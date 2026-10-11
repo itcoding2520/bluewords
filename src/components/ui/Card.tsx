@@ -1,0 +1,19 @@
+import { ComponentProps } from "react";
+import { cn } from "@/lib/cn";
+
+type CardProps = ComponentProps<"div">;
+
+export function Card({
+  className,
+  ...props
+}: CardProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200 bg-white",
+        className
+      )}
+      {...props}
+    />
+  );
+}
