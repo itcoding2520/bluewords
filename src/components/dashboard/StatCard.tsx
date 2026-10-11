@@ -12,12 +12,12 @@ export function StatCard({
   description,
 }: StatCardProps) {
   return (
-    <Card className="p-6">
+    <Card className="min-w-0 p-5 sm:p-6">
       <p className="text-sm font-medium text-slate-500">
         {label}
       </p>
 
-      <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
         {value}
       </p>
 

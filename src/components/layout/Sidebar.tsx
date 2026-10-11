@@ -1,40 +1,134 @@
-import { BookOpen, LayoutDashboard, Library } from "lucide-react";
+
+"use client";
+
+import { useState } from "react";
+import { BookOpen, LayoutDashboard, Library, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { cn } from "@/lib/cn";
+
+const navigation = [
+  {
+    label: "Overview",
+    href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Vocabulary",
+    href: "/vocabulary",
+    icon: Library,
+  },
+];
 
 export function Sidebar() {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  function closeSidebar() {
+    setIsOpen(false);
+  }
+
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white p-6">
-      <div className="mb-10">
-        <div className="flex items-center gap-2">
-          <BookOpen className="text-blue-600" size={22} />
-
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+    <>
+      {/* Mobile top bar */}
+      <div className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
+        <Link href="/" className="flex items-center gap-2">
+          <BookOpen size={22} className="text-blue-600" />
+          <span className="text-lg font-bold tracking-tight text-slate-900">
             Blue<span className="text-blue-600">Words</span>
-          </h1>
-        </div>
+          </span>
+        </Link>
 
-        <p className="mt-1 text-xs text-slate-400">
-          Learn a little every day.
-        </p>
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open navigation menu"
+          aria-expanded={isOpen}
+          aria-controls="bluewords-sidebar"
+          className="flex size-10 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100"
+        >
+          <Menu size={22} />
+        </button>
       </div>
 
-      <nav className="space-y-2">
-        <Link
-          href="/"
-          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-        >
-          <LayoutDashboard size={18} />
-          Overview
-        </Link>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <button
+          type="button"
+          onClick={closeSidebar}
+          aria-label="Close navigation menu"
+          className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden"
+        />
+      )}
 
-        <Link
-          href="/vocabulary"
-          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-        >
-          <Library size={18} />
-          Vocabulary
-        </Link>
-      </nav>
-    </aside>
+      {/* Desktop sidebar + mobile drawer */}
+      <aside
+        id="bluewords-sidebar"
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 shrink-0 border-r border-slate-200 bg-white p-6 transition-transform duration-300",
+          "lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="mb-10 flex items-start justify-between gap-2">
+          <div>
+            <Link
+              href="/"
+              onClick={closeSidebar}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="text-blue-600" size={22} />
+
+              <span className="text-xl font-bold tracking-tight text-slate-900">
+                Blue<span className="text-blue-600">Words</span>
+              </span>
+            </Link>
+
+            <p className="mt-1 text-xs text-slate-400">
+              Learn a little every day.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={closeSidebar}
+            aria-label="Close navigation menu"
+            className="flex size-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 lg:hidden"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav aria-label="Main navigation" className="space-y-2">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeSidebar}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition",
+                  isActive
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                )}
+              >
+                <Icon size={18} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
   );
 }

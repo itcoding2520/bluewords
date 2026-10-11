@@ -13,7 +13,7 @@ export function ProgressCard({
 }: ProgressCardProps) {
   return (
     <Card className="mt-5 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold text-slate-900">
             Learning progress

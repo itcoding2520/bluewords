@@ -11,13 +11,13 @@ export function DashboardHeader({
   greeting,
 }: DashboardHeaderProps) {
   return (
-    <header className="flex items-center justify-between gap-6">
+    <header className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-medium text-blue-600">
           {dateLabel}
         </p>
 
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
           {greeting} 👋
         </h1>
 

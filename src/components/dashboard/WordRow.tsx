@@ -1,3 +1,5 @@
+
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 interface WordRowProps {
@@ -12,22 +14,32 @@ export function WordRow({
   category,
 }: WordRowProps) {
   return (
-    <div className="flex items-center gap-6 border-b border-slate-100 px-6 py-5 last:border-none">
-      <p className="w-40 font-semibold text-slate-900">
-        {word}
-      </p>
+    <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
+      <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-6">
+        <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-6">
+          <p className="break-words font-semibold text-slate-900 sm:w-32 sm:shrink-0 lg:w-40">
+            {word}
+          </p>
 
-      <p className="flex-1 text-sm text-slate-500">
-        {meaning}
-      </p>
+          <p className="mt-1 break-words text-sm text-slate-500 sm:mt-0 sm:min-w-0 sm:flex-1">
+            {meaning}
+          </p>
+        </div>
 
-      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-        {category}
-      </span>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 sm:px-3">
+            {category}
+          </span>
 
-      <button className="text-slate-400 transition hover:text-slate-900">
-        <ArrowRight size={16} />
-      </button>
+          <Link
+            href="/vocabulary"
+            aria-label={`View ${word} in vocabulary`}
+            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
