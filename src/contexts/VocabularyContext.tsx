@@ -19,6 +19,7 @@ import {
   loadVocabulary,
   saveVocabulary,
 } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface VocabularyContextValue {
   words: VocabularyWord[];
@@ -68,6 +69,7 @@ function VocabularyStoreProvider({
       word,
       ...currentWords,
     ]);
+    toast.success(`"${word.word}" added successfully!`);
   }
 
   function updateWord(updatedWord: VocabularyWord) {
@@ -78,12 +80,18 @@ function VocabularyStoreProvider({
           : word
       )
     );
+    toast.success(`"${updatedWord.word}" updated successfully!`);
   }
 
   function deleteWord(id: string) {
+    const deletedWord = words.find((word) => word.id === id);
+
+    if (!deletedWord) return;
+
     setWords((currentWords) =>
       currentWords.filter((word) => word.id !== id)
     );
+    toast.success(`"${deletedWord.word}" deleted successfully!`);
   }
 
   function toggleMastered(id: string) {

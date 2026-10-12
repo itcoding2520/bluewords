@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useState } from "react";
 import {
   Check,
   Circle,
@@ -8,8 +10,8 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
+import { cn } from "@/lib/cn";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -22,51 +24,53 @@ export function VocabularyRow({
   item,
   onToggleMastered,
   onEdit,
-  onDelete
+  onDelete,
 }: VocabularyRowProps) {
-  const mastered = item.status === "mastered";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const mastered = item.status === "mastered";
 
-  return (
-    <div className="grid grid-cols-[1.2fr_2fr_1fr_1fr_auto] items-center gap-6 border-b border-slate-100 px-6 py-5 last:border-none">
-      <div>
-        <p className="font-semibold text-slate-950">
+  
+return (
+  <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
+      {/* Word */}
+      <div className="min-w-0">
+        <p className="break-words font-semibold text-slate-950">
           {item.word}
+        </p>
+
+        <p className="mt-1 break-words text-sm text-slate-500 lg:hidden">
+          {item.meaning}
         </p>
       </div>
 
-      <p className="text-sm text-slate-500">
+      {/* Meaning - desktop */}
+      <p className="hidden min-w-0 break-words text-sm text-slate-500 lg:block">
         {item.meaning}
       </p>
 
-      <div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+      {/* Category */}
+      <div className="col-start-1 row-start-2 lg:col-auto lg:row-auto">
+        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
           {item.category}
         </span>
       </div>
 
-      <div>
-        <span
-          className={
-            mastered
-              ? "inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600"
-              : "text-sm font-medium text-amber-600"
-          }
-        >
-          {mastered && <Check size={15} />}
-
-          {mastered ? "Mastered" : "Learning"}
-        </span>
-      </div>
-
+      {/* Status */}
       <button
         type="button"
         onClick={() => onToggleMastered(item.id)}
-        className={
+        aria-label={`Mark ${item.word} as ${
+          mastered ? "learning" : "mastered"
+        }`}
+        aria-pressed={mastered}
+        className={cn(
+          "col-start-1 row-start-3 inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
+          "lg:col-auto lg:row-auto",
           mastered
-            ? "inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600"
-            : "inline-flex items-center gap-1.5 text-sm font-medium text-amber-600"
-        }
+            ? "text-emerald-600 hover:text-emerald-700"
+            : "text-amber-600 hover:text-amber-700"
+        )}
       >
         {mastered ? (
           <Check size={15} />
@@ -77,27 +81,28 @@ export function VocabularyRow({
         {mastered ? "Mastered" : "Learning"}
       </button>
 
-      <div className="relative">
+      {/* Actions */}
+      <div className="relative col-start-2 row-start-1 justify-self-end lg:col-auto lg:row-auto">
         <button
           type="button"
           aria-label={`Actions for ${item.word}`}
-          onClick={() =>
-            setIsMenuOpen((current) => !current)
-          }
-          className="flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+          aria-expanded={isMenuOpen}
+          aria-haspopup="true"
+          onClick={() => setIsMenuOpen((current) => !current)}
+          className="cursor-pointer flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
         >
           <MoreHorizontal size={18} />
         </button>
 
         {isMenuOpen && (
-          <div className="absolute right-0 top-11 z-20 w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+          <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
             <button
               type="button"
               onClick={() => {
-                onEdit(item);
                 setIsMenuOpen(false);
+                onEdit(item);
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+              className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
             >
               <Pencil size={15} />
               Edit
@@ -106,10 +111,10 @@ export function VocabularyRow({
             <button
               type="button"
               onClick={() => {
-                onDelete(item);
                 setIsMenuOpen(false);
+                onDelete(item);
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
+              className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
             >
               <Trash2 size={15} />
               Delete
@@ -118,5 +123,7 @@ export function VocabularyRow({
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }

@@ -1,3 +1,5 @@
+
+import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import {
@@ -5,9 +7,7 @@ import {
   type VocabularyCategory,
 } from "@/config/vocabulary";
 
-export type CategoryFilter =
-  | "All"
-  | VocabularyCategory;
+export type CategoryFilter = "All" | VocabularyCategory;
 
 interface VocabularyToolbarProps {
   search: string;
@@ -22,9 +22,9 @@ const filters: CategoryFilter[] = [
 ];
 
 interface FilterButtonProps {
-  children: React.ReactNode;
+  children: ReactNode;
   active?: boolean;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
 function FilterButton({
@@ -36,10 +36,11 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={
         active
-          ? "rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white"
-          : "rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+          ? "shrink-0 whitespace-nowrap rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white"
+          : "cursor-pointer shrink-0 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
       }
     >
       {children}
@@ -54,15 +55,18 @@ export function VocabularyToolbar({
   onCategoryChange,
 }: VocabularyToolbarProps) {
   return (
-    <div className="mt-10 flex items-center justify-between gap-4">
-      <div className="relative max-w-md flex-1">
+    <div className="mt-6 flex min-w-0 flex-col gap-4 lg:mt-10 lg:flex-row lg:items-center lg:justify-between">
+      {/* Search */}
+      <div className="relative w-full min-w-0 lg:max-w-md lg:flex-1">
         <Search
           size={17}
+          aria-hidden="true"
           className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
         />
 
         <input
-          type="text"
+          type="search"
+          aria-label="Search vocabulary"
           value={search}
           onChange={(event) =>
             onSearchChange(event.target.value)
@@ -72,18 +76,23 @@ export function VocabularyToolbar({
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        {filters.map((item) => (
-          <FilterButton
-            key={item}
-            active={category === item}
-            onClick={() =>
-              onCategoryChange(item)
-            }
-          >
-            {item}
-          </FilterButton>
-        ))}
+      {/* Category filters */}
+      <div className="min-w-0 w-full lg:w-auto">
+        <div
+          role="group"
+          aria-label="Filter vocabulary by category"
+          className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0"
+        >
+          {filters.map((item) => (
+            <FilterButton
+              key={item}
+              active={category === item}
+              onClick={() => onCategoryChange(item)}
+            >
+              {item}
+            </FilterButton>
+          ))}
+        </div>
       </div>
     </div>
   );

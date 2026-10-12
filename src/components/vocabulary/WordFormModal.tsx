@@ -98,11 +98,19 @@ export function WordFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-950">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="word-modal-title"
+        className="my-auto w-full max-w-lg max-h-[calc(100dvh-24px)] overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:rounded-3xl sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2
+              id="word-modal-title"
+              className="text-lg font-semibold text-slate-950 sm:text-xl"
+            >
               {isEditing ? "Edit word" : "Add new word"}
             </h2>
 
@@ -117,7 +125,7 @@ export function WordFormModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+            className="cursor-pointer flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
           >
             <X size={18} />
           </button>
@@ -125,7 +133,7 @@ export function WordFormModal({
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 space-y-5"
+          className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
         >
           <div>
             <label
@@ -170,7 +178,9 @@ export function WordFormModal({
             </label>
 
             <textarea
-                id="meaning"
+              id="meaning"
+              aria-invalid={Boolean(errors.meaning)}
+              aria-describedby={errors.meaning ? "meaning-error" : undefined}
                 value={meaning}
                 onChange={(event) => {
                     setMeaning(event.target.value);
@@ -193,9 +203,12 @@ export function WordFormModal({
             />
 
             {errors.meaning && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
+              <p
+                id="meaning-error"
+                className="mt-1.5 text-xs font-medium text-red-500"
+              >
                 {errors.meaning}
-                </p>
+              </p>
             )}
             </div>
 
@@ -228,7 +241,7 @@ export function WordFormModal({
             </Select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="secondary"

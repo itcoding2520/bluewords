@@ -46,7 +46,7 @@ export function Sidebar() {
           aria-label="Open navigation menu"
           aria-expanded={isOpen}
           aria-controls="bluewords-sidebar"
-          className="flex size-10 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100"
+          className="cursor-pointer flex size-10 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100"
         >
           <Menu size={22} />
         </button>

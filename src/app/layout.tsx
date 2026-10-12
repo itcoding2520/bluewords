@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <VocabularyProvider>
           {children}
         </VocabularyProvider>
+
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          duration={3000}
+        />
       </body>
     </html>
   );
