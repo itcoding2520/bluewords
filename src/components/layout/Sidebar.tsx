@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/cn";
+import Image from "next/image";
 
 const navigation = [
   {
@@ -32,12 +33,9 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex min-h-25 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <BookOpen size={22} className="text-blue-600" />
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            Blue<span className="text-blue-600">Words</span>
-          </span>
+          <Image src="/logo.png" alt="Blue words" width={100} height={100}/>
         </Link>
 
         <button
@@ -71,18 +69,14 @@ export function Sidebar() {
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="mb-10 flex items-start justify-between gap-2">
+        <div className="mb-10 flex items-start justify-center gap-2">
           <div>
             <Link
               href="/"
               onClick={closeSidebar}
               className="flex items-center gap-2"
             >
-              <BookOpen className="text-blue-600" size={22} />
-
-              <span className="text-xl font-bold tracking-tight text-slate-900">
-                Blue<span className="text-blue-600">Words</span>
-              </span>
+              <Image src="/logo.png" alt="Blue words" width={128} height={128}/>
             </Link>
 
             <p className="mt-1 text-xs text-slate-400">

@@ -12,7 +12,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex min-h-screen">
         <Sidebar />
 
-        <section className="min-w-0 flex-1 px-4 pb-6 pt-22 sm:px-6 lg:px-10 lg:py-8">
+        <section className="min-w-0 flex-1 px-4 pb-6 pt-30 sm:px-6 lg:px-10 lg:py-8">
           <div className="mx-auto max-w-6xl">
             {children}
           </div>
