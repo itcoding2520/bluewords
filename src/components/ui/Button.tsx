@@ -1,4 +1,6 @@
-import { ButtonHTMLAttributes } from "react";
+
+import type { ButtonHTMLAttributes } from "react";
+
 import { cn } from "@/lib/cn";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -21,13 +23,17 @@ const variants: Record<ButtonVariant, string> = {
 
 export function Button({
   variant = "primary",
+  type = "button",
   className,
   ...props
 }: ButtonProps) {
   return (
     <button
+      type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition cursor-pointer",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500",
+        "disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         className
       )}

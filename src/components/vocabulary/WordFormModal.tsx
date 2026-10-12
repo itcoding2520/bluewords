@@ -12,6 +12,7 @@ import {
 import { Input } from "../ui/Input";
 import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
+import * as Dialog from "@radix-ui/react-dialog";
 
 interface WordFormModalProps {
   open: boolean;
@@ -98,37 +99,41 @@ export function WordFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/30 p-3 backdrop-blur-sm sm:p-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="word-modal-title"
-        className="my-auto w-full max-w-lg max-h-[calc(100dvh-24px)] overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:rounded-3xl sm:p-6"
-      >
+    <Dialog.Root open={open} onOpenChange={(nextOpen) => {
+  if (!nextOpen) onClose();
+}}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
+
+    <Dialog.Content
+      aria-describedby="word-modal-description"
+      className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
+    >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2
-              id="word-modal-title"
-              className="text-lg font-semibold text-slate-950 sm:text-xl"
-            >
+            <Dialog.Title className="text-lg font-semibold text-slate-950 sm:text-xl">
               {isEditing ? "Edit word" : "Add new word"}
-            </h2>
+            </Dialog.Title>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <Dialog.Description
+              id="word-modal-description"
+              className="mt-1 text-sm text-slate-500"
+            >
               {isEditing
                 ? "Update the details of this word."
                 : "Add a word you want to remember."}
-            </p>
+            </Dialog.Description>
           </div>
 
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="Close"
-            className="cursor-pointer flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
-          >
-            <X size={18} />
-          </button>
+          <Dialog.Close asChild>
+            <button
+              type="button"
+              aria-label="Close"
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              <X size={18} />
+            </button>
+          </Dialog.Close>
         </div>
 
         <form
@@ -255,7 +260,8 @@ export function WordFormModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
   );
 }

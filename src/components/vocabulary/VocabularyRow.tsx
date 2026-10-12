@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Circle,
@@ -29,6 +29,36 @@ export function VocabularyRow({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mastered = item.status === "mastered";
 
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
   
 return (
   <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
@@ -82,14 +112,18 @@ return (
       </button>
 
       {/* Actions */}
-      <div className="relative col-start-2 row-start-1 justify-self-end lg:col-auto lg:row-auto">
+      <div
+        ref={menuRef}
+        className="relative col-start-2 row-start-1 justify-self-end lg:col-auto lg:row-auto"
+      >
         <button
+          ref={triggerRef}
           type="button"
           aria-label={`Actions for ${item.word}`}
           aria-expanded={isMenuOpen}
           aria-haspopup="true"
           onClick={() => setIsMenuOpen((current) => !current)}
-          className="cursor-pointer flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+          className="cursor-pointer flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:border-none focus-visible:outline-none"
         >
           <MoreHorizontal size={18} />
         </button>

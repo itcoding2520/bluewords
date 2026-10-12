@@ -13,10 +13,10 @@ import { WordFormModal } from "./WordFormModal";
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyToolbar } from "./VocabularyToolbar";
+import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import type {
   CategoryFilter,
 } from "./VocabularyToolbar";
-import { Button } from "../ui/Button";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 
 export function VocabularyContent() {
@@ -123,40 +123,11 @@ export function VocabularyContent() {
         />
       )}
 
-      {deletingWord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-slate-950">
-              Delete word?
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Are you sure you want to delete{" "}
-              <span className="font-medium text-slate-900">
-                &ldquo;{deletingWord.word}&rdquo;
-              </span>
-              ? This action cannot be undone.
-            </p>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setDeletingWord(null)}
-              >
-                Cancel
-              </Button>
-
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="cursor-pointer rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        word={deletingWord}
+        onClose={() => setDeletingWord(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 }
