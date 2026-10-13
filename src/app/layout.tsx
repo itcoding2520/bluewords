@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: {
     default: "BlueWords",
@@ -22,7 +23,21 @@ export const metadata: Metadata = {
   description:
     "BlueWords helps you track, organize, and master your English vocabulary.",
   applicationName: "BlueWords",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BlueWords",
+  },
+  icons: {
+    icon: [
+      { url: "/pwa-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/pwa-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
+
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
