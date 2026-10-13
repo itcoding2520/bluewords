@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-
+import { createClient } from "@/lib/supabase/client";
 import type { VocabularyWord } from "@/data/vocabulary";
 import {
   getVocabularyWords,
@@ -47,33 +47,61 @@ function VocabularyStoreProvider({
 }: {
   children: ReactNode;
 }) {
+  const [supabase] = useState(() => createClient());
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-
+  
   useEffect(() => {
     let cancelled = false;
+    let requestId = 0;
 
     async function loadWords() {
+      const currentRequest = ++requestId;
+
+      // Xóa ngay dữ liệu cũ khi session thay đổi.
+      setWords([]);
+      setIsLoaded(false);
+
       try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (cancelled || currentRequest !== requestId) {
+          return;
+        }
+
+        if (authError || !user) {
+          setWords([]);
+          return;
+        }
+
         const rows = await getVocabularyWords();
 
-        if (!cancelled) {
-          setWords(
-            rows.map(({ id, word, meaning, category, status }) => ({
-              id,
-              word,
-              meaning,
-              category,
-              status,
-            }))
-          );
+
+        if (cancelled || currentRequest !== requestId) {
+          return;
         }
-      } catch {
-        if (!cancelled) {
-          toast.error("Failed to load vocabulary.");
+
+        setWords(
+          rows.map(({ id, word, meaning, category, status }) => ({
+            id,
+            word,
+            meaning,
+            category,
+            status,
+          }))
+        );
+      } catch (error) {
+        if (cancelled || currentRequest !== requestId) {
+          return;
         }
+
+        console.error("Failed to load vocabulary:", error);
+        toast.error("Failed to load vocabulary.");
       } finally {
-        if (!cancelled) {
+        if (!cancelled && currentRequest === requestId) {
           setIsLoaded(true);
         }
       }
@@ -81,10 +109,31 @@ function VocabularyStoreProvider({
 
     void loadWords();
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED"
+      ) {
+        // Tránh gọi Supabase API đồng bộ bên trong
+        // callback của onAuthStateChange.
+        setTimeout(() => {
+          if (!cancelled) {
+            void loadWords();
+          }
+        }, 0);
+      }
+    });
+
     return () => {
       cancelled = true;
+      requestId++;
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
+
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
