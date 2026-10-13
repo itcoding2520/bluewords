@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { LayoutDashboard, Library, Menu, X, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,6 +27,35 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [supabase] = useState(() => createClient());
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (active) {
+        setEmail(user?.email ?? null);
+      }
+    }
+
+    void loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user.email ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   function closeSidebar() {
     setIsOpen(false);
@@ -124,16 +154,38 @@ export function Sidebar() {
           })}
           
         </nav>
-        {/* Logout at the bottom */}
-        <form action={logout} className="mt-auto pt-6">
-          <button
-            type="submit"
-            className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-          >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
-        </form>
+        
+        <div className="mt-auto border-t border-slate-100 pt-5">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <span className="text-sm font-semibold">
+                {email?.charAt(0).toUpperCase() ?? "U"}
+              </span>
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900">
+                Hello 👋
+              </p>
+              <p
+                className="truncate text-xs text-slate-500"
+                title={email ?? undefined}
+              >
+                {email ?? "Loading account..."}
+              </p>
+            </div>
+          </div>
+
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          </form>
+        </div>
       </aside>
     </>
   );
