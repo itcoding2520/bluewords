@@ -23,12 +23,12 @@ export default function LoginPage() {
           ? await login(formData)
           : await signup(formData);
 
-      if (result?.error) {
-        setMessage(result.error);
-        setIsError(true);
-      } else if (result?.success) {
-        setMessage(result.success);
-      }
+        if (result && "error" in result && result.error) {
+            setMessage(result.error);
+            setIsError(true);
+        } else if (result && "success" in result && result.success) {
+            setMessage(result.success);
+        }
     });
   }
 
