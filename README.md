@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BlueWords 💙
 
-## Getting Started
+**A simple and modern vocabulary tracker to help you learn, organize, and master English words.**
 
-First, run the development server:
+BlueWords is a responsive web application built with Next.js, TypeScript, and Tailwind CSS. It helps users manage their vocabulary, track learning progress, and build a consistent learning habit.
+
+### 🔗 Live Demo
+
+**[Try BlueWords](https://bluewords.vercel.app)**
+
+### ✨ Features
+
+- **Vocabulary Management** — Add, edit, and delete vocabulary words.
+- **Learning Status** — Mark words as Learning or Mastered.
+- **Smart Search** — Search words by English vocabulary or meaning.
+- **Category Filtering** — Organize words into Daily, Work, and Frontend categories.
+- **Dashboard Overview** — View total words, mastered words, and learning progress.
+- **Recent Words** — Quickly review recently added vocabulary.
+- **Local Storage** — Keep vocabulary data after refreshing the browser.
+- **Responsive Design** — Optimized for desktop, tablet, and mobile.
+- **User-Friendly Interactions** — Confirmation dialogs, toast notifications, and accessible modal interactions.
+
+### 🛠️ Tech Stack
+
+| Technology | Purpose |
+|---|---|
+| Next.js (App Router) | React framework |
+| React | UI development |
+| TypeScript | Type safety |
+| Tailwind CSS v4 | Styling |
+| React Context API | State management |
+| Local Storage | Browser data persistence |
+| Radix UI Dialog | Accessible dialogs |
+| Lucide React | Icons |
+| Sonner | Toast notifications |
+| Vercel | Deployment |
+
+### 🚀 Getting Started
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/itcoding2520/bluewords.git
+cd bluewords
+```
+
+**2. Install dependencies**
+
+```bash
+npm install
+```
+
+**3. Start the development server**
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**4. Open the application**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 📁 Project Structure
 
-## Learn More
+```text
+src/
+├── app/
+│   ├── page.tsx
+│   ├── vocabulary/
+│   │   └── page.tsx
+│   └── layout.tsx
+├── components/
+│   ├── dashboard/
+│   ├── layout/
+│   ├── ui/
+│   └── vocabulary/
+├── config/
+├── contexts/
+├── data/
+├── hooks/
+└── lib/
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 💾 Data Persistence
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+BlueWords uses the browser's `localStorage` to save vocabulary data.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Words remain available after refreshing the page.
+- No account or login is required.
+- Data is stored locally in each browser.
+- Vocabulary does not automatically sync across devices or browsers.
 
-## Deploy on Vercel
+### 🧭 Future Improvements
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [ ] Vocabulary review and practice mode
+- [ ] Spaced repetition system
+- [ ] Custom vocabulary categories
+- [ ] Import and export vocabulary
+- [ ] Cloud synchronization and user authentication
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 🌐 Deployment
+
+BlueWords is deployed on **Vercel**.
+
+Live application: https://bluewords.vercel.app
+
+### 👨‍💻 Author
+
+Developed by [itcoding2520](https://github.com/itcoding2520).
+
+---
+
+Built with 💙 to make vocabulary learning simple and enjoyable.
