@@ -59,13 +59,13 @@ export async function signup(formData: FormData) {
   redirect("/");
 }
 
-export async function logout() {
+export async function logout(): Promise<void> {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    return { error: error.message };
+    throw new Error("Unable to sign out. Please try again.");
   }
 
   revalidatePath("/", "layout");

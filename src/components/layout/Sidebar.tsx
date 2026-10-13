@@ -2,9 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Library, Menu, X } from "lucide-react";
+import { LayoutDashboard, Library, Menu, X, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/login/actions";
 
 import { cn } from "@/lib/cn";
 import Image from "next/image";
@@ -19,7 +20,7 @@ const navigation = [
     label: "Vocabulary",
     href: "/vocabulary",
     icon: Library,
-  },
+  }
 ];
 
 export function Sidebar() {
@@ -64,7 +65,7 @@ export function Sidebar() {
       <aside
         id="bluewords-sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 shrink-0 border-r border-slate-200 bg-white p-6 transition-transform duration-300",
+          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white p-6 transition-transform duration-300",
           "lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -121,7 +122,18 @@ export function Sidebar() {
               </Link>
             );
           })}
+          
         </nav>
+        {/* Logout at the bottom */}
+        <form action={logout} className="mt-auto pt-6">
+          <button
+            type="submit"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
+        </form>
       </aside>
     </>
   );
