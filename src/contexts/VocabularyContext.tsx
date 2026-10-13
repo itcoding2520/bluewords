@@ -25,6 +25,7 @@ interface VocabularyContextValue {
   updateWord: (word: VocabularyWord) => Promise<boolean>;
   deleteWord: (id: string) => Promise<boolean>;
   toggleMastered: (id: string) => Promise<boolean>;
+  refreshWords: () => Promise<void>;
 }
 
 const VocabularyContext =
@@ -134,6 +135,38 @@ function VocabularyStoreProvider({
     };
   }, [supabase]);
 
+  async function refreshWords(): Promise<void> {
+    setIsLoaded(false);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setWords([]);
+        return;
+      }
+
+      const rows = await getVocabularyWords();
+
+      setWords(
+        rows.map(({ id, word, meaning, category, status }) => ({
+          id,
+          word,
+          meaning,
+          category,
+          status,
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to refresh vocabulary:", error);
+      toast.error("Failed to refresh vocabulary.");
+    } finally {
+      setIsLoaded(true);
+    }
+  }
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
@@ -260,6 +293,7 @@ function VocabularyStoreProvider({
         updateWord,
         deleteWord,
         toggleMastered,
+        refreshWords,
       }}
     >
       {children}
