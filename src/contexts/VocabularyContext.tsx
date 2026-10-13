@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -52,90 +53,13 @@ function VocabularyStoreProvider({
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  useEffect(() => {
-    let cancelled = false;
-    let requestId = 0;
-
-    async function loadWords() {
-      const currentRequest = ++requestId;
-
-      // Xóa ngay dữ liệu cũ khi session thay đổi.
-      setWords([]);
-      setIsLoaded(false);
-
-      try {
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
-
-        if (cancelled || currentRequest !== requestId) {
-          return;
-        }
-
-        if (authError || !user) {
-          setWords([]);
-          return;
-        }
-
-        const rows = await getVocabularyWords();
-
-
-        if (cancelled || currentRequest !== requestId) {
-          return;
-        }
-
-        setWords(
-          rows.map(({ id, word, meaning, category, status }) => ({
-            id,
-            word,
-            meaning,
-            category,
-            status,
-          }))
-        );
-      } catch (error) {
-        if (cancelled || currentRequest !== requestId) {
-          return;
-        }
-
-        console.error("Failed to load vocabulary:", error);
-        toast.error("Failed to load vocabulary.");
-      } finally {
-        if (!cancelled && currentRequest === requestId) {
-          setIsLoaded(true);
-        }
-      }
-    }
-
-    void loadWords();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (
-        event === "SIGNED_IN" ||
-        event === "SIGNED_OUT" ||
-        event === "USER_UPDATED"
-      ) {
-        // Tránh gọi Supabase API đồng bộ bên trong
-        // callback của onAuthStateChange.
-        setTimeout(() => {
-          if (!cancelled) {
-            void loadWords();
-          }
-        }, 0);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      requestId++;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+  const requestIdRef = useRef(0);
+  const ownerIdRef = useRef<string | null>(null);
+  const mountedRef = useRef(false);
 
   async function refreshWords(): Promise<void> {
+    const currentRequest = ++requestIdRef.current;
+
     setIsLoaded(false);
 
     try {
@@ -144,12 +68,51 @@ function VocabularyStoreProvider({
         error: authError,
       } = await supabase.auth.getUser();
 
+      if (
+        !mountedRef.current ||
+        currentRequest !== requestIdRef.current
+      ) {
+        return;
+      }
+
       if (authError || !user) {
+        ownerIdRef.current = null;
         setWords([]);
         return;
       }
 
+      // Không giữ dữ liệu của tài khoản trước.
+      if (ownerIdRef.current !== user.id) {
+        ownerIdRef.current = user.id;
+        setWords([]);
+      }
+
       const rows = await getVocabularyWords();
+
+      if (
+        !mountedRef.current ||
+        currentRequest !== requestIdRef.current
+      ) {
+        return;
+      }
+
+      // Xác minh tài khoản vẫn là người đã bắt đầu request.
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (
+        !mountedRef.current ||
+        currentRequest !== requestIdRef.current
+      ) {
+        return;
+      }
+
+      if (currentUser?.id !== user.id) {
+        ownerIdRef.current = null;
+        setWords([]);
+        return;
+      }
 
       setWords(
         rows.map(({ id, word, meaning, category, status }) => ({
@@ -161,12 +124,61 @@ function VocabularyStoreProvider({
         }))
       );
     } catch (error) {
+      if (
+        !mountedRef.current ||
+        currentRequest !== requestIdRef.current
+      ) {
+        return;
+      }
+
       console.error("Failed to refresh vocabulary:", error);
-      toast.error("Failed to refresh vocabulary.");
+      toast.error("Failed to load vocabulary.");
     } finally {
-      setIsLoaded(true);
+      if (
+        mountedRef.current &&
+        currentRequest === requestIdRef.current
+      ) {
+        setIsLoaded(true);
+      }
     }
   }
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    void refreshWords();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED"
+      ) {
+        // Hủy hiệu lực request cũ ngay khi Auth thay đổi.
+        requestIdRef.current++;
+        ownerIdRef.current = null;
+        setWords([]);
+        setIsLoaded(false);
+
+        // Không gọi Supabase API trực tiếp trong Auth callback.
+        setTimeout(() => {
+          if (mountedRef.current) {
+            void refreshWords();
+          }
+        }, 0);
+      }
+    });
+
+    return () => {
+      mountedRef.current = false;
+      requestIdRef.current++;
+      subscription.unsubscribe();
+    };
+    // Chỉ đăng ký Auth listener một lần cho Supabase client.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
