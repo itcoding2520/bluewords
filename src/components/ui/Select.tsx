@@ -15,7 +15,7 @@ export function Select({
     <div className="relative">
       <select
         className={cn(
-          "w-full rounded-xl appearance-none border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition",
+          "w-full rounded-xl appearance-none border border-slate-200 bg-white px-4 py-3 text-base sm:text-sm text-slate-900 outline-none transition",
           "focus:border-blue-400 focus:ring-4 focus:ring-blue-50",
           className
         )}

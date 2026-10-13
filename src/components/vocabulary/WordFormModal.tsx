@@ -1,8 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { X } from "lucide-react";
-
 import { Button } from "@/components/ui/Button";
 import type { VocabularyWord } from "@/data/vocabulary";
 import {
@@ -44,6 +43,7 @@ export function WordFormModal({
     );
   const [errors, setErrors] = useState<FormErrors>({});
   const isEditing = Boolean(editingWord);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   if (!open) {
     return null;
@@ -106,12 +106,20 @@ export function WordFormModal({
     <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
 
     <Dialog.Content
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        titleRef.current?.focus();
+      }}
       aria-describedby="word-modal-description"
       className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
     >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <Dialog.Title className="text-lg font-semibold text-slate-950 sm:text-xl">
+            <Dialog.Title
+              ref={titleRef}
+              tabIndex={-1}
+              className="text-lg font-semibold text-slate-950 outline-none sm:text-xl"
+            >
               {isEditing ? "Edit word" : "Add new word"}
             </Dialog.Title>
 
@@ -162,7 +170,6 @@ export function WordFormModal({
                     }
                 }}
                 placeholder="e.g. resilient"
-                autoFocus
                 error={Boolean(errors.word)}
                 className="mt-2"
             />
@@ -200,7 +207,7 @@ export function WordFormModal({
                 placeholder="What does this word mean?"
                 rows={3}
                 className={cn(
-                "mt-2 w-full resize-none rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4",
+                "mt-2 w-full resize-none rounded-xl border px-4 py-3 text-base sm:text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4",
                 errors.meaning
                     ? "border-red-300 focus:border-red-400 focus:ring-red-50"
                     : "border-slate-200 focus:border-blue-400 focus:ring-blue-50"

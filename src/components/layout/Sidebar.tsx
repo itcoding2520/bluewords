@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, LayoutDashboard, Library, Menu, X } from "lucide-react";
+import { LayoutDashboard, Library, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
