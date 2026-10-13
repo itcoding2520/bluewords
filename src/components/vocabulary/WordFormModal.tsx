@@ -18,7 +18,7 @@ interface WordFormModalProps {
   words: VocabularyWord[];
   editingWord?: VocabularyWord | null;
   onClose: () => void;
-  onSubmit: (word: VocabularyWord) => void;
+  onSubmit: (word: VocabularyWord) => Promise<void>;
 }
 
 interface FormErrors {
@@ -42,6 +42,7 @@ export function WordFormModal({
       editingWord?.category ?? "Daily"
     );
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = Boolean(editingWord);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -50,13 +51,17 @@ export function WordFormModal({
   }
 
   function handleClose() {
+    if (isSubmitting) return;
     onClose();
   }
 
-  function handleSubmit(
+  
+  async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
+
+    if (isSubmitting) return;
 
     const trimmedWord = word.trim();
     const trimmedMeaning = meaning.trim();
@@ -87,188 +92,203 @@ export function WordFormModal({
       return;
     }
 
-    onSubmit({
-      id: editingWord?.id ?? crypto.randomUUID(),
-      word: trimmedWord,
-      meaning: trimmedMeaning,
-      category,
-      status: editingWord?.status ?? "learning",
-    });
+    setIsSubmitting(true);
 
-    onClose();
+    try {
+      await onSubmit({
+        id: editingWord?.id ?? crypto.randomUUID(),
+        word: trimmedWord,
+        meaning: trimmedMeaning,
+        category,
+        status: editingWord?.status ?? "learning",
+      });
+
+      // Không gọi onClose() ở đây.
+      // VocabularyContent sẽ đóng modal khi Supabase lưu thành công.
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(nextOpen) => {
-  if (!nextOpen) onClose();
-}}>
-  <Dialog.Portal>
-    <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
-
-    <Dialog.Content
-      onOpenAutoFocus={(event) => {
-        event.preventDefault();
-        titleRef.current?.focus();
+    <Dialog.Root
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
       }}
-      aria-describedby="word-modal-description"
-      className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
     >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Dialog.Title
-              ref={titleRef}
-              tabIndex={-1}
-              className="text-lg font-semibold text-slate-950 outline-none sm:text-xl"
-            >
-              {isEditing ? "Edit word" : "Add new word"}
-            </Dialog.Title>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
 
-            <Dialog.Description
-              id="word-modal-description"
-              className="mt-1 text-sm text-slate-500"
-            >
-              {isEditing
-                ? "Update the details of this word."
-                : "Add a word you want to remember."}
-            </Dialog.Description>
-          </div>
-
-          <Dialog.Close asChild>
-            <button
-              type="button"
-              aria-label="Close"
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-              <X size={18} />
-            </button>
-          </Dialog.Close>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+        <Dialog.Content
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            titleRef.current?.focus();
+          }}
+          aria-describedby="word-modal-description"
+          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
         >
-          <div>
-            <label
-                htmlFor="word"
-                className="text-sm font-medium text-slate-700"
-            >
-                Word
-            </label>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Dialog.Title
+                  ref={titleRef}
+                  tabIndex={-1}
+                  className="text-lg font-semibold text-slate-950 outline-none sm:text-xl"
+                >
+                  {isEditing ? "Edit word" : "Add new word"}
+                </Dialog.Title>
 
-            <Input
-                id="word"
-                value={word}
-                onChange={(event) => {
-                    setWord(event.target.value);
+                <Dialog.Description
+                  id="word-modal-description"
+                  className="mt-1 text-sm text-slate-500"
+                >
+                  {isEditing
+                    ? "Update the details of this word."
+                    : "Add a word you want to remember."}
+                </Dialog.Description>
+              </div>
 
-                    if (errors.word) {
-                        setErrors((current) => ({
-                        ...current,
-                        word: undefined,
-                        }));
-                    }
-                }}
-                placeholder="e.g. resilient"
-                error={Boolean(errors.word)}
-                className="mt-2"
-            />
-
-            {errors.word && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
-                {errors.word}
-                </p>
-            )}
-          </div>
-
-          <div>
-            <label
-                htmlFor="meaning"
-                className="text-sm font-medium text-slate-700"
-            >
-                Meaning
-            </label>
-
-            <textarea
-              id="meaning"
-              aria-invalid={Boolean(errors.meaning)}
-              aria-describedby={errors.meaning ? "meaning-error" : undefined}
-                value={meaning}
-                onChange={(event) => {
-                    setMeaning(event.target.value);
-
-                    if (errors.meaning) {
-                        setErrors((current) => ({
-                        ...current,
-                        meaning: undefined,
-                        }));
-                    }
-                }}
-                placeholder="What does this word mean?"
-                rows={3}
-                className={cn(
-                "mt-2 w-full resize-none rounded-xl border px-4 py-3 text-base sm:text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4",
-                errors.meaning
-                    ? "border-red-300 focus:border-red-400 focus:ring-red-50"
-                    : "border-slate-200 focus:border-blue-400 focus:ring-blue-50"
-                )}
-            />
-
-            {errors.meaning && (
-              <p
-                id="meaning-error"
-                className="mt-1.5 text-xs font-medium text-red-500"
-              >
-                {errors.meaning}
-              </p>
-            )}
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
             </div>
 
-          <div>
-            <label
-                htmlFor="category"
-                className="text-sm font-medium text-slate-700"
+            <form
+              onSubmit={handleSubmit}
+              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
             >
-                Category
-            </label>
-
-            <Select
-                id="category"
-                value={category}
-                onChange={(event) =>
-                    setCategory(
-                    event.target.value as VocabularyCategory
-                    )
-                }
-                className="mt-2"
+              <div>
+                <label
+                    htmlFor="word"
+                    className="text-sm font-medium text-slate-700"
                 >
-                {VOCABULARY_CATEGORIES.map((category) => (
-                    <option
-                    key={category}
+                    Word
+                </label>
+
+                <Input
+                    id="word"
+                    value={word}
+                    onChange={(event) => {
+                        setWord(event.target.value);
+
+                        if (errors.word) {
+                            setErrors((current) => ({
+                            ...current,
+                            word: undefined,
+                            }));
+                        }
+                    }}
+                    placeholder="e.g. resilient"
+                    error={Boolean(errors.word)}
+                    className="mt-2"
+                />
+
+                {errors.word && (
+                    <p className="mt-1.5 text-xs font-medium text-red-500">
+                    {errors.word}
+                    </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                    htmlFor="meaning"
+                    className="text-sm font-medium text-slate-700"
+                >
+                    Meaning
+                </label>
+
+                <textarea
+                  id="meaning"
+                  aria-invalid={Boolean(errors.meaning)}
+                  aria-describedby={errors.meaning ? "meaning-error" : undefined}
+                    value={meaning}
+                    onChange={(event) => {
+                        setMeaning(event.target.value);
+
+                        if (errors.meaning) {
+                            setErrors((current) => ({
+                            ...current,
+                            meaning: undefined,
+                            }));
+                        }
+                    }}
+                    placeholder="What does this word mean?"
+                    rows={3}
+                    className={cn(
+                    "mt-2 w-full resize-none rounded-xl border px-4 py-3 text-base sm:text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4",
+                    errors.meaning
+                        ? "border-red-300 focus:border-red-400 focus:ring-red-50"
+                        : "border-slate-200 focus:border-blue-400 focus:ring-blue-50"
+                    )}
+                />
+
+                {errors.meaning && (
+                  <p
+                    id="meaning-error"
+                    className="mt-1.5 text-xs font-medium text-red-500"
+                  >
+                    {errors.meaning}
+                  </p>
+                )}
+                </div>
+
+              <div>
+                <label
+                    htmlFor="category"
+                    className="text-sm font-medium text-slate-700"
+                >
+                    Category
+                </label>
+
+                <Select
+                    id="category"
                     value={category}
+                    onChange={(event) =>
+                        setCategory(
+                        event.target.value as VocabularyCategory
+                        )
+                    }
+                    className="mt-2"
                     >
-                    {category}
-                    </option>
-                ))}
-            </Select>
-          </div>
+                    {VOCABULARY_CATEGORIES.map((category) => (
+                        <option
+                        key={category}
+                        value={category}
+                        >
+                        {category}
+                        </option>
+                    ))}
+                </Select>
+              </div>
 
-          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClose}
-            >
-              Cancel
-            </Button>
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
 
-            <Button type="submit">
-              {isEditing ? "Save changes" : "Add word"}
-            </Button>
-          </div>
-        </form>
-      </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting
+                    ? "Saving..."
+                    : isEditing
+                      ? "Save changes"
+                      : "Add word"}
+                </Button>
+              </div>
+            </form>
+          </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

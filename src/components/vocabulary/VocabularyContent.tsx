@@ -33,6 +33,7 @@ export function VocabularyContent() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredWords = useMemo(() => {
     return words.filter((item) => {
@@ -69,20 +70,43 @@ export function VocabularyContent() {
     setDeletingWord(word);
   }
 
-  function handleConfirmDelete() {
-    if (!deletingWord) return;
+  
+  async function handleConfirmDelete() {
+    if (!deletingWord || isSubmitting) return;
 
-    deleteWord(deletingWord.id);
-    setDeletingWord(null);
-  }
+    setIsSubmitting(true);
 
-  function handleSubmitWord(submittedWord: VocabularyWord) {
-    if (editingWord) {
-      updateWord(submittedWord);
-    } else {
-      addWord(submittedWord);
+    try {
+      const success = await deleteWord(deletingWord.id);
+
+      if (success) {
+        setDeletingWord(null);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   }
+
+  async function handleSubmitWord(
+    submittedWord: VocabularyWord
+  ) {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const success = editingWord
+        ? await updateWord(submittedWord)
+        : await addWord(submittedWord);
+
+      if (success) {
+        handleCloseForm();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
 
   if (!isLoaded) {
     return (
@@ -125,6 +149,7 @@ export function VocabularyContent() {
 
       <DeleteConfirmModal
         word={deletingWord}
+        isDeleting={isSubmitting}
         onClose={() => setDeletingWord(null)}
         onConfirm={handleConfirmDelete}
       />

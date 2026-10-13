@@ -7,7 +7,7 @@ import { VocabularyRow } from "./VocabularyRow";
 
 interface VocabularyListProps {
   words: VocabularyWord[];
-  onToggleMastered: (id: string) => void;
+  onToggleMastered: (id: string) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
 }

@@ -8,12 +8,14 @@ import type { VocabularyWord } from "@/data/vocabulary";
 
 interface DeleteConfirmModalProps {
   word: VocabularyWord | null;
+  isDeleting?: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function DeleteConfirmModal({
   word,
+  isDeleting = false,
   onClose,
   onConfirm,
 }: DeleteConfirmModalProps) {
@@ -21,7 +23,9 @@ export function DeleteConfirmModal({
     <Dialog.Root
       open={Boolean(word)}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open && !isDeleting) {
+          onClose();
+        }
       }}
     >
       <Dialog.Portal>
@@ -42,18 +46,25 @@ export function DeleteConfirmModal({
           </Dialog.Description>
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Dialog.Close asChild>
-              <Button variant="secondary" className="w-full sm:w-auto">
-                Cancel
-              </Button>
-            </Dialog.Close>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              disabled={isDeleting}
+              onClick={() => {
+                if (!isDeleting) onClose();
+              }}
+            >
+              Cancel
+            </Button>
 
             <button
               type="button"
-              onClick={onConfirm}
-              className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 sm:w-auto"
+              onClick={() => void onConfirm()}
+              disabled={isDeleting}
+              className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
-              Delete word
+              {isDeleting ? "Deleting..." : "Delete word"}
             </button>
           </div>
         </Dialog.Content>

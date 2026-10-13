@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -8,26 +9,22 @@ import {
   type ReactNode,
 } from "react";
 
-import { useHasHydrated } from "@/hooks/useHasHydrated";
-
+import type { VocabularyWord } from "@/data/vocabulary";
 import {
-  initialVocabulary,
-  type VocabularyWord,
-} from "@/data/vocabulary";
-
-import {
-  loadVocabulary,
-  saveVocabulary,
-} from "@/lib/storage";
+  getVocabularyWords,
+  addVocabularyWord,
+  updateVocabularyWord,
+  deleteVocabularyWord,
+} from "@/lib/supabase/vocabulary";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
   words: VocabularyWord[];
   isLoaded: boolean;
-  addWord: (word: VocabularyWord) => void;
-  updateWord: (word: VocabularyWord) => void;
-  deleteWord: (id: string) => void;
-  toggleMastered: (id: string) => void;
+  addWord: (word: VocabularyWord) => Promise<boolean>;
+  updateWord: (word: VocabularyWord) => Promise<boolean>;
+  deleteWord: (id: string) => Promise<boolean>;
+  toggleMastered: (id: string) => Promise<boolean>;
 }
 
 const VocabularyContext =
@@ -38,12 +35,6 @@ export function VocabularyProvider({
 }: {
   children: ReactNode;
 }) {
-  const hasHydrated = useHasHydrated();
-
-  if (!hasHydrated) {
-    return null;
-  }
-
   return (
     <VocabularyStoreProvider>
       {children}
@@ -56,65 +47,166 @@ function VocabularyStoreProvider({
 }: {
   children: ReactNode;
 }) {
-  const [words, setWords] = useState<VocabularyWord[]>(() => {
-    return loadVocabulary() ?? initialVocabulary;
-  });
+  const [words, setWords] = useState<VocabularyWord[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    saveVocabulary(words);
-  }, [words]);
+    let cancelled = false;
 
-  function addWord(word: VocabularyWord) {
-    setWords((currentWords) => [
-      word,
-      ...currentWords,
-    ]);
-    toast.success(`"${word.word}" added successfully!`);
+    async function loadWords() {
+      try {
+        const rows = await getVocabularyWords();
+
+        if (!cancelled) {
+          setWords(
+            rows.map(({ id, word, meaning, category, status }) => ({
+              id,
+              word,
+              meaning,
+              category,
+              status,
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Failed to load vocabulary.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoaded(true);
+        }
+      }
+    }
+
+    void loadWords();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function addWord(word: VocabularyWord): Promise<boolean> {
+    try {
+      const row = await addVocabularyWord({
+        word: word.word,
+        meaning: word.meaning,
+        category: word.category,
+        status: word.status,
+      });
+
+      setWords((current) => [
+        {
+          id: row.id,
+          word: row.word,
+          meaning: row.meaning,
+          category: row.category,
+          status: row.status,
+        },
+        ...current,
+      ]);
+
+      toast.success(`"${row.word}" added successfully!`);
+      return true;
+    } catch (error) {
+      console.error("Supabase addWord error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add word."
+      );
+
+      return false;
+    }
   }
 
-  function updateWord(updatedWord: VocabularyWord) {
-    setWords((currentWords) =>
-      currentWords.map((word) =>
-        word.id === updatedWord.id
-          ? updatedWord
-          : word
-      )
-    );
-    toast.success(`"${updatedWord.word}" updated successfully!`);
+  async function updateWord(
+    updatedWord: VocabularyWord
+  ): Promise<boolean> {
+    try {
+      const row = await updateVocabularyWord(updatedWord.id, {
+        word: updatedWord.word,
+        meaning: updatedWord.meaning,
+        category: updatedWord.category,
+        status: updatedWord.status,
+      });
+
+      setWords((current) =>
+        current.map((word) =>
+          word.id === row.id
+            ? {
+                id: row.id,
+                word: row.word,
+                meaning: row.meaning,
+                category: row.category,
+                status: row.status,
+              }
+            : word
+        )
+      );
+
+      toast.success(`"${row.word}" updated successfully!`);
+      return true;
+    } catch {
+      toast.error("Failed to update word.");
+      return false;
+    }
   }
 
-  function deleteWord(id: string) {
-    const deletedWord = words.find((word) => word.id === id);
+  async function deleteWord(id: string): Promise<boolean> {
+    const word = words.find((item) => item.id === id);
 
-    if (!deletedWord) return;
+    if (!word) return false;
 
-    setWords((currentWords) =>
-      currentWords.filter((word) => word.id !== id)
-    );
-    toast.success(`"${deletedWord.word}" deleted successfully!`);
+    try {
+      await deleteVocabularyWord(id);
+
+      setWords((current) =>
+        current.filter((item) => item.id !== id)
+      );
+
+      toast.success(`"${word.word}" deleted successfully!`);
+      return true;
+    } catch {
+      toast.error("Failed to delete word.");
+      return false;
+    }
   }
 
-  function toggleMastered(id: string) {
-    setWords((currentWords) =>
-      currentWords.map((word) =>
-        word.id === id
-          ? {
-              ...word,
-              status:
-                word.status === "mastered"
-                  ? "learning"
-                  : "mastered",
-            }
-          : word
-      )
-    );
+  async function toggleMastered(id: string): Promise<boolean> {
+    const word = words.find((item) => item.id === id);
+
+    if (!word) return false;
+
+    const nextStatus =
+      word.status === "mastered" ? "learning" : "mastered";
+
+    try {
+      const row = await updateVocabularyWord(id, {
+        status: nextStatus,
+      });
+
+      setWords((current) =>
+        current.map((item) =>
+          item.id === row.id
+            ? { ...item, status: row.status }
+            : item
+        )
+      );
+
+      return true;
+    } catch {
+      toast.error("Failed to update word status.");
+      return false;
+    }
   }
 
   return (
     <VocabularyContext.Provider
       value={{
         words,
-        isLoaded: true,
+        isLoaded,
         addWord,
         updateWord,
         deleteWord,
