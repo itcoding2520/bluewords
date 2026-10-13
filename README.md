@@ -6,6 +6,17 @@ BlueWords is a responsive web application built with Next.js, TypeScript, and Ta
 
 ### 🔗 Live Demo
 
+## Screenshots
+
+### Dashboard
+
+![BlueWords Dashboard](./public/screenshots/dashboard.png)
+
+### Vocabulary Management
+
+![BlueWords Vocabulary](./public/screenshots/vocabulary.png)
+
+
 **[Try BlueWords](https://bluewords.vercel.app)**
 
 ### ✨ Features
