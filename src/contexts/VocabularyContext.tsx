@@ -57,11 +57,10 @@ function VocabularyStoreProvider({
   const requestIdRef = useRef(0);
   const ownerIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
+  const loadedOwnerIdRef = useRef<string | null>(null);
 
   const refreshWords = useCallback(async (): Promise<void> => {
     const currentRequest = ++requestIdRef.current;
-
-    setIsLoaded(false);
 
     try {
       const {
@@ -78,13 +77,17 @@ function VocabularyStoreProvider({
 
       if (authError || !user) {
         ownerIdRef.current = null;
+        loadedOwnerIdRef.current = null;
         setWords([]);
+        setIsLoaded(true);
         return;
       }
 
       if (ownerIdRef.current !== user.id) {
         ownerIdRef.current = user.id;
+        loadedOwnerIdRef.current = null;
         setWords([]);
+        setIsLoaded(false);
       }
 
       const rows = await getVocabularyWords();
@@ -109,7 +112,9 @@ function VocabularyStoreProvider({
 
       if (currentUser?.id !== user.id) {
         ownerIdRef.current = null;
+        loadedOwnerIdRef.current = null;
         setWords([]);
+        setIsLoaded(false);
         return;
       }
 
@@ -122,6 +127,9 @@ function VocabularyStoreProvider({
           status,
         }))
       );
+
+      loadedOwnerIdRef.current = user.id;
+      setIsLoaded(true);
     } catch (error) {
       if (
         !mountedRef.current ||
@@ -132,13 +140,8 @@ function VocabularyStoreProvider({
 
       console.error("Failed to refresh vocabulary:", error);
       toast.error("Failed to load vocabulary.");
-    } finally {
-      if (
-        mountedRef.current &&
-        currentRequest === requestIdRef.current
-      ) {
-        setIsLoaded(true);
-      }
+
+      setIsLoaded(true);
     }
   }, [supabase]);
 
@@ -158,26 +161,46 @@ function VocabularyStoreProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (
-        event === "SIGNED_IN" ||
-        event === "SIGNED_OUT" ||
-        event === "USER_UPDATED"
+        event !== "SIGNED_IN" &&
+        event !== "SIGNED_OUT" &&
+        event !== "USER_UPDATED"
       ) {
-        // Vô hiệu hóa request cũ ngay khi auth thay đổi.
-        requestIdRef.current++;
-        ownerIdRef.current = null;
-
-        setWords([]);
-        setIsLoaded(false);
-
-        // Tránh gọi Supabase API trực tiếp trong callback.
-        setTimeout(() => {
-          if (!cancelled) {
-            void refreshWords();
-          }
-        }, 0);
+        return;
       }
+
+      const nextUserId = session?.user.id ?? null;
+
+      // Cùng tài khoản và dữ liệu đã tải:
+      // không reset cache hoặc fetch lại.
+      if (
+        nextUserId !== null &&
+        nextUserId === ownerIdRef.current &&
+        loadedOwnerIdRef.current === nextUserId
+      ) {
+        return;
+      }
+
+      // Vô hiệu hóa request của tài khoản cũ.
+      requestIdRef.current++;
+
+      ownerIdRef.current = nextUserId;
+      loadedOwnerIdRef.current = null;
+
+      setWords([]);
+      setIsLoaded(false);
+
+      if (nextUserId === null) {
+        setIsLoaded(true);
+        return;
+      }
+
+      setTimeout(() => {
+        if (!cancelled) {
+          void refreshWords();
+        }
+      }, 0);
     });
 
     return () => {
