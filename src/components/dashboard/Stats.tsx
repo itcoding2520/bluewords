@@ -1,3 +1,4 @@
+
 import { StatCard } from "./StatCard";
 
 interface StatsProps {
@@ -17,18 +18,21 @@ export function Stats({
         label="Total words"
         value={total}
         description="In your vocabulary"
+        variant="blue"
       />
 
       <StatCard
         label="Learning"
         value={learning}
         description="Keep practicing"
+        variant="orange"
       />
 
       <StatCard
         label="Mastered"
         value={mastered}
         description="Great progress"
+        variant="green"
       />
     </section>
   );

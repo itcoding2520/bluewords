@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import type { VocabularyWord } from "@/data/vocabulary";
+import { categoryStyles, type VocabularyWord } from "@/data/vocabulary";
 import { cn } from "@/lib/cn";
 
 interface VocabularyRowProps {
@@ -98,9 +98,14 @@ export function VocabularyRow({
 
         {/* Category */}
         <div className="col-start-1 row-start-2 lg:col-auto lg:row-auto">
-          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-            {item.category}
-          </span>
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                categoryStyles[item.category] ??
+                "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {item.category}
+            </span>
         </div>
 
         {/* Status */}
