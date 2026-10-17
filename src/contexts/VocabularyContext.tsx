@@ -3,6 +3,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -57,7 +58,7 @@ function VocabularyStoreProvider({
   const ownerIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
 
-  async function refreshWords(): Promise<void> {
+  const refreshWords = useCallback(async (): Promise<void> => {
     const currentRequest = ++requestIdRef.current;
 
     setIsLoaded(false);
@@ -81,7 +82,6 @@ function VocabularyStoreProvider({
         return;
       }
 
-      // Không giữ dữ liệu của tài khoản trước.
       if (ownerIdRef.current !== user.id) {
         ownerIdRef.current = user.id;
         setWords([]);
@@ -96,7 +96,6 @@ function VocabularyStoreProvider({
         return;
       }
 
-      // Xác minh tài khoản vẫn là người đã bắt đầu request.
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser();
@@ -141,12 +140,21 @@ function VocabularyStoreProvider({
         setIsLoaded(true);
       }
     }
-  }
+  }, [supabase]);
 
+  
   useEffect(() => {
+    let cancelled = false;
+    const requestId = requestIdRef;
+
     mountedRef.current = true;
 
-    void refreshWords();
+    // Chạy bất đồng bộ sau khi effect được thiết lập.
+    const initialLoadTimer = setTimeout(() => {
+      if (!cancelled) {
+        void refreshWords();
+      }
+    }, 0);
 
     const {
       data: { subscription },
@@ -156,15 +164,16 @@ function VocabularyStoreProvider({
         event === "SIGNED_OUT" ||
         event === "USER_UPDATED"
       ) {
-        // Hủy hiệu lực request cũ ngay khi Auth thay đổi.
+        // Vô hiệu hóa request cũ ngay khi auth thay đổi.
         requestIdRef.current++;
         ownerIdRef.current = null;
+
         setWords([]);
         setIsLoaded(false);
 
-        // Không gọi Supabase API trực tiếp trong Auth callback.
+        // Tránh gọi Supabase API trực tiếp trong callback.
         setTimeout(() => {
-          if (mountedRef.current) {
+          if (!cancelled) {
             void refreshWords();
           }
         }, 0);
@@ -172,13 +181,16 @@ function VocabularyStoreProvider({
     });
 
     return () => {
+      cancelled = true;
       mountedRef.current = false;
-      requestIdRef.current++;
+
+      requestId.current++;
+
+      clearTimeout(initialLoadTimer);
       subscription.unsubscribe();
     };
-    // Chỉ đăng ký Auth listener một lần cho Supabase client.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]);
+  }, [supabase, refreshWords]);
+
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
