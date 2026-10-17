@@ -1,6 +1,6 @@
 
 import type { ReactNode } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import {
   VOCABULARY_CATEGORIES,
@@ -61,19 +61,31 @@ export function VocabularyToolbar({
         <Search
           size={17}
           aria-hidden="true"
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
         />
 
         <input
-          type="search"
+          type="text"
           aria-label="Search vocabulary"
           value={search}
           onChange={(event) =>
             onSearchChange(event.target.value)
           }
           placeholder="Search vocabulary..."
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-11 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
         />
+
+        {search.length > 0 && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            title="Clear search"
+            onClick={() => onSearchChange("")}
+            className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* Category filters */}
