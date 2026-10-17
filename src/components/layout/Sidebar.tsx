@@ -33,23 +33,35 @@ export function Sidebar() {
   useEffect(() => {
     let active = true;
 
-    async function loadUser() {
+    // Lấy session hiện tại để hiển thị email.
+    async function loadSession() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-      if (active) {
-        setEmail(user?.email ?? null);
+      if (!active) return;
+
+      if (error) {
+        console.error("Failed to load session:", error);
+        return;
       }
+
+      setEmail(session?.user.email ?? null);
     }
 
-    void loadUser();
+    void loadSession();
 
+    // Cập nhật email khi auth thay đổi.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user.email ?? null);
-    });
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!active) return;
+
+        setEmail(session?.user.email ?? null);
+      }
+    );
 
     return () => {
       active = false;
