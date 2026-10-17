@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 
@@ -18,6 +19,44 @@ export function DashboardContent({
   dateLabel,
   greeting,
 }: DashboardContentProps) {
+  const [supabase] = useState(() => createClient());
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) {
+        setEmail(session?.user.email ?? null);
+      }
+    });
+
+    async function loadSession() {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (!active) return;
+
+      if (error) {
+        console.error("Failed to load dashboard session:", error);
+        return;
+      }
+
+      setEmail(session?.user.email ?? null);
+    }
+
+    void loadSession();
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   const { words, isLoaded } = useVocabulary();
 
   const stats = useMemo(() => {
@@ -52,7 +91,11 @@ export function DashboardContent({
 
   return (
     <>
-      <DashboardHeader dateLabel={dateLabel} greeting={greeting} />
+      <DashboardHeader
+        dateLabel={dateLabel}
+        greeting={greeting}
+        email={email}
+      />
 
       <Stats
         total={stats.total}
