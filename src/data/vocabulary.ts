@@ -47,3 +47,9 @@ export const initialVocabulary: VocabularyWord[] = [
     status: "learning",
   },
 ];
+
+export const categoryStyles: Record<string, string> = {
+  Daily: "bg-blue-50 text-blue-700",
+  Frontend: "bg-violet-50 text-violet-700",
+  Work: "bg-orange-50 text-orange-700",
+};

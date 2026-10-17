@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { categoryStyles } from "@/data/vocabulary";
 
 interface WordRowProps {
   word: string;
@@ -27,7 +28,12 @@ export function WordRow({
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 sm:px-3">
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+              categoryStyles[category] ??
+              "bg-slate-100 text-slate-600"
+            }`}
+          >
             {category}
           </span>
 
