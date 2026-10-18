@@ -1,13 +1,18 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type {
+  VocabularyMeaning,
+  VocabularyWord,
+} from "@/data/vocabulary";
 import {
   VOCABULARY_CATEGORIES,
   VOCABULARY_TYPES,
+  PARTS_OF_SPEECH,
   type VocabularyCategory,
+  type PartOfSpeech,
   type VocabularyType,
 } from "@/config/vocabulary";
 import { Input } from "../ui/Input";
@@ -43,6 +48,10 @@ export function WordFormModal({
   const [category, setCategory] = useState<VocabularyCategory>(
     editingWord?.category ?? "Daily"
   );
+  const [detailedMeanings, setDetailedMeanings] =
+    useState<VocabularyMeaning[]>(
+      editingWord?.detailedMeanings ?? []
+    );
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = Boolean(editingWord);
@@ -55,6 +64,33 @@ export function WordFormModal({
   function handleClose() {
     if (isSubmitting) return;
     onClose();
+  }
+
+  function updateDetailedMeaning(
+    index: number,
+    updates: Partial<VocabularyMeaning>
+  ) {
+    setDetailedMeanings((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...updates } : item
+      )
+    );
+  }
+
+  function addDetailedMeaning() {
+    setDetailedMeanings((current) => [
+      ...current,
+      {
+        partOfSpeech: PARTS_OF_SPEECH[0],
+        meaning: "",
+      },
+    ]);
+  }
+
+  function removeDetailedMeaning(index: number) {
+    setDetailedMeanings((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index)
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -100,7 +136,12 @@ export function WordFormModal({
         type,
         category,
         status: editingWord?.status ?? "learning",
-        detailedMeanings: editingWord?.detailedMeanings ?? [],
+        detailedMeanings: detailedMeanings
+          .map((item) => ({
+            ...item,
+            meaning: item.meaning.trim(),
+          }))
+          .filter((item) => item.meaning.length > 0),
         imagePath: editingWord?.imagePath ?? null,
       });
     } finally {
@@ -238,6 +279,107 @@ export function WordFormModal({
                 </p>
               )}
             </div>
+
+            <section aria-labelledby="detailed-meanings-heading">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3
+                    id="detailed-meanings-heading"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Detailed meanings
+                    <span className="ml-1 font-normal text-slate-400">
+                      (optional)
+                    </span>
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Add meanings by part of speech.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addDetailedMeaning}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+                >
+                  <Plus size={16} />
+                  Add meaning
+                </button>
+              </div>
+
+              {detailedMeanings.length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {detailedMeanings.map((item, index) => (
+                    <div
+                      key={item.id ?? `new-meaning-${index}`}
+                      className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto]"
+                    >
+                      <div>
+                        <label
+                          htmlFor={`meaning-part-${index}`}
+                          className="text-xs font-medium text-slate-600"
+                        >
+                          Part of speech
+                        </label>
+                        <Select
+                          id={`meaning-part-${index}`}
+                          value={item.partOfSpeech}
+                          onChange={(event) =>
+                            updateDetailedMeaning(index, {
+                              partOfSpeech: event.target
+                                .value as PartOfSpeech,
+                            })
+                          }
+                          className="mt-1.5"
+                        >
+                          {PARTS_OF_SPEECH.map((partOfSpeech) => (
+                            <option
+                              key={partOfSpeech}
+                              value={partOfSpeech}
+                            >
+                              {partOfSpeech.replace(/\b\w/g, (letter) =>
+                                letter.toUpperCase()
+                              )}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor={`meaning-detail-${index}`}
+                          className="text-xs font-medium text-slate-600"
+                        >
+                          Detailed meaning
+                        </label>
+                        <Input
+                          id={`meaning-detail-${index}`}
+                          value={item.meaning}
+                          onChange={(event) =>
+                            updateDetailedMeaning(index, {
+                              meaning: event.target.value,
+                            })
+                          }
+                          placeholder="Enter this meaning"
+                          className="mt-1.5"
+                        />
+                      </div>
+
+                      <div className="flex items-end justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeDetailedMeaning(index)}
+                          aria-label={`Remove detailed meaning ${index + 1}`}
+                          className="flex size-10 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <div>
               <label
