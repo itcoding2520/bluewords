@@ -1,16 +1,19 @@
-
 import { createClient } from "@/lib/supabase/client";
 import type {
   VocabularyWordRow,
   VocabularyWordUpdate,
 } from "@/types/database";
+import type { VocabularyType } from "@/config/vocabulary";
 
 const supabase = createClient();
 
 type VocabularyWordInput = Pick<
   VocabularyWordRow,
   "word" | "meaning" | "category" | "status"
->;
+> &
+  Partial<Pick<VocabularyWordRow, "image_path">> & {
+    type?: VocabularyType;
+  };
 
 export async function getVocabularyWords(): Promise<
   VocabularyWordRow[]
@@ -45,6 +48,10 @@ export async function addVocabularyWord(
       meaning: input.meaning.trim(),
       category: input.category,
       status: input.status,
+      ...(input.type ? { type: input.type } : {}),
+      ...(input.image_path !== undefined
+        ? { image_path: input.image_path }
+        : {}),
     })
     .select()
     .single();
