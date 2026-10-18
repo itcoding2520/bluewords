@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -53,7 +52,7 @@ function VocabularyStoreProvider({
   const [supabase] = useState(() => createClient());
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  
+
   const requestIdRef = useRef(0);
   const ownerIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
@@ -119,13 +118,26 @@ function VocabularyStoreProvider({
       }
 
       setWords(
-        rows.map(({ id, word, meaning, category, status }) => ({
-          id,
-          word,
-          meaning,
-          category,
-          status,
-        }))
+        rows.map(
+          ({
+            id,
+            word,
+            meaning,
+            category,
+            status,
+            type,
+            image_path,
+          }) => ({
+            id,
+            word,
+            meaning,
+            category,
+            status,
+            type: type ?? "word",
+            imagePath: image_path ?? null,
+            detailedMeanings: [],
+          })
+        )
       );
 
       loadedOwnerIdRef.current = user.id;
@@ -145,14 +157,12 @@ function VocabularyStoreProvider({
     }
   }, [supabase]);
 
-  
   useEffect(() => {
     let cancelled = false;
     const requestId = requestIdRef;
 
     mountedRef.current = true;
 
-    // Chạy bất đồng bộ sau khi effect được thiết lập.
     const initialLoadTimer = setTimeout(() => {
       if (!cancelled) {
         void refreshWords();
@@ -172,8 +182,6 @@ function VocabularyStoreProvider({
 
       const nextUserId = session?.user.id ?? null;
 
-      // Cùng tài khoản và dữ liệu đã tải:
-      // không reset cache hoặc fetch lại.
       if (
         nextUserId !== null &&
         nextUserId === ownerIdRef.current &&
@@ -182,7 +190,6 @@ function VocabularyStoreProvider({
         return;
       }
 
-      // Vô hiệu hóa request của tài khoản cũ.
       requestIdRef.current++;
 
       ownerIdRef.current = nextUserId;
@@ -214,7 +221,6 @@ function VocabularyStoreProvider({
     };
   }, [supabase, refreshWords]);
 
-
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
       const row = await addVocabularyWord({
@@ -222,6 +228,8 @@ function VocabularyStoreProvider({
         meaning: word.meaning,
         category: word.category,
         status: word.status,
+        type: word.type ?? "word",
+        image_path: word.imagePath ?? null,
       });
 
       setWords((current) => [
@@ -231,6 +239,9 @@ function VocabularyStoreProvider({
           meaning: row.meaning,
           category: row.category,
           status: row.status,
+          type: row.type ?? "word",
+          imagePath: row.image_path ?? null,
+          detailedMeanings: [],
         },
         ...current,
       ]);
@@ -259,6 +270,8 @@ function VocabularyStoreProvider({
         meaning: updatedWord.meaning,
         category: updatedWord.category,
         status: updatedWord.status,
+        type: updatedWord.type ?? "word",
+        image_path: updatedWord.imagePath ?? null,
       });
 
       setWords((current) =>
@@ -270,6 +283,9 @@ function VocabularyStoreProvider({
                 meaning: row.meaning,
                 category: row.category,
                 status: row.status,
+                type: row.type ?? "word",
+                imagePath: row.image_path ?? null,
+                detailedMeanings: word.detailedMeanings ?? [],
               }
             : word
         )
