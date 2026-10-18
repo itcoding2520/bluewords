@@ -64,3 +64,18 @@ export type VocabularyReviewInsert = Pick<
   VocabularyReviewRow,
   "user_id" | "vocabulary_word_id" | "remembered"
 >;
+
+export type VocabularyReviewScheduleRow = {
+  user_id: string;
+  vocabulary_word_id: string;
+  due_at: string;
+  interval_days: number;
+  repetitions: number;
+  last_reviewed_at: string | null;
+  updated_at: string;
+};
+
+export type VocabularyReviewScheduleUpsert = Pick<
+  VocabularyReviewScheduleRow,
+  "user_id" | "vocabulary_word_id" | "due_at" | "interval_days" | "repetitions" | "last_reviewed_at"
+>;
