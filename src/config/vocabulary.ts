@@ -4,8 +4,7 @@ export const VOCABULARY_CATEGORIES = [
   "Frontend",
 ] as const;
 
-export type VocabularyCategory =
-  (typeof VOCABULARY_CATEGORIES)[number];
+export type VocabularyCategory = string;
 
 export const VOCABULARY_TYPES = [
   "word",
