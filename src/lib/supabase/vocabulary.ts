@@ -10,6 +10,10 @@ import type { VocabularyType } from "@/config/vocabulary";
 
 const supabase = createClient();
 
+export type VocabularyWordWithMeaningsRow = VocabularyWordRow & {
+  vocabulary_meanings: VocabularyMeaningRow[];
+};
+
 type VocabularyWordInput = Pick<
   VocabularyWordRow,
   "word" | "meaning" | "category" | "status"
@@ -19,16 +23,16 @@ type VocabularyWordInput = Pick<
   };
 
 export async function getVocabularyWords(): Promise<
-  VocabularyWordRow[]
+  VocabularyWordWithMeaningsRow[]
 > {
   const { data, error } = await supabase
     .from("vocabulary_words")
-    .select("*")
+    .select("*, vocabulary_meanings(*)")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
 
-  return (data ?? []) as VocabularyWordRow[];
+  return (data ?? []) as unknown as VocabularyWordWithMeaningsRow[];
 }
 
 export async function addVocabularyWord(
