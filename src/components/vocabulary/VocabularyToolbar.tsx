@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 
 import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { Select } from "@/components/ui/Select";
 
 export type CategoryFilter = "All" | VocabularyCategory;
 
@@ -88,17 +89,42 @@ export function VocabularyToolbar({
         <div
           role="group"
           aria-label="Filter vocabulary by category"
-          className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0"
+          className="flex min-w-0 items-center gap-2"
         >
-          {(["All", ...categories.map((item) => item.name)] as CategoryFilter[]).map((item) => (
-            <FilterButton
-              key={item}
-              active={category === item}
-              onClick={() => onCategoryChange(item)}
+          <FilterButton
+            active={category === "All"}
+            onClick={() => onCategoryChange("All")}
+          >
+            All
+          </FilterButton>
+
+          <div className="min-w-0 flex-1 md:hidden">
+            <Select
+              aria-label="Filter vocabulary by category"
+              value={category === "All" ? "" : category}
+              onChange={(event) =>
+                onCategoryChange(event.target.value as CategoryFilter)
+              }
+              className="min-w-0 px-3 py-2.5 pr-9 text-sm"
             >
-              {item}
-            </FilterButton>
-          ))}
+              <option value="" disabled>Select category</option>
+              {categories.map((item) => (
+                <option key={item.id} value={item.name}>{item.name}</option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="hidden items-center gap-2 md:flex">
+            {categories.map((item) => (
+              <FilterButton
+                key={item.id}
+                active={category === item.name}
+                onClick={() => onCategoryChange(item.name)}
+              >
+                {item.name}
+              </FilterButton>
+            ))}
+          </div>
         </div>
       </div>
     </div>
