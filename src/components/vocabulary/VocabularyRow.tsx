@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
+import { PronunciationButton } from "./PronunciationButton";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -149,6 +150,7 @@ export function VocabularyRow({
               <p className="break-words font-semibold text-slate-950">
                 {item.word}
               </p>
+              <PronunciationButton word={item.word} />
 
               <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 lg:inline-flex">
                 {item.type === "expression" ? "Expression" : "Word"}

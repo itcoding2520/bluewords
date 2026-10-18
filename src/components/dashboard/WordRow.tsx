@@ -8,6 +8,7 @@ import {
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
+import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 
 interface WordRowProps {
   word: string;
@@ -44,9 +45,12 @@ export function WordRow({
           )}
 
           <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-6">
-            <p className="break-words font-semibold text-slate-900 sm:w-32 sm:shrink-0 lg:w-40">
-              {word}
-            </p>
+            <div className="flex min-w-0 items-center gap-1 sm:w-32 sm:shrink-0 lg:w-40">
+              <p className="break-words font-semibold text-slate-900">
+                {word}
+              </p>
+              <PronunciationButton word={word} />
+            </div>
 
             <p className="mt-1 break-words text-sm text-slate-500 sm:mt-0 sm:min-w-0 sm:flex-1">
               {meaning}
