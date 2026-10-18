@@ -16,6 +16,7 @@ import { VocabularyList } from "./VocabularyList";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { ManageCategoriesModal } from "./ManageCategoriesModal";
+import { VocabularyCsvTools } from "./VocabularyCsvTools";
 import type {
   CategoryFilter,
 } from "./VocabularyToolbar";
@@ -268,6 +269,8 @@ export function VocabularyContent() {
           )}
         </div>
       )}
+
+      <VocabularyCsvTools words={words} categories={categories} />
 
       <VocabularyToolbar
         search={search}

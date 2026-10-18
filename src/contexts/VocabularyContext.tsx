@@ -34,6 +34,7 @@ import {
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
 import type { VocabularyMeaningRow } from "@/types/database";
+import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -54,6 +55,9 @@ interface VocabularyContextValue {
     updates: VocabularyCategoryUpdate
   ) => Promise<VocabularyCategoryRow | null>;
   deleteCategory: (id: string) => Promise<boolean>;
+  importWords: (
+    words: VocabularyCsvWord[]
+  ) => Promise<{ imported: number; duplicates: number; failed: number }>;
 }
 
 const VocabularyContext =
@@ -590,6 +594,90 @@ function VocabularyStoreProvider({
     }
   }
 
+  async function importWords(
+    importedWords: VocabularyCsvWord[]
+  ): Promise<{ imported: number; duplicates: number; failed: number }> {
+    let imported = 0;
+    let duplicates = 0;
+    let failed = 0;
+    let nextIndex = 0;
+    const savedWords: VocabularyWord[] = [];
+
+    async function importNext() {
+      while (nextIndex < importedWords.length) {
+        const word = importedWords[nextIndex++];
+        let insertedId: string | null = null;
+
+        try {
+          const row = await addVocabularyWord({
+            word: word.word,
+            meaning: word.meaning,
+            category: word.category,
+            status: word.status,
+            type: word.type ?? "word",
+            image_path: word.imagePath ?? null,
+          });
+          insertedId = row.id;
+
+          const detailedMeanings = await saveVocabularyMeanings(
+            row.id,
+            word.detailedMeanings ?? []
+          );
+
+          savedWords.push({
+            id: row.id,
+            word: row.word,
+            meaning: row.meaning,
+            category: row.category,
+            status: row.status,
+            type: row.type ?? "word",
+            imagePath: row.image_path ?? null,
+            detailedMeanings,
+          });
+          imported++;
+        } catch (error) {
+          if (insertedId) {
+            try {
+              await deleteVocabularyWord(insertedId);
+            } catch (rollbackError) {
+              console.error(
+                "Failed to roll back CSV import word:",
+                word.word,
+                rollbackError
+              );
+            }
+          }
+
+          const code =
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error
+              ? error.code
+              : null;
+
+          if (code === "23505") duplicates++;
+          else {
+            failed++;
+            console.error("Failed to import CSV vocabulary:", word.word, error);
+          }
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(4, importedWords.length) },
+        () => importNext()
+      )
+    );
+
+    if (savedWords.length) {
+      setWords((current) => [...savedWords.reverse(), ...current]);
+    }
+
+    return { imported, duplicates, failed };
+  }
+
   return (
     <VocabularyContext.Provider
       value={{
@@ -604,6 +692,7 @@ function VocabularyStoreProvider({
         addCategory,
         updateCategory,
         deleteCategory,
+        importWords,
       }}
     >
       {children}

@@ -36,6 +36,7 @@ It helps users build their personal vocabulary collection, organize words by cat
 - **Custom Categories** — Create, rename, recolor, and delete personal vocabulary categories.
 - **Category Filtering** — Filter vocabulary using your own category list.
 - **Duplicate Prevention** — Prevent duplicate vocabulary entries within the same account.
+- **CSV Import & Export** — Preview and validate CSV files, combine multiple meanings for a word, and export a UTF-8 backup.
 
 **Dashboard & User Experience**
 - **Dashboard Overview** — Track total words, mastered words, and learning progress.
@@ -162,7 +163,6 @@ BlueWords uses **Supabase PostgreSQL** as its primary data store.
 - [ ] Flashcards and vocabulary practice mode
 - [ ] Vocabulary quizzes
 - [ ] Spaced repetition system
-- [ ] Vocabulary export
 - [ ] Offline vocabulary access
 
 ### 🌐 Deployment
