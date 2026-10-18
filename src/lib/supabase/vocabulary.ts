@@ -18,7 +18,7 @@ type VocabularyWordInput = Pick<
   VocabularyWordRow,
   "word" | "meaning" | "category" | "status"
 > &
-  Partial<Pick<VocabularyWordRow, "image_path">> & {
+  Partial<Pick<VocabularyWordRow, "image_path" | "ipa">> & {
     type?: VocabularyType;
   };
 
@@ -56,6 +56,7 @@ export async function addVocabularyWord(
       category: input.category,
       status: input.status,
       ...(input.type ? { type: input.type } : {}),
+      ...(input.ipa !== undefined ? { ipa: input.ipa } : {}),
       ...(input.image_path !== undefined
         ? { image_path: input.image_path }
         : {}),

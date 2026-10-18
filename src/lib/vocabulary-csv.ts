@@ -5,6 +5,8 @@ import {
 } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
 
+export const MAX_VOCABULARY_IMPORT_WORDS = 50;
+
 export const VOCABULARY_CSV_HEADERS = [
   "word",
   "type",
@@ -12,7 +14,12 @@ export const VOCABULARY_CSV_HEADERS = [
   "meaning",
   "category",
   "status",
+  "ipa",
 ] as const;
+
+const REQUIRED_CSV_HEADERS = VOCABULARY_CSV_HEADERS.filter(
+  (header) => header !== "ipa"
+);
 
 export type VocabularyCsvWord = Omit<VocabularyWord, "id">;
 
@@ -47,6 +54,7 @@ interface WordGroup {
   meanings: Array<{ partOfSpeech: PartOfSpeech; meaning: string }>;
   plainMeanings: string[];
   seenMeanings: Set<string>;
+  ipa: string | null;
 }
 
 function parseRecords(input: string): CsvParseResult {
@@ -168,7 +176,7 @@ export function previewVocabularyCsvImport(
   }
 
   const header = parsed.records[0].fields.map((value) => normalized(value));
-  const missingHeaders = VOCABULARY_CSV_HEADERS.filter(
+  const missingHeaders = REQUIRED_CSV_HEADERS.filter(
     (name) => !header.includes(name)
   );
   const duplicateHeaders = header.filter(
@@ -224,6 +232,7 @@ export function previewVocabularyCsvImport(
     const meaning = value("meaning");
     const rawCategory = value("category");
     const statusValue = normalized(value("status"));
+    const ipa = columnIndex.has("ipa") ? value("ipa") || null : null;
     const key = normalized(word);
 
     if (!word) {
@@ -293,10 +302,12 @@ export function previewVocabularyCsvImport(
         meanings: [],
         plainMeanings: [],
         seenMeanings: new Set(),
+        ipa,
       });
     }
 
     const group = groups.get(key)!;
+    if (!group.ipa && ipa) group.ipa = ipa;
     if (partOfSpeech) {
       const meaningKey = `${normalized(partOfSpeech)}\u0000${normalized(meaning)}`;
       if (!group.seenMeanings.has(meaningKey)) {
@@ -324,12 +335,21 @@ export function previewVocabularyCsvImport(
       category: group.category,
       status: group.status,
       imagePath: null,
+      ipa: group.ipa,
       detailedMeanings: group.meanings,
     });
   }
 
+  const exceedsImportLimit = items.length > MAX_VOCABULARY_IMPORT_WORDS;
+  if (exceedsImportLimit) {
+    errors.push({
+      line: parsed.records[0].line,
+      message: `Import is limited to ${MAX_VOCABULARY_IMPORT_WORDS} new words at a time. Split this file and try again.`,
+    });
+  }
+
   return {
-    items,
+    items: exceedsImportLimit ? [] : items,
     errors,
     duplicates: duplicateWords.size,
     categoryFallbacks: [...fallbackWords].filter((key) => groups.has(key) && !invalidGroups.has(key)).length,
@@ -360,6 +380,7 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
           item.meaning,
           word.category,
           word.status,
+          word.ipa ?? "",
         ]);
       }
     } else {
@@ -370,6 +391,7 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
         word.meaning,
         word.category,
         word.status,
+        word.ipa ?? "",
       ]);
     }
   }

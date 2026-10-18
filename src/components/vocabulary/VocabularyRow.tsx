@@ -151,11 +151,11 @@ export function VocabularyRow({
                 {item.word}
               </p>
               <PronunciationButton word={item.word} />
-
-              <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 lg:inline-flex">
-                {item.type === "expression" ? "Expression" : "Word"}
-              </span>
             </div>
+
+            <span className="mt-1 hidden w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 lg:inline-flex">
+              {item.type === "expression" ? "Expression" : "Word"}
+            </span>
 
             <div className="mt-1 lg:hidden">
               {!hasPartOfSpeechMeanings && (

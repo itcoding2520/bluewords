@@ -10,10 +10,12 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import {
+  MAX_VOCABULARY_IMPORT_WORDS,
   exportVocabularyCsv,
   previewVocabularyCsvImport,
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
+import { fetchEnglishIpa } from "@/lib/dictionary";
 
 interface VocabularyCsvToolsProps {
   words: VocabularyWord[];
@@ -31,25 +33,44 @@ export function VocabularyCsvTools({
   const [preview, setPreview] = useState<VocabularyCsvPreview | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  function handleExport() {
+  async function handleExport() {
     if (words.length === 0) {
       toast.info("There are no words to export yet.");
       return;
     }
 
-    const blob = new Blob([exportVocabularyCsv(words)], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "bluewords-vocabulary.csv";
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast.success(`Exported ${words.length} words.`);
+    setIsExporting(true);
+    try {
+      const wordsWithIpa: VocabularyWord[] = [];
+      for (let index = 0; index < words.length; index += 10) {
+        const batch = await Promise.all(
+          words.slice(index, index + 10).map(async (word) => ({
+            ...word,
+            ipa: word.type === "expression"
+              ? null
+              : word.ipa?.trim() || await fetchEnglishIpa(word.word),
+          }))
+        );
+        wordsWithIpa.push(...batch);
+      }
+
+      const blob = new Blob([exportVocabularyCsv(wordsWithIpa)], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "bluewords-vocabulary.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success(`Exported ${words.length} words.`);
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -85,6 +106,10 @@ export function VocabularyCsvTools({
     setIsImporting(true);
     try {
       const result = await importWords(preview.items);
+      if (result.limitExceeded) {
+        toast.error(`Import is limited to ${MAX_VOCABULARY_IMPORT_WORDS} words at a time.`);
+        return;
+      }
       const duplicateTotal = preview.duplicates + result.duplicates;
 
       if (result.imported > 0) {
@@ -114,9 +139,9 @@ export function VocabularyCsvTools({
           <FileUp size={16} />
           Import CSV
         </Button>
-        <Button variant="secondary" onClick={handleExport}>
+        <Button variant="secondary" onClick={() => void handleExport()} disabled={isExporting}>
           <Download size={16} />
-          Export CSV
+          {isExporting ? "Preparing export..." : "Export CSV"}
         </Button>
       </div>
 
@@ -175,7 +200,7 @@ export function VocabularyCsvTools({
                 Choose file
               </Button>
               <p className="mt-3 text-xs text-slate-500">
-                Columns: word, type, part_of_speech, meaning, category, status
+                Columns: word, type, part_of_speech, meaning, category, status, ipa (optional). Max {MAX_VOCABULARY_IMPORT_WORDS} words per import.
               </p>
             </div>
 

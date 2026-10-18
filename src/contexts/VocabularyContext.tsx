@@ -35,8 +35,12 @@ import {
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
 import type { VocabularyMeaningRow } from "@/types/database";
-import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
+import {
+  MAX_VOCABULARY_IMPORT_WORDS,
+  type VocabularyCsvWord,
+} from "@/lib/vocabulary-csv";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
+import { fetchEnglishIpa } from "@/lib/dictionary";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -60,7 +64,12 @@ interface VocabularyContextValue {
   deleteCategory: (id: string) => Promise<boolean>;
   importWords: (
     words: VocabularyCsvWord[]
-  ) => Promise<{ imported: number; duplicates: number; failed: number }>;
+  ) => Promise<{
+    imported: number;
+    duplicates: number;
+    failed: number;
+    limitExceeded?: boolean;
+  }>;
 }
 
 const VocabularyContext =
@@ -241,6 +250,7 @@ function VocabularyStoreProvider({
             category,
             status,
             type,
+            ipa,
             image_path,
             vocabulary_meanings,
           }) => ({
@@ -250,6 +260,7 @@ function VocabularyStoreProvider({
             category,
             status,
             type: type ?? "word",
+            ipa: ipa ?? null,
             imagePath: image_path ?? null,
             detailedMeanings: (vocabulary_meanings ?? []).map(
               mapVocabularyMeaning
@@ -343,12 +354,17 @@ function VocabularyStoreProvider({
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
+      const type = word.type ?? "word";
+      const ipa = type === "word"
+        ? word.ipa?.trim() || await fetchEnglishIpa(word.word)
+        : null;
       const row = await addVocabularyWord({
         word: word.word,
         meaning: word.meaning,
         category: word.category,
         status: word.status,
-        type: word.type ?? "word",
+        type,
+        ipa,
         image_path: word.imagePath ?? null,
       });
 
@@ -380,6 +396,7 @@ function VocabularyStoreProvider({
           category: row.category,
           status: row.status,
           type: row.type ?? "word",
+          ipa: row.ipa ?? null,
           imagePath: row.image_path ?? null,
           detailedMeanings: savedMeanings,
         },
@@ -405,18 +422,25 @@ function VocabularyStoreProvider({
     updatedWord: VocabularyWord
   ): Promise<boolean> {
     try {
+      const currentWord = words.find(
+        (word) => word.id === updatedWord.id
+      );
+      const type = updatedWord.type ?? "word";
+      const wordChanged = currentWord?.word.trim().toLowerCase() !== updatedWord.word.trim().toLowerCase();
+      const ipa = type !== "word"
+        ? null
+        : updatedWord.ipa?.trim() || (wordChanged || !currentWord?.ipa
+          ? await fetchEnglishIpa(updatedWord.word)
+          : currentWord.ipa);
       const row = await updateVocabularyWord(updatedWord.id, {
         word: updatedWord.word,
         meaning: updatedWord.meaning,
         category: updatedWord.category,
         status: updatedWord.status,
-        type: updatedWord.type ?? "word",
+        type,
+        ipa,
         image_path: updatedWord.imagePath ?? null,
       });
-
-      const currentWord = words.find(
-        (word) => word.id === updatedWord.id
-      );
 
       const savedMeanings = await saveVocabularyMeanings(
         updatedWord.id,
@@ -435,6 +459,7 @@ function VocabularyStoreProvider({
                 category: row.category,
                 status: row.status,
                 type: row.type ?? "word",
+                ipa: row.ipa ?? null,
                 imagePath: row.image_path ?? null,
                 detailedMeanings: savedMeanings,
               }
@@ -640,7 +665,21 @@ function VocabularyStoreProvider({
 
   async function importWords(
     importedWords: VocabularyCsvWord[]
-  ): Promise<{ imported: number; duplicates: number; failed: number }> {
+  ): Promise<{
+    imported: number;
+    duplicates: number;
+    failed: number;
+    limitExceeded?: boolean;
+  }> {
+    if (importedWords.length > MAX_VOCABULARY_IMPORT_WORDS) {
+      return {
+        imported: 0,
+        duplicates: 0,
+        failed: 0,
+        limitExceeded: true,
+      };
+    }
+
     let imported = 0;
     let duplicates = 0;
     let failed = 0;
@@ -659,6 +698,9 @@ function VocabularyStoreProvider({
             category: word.category,
             status: word.status,
             type: word.type ?? "word",
+            ipa: (word.type ?? "word") === "word"
+              ? word.ipa?.trim() || await fetchEnglishIpa(word.word)
+              : null,
             image_path: word.imagePath ?? null,
           });
           insertedId = row.id;
@@ -675,6 +717,7 @@ function VocabularyStoreProvider({
             category: row.category,
             status: row.status,
             type: row.type ?? "word",
+            ipa: row.ipa ?? null,
             imagePath: row.image_path ?? null,
             detailedMeanings,
           });

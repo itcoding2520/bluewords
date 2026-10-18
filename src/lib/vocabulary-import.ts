@@ -1,6 +1,7 @@
 import { addVocabularyWord } from "@/lib/supabase/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getLegacyVocabulary } from "@/lib/vocabulary-migration";
+import { fetchEnglishIpa } from "@/lib/dictionary";
 
 export interface VocabularyImportPreview {
   total: number;
@@ -66,6 +67,10 @@ export async function importLegacyVocabulary(
         meaning: item.meaning.trim(),
         category: item.category,
         status: item.status,
+        type: item.type ?? "word",
+        ipa: (item.type ?? "word") === "word"
+          ? item.ipa?.trim() || await fetchEnglishIpa(item.word)
+          : null,
       });
 
       imported++;

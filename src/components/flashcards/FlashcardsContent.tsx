@@ -149,6 +149,17 @@ export function FlashcardsContent() {
   const [isRevealed, setIsRevealed] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
+  const statusCounts = useMemo(() => {
+    const categoryWords = words.filter(
+      (word) => category === "all" || word.category === category
+    );
+
+    return {
+      learning: categoryWords.filter((word) => word.status === "learning").length,
+      mastered: categoryWords.filter((word) => word.status === "mastered").length,
+    };
+  }, [category, words]);
+
   const deck = useMemo(() => {
     const filteredWords = words.filter(
       (word) =>
@@ -231,25 +242,43 @@ export function FlashcardsContent() {
               type="button"
               aria-pressed={status === "learning"}
               onClick={() => changeStatus("learning")}
-              className={`rounded-lg cursor-pointer px-3 py-2.5 text-sm font-medium transition ${
+              className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 status === "learning"
                   ? "bg-amber-500 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50"
               }`}
             >
-              Learning
+              <span>Learning</span>
+              <span
+                className={`rounded-full  px-2 py-0.5 text-xs ${
+                  status === "learning"
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {statusCounts.learning}
+              </span>
             </button>
             <button
               type="button"
               aria-pressed={status === "mastered"}
               onClick={() => changeStatus("mastered")}
-              className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+              className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 status === "mastered"
                   ? "bg-emerald-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50"
               }`}
             >
-              Mastered
+              <span>Mastered</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  status === "mastered"
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {statusCounts.mastered}
+              </span>
             </button>
           </div>
         </fieldset>

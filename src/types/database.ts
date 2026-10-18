@@ -9,6 +9,7 @@ export type VocabularyWordRow = {
   meaning: string;
   category: string;
   type: "word" | "expression";
+  ipa: string | null;
   image_path: string | null;
   status: "learning" | "mastered";
   created_at: string;
@@ -21,6 +22,7 @@ export type VocabularyWordInsert = {
   meaning: string;
   category: VocabularyWordRow["category"];
   type?: VocabularyWordRow["type"];
+  ipa?: VocabularyWordRow["ipa"];
   image_path?: VocabularyWordRow["image_path"];
   status?: VocabularyWordRow["status"];
 };
@@ -28,7 +30,7 @@ export type VocabularyWordInsert = {
 export type VocabularyWordUpdate = Partial<
   Pick<
     VocabularyWordRow,
-    "word" | "meaning" | "category" | "type" | "image_path" | "status"
+    "word" | "meaning" | "category" | "type" | "ipa" | "image_path" | "status"
   >
 >;
 
