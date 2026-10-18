@@ -9,15 +9,18 @@ import { DashboardHeader } from "./DashboardHeader";
 import { Stats } from "./Stats";
 import { ProgressCard } from "./ProgressCard";
 import { RecentWords } from "./RecentWords";
+import { LearningInsights } from "./LearningInsights";
 
 interface DashboardContentProps {
   dateLabel: string;
   greeting: string;
+  userId: string;
 }
 
 export function DashboardContent({
   dateLabel,
   greeting,
+  userId,
 }: DashboardContentProps) {
   const [supabase] = useState(() => createClient());
   const [email, setEmail] = useState<string | null>(null);
@@ -108,6 +111,8 @@ export function DashboardContent({
         mastered={stats.mastered}
         progress={stats.progress}
       />
+
+      <LearningInsights userId={userId} />
 
       <RecentWords words={words.slice(0, 10)} />
     </>

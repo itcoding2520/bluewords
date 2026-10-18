@@ -25,6 +25,7 @@ export default async function Home() {
       <DashboardContent
         dateLabel={formatDate(localDate)}
         greeting={getGreeting(localDate)}
+        userId={data.claims.sub}
       />
     </AppLayout>
   );

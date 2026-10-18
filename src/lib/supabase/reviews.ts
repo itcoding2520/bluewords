@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import type { VocabularyReviewRow } from "@/types/database";
 
 const supabase = createClient();
@@ -81,6 +82,8 @@ export async function recordVocabularyReview(
     .single();
 
   if (error) throw error;
+
+  invalidateLearningAnalyticsCache(user.id);
 
   const cachedReviews = latestReviewsByUser.get(user.id);
   if (cachedReviews) {

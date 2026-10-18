@@ -42,6 +42,7 @@ import {
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
 import { invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/reviews";
+import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -503,6 +504,7 @@ function VocabularyStoreProvider({
         current.filter((item) => item.id !== id)
       );
       invalidateLatestVocabularyReviewsCache();
+      invalidateLearningAnalyticsCache();
 
       toast.success(`"${word.word}" deleted successfully!`);
       return true;
@@ -533,6 +535,7 @@ function VocabularyStoreProvider({
         current.filter((word) => !deletedSet.has(word.id))
       );
       invalidateLatestVocabularyReviewsCache();
+      invalidateLearningAnalyticsCache();
 
       return deletedIds.length;
     } catch (error) {
