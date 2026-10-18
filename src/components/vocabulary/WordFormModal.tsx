@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type {
   VocabularyMeaning,
@@ -19,6 +19,13 @@ import { Input } from "../ui/Input";
 import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
 import * as Dialog from "@radix-ui/react-dialog";
+import Image from "next/image";
+import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import {
+  deleteVocabularyImages,
+  uploadVocabularyImage,
+  validateVocabularyImage,
+} from "@/lib/supabase/vocabulary-images";
 
 interface WordFormModalProps {
   open: boolean;
@@ -26,12 +33,13 @@ interface WordFormModalProps {
   categories: VocabularyCategoryRow[];
   editingWord?: VocabularyWord | null;
   onClose: () => void;
-  onSubmit: (word: VocabularyWord) => Promise<void>;
+  onSubmit: (word: VocabularyWord) => Promise<boolean>;
 }
 
 interface FormErrors {
   word?: string;
   meaning?: string;
+  image?: string;
 }
 
 export function WordFormModal({
@@ -59,8 +67,25 @@ export function WordFormModal({
     );
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const existingImageUrl = useVocabularyImageUrl(
+    removeCurrentImage ? null : editingWord?.imagePath
+  );
   const isEditing = Boolean(editingWord);
   const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (!selectedImage) {
+      setSelectedImageUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImage);
+    setSelectedImageUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedImage]);
 
   if (!open) {
     return null;
@@ -134,8 +159,20 @@ export function WordFormModal({
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        id: editingWord?.id ?? crypto.randomUUID(),
+      if (selectedImage) {
+        const imageError = validateVocabularyImage(selectedImage);
+        if (imageError) {
+          setErrors((current) => ({ ...current, image: imageError }));
+          return;
+        }
+      }
+
+      const wordId = editingWord?.id ?? crypto.randomUUID();
+      const uploadedPath = selectedImage
+        ? await uploadVocabularyImage(wordId, selectedImage)
+        : null;
+      const success = await onSubmit({
+        id: wordId,
         word: trimmedWord,
         meaning: trimmedMeaning,
         type,
@@ -147,8 +184,16 @@ export function WordFormModal({
             meaning: item.meaning.trim(),
           }))
           .filter((item) => item.meaning.length > 0),
-        imagePath: editingWord?.imagePath ?? null,
+        imagePath: uploadedPath ?? (removeCurrentImage ? null : editingWord?.imagePath ?? null),
       });
+      if (!success && uploadedPath) {
+        await deleteVocabularyImages([uploadedPath]);
+      }
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        image: error instanceof Error ? error.message : "Could not upload image.",
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -283,6 +328,56 @@ export function WordFormModal({
                   {errors.meaning}
                 </p>
               )}
+            </div>
+
+            <div>
+              <label htmlFor="vocabulary-image" className="text-sm font-medium text-slate-700">
+                Illustration <span className="font-normal text-slate-400">(optional, max 5 MB)</span>
+              </label>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {(selectedImageUrl || existingImageUrl) && (
+                  <Image
+                    src={selectedImageUrl ?? existingImageUrl ?? ""}
+                    alt="Vocabulary illustration preview"
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="size-16 rounded-xl border border-slate-200 object-cover"
+                  />
+                )}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                  <ImagePlus size={16} />
+                  {selectedImage || existingImageUrl ? "Change image" : "Choose image"}
+                  <input
+                    id="vocabulary-image"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={isSubmitting}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      setSelectedImage(file);
+                      setRemoveCurrentImage(false);
+                      setErrors((current) => ({ ...current, image: undefined }));
+                    }}
+                  />
+                </label>
+                {(selectedImage || editingWord?.imagePath) && (
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setRemoveCurrentImage(true);
+                    }}
+                    className="cursor-pointer text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
+                  >
+                    Remove image
+                  </button>
+                )}
+              </div>
+              {errors.image && <p role="alert" className="mt-1.5 text-xs font-medium text-red-500">{errors.image}</p>}
+              <p className="mt-1.5 text-xs text-slate-400">JPEG, PNG, or WebP. Images are private to your account.</p>
             </div>
 
             <section aria-labelledby="detailed-meanings-heading">

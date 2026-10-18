@@ -35,6 +35,7 @@ import {
 } from "@/lib/supabase/categories";
 import type { VocabularyMeaningRow } from "@/types/database";
 import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
+import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -439,6 +440,12 @@ function VocabularyStoreProvider({
         )
       );
 
+      if (currentWord?.imagePath && currentWord.imagePath !== row.image_path) {
+        void deleteVocabularyImages([currentWord.imagePath]).catch((error) =>
+          console.error("Could not remove replaced vocabulary image:", error)
+        );
+      }
+
       toast.success(`"${row.word}" updated successfully!`);
       return true;
     } catch (error) {
@@ -456,6 +463,12 @@ function VocabularyStoreProvider({
 
     try {
       await deleteVocabularyWord(id);
+
+      if (word.imagePath) {
+        void deleteVocabularyImages([word.imagePath]).catch((error) =>
+          console.error("Could not remove vocabulary image:", error)
+        );
+      }
 
       setWords((current) =>
         current.filter((item) => item.id !== id)

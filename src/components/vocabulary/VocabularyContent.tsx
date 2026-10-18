@@ -168,8 +168,8 @@ export function VocabularyContent() {
 
   async function handleSubmitWord(
     submittedWord: VocabularyWord
-  ) {
-    if (isSubmitting) return;
+  ): Promise<boolean> {
+    if (isSubmitting) return false;
 
     setIsSubmitting(true);
 
@@ -181,6 +181,7 @@ export function VocabularyContent() {
       if (success) {
         handleCloseForm();
       }
+      return success;
     } finally {
       setIsSubmitting(false);
     }
