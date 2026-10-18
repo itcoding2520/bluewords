@@ -1,6 +1,5 @@
 import type {
   PartOfSpeech,
-  VocabularyType,
 } from "@/config/vocabulary";
 
 export type VocabularyWordRow = {
@@ -8,10 +7,10 @@ export type VocabularyWordRow = {
   user_id: string;
   word: string;
   meaning: string;
-  category: "Daily" | "Work" | "Frontend";
-  status: "learning" | "mastered";
-  type: VocabularyType;
+  category: string;
+  type: "word" | "expression";
   image_path: string | null;
+  status: "learning" | "mastered";
   created_at: string;
   updated_at: string;
 };
@@ -21,15 +20,15 @@ export type VocabularyWordInsert = {
   word: string;
   meaning: string;
   category: VocabularyWordRow["category"];
+  type?: VocabularyWordRow["type"];
+  image_path?: VocabularyWordRow["image_path"];
   status?: VocabularyWordRow["status"];
-  type?: VocabularyType;
-  image_path?: string | null;
 };
 
 export type VocabularyWordUpdate = Partial<
   Pick<
     VocabularyWordRow,
-    "word" | "meaning" | "category" | "status" | "type" | "image_path"
+    "word" | "meaning" | "category" | "type" | "image_path" | "status"
   >
 >;
 
