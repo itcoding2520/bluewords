@@ -24,6 +24,7 @@ export interface VocabularyWord {
   type?: VocabularyType;
   detailedMeanings?: VocabularyMeaning[];
   imagePath?: string | null;
+  ipa?: string | null;
 }
 
 export const initialVocabulary: VocabularyWord[] = [

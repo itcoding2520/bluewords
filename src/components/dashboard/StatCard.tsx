@@ -26,10 +26,10 @@ const variantStyles: Record<
     description: "text-blue-600",
   },
   orange: {
-    card: "border-orange-100 bg-[#ff990a]",
-    label: "text-white",
-    value: "text-white",
-    description: "text-white",
+    card: "border-orange-100 bg-orange-50",
+    label: "text-orange-700",
+    value: "text-text-orange-950",
+    description: "text-orange-600",
   },
   green: {
     card: "border-green-100 bg-green-50",

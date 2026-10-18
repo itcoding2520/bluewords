@@ -3,7 +3,14 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { LayoutDashboard, Library, Menu, X, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Library,
+  BookOpenCheck,
+  Menu,
+  X,
+  LogOut,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
@@ -21,6 +28,11 @@ const navigation = [
     label: "Vocabulary",
     href: "/vocabulary",
     icon: Library,
+  },
+  {
+    label: "Flashcards",
+    href: "/flashcards",
+    icon: BookOpenCheck,
   }
 ];
 
