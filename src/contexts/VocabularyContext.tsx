@@ -10,13 +10,21 @@ import {
   type ReactNode,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type {
+  VocabularyMeaning,
+  VocabularyWord,
+} from "@/data/vocabulary";
 import {
   getVocabularyWords,
   addVocabularyWord,
   updateVocabularyWord,
   deleteVocabularyWord,
+  getVocabularyMeanings,
+  addVocabularyMeaning,
+  updateVocabularyMeaning,
+  deleteVocabularyMeaning,
 } from "@/lib/supabase/vocabulary";
+import type { VocabularyMeaningRow } from "@/types/database";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -31,6 +39,66 @@ interface VocabularyContextValue {
 
 const VocabularyContext =
   createContext<VocabularyContextValue | null>(null);
+
+function mapVocabularyMeaning(
+  row: VocabularyMeaningRow
+): VocabularyMeaning {
+  return {
+    id: row.id,
+    partOfSpeech: row.part_of_speech,
+    meaning: row.meaning,
+  };
+}
+
+async function saveVocabularyMeanings(
+  vocabularyWordId: string,
+  meanings: VocabularyMeaning[]
+): Promise<VocabularyMeaning[]> {
+  const existingMeanings =
+    await getVocabularyMeanings(vocabularyWordId);
+
+  const existingById = new Map(
+    existingMeanings.map((meaning) => [meaning.id, meaning])
+  );
+
+  const retainedIds = new Set<string>();
+  const savedMeanings: VocabularyMeaningRow[] = [];
+
+  for (const meaning of meanings) {
+    const trimmedMeaning = meaning.meaning.trim();
+
+    if (!trimmedMeaning) {
+      continue;
+    }
+
+    const existing =
+      meaning.id !== undefined
+        ? existingById.get(meaning.id)
+        : undefined;
+
+    const saved = existing
+      ? await updateVocabularyMeaning(existing.id, {
+          part_of_speech: meaning.partOfSpeech,
+          meaning: trimmedMeaning,
+        })
+      : await addVocabularyMeaning({
+          vocabulary_word_id: vocabularyWordId,
+          part_of_speech: meaning.partOfSpeech,
+          meaning: trimmedMeaning,
+        });
+
+    retainedIds.add(saved.id);
+    savedMeanings.push(saved);
+  }
+
+  for (const existing of existingMeanings) {
+    if (!retainedIds.has(existing.id)) {
+      await deleteVocabularyMeaning(existing.id);
+    }
+  }
+
+  return savedMeanings.map(mapVocabularyMeaning);
+}
 
 export function VocabularyProvider({
   children,
@@ -137,11 +205,7 @@ function VocabularyStoreProvider({
             type: type ?? "word",
             imagePath: image_path ?? null,
             detailedMeanings: (vocabulary_meanings ?? []).map(
-              ({ id: meaningId, part_of_speech, meaning: detail }) => ({
-                id: meaningId,
-                partOfSpeech: part_of_speech,
-                meaning: detail,
-              })
+              mapVocabularyMeaning
             ),
           })
         )
@@ -239,6 +303,26 @@ function VocabularyStoreProvider({
         image_path: word.imagePath ?? null,
       });
 
+      let savedMeanings: VocabularyMeaning[];
+
+      try {
+        savedMeanings = await saveVocabularyMeanings(
+          row.id,
+          word.detailedMeanings ?? []
+        );
+      } catch (error) {
+        try {
+          await deleteVocabularyWord(row.id);
+        } catch (rollbackError) {
+          console.error(
+            "Failed to roll back vocabulary after meaning save error:",
+            rollbackError
+          );
+        }
+
+        throw error;
+      }
+
       setWords((current) => [
         {
           id: row.id,
@@ -248,7 +332,7 @@ function VocabularyStoreProvider({
           status: row.status,
           type: row.type ?? "word",
           imagePath: row.image_path ?? null,
-          detailedMeanings: [],
+          detailedMeanings: savedMeanings,
         },
         ...current,
       ]);
@@ -281,6 +365,17 @@ function VocabularyStoreProvider({
         image_path: updatedWord.imagePath ?? null,
       });
 
+      const currentWord = words.find(
+        (word) => word.id === updatedWord.id
+      );
+
+      const savedMeanings = await saveVocabularyMeanings(
+        updatedWord.id,
+        updatedWord.detailedMeanings ??
+          currentWord?.detailedMeanings ??
+          []
+      );
+
       setWords((current) =>
         current.map((word) =>
           word.id === row.id
@@ -292,7 +387,7 @@ function VocabularyStoreProvider({
                 status: row.status,
                 type: row.type ?? "word",
                 imagePath: row.image_path ?? null,
-                detailedMeanings: word.detailedMeanings ?? [],
+                detailedMeanings: savedMeanings,
               }
             : word
         )
@@ -300,7 +395,9 @@ function VocabularyStoreProvider({
 
       toast.success(`"${row.word}" updated successfully!`);
       return true;
-    } catch {
+    } catch (error) {
+      console.error("Supabase updateWord error:", error);
+      await refreshWords();
       toast.error("Failed to update word.");
       return false;
     }
