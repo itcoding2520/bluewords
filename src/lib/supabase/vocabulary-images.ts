@@ -66,14 +66,22 @@ export async function deleteVocabularyImages(paths: Array<string | null | undefi
 }
 
 export async function createVocabularyImageUrl(path: string): Promise<string | null> {
-  const { data, error } = await supabase.storage
-    .from(VOCABULARY_IMAGES_BUCKET)
-    .createSignedUrl(path, 60 * 60);
+  try {
+    const { data, error } = await supabase.storage
+      .from(VOCABULARY_IMAGES_BUCKET)
+      .createSignedUrl(path, 60 * 60);
 
-  if (error) {
-    console.error("Could not create vocabulary image URL:", error);
+    if (error) {
+      console.warn("Could not create vocabulary image URL:", error.message);
+      return null;
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.warn(
+      "Could not create vocabulary image URL:",
+      error instanceof Error ? error.message : "Storage request failed."
+    );
     return null;
   }
-
-  return data.signedUrl;
 }
