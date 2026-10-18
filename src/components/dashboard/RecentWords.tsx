@@ -45,6 +45,7 @@ export function RecentWords({ words }: RecentWordsProps) {
               word={item.word}
               meaning={item.meaning}
               category={item.category}
+              imagePath={item.imagePath}
             />
           ))
         )}

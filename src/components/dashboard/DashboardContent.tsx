@@ -109,7 +109,7 @@ export function DashboardContent({
         progress={stats.progress}
       />
 
-      <RecentWords words={words.slice(0, 3)} />
+      <RecentWords words={words.slice(0, 10)} />
     </>
   );
 }
