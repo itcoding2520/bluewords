@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 
 import {
-  categoryColorStyles,
-  categoryStyles,
+  categorySolidColorStyles,
+  categorySolidStyles,
   type VocabularyMeaning,
   type VocabularyWord,
 } from "@/data/vocabulary";
@@ -70,6 +70,9 @@ export function VocabularyRow({
     (category) => category.name === item.category
   )?.color;
   const imageUrl = useVocabularyImageUrl(item.imagePath);
+  const hasPartOfSpeechMeanings = Boolean(
+    item.detailedMeanings?.some((meaning) => meaning.partOfSpeech)
+  );
 
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -118,7 +121,7 @@ export function VocabularyRow({
 
   return (
     <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
-      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
+      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
         <div className="col-start-1 row-start-1 flex justify-center pt-1">
           <input
             type="checkbox"
@@ -141,19 +144,23 @@ export function VocabularyRow({
               className="size-12 shrink-0 rounded-lg border border-slate-100 object-cover"
             />
           )}
-          <div className="min-w-0">
-            <p className="break-words font-semibold text-slate-950">
-              {item.word}
-            </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="break-words font-semibold text-slate-950">
+                {item.word}
+              </p>
 
-            <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-              {item.type === "expression" ? "Expression" : "Word"}
-            </span>
+              <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 lg:inline-flex">
+                {item.type === "expression" ? "Expression" : "Word"}
+              </span>
+            </div>
 
             <div className="mt-1 lg:hidden">
-              <p className="break-words text-sm text-slate-500">
-                {item.meaning}
-              </p>
+              {!hasPartOfSpeechMeanings && (
+                <p className="break-words text-sm text-slate-500">
+                  {item.meaning}
+                </p>
+              )}
               <DetailedMeanings meanings={item.detailedMeanings} />
             </div>
           </div>
@@ -161,51 +168,53 @@ export function VocabularyRow({
 
         {/* Meaning - desktop */}
         <div className="hidden min-w-0 text-sm text-slate-500 lg:col-start-3 lg:block">
-          <p className="break-words">{item.meaning}</p>
+          {!hasPartOfSpeechMeanings && (
+            <p className="break-words">{item.meaning}</p>
+          )}
           <DetailedMeanings meanings={item.detailedMeanings} />
         </div>
 
-        {/* Category */}
-        <div className="col-start-2 row-start-2 lg:col-start-4 lg:row-auto">
+        {/* Category and status share a compact row on mobile. */}
+        <div className="col-start-2 row-start-2 flex min-w-0 items-center justify-between gap-3 lg:contents">
           <span
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+            className={`inline-flex w-max max-w-max justify-center rounded-full px-3 py-1 text-xs font-medium lg:col-start-4 lg:row-auto ${
               (categoryColor
-                ? categoryColorStyles[categoryColor]
-                : categoryStyles[item.category]) ??
-              "bg-slate-100 text-slate-600"
+                ? categorySolidColorStyles[categoryColor]
+                : categorySolidStyles[item.category]) ??
+              "bg-slate-600 text-white"
             }`}
           >
             {item.category}
           </span>
+
+          {/* Status */}
+          <button
+            type="button"
+            onClick={() => void handleToggleMastered()}
+            disabled={isToggling}
+            aria-label={`Mark ${item.word} as ${
+              mastered ? "learning" : "mastered"
+            }`}
+            aria-pressed={mastered}
+            aria-busy={isToggling}
+            className={cn(
+              "inline-flex w-fit shrink-0 cursor-pointer items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
+              "lg:col-start-5 lg:row-auto",
+              "disabled:cursor-wait disabled:opacity-60",
+              mastered
+                ? "text-emerald-600 hover:text-emerald-700"
+                : "text-amber-600 hover:text-amber-700"
+            )}
+          >
+            {mastered ? <Check size={15} /> : <Circle size={14} />}
+
+            {isToggling
+              ? "Saving..."
+              : mastered
+                ? "Mastered"
+                : "Learning"}
+          </button>
         </div>
-
-        {/* Status */}
-        <button
-          type="button"
-          onClick={() => void handleToggleMastered()}
-          disabled={isToggling}
-          aria-label={`Mark ${item.word} as ${
-            mastered ? "learning" : "mastered"
-          }`}
-          aria-pressed={mastered}
-          aria-busy={isToggling}
-          className={cn(
-            "col-start-2 cursor-pointer row-start-3 inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
-            "lg:col-start-5 lg:row-auto",
-            "disabled:cursor-wait disabled:opacity-60",
-            mastered
-              ? "text-emerald-600 hover:text-emerald-700"
-              : "text-amber-600 hover:text-amber-700"
-          )}
-        >
-          {mastered ? <Check size={15} /> : <Circle size={14} />}
-
-          {isToggling
-            ? "Saving..."
-            : mastered
-              ? "Mastered"
-              : "Learning"}
-        </button>
 
         {/* Actions */}
         <div

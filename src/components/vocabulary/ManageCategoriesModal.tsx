@@ -20,8 +20,8 @@ const colorOptions: Array<{
   className: string;
 }> = [
   { value: "blue", label: "Blue", className: "bg-blue-500" },
-  { value: "violet", label: "Violet", className: "bg-violet-500" },
-  { value: "orange", label: "Orange", className: "bg-orange-500" },
+  { value: "violet", label: "Violet", className: "bg-[#bf00ff]" },
+  { value: "orange", label: "Orange", className: "bg-[#ff990a]" },
   { value: "green", label: "Green", className: "bg-emerald-500" },
   { value: "rose", label: "Rose", className: "bg-rose-500" },
 ];

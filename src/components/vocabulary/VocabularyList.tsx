@@ -48,7 +48,7 @@ export function VocabularyList({
           disabled={words.length === 0 || isBulkDeleting}
           className="col-start-1 row-start-1 size-4 cursor-pointer justify-self-center rounded border-slate-300 accent-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed"
         />
-        <span className="col-start-2 row-start-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="sr-only col-start-2 row-start-1 text-xs font-semibold uppercase tracking-wide text-slate-400 lg:not-sr-only">
           Word
         </span>
 

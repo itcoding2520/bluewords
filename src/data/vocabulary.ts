@@ -80,18 +80,35 @@ export const initialVocabulary: VocabularyWord[] = [
 ];
 
 export const categoryStyles: Record<string, string> = {
-  Daily: "bg-blue-50 text-blue-700",
-  Frontend: "bg-violet-50 text-violet-700",
-  Work: "bg-orange-50 text-orange-700",
+  Daily: "bg-blue-50 text-white",
+  Frontend: "bg-[#bf00ff] text-white",
+  Work: "bg-[#ff990a] text-white",
 };
 
 export const categoryColorStyles: Record<
   VocabularyCategoryColor,
   string
 > = {
-  blue: "bg-blue-50 text-blue-700",
-  violet: "bg-violet-50 text-violet-700",
-  orange: "bg-orange-50 text-orange-700",
-  green: "bg-emerald-50 text-emerald-700",
-  rose: "bg-rose-50 text-rose-700",
+  blue: "bg-blue-700 text-white",
+  violet: "bg-[#bf00ff] text-white",
+  orange: "bg-[#ff990a] text-white",
+  green: "bg-emerald-700 text-white",
+  rose: "bg-rose-700 text-white",
+};
+
+export const categorySolidColorStyles: Record<
+  VocabularyCategoryColor,
+  string
+> = {
+  blue: "bg-blue-700 text-white",
+  violet: "bg-[#bf00ff] text-white",
+  orange: "bg-[#ff990a] text-white",
+  green: "bg-emerald-700 text-white",
+  rose: "bg-rose-700 text-white",
+};
+
+export const categorySolidStyles: Record<string, string> = {
+  Daily: "bg-blue-700 text-white",
+  Frontend: "bg-[#bf00ff] text-white",
+  Work: "bg-[#ff990a] text-white",
 };
