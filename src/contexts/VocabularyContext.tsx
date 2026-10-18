@@ -127,6 +127,7 @@ function VocabularyStoreProvider({
             status,
             type,
             image_path,
+            vocabulary_meanings,
           }) => ({
             id,
             word,
@@ -135,7 +136,13 @@ function VocabularyStoreProvider({
             status,
             type: type ?? "word",
             imagePath: image_path ?? null,
-            detailedMeanings: [],
+            detailedMeanings: (vocabulary_meanings ?? []).map(
+              ({ id: meaningId, part_of_speech, meaning: detail }) => ({
+                id: meaningId,
+                partOfSpeech: part_of_speech,
+                meaning: detail,
+              })
+            ),
           })
         )
       );
