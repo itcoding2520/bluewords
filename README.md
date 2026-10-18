@@ -8,7 +8,7 @@ It helps users build their personal vocabulary collection, organize words by cat
 
 ### 🔗 Live Demo
 
-**[Try BlueWords](https://bluewords.vercel.app)**
+**[Try BlueWords](https://bluewords.online/)**
 
 ### 📸 Screenshots
 
@@ -169,6 +169,6 @@ BlueWords uses **Supabase PostgreSQL** as its primary data store.
 
 BlueWords is deployed on **Vercel**.
 
-**Live application:** [https://bluewords.vercel.app](https://bluewords.vercel.app)
+**Live application:** [https://bluewords.online](https://bluewords.online)
 
 Production environment variables are configured in Vercel, while authentication and vocabulary storage
