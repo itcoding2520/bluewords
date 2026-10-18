@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Library,
   BookOpenCheck,
+  History,
   Menu,
   X,
   LogOut,
@@ -33,7 +34,12 @@ const navigation = [
     label: "Flashcards",
     href: "/flashcards",
     icon: BookOpenCheck,
-  }
+  },
+  {
+    label: "Review results",
+    href: "/reviews",
+    icon: History,
+  },
 ];
 
 export function Sidebar() {

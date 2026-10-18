@@ -41,6 +41,7 @@ import {
 } from "@/lib/vocabulary-csv";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
+import { invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/reviews";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -466,6 +467,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateLatestVocabularyReviewsCache();
 
       if (currentWord?.imagePath && currentWord.imagePath !== row.image_path) {
         void deleteVocabularyImages([currentWord.imagePath]).catch((error) =>
@@ -500,6 +502,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((item) => item.id !== id)
       );
+      invalidateLatestVocabularyReviewsCache();
 
       toast.success(`"${word.word}" deleted successfully!`);
       return true;
@@ -529,6 +532,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((word) => !deletedSet.has(word.id))
       );
+      invalidateLatestVocabularyReviewsCache();
 
       return deletedIds.length;
     } catch (error) {
@@ -617,6 +621,7 @@ function VocabularyStoreProvider({
           )
         );
       }
+      invalidateLatestVocabularyReviewsCache();
 
       toast.success(`Category "${row.name}" updated.`);
       return row;
@@ -649,6 +654,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateLatestVocabularyReviewsCache();
 
       toast.success(`Category "${category.name}" deleted.`);
       return true;
