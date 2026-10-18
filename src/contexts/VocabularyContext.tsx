@@ -19,6 +19,7 @@ import {
   addVocabularyWord,
   updateVocabularyWord,
   deleteVocabularyWord,
+  deleteVocabularyWords,
   getVocabularyMeanings,
   addVocabularyMeaning,
   updateVocabularyMeaning,
@@ -45,6 +46,7 @@ interface VocabularyContextValue {
   addWord: (word: VocabularyWord) => Promise<boolean>;
   updateWord: (word: VocabularyWord) => Promise<boolean>;
   deleteWord: (id: string) => Promise<boolean>;
+  deleteWords: (ids: string[]) => Promise<number>;
   toggleMastered: (id: string) => Promise<boolean>;
   refreshWords: () => Promise<void>;
   addCategory: (input: {
@@ -482,6 +484,35 @@ function VocabularyStoreProvider({
     }
   }
 
+  async function deleteWords(ids: string[]): Promise<number> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) return 0;
+
+    try {
+      const deletedIds = await deleteVocabularyWords(uniqueIds);
+      const deletedSet = new Set(deletedIds);
+      const deletedImagePaths = words
+        .filter((word) => deletedSet.has(word.id))
+        .map((word) => word.imagePath);
+
+      if (deletedImagePaths.some(Boolean)) {
+        void deleteVocabularyImages(deletedImagePaths).catch((error) =>
+          console.error("Could not remove deleted vocabulary images:", error)
+        );
+      }
+
+      setWords((current) =>
+        current.filter((word) => !deletedSet.has(word.id))
+      );
+
+      return deletedIds.length;
+    } catch (error) {
+      console.error("Supabase deleteWords error:", error);
+      toast.error("Failed to delete selected words.");
+      return 0;
+    }
+  }
+
   async function toggleMastered(id: string): Promise<boolean> {
     const word = words.find((item) => item.id === id);
 
@@ -700,6 +731,7 @@ function VocabularyStoreProvider({
         addWord,
         updateWord,
         deleteWord,
+        deleteWords,
         toggleMastered,
         refreshWords,
         addCategory,

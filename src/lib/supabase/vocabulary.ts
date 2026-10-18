@@ -95,6 +95,22 @@ export async function deleteVocabularyWord(
   if (error) throw error;
 }
 
+export async function deleteVocabularyWords(
+  ids: string[]
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("vocabulary_words")
+    .delete()
+    .in("id", [...new Set(ids)])
+    .select("id");
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => row.id as string);
+}
+
 export async function getVocabularyMeanings(
   vocabularyWordId: string
 ): Promise<VocabularyMeaningRow[]> {

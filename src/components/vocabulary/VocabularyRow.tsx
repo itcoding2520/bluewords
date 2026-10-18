@@ -17,9 +17,13 @@ import {
 } from "@/data/vocabulary";
 import { cn } from "@/lib/cn";
 import { useVocabulary } from "@/contexts/VocabularyContext";
+import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import Image from "next/image";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
+  selected: boolean;
+  onToggleSelected: (id: string) => void;
   onToggleMastered: (id: string) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
@@ -51,6 +55,8 @@ function DetailedMeanings({
 
 export function VocabularyRow({
   item,
+  selected,
+  onToggleSelected,
   onToggleMastered,
   onEdit,
   onDelete,
@@ -63,6 +69,7 @@ export function VocabularyRow({
   const categoryColor = categories.find(
     (category) => category.name === item.category
   )?.color;
+  const imageUrl = useVocabularyImageUrl(item.imagePath);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -111,33 +118,55 @@ export function VocabularyRow({
 
   return (
     <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
+      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
+        <div className="col-start-1 row-start-1 flex justify-center pt-1">
+          <input
+            type="checkbox"
+            aria-label={`Select ${item.word}`}
+            checked={selected}
+            onChange={() => onToggleSelected(item.id)}
+            className="size-4 cursor-pointer rounded border-slate-300 accent-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          />
+        </div>
+
         {/* Word */}
-        <div className="min-w-0">
-          <p className="break-words font-semibold text-slate-950">
-            {item.word}
-          </p>
-
-          <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-            {item.type === "expression" ? "Expression" : "Word"}
-          </span>
-
-          <div className="mt-1 lg:hidden">
-            <p className="break-words text-sm text-slate-500">
-              {item.meaning}
+        <div className="col-start-2 row-start-1 flex min-w-0 items-start gap-3 lg:items-center">
+          {imageUrl && (
+            <Image
+              src={imageUrl}
+              alt={`Illustration for ${item.word}`}
+              width={48}
+              height={48}
+              unoptimized
+              className="size-12 shrink-0 rounded-lg border border-slate-100 object-cover"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="break-words font-semibold text-slate-950">
+              {item.word}
             </p>
-            <DetailedMeanings meanings={item.detailedMeanings} />
+
+            <span className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              {item.type === "expression" ? "Expression" : "Word"}
+            </span>
+
+            <div className="mt-1 lg:hidden">
+              <p className="break-words text-sm text-slate-500">
+                {item.meaning}
+              </p>
+              <DetailedMeanings meanings={item.detailedMeanings} />
+            </div>
           </div>
         </div>
 
         {/* Meaning - desktop */}
-        <div className="hidden min-w-0 text-sm text-slate-500 lg:block">
+        <div className="hidden min-w-0 text-sm text-slate-500 lg:col-start-3 lg:block">
           <p className="break-words">{item.meaning}</p>
           <DetailedMeanings meanings={item.detailedMeanings} />
         </div>
 
         {/* Category */}
-        <div className="col-start-1 row-start-2 lg:col-auto lg:row-auto">
+        <div className="col-start-2 row-start-2 lg:col-start-4 lg:row-auto">
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
               (categoryColor
@@ -161,8 +190,8 @@ export function VocabularyRow({
           aria-pressed={mastered}
           aria-busy={isToggling}
           className={cn(
-            "col-start-1 cursor-pointer row-start-3 inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
-            "lg:col-auto lg:row-auto",
+            "col-start-2 cursor-pointer row-start-3 inline-flex w-fit items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
+            "lg:col-start-5 lg:row-auto",
             "disabled:cursor-wait disabled:opacity-60",
             mastered
               ? "text-emerald-600 hover:text-emerald-700"
@@ -181,7 +210,7 @@ export function VocabularyRow({
         {/* Actions */}
         <div
           ref={menuRef}
-          className="relative col-start-2 row-start-1 justify-self-end lg:col-auto lg:row-auto"
+          className="relative col-start-3 row-start-1 justify-self-end lg:col-start-6 lg:row-auto"
         >
           <button
             ref={triggerRef}
