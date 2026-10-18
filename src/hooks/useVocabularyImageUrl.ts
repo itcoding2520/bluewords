@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createVocabularyImageUrl } from "@/lib/supabase/vocabulary-images";
+import {
+  createVocabularyImageUrl,
+  getCachedVocabularyImageUrl,
+} from "@/lib/supabase/vocabulary-images";
 
 export function useVocabularyImageUrl(path?: string | null) {
   const [result, setResult] = useState<{
     path: string | null;
     url: string | null;
-  }>({ path: null, url: null });
+  }>(() => ({
+    path: path ?? null,
+    url: path ? getCachedVocabularyImageUrl(path) : null,
+  }));
 
   useEffect(() => {
     let cancelled = false;

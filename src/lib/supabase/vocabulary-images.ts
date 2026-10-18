@@ -10,6 +10,21 @@ const supportedImageTypes = new Set([
 ]);
 
 const supabase = createClient();
+const SIGNED_URL_TTL_MS = 55 * 60 * 1000;
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+const signedUrlRequests = new Map<string, Promise<string | null>>();
+
+export function getCachedVocabularyImageUrl(path: string): string | null {
+  const cached = signedUrlCache.get(path);
+  if (!cached) return null;
+
+  if (cached.expiresAt <= Date.now()) {
+    signedUrlCache.delete(path);
+    return null;
+  }
+
+  return cached.url;
+}
 
 export function validateVocabularyImage(file: File): string | null {
   if (!supportedImageTypes.has(file.type)) {
@@ -63,9 +78,37 @@ export async function deleteVocabularyImages(paths: Array<string | null | undefi
     .from(VOCABULARY_IMAGES_BUCKET)
     .remove(ownedPaths);
   if (error) throw error;
+
+  for (const path of ownedPaths) {
+    signedUrlCache.delete(path);
+  }
 }
 
 export async function createVocabularyImageUrl(path: string): Promise<string | null> {
+  const cachedUrl = getCachedVocabularyImageUrl(path);
+  if (cachedUrl) return cachedUrl;
+
+  const pendingRequest = signedUrlRequests.get(path);
+  if (pendingRequest) return pendingRequest;
+
+  const request = createSignedVocabularyImageUrl(path);
+  signedUrlRequests.set(path, request);
+
+  try {
+    const url = await request;
+    if (url) {
+      signedUrlCache.set(path, {
+        url,
+        expiresAt: Date.now() + SIGNED_URL_TTL_MS,
+      });
+    }
+    return url;
+  } finally {
+    signedUrlRequests.delete(path);
+  }
+}
+
+async function createSignedVocabularyImageUrl(path: string): Promise<string | null> {
   try {
     const { data, error } = await supabase.storage
       .from(VOCABULARY_IMAGES_BUCKET)
