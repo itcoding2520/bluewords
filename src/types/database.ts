@@ -51,3 +51,16 @@ export type VocabularyMeaningInsert = {
 export type VocabularyMeaningUpdate = Partial<
   Pick<VocabularyMeaningRow, "part_of_speech" | "meaning">
 >;
+
+export type VocabularyReviewRow = {
+  id: string;
+  user_id: string;
+  vocabulary_word_id: string;
+  remembered: boolean;
+  reviewed_at: string;
+};
+
+export type VocabularyReviewInsert = Pick<
+  VocabularyReviewRow,
+  "user_id" | "vocabulary_word_id" | "remembered"
+>;

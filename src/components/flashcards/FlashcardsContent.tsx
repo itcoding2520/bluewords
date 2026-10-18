@@ -3,7 +3,8 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, Check, Circle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Circle, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
+import { recordVocabularyReview } from "@/lib/supabase/reviews";
 
 interface Flashcard {
   word: VocabularyWord;
@@ -148,6 +150,7 @@ export function FlashcardsContent() {
   const [index, setIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
+  const [isSavingReview, setIsSavingReview] = useState(false);
 
   const statusCounts = useMemo(() => {
     const categoryWords = words.filter(
@@ -197,6 +200,21 @@ export function FlashcardsContent() {
       if (updated) setIsRevealed(false);
     } finally {
       setIsTogglingStatus(false);
+    }
+  }
+
+  async function handleRecordReview(remembered: boolean) {
+    if (!card || isSavingReview) return;
+
+    setIsSavingReview(true);
+    try {
+      await recordVocabularyReview(card.word.id, remembered);
+      moveCard(1);
+    } catch (error) {
+      console.error("Failed to save flashcard review:", error);
+      toast.error("Could not save this review. Please try again.");
+    } finally {
+      setIsSavingReview(false);
     }
   }
 
@@ -329,6 +347,28 @@ export function FlashcardsContent() {
                   <div className="flex w-full flex-1 flex-col items-center justify-center">
                     <FlashcardAnswer card={card} />
                   </div>
+                  {isRevealed && (
+                    <div className="mt-4 grid w-full max-w-sm shrink-0 grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleRecordReview(false)}
+                        disabled={isSavingReview}
+                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
+                      >
+                        <RotateCcw size={14} />
+                        {isSavingReview ? "Saving..." : "Need practice"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleRecordReview(true)}
+                        disabled={isSavingReview}
+                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
+                      >
+                        <Check size={14} />
+                        {isSavingReview ? "Saving..." : "Remembered"}
+                      </button>
+                    </div>
+                  )}
                   <Button
                     variant="secondary"
                     onClick={() => setIsRevealed(false)}
