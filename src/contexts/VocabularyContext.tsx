@@ -24,17 +24,36 @@ import {
   updateVocabularyMeaning,
   deleteVocabularyMeaning,
 } from "@/lib/supabase/vocabulary";
+import {
+  addVocabularyCategory,
+  deleteVocabularyCategory,
+  getVocabularyCategories,
+  updateVocabularyCategory,
+  type VocabularyCategoryColor,
+  type VocabularyCategoryRow,
+  type VocabularyCategoryUpdate,
+} from "@/lib/supabase/categories";
 import type { VocabularyMeaningRow } from "@/types/database";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
   words: VocabularyWord[];
+  categories: VocabularyCategoryRow[];
   isLoaded: boolean;
   addWord: (word: VocabularyWord) => Promise<boolean>;
   updateWord: (word: VocabularyWord) => Promise<boolean>;
   deleteWord: (id: string) => Promise<boolean>;
   toggleMastered: (id: string) => Promise<boolean>;
   refreshWords: () => Promise<void>;
+  addCategory: (input: {
+    name: string;
+    color: VocabularyCategoryColor;
+  }) => Promise<VocabularyCategoryRow | null>;
+  updateCategory: (
+    id: string,
+    updates: VocabularyCategoryUpdate
+  ) => Promise<VocabularyCategoryRow | null>;
+  deleteCategory: (id: string) => Promise<boolean>;
 }
 
 const VocabularyContext =
@@ -48,6 +67,18 @@ function mapVocabularyMeaning(
     partOfSpeech: row.part_of_speech,
     meaning: row.meaning,
   };
+}
+
+function sortCategories(
+  categories: VocabularyCategoryRow[]
+): VocabularyCategoryRow[] {
+  return [...categories].sort((left, right) => {
+    if (left.is_default !== right.is_default) {
+      return left.is_default ? -1 : 1;
+    }
+
+    return left.name.localeCompare(right.name);
+  });
 }
 
 async function saveVocabularyMeanings(
@@ -119,6 +150,9 @@ function VocabularyStoreProvider({
 }) {
   const [supabase] = useState(() => createClient());
   const [words, setWords] = useState<VocabularyWord[]>([]);
+  const [categories, setCategories] = useState<
+    VocabularyCategoryRow[]
+  >([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const requestIdRef = useRef(0);
@@ -146,6 +180,7 @@ function VocabularyStoreProvider({
         ownerIdRef.current = null;
         loadedOwnerIdRef.current = null;
         setWords([]);
+        setCategories([]);
         setIsLoaded(true);
         return;
       }
@@ -154,10 +189,14 @@ function VocabularyStoreProvider({
         ownerIdRef.current = user.id;
         loadedOwnerIdRef.current = null;
         setWords([]);
+        setCategories([]);
         setIsLoaded(false);
       }
 
-      const rows = await getVocabularyWords();
+      const [rows, categoryRows] = await Promise.all([
+        getVocabularyWords(),
+        getVocabularyCategories(),
+      ]);
 
       if (
         !mountedRef.current ||
@@ -181,6 +220,7 @@ function VocabularyStoreProvider({
         ownerIdRef.current = null;
         loadedOwnerIdRef.current = null;
         setWords([]);
+        setCategories([]);
         setIsLoaded(false);
         return;
       }
@@ -210,6 +250,7 @@ function VocabularyStoreProvider({
           })
         )
       );
+      setCategories(categoryRows);
 
       loadedOwnerIdRef.current = user.id;
       setIsLoaded(true);
@@ -267,6 +308,7 @@ function VocabularyStoreProvider({
       loadedOwnerIdRef.current = null;
 
       setWords([]);
+      setCategories([]);
       setIsLoaded(false);
 
       if (nextUserId === null) {
@@ -451,16 +493,117 @@ function VocabularyStoreProvider({
     }
   }
 
+  async function addCategory(input: {
+    name: string;
+    color: VocabularyCategoryColor;
+  }): Promise<VocabularyCategoryRow | null> {
+    try {
+      const row = await addVocabularyCategory(input);
+
+      setCategories((current) =>
+        sortCategories([...current, row])
+      );
+      toast.success(`Category "${row.name}" added.`);
+      return row;
+    } catch (error) {
+      console.error("Supabase addCategory error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add category."
+      );
+      return null;
+    }
+  }
+
+  async function updateCategory(
+    id: string,
+    updates: VocabularyCategoryUpdate
+  ): Promise<VocabularyCategoryRow | null> {
+    const previous = categories.find((category) => category.id === id);
+
+    if (!previous) return null;
+
+    try {
+      const row = await updateVocabularyCategory(id, updates);
+
+      setCategories((current) =>
+        sortCategories(
+          current.map((category) =>
+            category.id === row.id ? row : category
+          )
+        )
+      );
+
+      if (previous.name !== row.name) {
+        setWords((current) =>
+          current.map((word) =>
+            word.category === previous.name
+              ? { ...word, category: row.name }
+              : word
+          )
+        );
+      }
+
+      toast.success(`Category "${row.name}" updated.`);
+      return row;
+    } catch (error) {
+      console.error("Supabase updateCategory error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update category."
+      );
+      return null;
+    }
+  }
+
+  async function deleteCategory(id: string): Promise<boolean> {
+    const category = categories.find((item) => item.id === id);
+
+    if (!category || category.is_default) return false;
+
+    try {
+      await deleteVocabularyCategory(id);
+
+      setCategories((current) =>
+        current.filter((item) => item.id !== id)
+      );
+      setWords((current) =>
+        current.map((word) =>
+          word.category === category.name
+            ? { ...word, category: "Uncategorized" }
+            : word
+        )
+      );
+
+      toast.success(`Category "${category.name}" deleted.`);
+      return true;
+    } catch (error) {
+      console.error("Supabase deleteCategory error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete category."
+      );
+      return false;
+    }
+  }
+
   return (
     <VocabularyContext.Provider
       value={{
         words,
+        categories,
         isLoaded,
         addWord,
         updateWord,
         deleteWord,
         toggleMastered,
         refreshWords,
+        addCategory,
+        updateCategory,
+        deleteCategory,
       }}
     >
       {children}

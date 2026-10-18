@@ -8,13 +8,13 @@ import type {
   VocabularyWord,
 } from "@/data/vocabulary";
 import {
-  VOCABULARY_CATEGORIES,
   VOCABULARY_TYPES,
   PARTS_OF_SPEECH,
   type VocabularyCategory,
   type PartOfSpeech,
   type VocabularyType,
 } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { Input } from "../ui/Input";
 import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
@@ -23,6 +23,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 interface WordFormModalProps {
   open: boolean;
   words: VocabularyWord[];
+  categories: VocabularyCategoryRow[];
   editingWord?: VocabularyWord | null;
   onClose: () => void;
   onSubmit: (word: VocabularyWord) => Promise<void>;
@@ -36,6 +37,7 @@ interface FormErrors {
 export function WordFormModal({
   open,
   words,
+  categories,
   editingWord,
   onClose,
   onSubmit,
@@ -46,7 +48,10 @@ export function WordFormModal({
     editingWord?.type ?? "word"
   );
   const [category, setCategory] = useState<VocabularyCategory>(
-    editingWord?.category ?? "Daily"
+    editingWord?.category ??
+      categories.find((item) => item.name === "Daily")?.name ??
+      categories[0]?.name ??
+      "Uncategorized"
   );
   const [detailedMeanings, setDetailedMeanings] =
     useState<VocabularyMeaning[]>(
@@ -423,9 +428,9 @@ export function WordFormModal({
                 }
                 className="mt-2"
               >
-                {VOCABULARY_CATEGORIES.map((categoryOption) => (
-                  <option key={categoryOption} value={categoryOption}>
-                    {categoryOption}
+                {categories.map((categoryOption) => (
+                  <option key={categoryOption.id} value={categoryOption.name}>
+                    {categoryOption.name}
                   </option>
                 ))}
               </Select>

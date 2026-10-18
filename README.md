@@ -33,7 +33,8 @@ It helps users build their personal vocabulary collection, organize words by cat
 - **CRUD Operations** — Add, edit, and delete vocabulary words.
 - **Learning Status** — Mark words as Learning or Mastered.
 - **Smart Search** — Find words by English vocabulary or meaning.
-- **Category Filtering** — Organize words into Daily, Work, and Frontend categories.
+- **Custom Categories** — Create, rename, recolor, and delete personal vocabulary categories.
+- **Category Filtering** — Filter vocabulary using your own category list.
 - **Duplicate Prevention** — Prevent duplicate vocabulary entries within the same account.
 
 **Dashboard & User Experience**
@@ -161,7 +162,6 @@ BlueWords uses **Supabase PostgreSQL** as its primary data store.
 - [ ] Flashcards and vocabulary practice mode
 - [ ] Vocabulary quizzes
 - [ ] Spaced repetition system
-- [ ] Custom vocabulary categories
 - [ ] Vocabulary export
 - [ ] Offline vocabulary access
 

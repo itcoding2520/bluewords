@@ -1,7 +1,11 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { categoryStyles } from "@/data/vocabulary";
+import {
+  categoryColorStyles,
+  categoryStyles,
+} from "@/data/vocabulary";
+import { useVocabulary } from "@/contexts/VocabularyContext";
 
 interface WordRowProps {
   word: string;
@@ -14,6 +18,11 @@ export function WordRow({
   meaning,
   category,
 }: WordRowProps) {
+  const { categories } = useVocabulary();
+  const categoryColor = categories.find(
+    (item) => item.name === category
+  )?.color;
+
   return (
     <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
       <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-6">
@@ -30,7 +39,9 @@ export function WordRow({
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-              categoryStyles[category] ??
+              (categoryColor
+                ? categoryColorStyles[categoryColor]
+                : categoryStyles[category]) ??
               "bg-slate-100 text-slate-600"
             }`}
           >

@@ -10,11 +10,13 @@ import {
 } from "lucide-react";
 
 import {
+  categoryColorStyles,
   categoryStyles,
   type VocabularyMeaning,
   type VocabularyWord,
 } from "@/data/vocabulary";
 import { cn } from "@/lib/cn";
+import { useVocabulary } from "@/contexts/VocabularyContext";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -53,10 +55,14 @@ export function VocabularyRow({
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
+  const { categories } = useVocabulary();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const togglingRef = useRef(false);
   const mastered = item.status === "mastered";
+  const categoryColor = categories.find(
+    (category) => category.name === item.category
+  )?.color;
 
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -134,7 +140,9 @@ export function VocabularyRow({
         <div className="col-start-1 row-start-2 lg:col-auto lg:row-auto">
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-              categoryStyles[item.category] ??
+              (categoryColor
+                ? categoryColorStyles[categoryColor]
+                : categoryStyles[item.category]) ??
               "bg-slate-100 text-slate-600"
             }`}
           >

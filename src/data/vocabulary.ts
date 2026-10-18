@@ -3,6 +3,7 @@ import type {
   VocabularyCategory,
   VocabularyType,
 } from "@/config/vocabulary";
+import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 
 export type VocabularyStatus = "learning" | "mastered";
 
@@ -82,4 +83,15 @@ export const categoryStyles: Record<string, string> = {
   Daily: "bg-blue-50 text-blue-700",
   Frontend: "bg-violet-50 text-violet-700",
   Work: "bg-orange-50 text-orange-700",
+};
+
+export const categoryColorStyles: Record<
+  VocabularyCategoryColor,
+  string
+> = {
+  blue: "bg-blue-50 text-blue-700",
+  violet: "bg-violet-50 text-violet-700",
+  orange: "bg-orange-50 text-orange-700",
+  green: "bg-emerald-50 text-emerald-700",
+  rose: "bg-rose-50 text-rose-700",
 };

@@ -2,24 +2,18 @@
 import type { ReactNode } from "react";
 import { Search, X } from "lucide-react";
 
-import {
-  VOCABULARY_CATEGORIES,
-  type VocabularyCategory,
-} from "@/config/vocabulary";
+import type { VocabularyCategory } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 
 export type CategoryFilter = "All" | VocabularyCategory;
 
 interface VocabularyToolbarProps {
   search: string;
   category: CategoryFilter;
+  categories: VocabularyCategoryRow[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: CategoryFilter) => void;
 }
-
-const filters: CategoryFilter[] = [
-  "All",
-  ...VOCABULARY_CATEGORIES,
-];
 
 interface FilterButtonProps {
   children: ReactNode;
@@ -51,6 +45,7 @@ function FilterButton({
 export function VocabularyToolbar({
   search,
   category,
+  categories,
   onSearchChange,
   onCategoryChange,
 }: VocabularyToolbarProps) {
@@ -95,7 +90,7 @@ export function VocabularyToolbar({
           aria-label="Filter vocabulary by category"
           className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0"
         >
-          {filters.map((item) => (
+          {(["All", ...categories.map((item) => item.name)] as CategoryFilter[]).map((item) => (
             <FilterButton
               key={item}
               active={category === item}

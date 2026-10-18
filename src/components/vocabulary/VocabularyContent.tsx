@@ -15,6 +15,7 @@ import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
+import { ManageCategoriesModal } from "./ManageCategoriesModal";
 import type {
   CategoryFilter,
 } from "./VocabularyToolbar";
@@ -23,6 +24,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 export function VocabularyContent() {
   const {
     words,
+    categories,
     isLoaded,
     addWord,
     updateWord,
@@ -33,6 +35,7 @@ export function VocabularyContent() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +53,12 @@ export function VocabularyContent() {
   const hasPendingImport =
   importPreview !== null &&
   importPreview.ready.length > 0;
+
+  const selectedCategory =
+    category === "All" ||
+    categories.some((item) => item.name === category)
+      ? category
+      : "All";
 
   async function handleImportVocabulary() {
     if (isImporting || !importPreview || importPreview.ready.length === 0) {
@@ -103,12 +112,12 @@ export function VocabularyContent() {
         item.meaning.toLowerCase().includes(query);
 
       const matchesCategory =
-        category === "All" ||
-        item.category === category;
+        selectedCategory === "All" ||
+        item.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [words, search, category]);
+  }, [words, search, selectedCategory]);
 
   function handleOpenAdd() {
     setEditingWord(null);
@@ -123,6 +132,16 @@ export function VocabularyContent() {
   function handleCloseForm() {
     setIsFormOpen(false);
     setEditingWord(null);
+  }
+
+  function handleCloseCategories() {
+    setIsCategoriesOpen(false);
+    setCategory((current) =>
+      current === "All" ||
+      categories.some((item) => item.name === current)
+        ? current
+        : "All"
+    );
   }
 
   function handleDeleteWord(word: VocabularyWord) {
@@ -179,6 +198,7 @@ export function VocabularyContent() {
     <>
       <VocabularyHeader
         onAddWord={handleOpenAdd}
+        onManageCategories={() => setIsCategoriesOpen(true)}
       />
 
       {hasPendingImport && (
@@ -251,7 +271,8 @@ export function VocabularyContent() {
 
       <VocabularyToolbar
         search={search}
-        category={category}
+        category={selectedCategory}
+        categories={categories}
         onSearchChange={setSearch}
         onCategoryChange={setCategory}
       />
@@ -268,6 +289,7 @@ export function VocabularyContent() {
           key={editingWord?.id ?? "new"}
           open={isFormOpen}
           words={words}
+          categories={categories}
           editingWord={editingWord}
           onClose={handleCloseForm}
           onSubmit={handleSubmitWord}
@@ -279,6 +301,11 @@ export function VocabularyContent() {
         isDeleting={isSubmitting}
         onClose={() => setDeletingWord(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      <ManageCategoriesModal
+        open={isCategoriesOpen}
+        onClose={handleCloseCategories}
       />
     </>
   );
