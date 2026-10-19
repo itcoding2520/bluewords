@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { useVocabulary } from "@/contexts/VocabularyContext";
+import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
 import { getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
@@ -79,8 +81,9 @@ function QuizImage({ word, className = "" }: { word: VocabularyWord; className?:
 }
 
 export function QuizGameContent() {
-  const { words, isLoaded } = useVocabulary();
+  const { words, categories, isLoaded } = useVocabulary();
   const [mode, setMode] = useState<QuizMode>("choose-meaning");
+  const [category, setCategory] = useState("all");
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [phase, setPhase] = useState<Phase>("setup");
   const [tab, setTab] = useState<Tab>("play");
@@ -100,8 +103,12 @@ export function QuizGameContent() {
   const [saveError, setSaveError] = useState("");
   const saveStartedRef = useRef<number | null>(null);
 
-  const meaningQuestions = useMemo(() => buildMeaningQuestions(words), [words]);
-  const eligibleWords = useMemo(() => mode === "type-word" ? words.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [mode, meaningQuestions, words]);
+  const categoryWords = useMemo(
+    () => filterQuizWordsByCategory(words, category),
+    [category, words]
+  );
+  const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
+  const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
   const maximumQuestions = eligibleWords.length;
   const selectedQuestionCount = questionCount;
   const currentQuestion = questions[questionIndex];
@@ -289,10 +296,11 @@ export function QuizGameContent() {
 
       {tab === "play" && phase === "setup" && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
-          <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600"><Gamepad2 size={22} /></span><div><h2 className="text-lg font-semibold text-slate-950">Set up your game</h2><p className="mt-1 text-sm text-slate-500">Choose a question type and number of words. There’s no time limit.</p></div></div>
-          <fieldset className="mt-7"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend><div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600"><Gamepad2 size={22} /></span><div><h2 className="text-lg font-semibold text-slate-950">Set up your game</h2><p className="mt-1 text-sm text-slate-500">Choose a category, question type, and number of words. There’s no time limit.</p></div></div>
+          <fieldset className="mt-7"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><CategoryDropdown category={category} categories={categories} onChange={setCategory} includeAll allLabel="All categories" fullWidth /><p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p></fieldset>
+          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend><div className="grid gap-3 sm:grid-cols-2">
             <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
-            <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={words.filter((word) => Boolean(word.imagePath)).length} onClick={() => setMode("type-word")} />
+            <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={categoryWords.filter((word) => Boolean(word.imagePath)).length} onClick={() => setMode("type-word")} />
           </div></fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
