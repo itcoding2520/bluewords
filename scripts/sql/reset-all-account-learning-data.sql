@@ -9,7 +9,7 @@
 -- and after confirming this reset should affect every existing account.
 
 BEGIN;
-SET LOCAL app.confirm_reset_all_account_learning_data = 'YES';
+SET LOCAL app.confirm_reset_all_account_learning_data = 'NO';
 
 DO $$
 BEGIN

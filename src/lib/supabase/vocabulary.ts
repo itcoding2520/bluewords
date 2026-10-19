@@ -7,6 +7,7 @@ import type {
   VocabularyWordUpdate,
 } from "@/types/database";
 import type { VocabularyType } from "@/config/vocabulary";
+import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 
 const supabase = createClient();
 
@@ -25,14 +26,19 @@ type VocabularyWordInput = Pick<
 export async function getVocabularyWords(): Promise<
   VocabularyWordWithMeaningsRow[]
 > {
-  const { data, error } = await supabase
-    .from("vocabulary_words")
-    .select("*, vocabulary_meanings(*)")
-    .order("created_at", { ascending: false });
+  return fetchAllPages(async (from, to) => {
+    const { data, error } = await supabase
+      .from("vocabulary_words")
+      .select("*, vocabulary_meanings(*)")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
 
-  if (error) throw error;
-
-  return (data ?? []) as unknown as VocabularyWordWithMeaningsRow[];
+    return {
+      data: (data ?? []) as unknown as VocabularyWordWithMeaningsRow[],
+      error,
+    };
+  });
 }
 
 export async function addVocabularyWord(
@@ -83,6 +89,40 @@ export async function updateVocabularyWord(
   if (error) throw error;
 
   return data as VocabularyWordRow;
+}
+
+export async function updateVocabularyWordWithMeanings(input: {
+  id: string;
+  word: string;
+  meaning: string;
+  category: string;
+  status: VocabularyWordRow["status"];
+  type: VocabularyWordRow["type"];
+  ipa: string | null;
+  image_path: string | null;
+  meanings: Array<Pick<VocabularyMeaningRow, "part_of_speech" | "meaning">>;
+}): Promise<{ word: VocabularyWordRow; meanings: VocabularyMeaningRow[] }> {
+  const { data, error } = await supabase.rpc(
+    "update_vocabulary_word_with_meanings",
+    {
+      p_vocabulary_word_id: input.id,
+      p_word: input.word,
+      p_meaning: input.meaning,
+      p_category: input.category,
+      p_status: input.status,
+      p_type: input.type,
+      p_ipa: input.ipa,
+      p_image_path: input.image_path,
+      p_meanings: input.meanings,
+    }
+  );
+
+  if (error) throw error;
+
+  return data as unknown as {
+    word: VocabularyWordRow;
+    meanings: VocabularyMeaningRow[];
+  };
 }
 
 export async function deleteVocabularyWord(

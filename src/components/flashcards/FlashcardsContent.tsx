@@ -54,21 +54,21 @@ function getReviewClockSnapshot() {
 }
 
 let currentShuffleSeed = 0;
-let initializedShuffleSeed = false;
 const shuffleSeedListeners = new Set<() => void>();
 
 function subscribeToShuffleSeed(listener: () => void) {
   shuffleSeedListeners.add(listener);
 
-  if (!initializedShuffleSeed) {
-    initializedShuffleSeed = true;
+  if (shuffleSeedListeners.size === 1) {
     queueMicrotask(() => {
       currentShuffleSeed = Math.floor(Math.random() * 2 ** 32);
       shuffleSeedListeners.forEach((notify) => notify());
     });
   }
 
-  return () => shuffleSeedListeners.delete(listener);
+  return () => {
+    shuffleSeedListeners.delete(listener);
+  };
 }
 
 function getShuffleSeed() {

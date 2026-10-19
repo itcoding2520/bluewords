@@ -10,6 +10,7 @@ import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
+import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
 
 type QuizMode = "type-word" | "choose-meaning";
@@ -63,10 +64,6 @@ function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
       choices: shuffle([meaning.meaning.trim(), ...distractors]),
     }];
   }));
-}
-
-function normalizeAnswer(value: string) {
-  return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
 }
 
 function formatTime(seconds: number) {
@@ -196,7 +193,7 @@ export function QuizGameContent() {
   function submitAnswer(value: string) {
     if (!currentQuestion || currentAnswer || !value.trim()) return;
     const expected = mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning;
-    setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeAnswer(value) === normalizeAnswer(expected) } }));
+    setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected) } }));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {

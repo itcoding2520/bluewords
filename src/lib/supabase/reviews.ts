@@ -4,6 +4,7 @@ import type {
   VocabularyReviewRow,
   VocabularyReviewScheduleRow,
 } from "@/types/database";
+import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 
 const supabase = createClient();
 const latestReviewsByUser = new Map<string, VocabularyReviewWithWord[]>();
@@ -51,15 +52,18 @@ export async function getVocabularyReviewSchedules(): Promise<
   const cachedSchedules = schedulesByUser.get(user.id);
   if (cachedSchedules) return cachedSchedules;
 
-  const { data, error } = await supabase
-    .from("vocabulary_review_schedule")
-    .select("user_id, vocabulary_word_id, due_at, interval_days, repetitions, last_reviewed_at, updated_at")
-    .eq("user_id", user.id)
-    .order("due_at", { ascending: true });
+  const schedules = await fetchAllPages<VocabularyReviewScheduleRow>(async (from, to) => {
+    const { data, error } = await supabase
+      .from("vocabulary_review_schedule")
+      .select("user_id, vocabulary_word_id, due_at, interval_days, repetitions, last_reviewed_at, updated_at")
+      .eq("user_id", user.id)
+      .order("due_at", { ascending: true })
+      .order("vocabulary_word_id", { ascending: true })
+      .range(from, to);
 
-  if (error) throw error;
+    return { data: (data ?? []) as VocabularyReviewScheduleRow[], error };
+  });
 
-  const schedules = (data ?? []) as VocabularyReviewScheduleRow[];
   schedulesByUser.set(user.id, schedules);
   return schedules;
 }
@@ -79,24 +83,39 @@ export async function getLatestVocabularyReviews(): Promise<
   const cachedReviews = latestReviewsByUser.get(user.id);
   if (cachedReviews) return cachedReviews;
 
-  const { data, error } = await supabase
-    .from("vocabulary_reviews")
-    .select("id, user_id, vocabulary_word_id, remembered, reviewed_at, vocabulary_words!inner(word, meaning, category)")
-    .eq("user_id", user.id)
-    .order("reviewed_at", { ascending: false });
+  const reviews = await fetchAllPages<{
+    id: string;
+    user_id: string;
+    vocabulary_word_id: string;
+    remembered: boolean;
+    reviewed_at: string;
+    word: string;
+    meaning: string;
+    category: string;
+  }>(async (from, to) => {
+    const { data, error } = await supabase
+      .rpc("get_latest_vocabulary_reviews")
+      .order("reviewed_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
 
-  if (error) throw error;
+    return { data: data ?? [], error };
+  });
 
-  const latestByWord = new Map<string, VocabularyReviewWithWord>();
-  for (const review of (data ?? []) as unknown as VocabularyReviewWithWord[]) {
-    if (!latestByWord.has(review.vocabulary_word_id)) {
-      latestByWord.set(review.vocabulary_word_id, review);
-    }
-  }
-
-  const reviews = [...latestByWord.values()];
-  latestReviewsByUser.set(user.id, reviews);
-  return reviews;
+  const mappedReviews: VocabularyReviewWithWord[] = reviews.map((review) => ({
+    id: review.id,
+    user_id: review.user_id,
+    vocabulary_word_id: review.vocabulary_word_id,
+    remembered: review.remembered,
+    reviewed_at: review.reviewed_at,
+    vocabulary_words: {
+      word: review.word,
+      meaning: review.meaning,
+      category: review.category,
+    },
+  }));
+  latestReviewsByUser.set(user.id, mappedReviews);
+  return mappedReviews;
 }
 
 export async function recordVocabularyReview(
