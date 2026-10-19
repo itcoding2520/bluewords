@@ -29,7 +29,7 @@ import {
 import {
   addVocabularyCategory,
   deleteVocabularyCategory,
-  getVocabularyCategories,
+  getVocabularyCategoriesForUser,
   updateVocabularyCategory,
   type VocabularyCategoryColor,
   type VocabularyCategoryRow,
@@ -56,6 +56,7 @@ interface VocabularyContextValue {
   words: VocabularyWord[];
   categories: VocabularyCategoryRow[];
   isLoaded: boolean;
+  authVersion: number;
   addWord: (word: VocabularyWord) => Promise<boolean>;
   updateWord: (word: VocabularyWord) => Promise<boolean>;
   deleteWord: (id: string) => Promise<boolean>;
@@ -182,14 +183,18 @@ function VocabularyStoreProvider({
     VocabularyCategoryRow[]
   >([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [authVersion, setAuthVersion] = useState(0);
 
   const requestIdRef = useRef(0);
+  const pendingRequestIdRef = useRef<number | null>(null);
   const ownerIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
-  const loadedOwnerIdRef = useRef<string | null>(null);
 
   const refreshWords = useCallback(async (): Promise<void> => {
+    if (pendingRequestIdRef.current === requestIdRef.current) return;
+
     const currentRequest = ++requestIdRef.current;
+    pendingRequestIdRef.current = currentRequest;
 
     try {
       const {
@@ -206,7 +211,6 @@ function VocabularyStoreProvider({
 
       if (authError || !user) {
         ownerIdRef.current = null;
-        loadedOwnerIdRef.current = null;
         setWords([]);
         setCategories([]);
         setIsLoaded(true);
@@ -215,7 +219,6 @@ function VocabularyStoreProvider({
 
       if (ownerIdRef.current !== user.id) {
         ownerIdRef.current = user.id;
-        loadedOwnerIdRef.current = null;
         setWords([]);
         setCategories([]);
         setIsLoaded(false);
@@ -223,7 +226,7 @@ function VocabularyStoreProvider({
 
       const [rows, categoryRows] = await Promise.all([
         getVocabularyWords(),
-        getVocabularyCategories(),
+        getVocabularyCategoriesForUser(user.id),
       ]);
 
       if (
@@ -246,7 +249,6 @@ function VocabularyStoreProvider({
 
       if (currentUser?.id !== user.id) {
         ownerIdRef.current = null;
-        loadedOwnerIdRef.current = null;
         setWords([]);
         setCategories([]);
         setIsLoaded(false);
@@ -282,7 +284,6 @@ function VocabularyStoreProvider({
       );
       setCategories(categoryRows);
 
-      loadedOwnerIdRef.current = user.id;
       setIsLoaded(true);
     } catch (error) {
       if (
@@ -296,20 +297,16 @@ function VocabularyStoreProvider({
       toast.error("Failed to load vocabulary.");
 
       setIsLoaded(true);
+    } finally {
+      if (pendingRequestIdRef.current === currentRequest) {
+        pendingRequestIdRef.current = null;
+      }
     }
   }, [supabase]);
 
   useEffect(() => {
-    let cancelled = false;
     const requestId = requestIdRef;
-
     mountedRef.current = true;
-
-    const initialLoadTimer = setTimeout(() => {
-      if (!cancelled) {
-        void refreshWords();
-      }
-    }, 0);
 
     const {
       data: { subscription },
@@ -324,45 +321,29 @@ function VocabularyStoreProvider({
 
       const nextUserId = session?.user.id ?? null;
 
-      if (
-        nextUserId !== null &&
-        nextUserId === ownerIdRef.current &&
-        loadedOwnerIdRef.current === nextUserId
-      ) {
+      if (nextUserId === ownerIdRef.current) {
         return;
       }
 
-      requestIdRef.current++;
+      requestId.current++;
 
       ownerIdRef.current = nextUserId;
-      loadedOwnerIdRef.current = null;
+      setAuthVersion((version) => version + 1);
 
       setWords([]);
       setCategories([]);
-      setIsLoaded(false);
+      setIsLoaded(nextUserId === null);
 
-      if (nextUserId === null) {
-        setIsLoaded(true);
-        return;
-      }
-
-      setTimeout(() => {
-        if (!cancelled) {
-          void refreshWords();
-        }
-      }, 0);
     });
 
     return () => {
-      cancelled = true;
       mountedRef.current = false;
 
       requestId.current++;
 
-      clearTimeout(initialLoadTimer);
       subscription.unsubscribe();
     };
-  }, [supabase, refreshWords]);
+  }, [supabase]);
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
     try {
@@ -883,6 +864,7 @@ function VocabularyStoreProvider({
         words,
         categories,
         isLoaded,
+        authVersion,
         addWord,
         updateWord,
         deleteWord,
@@ -902,6 +884,19 @@ function VocabularyStoreProvider({
 
 export function useVocabulary() {
   const context = useContext(VocabularyContext);
+  const isLoaded = context?.isLoaded;
+  const authVersion = context?.authVersion;
+  const refreshWords = context?.refreshWords;
+
+  useEffect(() => {
+    if (isLoaded !== false || !refreshWords) return;
+
+    const loadTimer = setTimeout(() => {
+      void refreshWords();
+    }, 0);
+
+    return () => clearTimeout(loadTimer);
+  }, [authVersion, isLoaded, refreshWords]);
 
   if (!context) {
     throw new Error(
