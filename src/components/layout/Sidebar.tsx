@@ -8,6 +8,7 @@ import {
   Library,
   BookOpenCheck,
   History,
+  Gamepad2,
   Menu,
   X,
   LogOut,
@@ -34,6 +35,11 @@ const navigation = [
     label: "Flashcards",
     href: "/flashcards",
     icon: BookOpenCheck,
+  },
+  {
+    label: "Quiz game",
+    href: "/quiz",
+    icon: Gamepad2,
   },
   {
     label: "Review results",

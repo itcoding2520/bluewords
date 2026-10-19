@@ -79,3 +79,40 @@ export type VocabularyReviewScheduleUpsert = Pick<
   VocabularyReviewScheduleRow,
   "user_id" | "vocabulary_word_id" | "due_at" | "interval_days" | "repetitions" | "last_reviewed_at"
 >;
+
+export type VocabularyQuizMode = "type-word" | "choose-meaning";
+
+export type VocabularyQuizSessionRow = {
+  id: string;
+  user_id: string;
+  mode: VocabularyQuizMode;
+  question_count: number;
+  correct_count: number;
+  duration_seconds: number;
+  started_at: string;
+  completed_at: string;
+  created_at: string;
+};
+
+export type VocabularyQuizAnswerRow = {
+  id: string;
+  session_id: string;
+  user_id: string;
+  vocabulary_word_id: string | null;
+  question_position: number;
+  prompt_type: VocabularyQuizMode;
+  word_text: string;
+  prompt_text: string;
+  expected_answer: string;
+  selected_answer: string;
+  is_correct: boolean;
+  part_of_speech: string | null;
+  choices: string[];
+  image_path: string | null;
+  created_at: string;
+};
+
+export type VocabularyQuizAnswerInsert = Omit<
+  VocabularyQuizAnswerRow,
+  "id" | "session_id" | "user_id" | "created_at" | "prompt_type"
+>;
