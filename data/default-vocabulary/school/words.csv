@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+teacher,word,noun,giáo viên,School,learning,/ˈtiː.tʃər/,teacher.jpg
+pupil,word,noun,học sinh,School,learning,/ˈpjuː.pəl/,pupil.jpg
+class,word,noun,lớp học,School,learning,/klɑːs/,class.jpg
+classmate,word,noun,bạn cùng lớp,School,learning,/ˈklɑːs.meɪt/,classmate.jpg
+board,word,noun,bảng,School,learning,/bɔːd/,board.jpg
+book,word,noun,quyển sách,School,learning,/bʊk/,book.jpg
+table,word,noun,bàn học,School,learning,/ˈteɪ.bəl/,table.jpg
+chair,word,noun,ghế,School,learning,/tʃeər/,chair.jpg
+paper,word,noun,giấy,School,learning,/ˈpeɪ.pər/,paper.jpg
+pen,word,noun,bút,School,learning,/pen/,pen.jpg
+pencil,word,noun,bút chì,School,learning,/ˈpen.səl/,pencil.jpg
+eraser,word,noun,cục tẩy,School,learning,/ɪˈreɪ.zər/,eraser.jpg
+ruler,word,noun,thước kẻ,School,learning,/ˈruː.lər/,ruler.jpg
+bag,word,noun,cặp sách,School,learning,/bæɡ/,bag.jpg
+crayon,word,noun,bút chì màu,School,learning,/ˈkreɪ.ɒn/,crayon.jpg
+mouse,word,noun,chuột máy tính,School,learning,/maʊs/,mouse.jpg
+picture,word,noun,bức tranh,School,learning,/ˈpɪk.tʃər/,picture.jpg
+notebook,word,noun,vở ghi,School,learning,/ˈnoʊt.bʊk/,notebook.jpg
+scissors,word,noun,kéo,School,learning,/ˈsɪz.əz/,scissors.jpg
+glue,word,noun,keo dán,School,learning,/ɡluː/,glue.jpg
+folder,word,noun,bìa hồ sơ,School,learning,/ˈfoʊl.dər/,folder.jpg
+library,word,noun,thư viện,School,learning,/ˈlaɪ.brer.i/,library.jpg
+uniform,word,noun,đồng phục,School,learning,/ˈjuː.nɪ.fɔːrm/,uniform.jpg
+clock,word,noun,đồng hồ lớp học,School,learning,/klɒk/,clock.jpg
+map,word,noun,bản đồ,School,learning,/mæp/,map.jpg

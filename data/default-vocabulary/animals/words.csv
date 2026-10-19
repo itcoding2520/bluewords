@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+cat,word,noun,con mèo,Animals,learning,/kæt/,cat.jpg
+dog,word,noun,con chó,Animals,learning,/dɒɡ/,dog.jpg
+chick,word,noun,gà con,Animals,learning,/ʧɪk/,chick.jpg
+chicken,word,noun,gà,Animals,learning,/ˈtʃɪk.ɪn/,chicken.jpg
+pig,word,noun,lợn,Animals,learning,/pɪɡ/,pig.jpg
+cow,word,noun,con bò,Animals,learning,/kaʊ/,cow.jpg
+calf,word,noun,con bê,Animals,learning,/kɑːf/,calf.jpg
+duck,word,noun,con vịt,Animals,learning,/dʌk/,duck.jpg
+parrot,word,noun,con vẹt,Animals,learning,/pærət/,parrot.jpg
+horse,word,noun,ngựa,Animals,learning,/hɔːrs/,horse.jpg
+sheep,word,noun,cừu,Animals,learning,/ʃiːp/,sheep.jpg
+goat,word,noun,dê,Animals,learning,/ɡoʊt/,goat.jpg
+rabbit,word,noun,thỏ,Animals,learning,/ˈræb.ɪt/,rabbit.jpg
+hamster,word,noun,chuột hamster,Animals,learning,/ˈhæm.stər/,hamster.jpg
+turtle,word,noun,rùa,Animals,learning,/ˈtɜː.təl/,turtle.jpg
+fish,word,noun,cá,Animals,learning,/fɪʃ/,fish.jpg
+whale,word,noun,cá voi,Animals,learning,/weɪl/,whale.jpg
+dolphin,word,noun,cá heo,Animals,learning,/ˈdɒl.fɪn/,dolphin.jpg
+bear,word,noun,gấu,Animals,learning,/beər/,bear.jpg
+lion,word,noun,sư tử,Animals,learning,/ˈlaɪ.ən/,lion.jpg
+tiger,word,noun,hổ,Animals,learning,/ˈtaɪ.ɡər/,tiger.jpg
+elephant,word,noun,voi,Animals,learning,/ˈel.ɪ.fənt/,elephant.jpg
+monkey,word,noun,khỉ,Animals,learning,/ˈmʌŋ.ki/,monkey.jpg
+fox,word,noun,cáo,Animals,learning,/fɒks/,fox.jpg
+zebra,word,noun,ngựa vằn,Animals,learning,/ˈziː.brə/,zebra.jpg

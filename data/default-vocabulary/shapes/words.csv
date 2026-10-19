@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+circle,word,noun,hình tròn,Shapes,learning,/ˈsɜː.kəl/,circle.jpg
+triangle,word,noun,hình tam giác,Shapes,learning,/ˈtraɪ.æŋ.ɡəl/,triangle.jpg
+right triangle,word,noun,hình tam giác vuông,Shapes,learning,/ˌraɪt ˈtraɪ.æŋ.ɡəl/,right-triangle.jpg
+isosceles triangle,word,noun,hình tam giác cân,Shapes,learning,/aɪˌsɑː.sə.liːz ˈtraɪ.æŋ.ɡəl/,isosceles-triangle.jpg
+square,word,noun,hình vuông,Shapes,learning,/skweər/,square.jpg
+rectangle,word,noun,hình chữ nhật,Shapes,learning,/ˈrek.tæŋ.ɡəl/,rectangle.jpg
+hexagon,word,noun,hình lục giác,Shapes,learning,/ˈhek.sə.ɡɒn/,hexagon.jpg
+star,word,noun,hình ngôi sao,Shapes,learning,/stɑːr/,star.jpg
+oval,word,noun,hình bầu dục,Shapes,learning,/ˈəʊ.vəl/,oval.jpg
+cylinder,word,noun,hình trụ,Shapes,learning,/ˈsɪl.ɪn.dər/,cylinder.jpg
+cone,word,noun,hình chóp nón,Shapes,learning,/kəʊn/,cone.jpg
+cube,word,noun,hình lập phương,Shapes,learning,/kjuːb/,cube.jpg
+pentagon,word,noun,ngũ giác,Shapes,learning,/ˈpen.tə.ɡɒn/,pentagon.jpg
+octagon,word,noun,bát giác,Shapes,learning,/ˈɒk.tə.ɡɒn/,octagon.jpg
+nonagon,word,noun,cửu giác,Shapes,learning,/ˈnɒn.ə.ɡɒn/,nonagon.jpg
+decagon,word,noun,thập giác,Shapes,learning,/ˈdek.ə.ɡɒn/,decagon.jpg
+heart,word,noun,hình trái tim,Shapes,learning,/hɑːt/,heart.jpg
+crescent,word,noun,hình lưỡi liềm,Shapes,learning,/ˈkres.ənt/,crescent.jpg
+diamond,word,noun,hình thoi,Shapes,learning,/ˈdaɪə.mənd/,diamond.jpg
+parallelogram,word,noun,hình bình hành,Shapes,learning,/ˌpær.əˈlel.ə.ɡræm/,parallelogram.jpg
+trapezoid,word,noun,hình thang,Shapes,learning,/ˈtræp.ɪ.zɔɪd/,trapezoid.jpg
+sphere,word,noun,hình cầu,Shapes,learning,/sfɪər/,sphere.jpg
+pyramid,word,noun,hình kim tự tháp,Shapes,learning,/ˈpɪr.ə.mɪd/,pyramid.jpg
+semi-circle,word,noun,nửa hình tròn,Shapes,learning,/ˈsem.iˌsɜː.kəl/,semi-circle.jpg
+ring,word,noun,vòng tròn,Shapes,learning,/rɪŋ/,ring.jpg

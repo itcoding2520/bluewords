@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+hair,word,noun,tóc,Body,learning,/her/,hair.jpg
+head,word,noun,đầu,Body,learning,/hed/,head.jpg
+forehead,word,noun,trán,Body,learning,/ˈfɔːr.ɪd/,forehead.jpg
+face,word,noun,mặt,Body,learning,/feɪs/,face.jpg
+eye,word,noun,mắt,Body,learning,/aɪ/,eye.jpg
+cheek,word,noun,má,Body,learning,/tʃiːk/,cheek.jpg
+ear,word,noun,lỗ tai,Body,learning,/ɪər/,ear.jpg
+nose,word,noun,mũi,Body,learning,/nəʊz/,nose.jpg
+mouth,word,noun,miệng,Body,learning,/maʊθ/,mouth.jpg
+tongue,word,noun,lưỡi,Body,learning,/tʌŋ/,tongue.jpg
+neck,word,noun,cổ,Body,learning,/nek/,neck.jpg
+chin,word,noun,cằm,Body,learning,/ʧɪn/,chin.jpg
+shoulder,word,noun,vai,Body,learning,/ˈʃəʊl.dər/,shoulder.jpg
+back,word,noun,lưng,Body,learning,/bæk/,back.jpg
+arm,word,noun,cánh tay,Body,learning,/ɑːm/,arm.jpg
+hand,word,noun,bàn tay,Body,learning,/hænd/,hand.jpg
+finger,word,noun,ngón tay,Body,learning,/ˈfɪŋ.ɡər/,finger.jpg
+thigh,word,noun,đùi,Body,learning,/θaɪ/,thigh.jpg
+knee,word,noun,đầu gối,Body,learning,/niː/,knee.jpg
+leg,word,noun,chân,Body,learning,/leɡ/,leg.jpg
+foot,word,noun,bàn chân,Body,learning,/fʊt/,foot.jpg
+toe,word,noun,ngón chân,Body,learning,/təʊ/,toe.jpg
+waist,word,noun,eo,Body,learning,/weɪst/,waist.jpg
+elbow,word,noun,khuỷu tay,Body,learning,/ˈel.bəʊ/,elbow.jpg
+ankle,word,noun,mắt cá chân,Body,learning,/ˈæŋ.kəl/,ankle.jpg

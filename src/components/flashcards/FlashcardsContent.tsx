@@ -132,7 +132,7 @@ function FlashcardWord({
         </div>
 
         {card.word.ipa?.trim() && (
-          <p className="mt-2 text-sm text-slate-500">/{card.word.ipa.trim()}/</p>
+          <p className="mt-2 text-sm text-slate-500">{card.word.ipa.trim()}</p>
         )}
         {children}
       </div>

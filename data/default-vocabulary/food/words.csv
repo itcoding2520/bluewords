@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+cake,word,noun,bánh,Food,learning,/keɪk/,cake.jpg
+hamburger,word,noun,bánh hamburger,Food,learning,/ˈhæmˌbɝː.ɡɚ/,hamburger.jpg
+pizza,word,noun,bánh pizza,Food,learning,/ˈpiːt.sə/,pizza.jpg
+bread,word,noun,bánh mì,Food,learning,/bred/,bread.jpg
+biscuit,word,noun,bánh quy,Food,learning,/ˈbɪs.kɪt/,biscuit.jpg
+sandwich,word,noun,bánh mì sandwich,Food,learning,/ˈsæn.wɪdʒ/,sandwich.jpg
+chips,word,noun,khoai tây chiên,Food,learning,/tʃɪps/,chips.jpg
+chocolate,word,noun,sô cô la,Food,learning,/ˈtʃɑːk.lət/,chocolate.jpg
+cheese,word,noun,phô mai,Food,learning,/tʃiːz/,cheese.jpg
+honey,word,noun,mật ong,Food,learning,/ˈhʌn.i/,honey.jpg
+cottage cheese,word,noun,phô mai tươi,Food,learning,/ˈkɒt.ɪdʒ tʃiːz/,cottage-cheese.jpg
+cream,word,noun,kem,Food,learning,/kriːm/,cream.jpg
+milk,word,noun,sữa,Food,learning,/mɪlk/,milk.jpg
+yogurt,word,noun,sữa chua,Food,learning,/ˈjoʊ.ɡərt/,yogurt.jpg
+jam,word,noun,mứt,Food,learning,/dʒæm/,jam.jpg
+water,word,noun,nước uống,Food,learning,/ˈwɔː.tər/,water.jpg
+juice,word,noun,nước ép,Food,learning,/dʒuːs/,juice.jpg
+orange juice,word,noun,nước cam,Food,learning,/ˈɔːr.ɪndʒ dʒuːs/,orange-juice.jpg
+soda,word,noun,nước ngọt,Food,learning,/ˈsoʊ.də/,soda.jpg
+chewing gum,word,noun,kẹo cao su,Food,learning,/ˈtʃuː.ɪŋ ɡʌm/,chewing-gum.jpg
+noodles,word,noun,mì,Food,learning,/ˈnuː.dəlz/,noodles.jpg
+rice,word,noun,cơm,Food,learning,/raɪs/,rice.jpg
+soup,word,noun,canh,Food,learning,/suːp/,soup.jpg
+sausage,word,noun,xúc xích,Food,learning,/ˈsɔː.sɪdʒ/,sausage.jpg
+butter,word,noun,bơ,Food,learning,/ˈbʌt.ər/,butter.jpg

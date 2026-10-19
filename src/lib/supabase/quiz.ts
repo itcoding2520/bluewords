@@ -1,0 +1,100 @@
+import { createClient } from "@/lib/supabase/client";
+import type {
+  VocabularyQuizAnswerRow,
+  VocabularyQuizMode,
+  VocabularyQuizSessionRow,
+} from "@/types/database";
+
+const supabase = createClient();
+
+export interface SaveVocabularyQuizAnswer {
+  vocabulary_word_id: string;
+  question_position: number;
+  word_text: string;
+  prompt_text: string;
+  expected_answer: string;
+  selected_answer: string;
+  is_correct: boolean;
+  part_of_speech: string | null;
+  choices: string[];
+  image_path: string | null;
+}
+
+export interface SaveVocabularyQuizSession {
+  mode: VocabularyQuizMode;
+  question_count: number;
+  correct_count: number;
+  duration_seconds: number;
+  started_at: string;
+  completed_at: string;
+  answers: SaveVocabularyQuizAnswer[];
+}
+
+export async function saveVocabularyQuizSession(
+  session: SaveVocabularyQuizSession
+): Promise<string> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("You must be logged in to save quiz history.");
+  }
+
+  const { data, error } = await supabase.rpc("save_vocabulary_quiz_session", {
+    p_mode: session.mode,
+    p_question_count: session.question_count,
+    p_correct_count: session.correct_count,
+    p_duration_seconds: session.duration_seconds,
+    p_started_at: session.started_at,
+    p_completed_at: session.completed_at,
+    p_answers: session.answers,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionRow[]> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("You must be logged in to view quiz history.");
+  }
+
+  const { data, error } = await supabase
+    .from("vocabulary_quiz_sessions")
+    .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at")
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as VocabularyQuizSessionRow[];
+}
+
+export async function getVocabularyQuizAnswers(
+  sessionId: string
+): Promise<VocabularyQuizAnswerRow[]> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("You must be logged in to review a quiz.");
+  }
+
+  const { data, error } = await supabase
+    .from("vocabulary_quiz_answers")
+    .select("id, session_id, user_id, vocabulary_word_id, question_position, prompt_type, word_text, prompt_text, expected_answer, selected_answer, is_correct, part_of_speech, choices, image_path, created_at")
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id)
+    .order("question_position", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as VocabularyQuizAnswerRow[];
+}

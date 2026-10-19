@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+today,word,adverb,hôm nay,Time,learning,/təˈdeɪ/,today.jpg
+tomorrow,word,adverb,ngày mai,Time,learning,/təˈmɒroʊ/,tomorrow.jpg
+yesterday,word,adverb,hôm qua,Time,learning,/ˌjɛs.tərˈdeɪ/,yesterday.jpg
+Monday,word,noun,thứ hai,Time,learning,/ˈmʌn.deɪ/,monday.jpg
+Tuesday,word,noun,thứ ba,Time,learning,/ˈtjuːz.deɪ/,tuesday.jpg
+Wednesday,word,noun,thứ tư,Time,learning,/ˈwenz.deɪ/,wednesday.jpg
+Thursday,word,noun,thứ năm,Time,learning,/ˈθɜːrz.deɪ/,thursday.jpg
+Friday,word,noun,thứ sáu,Time,learning,/ˈfraɪ.deɪ/,friday.jpg
+Saturday,word,noun,thứ bảy,Time,learning,/ˈsæt.ər.deɪ/,saturday.jpg
+Sunday,word,noun,chủ nhật,Time,learning,/ˈsʌn.deɪ/,sunday.jpg
+January,word,noun,tháng một,Time,learning,/ˈdʒæn.juː.er.i/,january.jpg
+February,word,noun,tháng hai,Time,learning,/ˈfeb.ruː.er.i/,february.jpg
+March,word,noun,tháng ba,Time,learning,/mɑːrtʃ/,march.jpg
+April,word,noun,tháng tư,Time,learning,/ˈeɪ.prəl/,april.jpg
+May,word,noun,tháng năm,Time,learning,/meɪ/,may.jpg
+June,word,noun,tháng sáu,Time,learning,/dʒuːn/,june.jpg
+July,word,noun,tháng bảy,Time,learning,/dʒuˈlaɪ/,july.jpg
+August,word,noun,tháng tám,Time,learning,/ɔːˈɡʌst/,august.jpg
+September,word,noun,tháng chín,Time,learning,/sepˈtem.bər/,september.jpg
+October,word,noun,tháng mười,Time,learning,/ɒkˈtoʊ.bər/,october.jpg
+November,word,noun,tháng mười một,Time,learning,/noʊˈvem.bər/,november.jpg
+December,word,noun,tháng mười hai,Time,learning,/dɪˈsem.bər/,december.jpg
+now,word,adverb,bây giờ,Time,learning,/naʊ/,now.jpg
+week,word,noun,tuần,Time,learning,/wiːk/,week.jpg
+year,word,noun,năm,Time,learning,/jɪr/,year.jpg

@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+doctor,word,noun,bác sĩ,Jobs,learning,/ˈdɒk.tər/,doctor.jpg
+teacher,word,noun,giáo viên,Jobs,learning,/ˈtiː.tʃər/,teacher.jpg
+painter,word,noun,họa sĩ,Jobs,learning,/ˈpeɪn.tər/,painter.jpg
+writer,word,noun,nhà văn,Jobs,learning,/ˈraɪ.tər/,writer.jpg
+poet,word,noun,nhà thơ,Jobs,learning,/ˈpəʊ.ɪt/,poet.jpg
+director,word,noun,đạo diễn,Jobs,learning,/dəˈrek.tər/,director.jpg
+accountant,word,noun,kế toán,Jobs,learning,/əˈkaʊn.tənt/,accountant.jpg
+model,word,noun,người mẫu,Jobs,learning,/ˈmɒd.əl/,model.jpg
+tailor,word,noun,thợ may,Jobs,learning,/ˈteɪ.lər/,tailor.jpg
+stylist,word,noun,nhà tạo mẫu,Jobs,learning,/ˈstaɪ.lɪst/,stylist.jpg
+hairdresser,word,noun,thợ làm tóc,Jobs,learning,/ˈheə.dres.ər/,hairdresser.jpg
+engineer,word,noun,kỹ sư,Jobs,learning,/ˌen.dʒɪˈnɪər/,engineer.jpg
+architect,word,noun,kiến trúc sư,Jobs,learning,/ˈɑːr.kɪ.tekt/,architect.jpg
+scientist,word,noun,nhà khoa học,Jobs,learning,/ˈsaɪ.ən.tɪst/,scientist.jpg
+singer,word,noun,ca sĩ,Jobs,learning,/ˈsɪŋ.ər/,singer.jpg
+cook,word,noun,đầu bếp,Jobs,learning,/kʊk/,cook.jpg
+police,word,noun,cảnh sát,Jobs,learning,/pəˈliːs/,police.jpg
+firefighter,word,noun,lính cứu hỏa,Jobs,learning,/ˈfaɪərˌfaɪ.tər/,firefighter.jpg
+lawyer,word,noun,luật sư,Jobs,learning,/ˈlɔɪ.ər/,lawyer.jpg
+businessman,word,noun,doanh nhân,Jobs,learning,/ˈbɪz.nəs.mæn/,businessman.jpg
+banker,word,noun,nhân viên ngân hàng,Jobs,learning,/ˈbæŋ.kər/,banker.jpg
+cashier,word,noun,thu ngân,Jobs,learning,/kæˈʃɪr/,cashier.jpg
+dentist,word,noun,nha sĩ,Jobs,learning,/ˈden.tɪst/,dentist.jpg
+farmer,word,noun,nông dân,Jobs,learning,/ˈfɑːr.mər/,farmer.jpg
+nurse,word,noun,y tá,Jobs,learning,/nɜːrs/,nurse.jpg

@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+ambulance,word,noun,xe cứu thương,Transport,learning,/ˈæm.bjə.ləns/,ambulance.jpg
+fire truck,word,noun,xe cứu hỏa,Transport,learning,/ˈfaɪər trʌk/,fire-truck.jpg
+bike,word,noun,xe đạp,Transport,learning,/baɪk/,bike.jpg
+motorbike,word,noun,xe máy,Transport,learning,/ˈmoʊ.tər.baɪk/,motorbike.jpg
+car,word,noun,ô tô,Transport,learning,/kɑːr/,car.jpg
+bus,word,noun,xe buýt,Transport,learning,/bʌs/,bus.jpg
+coach,word,noun,xe khách,Transport,learning,/koʊtʃ/,coach.jpg
+taxi,word,noun,xe taxi,Transport,learning,/ˈtæk.si/,taxi.jpg
+train,word,noun,tàu hỏa (xe lửa),Transport,learning,/treɪn/,train.jpg
+boat,word,noun,con thuyền,Transport,learning,/boʊt/,boat.jpg
+ship,word,noun,tàu thủy,Transport,learning,/ʃɪp/,ship.jpg
+ferry,word,noun,phà,Transport,learning,/ˈfer.i/,ferry.jpg
+high-speed train,word,noun,tàu cao tốc,Transport,learning,/ˌhaɪ spiːd treɪn/,high-speed-train.jpg
+tube,word,noun,tàu điện ngầm (cách gọi ở Anh),Transport,learning,/tjuːb/,tube.jpg
+hot-air balloon,word,noun,khinh khí cầu,Transport,learning,/ˌhɒt eər bəˈluːn/,hot-air-balloon.jpg
+plane,word,noun,máy bay,Transport,learning,/pleɪn/,plane.jpg
+helicopter,word,noun,máy bay trực thăng,Transport,learning,/ˈhel.ɪˌkɒp.tər/,helicopter.jpg
+subway,word,noun,tàu điện ngầm (cách gọi ở Mỹ),Transport,learning,/ˈsʌb.weɪ/,subway.jpg
+tram,word,noun,tàu điện chạy trên đường,Transport,learning,/træm/,tram.jpg
+scooter,word,noun,xe tay ga,Transport,learning,/ˈskuː.tər/,scooter.jpg
+van,word,noun,xe tải nhỏ,Transport,learning,/væn/,van.jpg
+cargo ship,word,noun,tàu chở hàng,Transport,learning,/ˈkɑːr.ɡoʊ ʃɪp/,cargo-ship.jpg
+yacht,word,noun,du thuyền,Transport,learning,/jɒt/,yacht.jpg
+tractor,word,noun,máy kéo,Transport,learning,/ˈtræk.tər/,tractor.jpg
+rocket,word,noun,tên lửa,Transport,learning,/ˈrɒk.ɪt/,rocket.jpg

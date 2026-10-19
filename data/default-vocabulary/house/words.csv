@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+room,word,noun,phòng,House,learning,/ruːm/,room.jpg
+bedroom,word,noun,phòng ngủ,House,learning,/ˈbed.ruːm/,bedroom.jpg
+living room,word,noun,phòng khách,House,learning,/ˈlɪvɪŋ ruːm/,living-room.jpg
+bathroom,word,noun,phòng tắm,House,learning,/ˈbɑːθ.ruːm/,bathroom.jpg
+kitchen,word,noun,nhà bếp,House,learning,/ˈkɪtʃ.ən/,kitchen.jpg
+toilet,word,noun,nhà vệ sinh,House,learning,/ˈtɔɪ.lət/,toilet.jpg
+pool,word,noun,bể bơi,House,learning,/puːl/,pool.jpg
+stairs,word,noun,cầu thang,House,learning,/steəz/,stairs.jpg
+yard,word,noun,sân,House,learning,/jɑːrd/,yard.jpg
+fence,word,noun,rào chắn,House,learning,/fens/,fence.jpg
+door,word,noun,cửa ra vào,House,learning,/dɔːr/,door.jpg
+lock,word,noun,ổ khóa,House,learning,/lɒk/,lock.jpg
+key,word,noun,chìa khóa,House,learning,/kiː/,key.jpg
+gate,word,noun,cổng,House,learning,/ɡeɪt/,gate.jpg
+window,word,noun,cửa sổ,House,learning,/ˈwɪn.doʊ/,window.jpg
+door handle,word,noun,tay nắm cửa,House,learning,/dɔːr ˈhændəl/,door-handle.jpg
+television,word,noun,ti vi,House,learning,/ˈtel.ɪˌvɪʒ.ən/,television.jpg
+telephone,word,noun,điện thoại,House,learning,/ˈtel.ɪ.foʊn/,telephone.jpg
+bed,word,noun,giường ngủ,House,learning,/bed/,bed.jpg
+blanket,word,noun,chăn,House,learning,/ˈblæŋ.kɪt/,blanket.jpg
+pillow,word,noun,gối,House,learning,/ˈpɪl.oʊ/,pillow.jpg
+mat,word,noun,thảm chùi chân,House,learning,/mæt/,mat.jpg
+rug,word,noun,thảm trải sàn,House,learning,/rʌɡ/,rug.jpg
+fan,word,noun,cái quạt,House,learning,/fæn/,fan.jpg
+lights,word,noun,đèn,House,learning,/laɪts/,lights.jpg
