@@ -41,15 +41,15 @@ async function getAuthenticatedUser() {
   return user;
 }
 
-export async function getVocabularyCategories(): Promise<
+export async function getVocabularyCategoriesForUser(
+  userId: string
+): Promise<
   VocabularyCategoryRow[]
 > {
-  const user = await getAuthenticatedUser();
-
   const { data, error } = await supabase
     .from("vocabulary_categories")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("is_default", { ascending: false })
     .order("name", { ascending: true });
 

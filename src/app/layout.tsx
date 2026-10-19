@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { Toaster } from "sonner";
-import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,21 +43,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: LayoutProps<"/">) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <VocabularyProvider key={user?.id ?? "guest"}>
-          {children}
-        </VocabularyProvider>
+        <VocabularyProvider>{children}</VocabularyProvider>
 
         <Toaster
           position="bottom-right"
