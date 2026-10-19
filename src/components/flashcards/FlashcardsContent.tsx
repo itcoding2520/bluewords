@@ -299,12 +299,7 @@ export function FlashcardsContent() {
     try {
       const { schedule } = await recordVocabularyReview(
         card.word.id,
-        remembered,
-        {
-          word: card.word.word,
-          meaning: card.word.meaning,
-          category: card.word.category,
-        }
+        remembered
       );
       setReviewSchedules((current) => {
         const next = new Map(current);

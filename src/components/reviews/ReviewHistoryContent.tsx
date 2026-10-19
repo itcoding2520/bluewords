@@ -1,16 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Check, Circle, RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Circle, RotateCcw } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import {
   getCachedLatestVocabularyReviews,
+  getCachedLatestVocabularyReviewCounts,
+  getLatestVocabularyReviewCounts,
   getLatestVocabularyReviews,
+  type LatestVocabularyReviewCounts,
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
 
 type ReviewFilter = "practice" | "remembered";
+const PAGE_SIZE = 20;
+
+function getQueryKey(userId: string, filter: ReviewFilter, page: number): string {
+  return `${userId}:${filter}:${page}:${PAGE_SIZE}`;
+}
 
 function formatReviewedAt(value: string): string {
   const date = new Date(value);
@@ -23,51 +31,65 @@ function formatReviewedAt(value: string): string {
 }
 
 export function ReviewHistoryContent({ userId }: { userId: string }) {
-  const [reviews, setReviews] = useState<VocabularyReviewWithWord[]>(
-    () => getCachedLatestVocabularyReviews(userId) ?? []
-  );
   const [filter, setFilter] = useState<ReviewFilter>("practice");
-  const [isLoading, setIsLoading] = useState(
-    () => getCachedLatestVocabularyReviews(userId) === null
+  const [page, setPage] = useState(1);
+  const initialPage = getCachedLatestVocabularyReviews(userId, false, 1, PAGE_SIZE);
+  const queryKey = getQueryKey(userId, filter, page);
+  const [reviews, setReviews] = useState<VocabularyReviewWithWord[]>(() =>
+    initialPage?.reviews ?? []
   );
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [total, setTotal] = useState(
+    () => initialPage?.total ?? 0
+  );
+  const [counts, setCounts] = useState<LatestVocabularyReviewCounts>(
+    () => getCachedLatestVocabularyReviewCounts(userId) ?? { practice: 0, remembered: 0 }
+  );
+  const [loadedQueryKey, setLoadedQueryKey] = useState(() =>
+    initialPage ? queryKey : ""
+  );
+  const [failedQueryKey, setFailedQueryKey] = useState<string | null>(null);
+  const isLoading = loadedQueryKey !== queryKey;
+  const loadFailed = failedQueryKey === queryKey;
 
   useEffect(() => {
     let cancelled = false;
+    const remembered = filter === "remembered";
+    const cachedPage = getCachedLatestVocabularyReviews(
+      userId,
+      remembered,
+      page,
+      PAGE_SIZE
+    );
+    const cachedCounts = getCachedLatestVocabularyReviewCounts(userId);
 
-    if (getCachedLatestVocabularyReviews(userId) !== null) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    void getLatestVocabularyReviews()
-      .then((result) => {
-        if (!cancelled) setReviews(result);
+    void Promise.all([
+      cachedPage
+        ? Promise.resolve(cachedPage)
+        : getLatestVocabularyReviews({ remembered, page, pageSize: PAGE_SIZE }),
+      cachedCounts
+        ? Promise.resolve(cachedCounts)
+        : getLatestVocabularyReviewCounts(),
+    ])
+      .then(([pageResult, countResult]) => {
+        if (!cancelled) {
+          setReviews(pageResult.reviews);
+          setTotal(pageResult.total);
+          setCounts(countResult);
+          setLoadedQueryKey(getQueryKey(userId, filter, page));
+        }
       })
       .catch(() => {
-        if (!cancelled) setLoadFailed(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setFailedQueryKey(getQueryKey(userId, filter, page));
       });
 
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [filter, page, userId]);
 
-  const counts = useMemo(
-    () => ({
-      practice: reviews.filter((review) => !review.remembered).length,
-      remembered: reviews.filter((review) => review.remembered).length,
-    }),
-    [reviews]
-  );
-
-  const visibleReviews = reviews.filter((review) =>
-    filter === "remembered" ? review.remembered : !review.remembered
-  );
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const firstVisible = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const lastVisible = Math.min(page * PAGE_SIZE, total);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -85,7 +107,7 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
         <button
           type="button"
           aria-pressed={filter === "practice"}
-          onClick={() => setFilter("practice")}
+          onClick={() => { setFilter("practice"); setPage(1); }}
           className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
             filter === "practice"
               ? "bg-amber-500 text-white shadow-sm"
@@ -100,7 +122,7 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
         <button
           type="button"
           aria-pressed={filter === "remembered"}
-          onClick={() => setFilter("remembered")}
+          onClick={() => { setFilter("remembered"); setPage(1); }}
           className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
             filter === "remembered"
               ? "bg-emerald-600 text-white shadow-sm"
@@ -127,27 +149,23 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
             Check that the vocabulary reviews migration has been applied, then refresh this page.
           </p>
         </Card>
-      ) : visibleReviews.length === 0 ? (
+      ) : reviews.length === 0 ? (
         <Card className="px-5 py-12 text-center">
           <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-500">
             {filter === "practice" ? <RotateCcw size={20} /> : <Check size={20} />}
           </div>
           <h2 className="mt-4 font-semibold text-slate-900">
-            {reviews.length === 0
-              ? "No review results yet"
-              : filter === "practice"
-                ? "No words need practice"
-                : "No remembered words yet"}
+            {filter === "practice" ? "No words need practice" : "No remembered words yet"}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
-            {reviews.length === 0
+            {total === 0
               ? "Open Flashcards, reveal a meaning, and save your result."
               : "Your latest result for each reviewed word appears here."}
           </p>
         </Card>
       ) : (
         <Card className="divide-y divide-slate-100 overflow-hidden p-0">
-          {visibleReviews.map((review) => (
+          {reviews.map((review) => (
             <article
               key={review.id}
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6"
@@ -180,6 +198,33 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
             </article>
           ))}
         </Card>
+      )}
+
+      {!isLoading && !loadFailed && total > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+          <span>Showing {firstVisible}–{lastVisible} of {total} words</span>
+          <div className="flex items-center gap-2">
+            <span>Page {page} of {pageCount}</span>
+            <button
+              type="button"
+              aria-label="Previous review history page"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next review history page"
+              disabled={page >= pageCount}
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
