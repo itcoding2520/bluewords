@@ -236,25 +236,6 @@ function VocabularyStoreProvider({
         return;
       }
 
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (
-        !mountedRef.current ||
-        currentRequest !== requestIdRef.current
-      ) {
-        return;
-      }
-
-      if (currentUser?.id !== user.id) {
-        ownerIdRef.current = null;
-        setWords([]);
-        setCategories([]);
-        setIsLoaded(false);
-        return;
-      }
-
       setWords(
         rows.map(
           ({
