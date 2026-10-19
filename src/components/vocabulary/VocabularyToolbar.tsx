@@ -98,7 +98,7 @@ export function VocabularyToolbar({
             All
           </FilterButton>
 
-          <div className="min-w-0 flex-1 md:hidden">
+          <div className="min-w-0 max-w-[240px] flex-1">
             <Select
               aria-label="Filter vocabulary by category"
               value={category === "All" ? "" : category}
@@ -112,18 +112,6 @@ export function VocabularyToolbar({
                 <option key={item.id} value={item.name}>{item.name}</option>
               ))}
             </Select>
-          </div>
-
-          <div className="hidden items-center gap-2 md:flex">
-            {categories.map((item) => (
-              <FilterButton
-                key={item.id}
-                active={category === item.name}
-                onClick={() => onCategoryChange(item.name)}
-              >
-                {item.name}
-              </FilterButton>
-            ))}
           </div>
         </div>
       </div>
