@@ -437,7 +437,7 @@ export function FlashcardsContent() {
             setIndex(0);
             setIsRevealed(false);
           }}
-          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-wait disabled:opacity-50 ${reviewMode === "due" ? "border-amber-500 bg-amber-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-wait disabled:opacity-50 ${reviewMode === "due" ? "border-amber-500 bg-amber-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
         >
           <CalendarClock size={16} />
           Due now
