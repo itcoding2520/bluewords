@@ -21,6 +21,11 @@ const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   orange: "bg-[#ff990a]",
   green: "bg-emerald-700",
   rose: "bg-rose-700",
+  indigo: "bg-indigo-700",
+  teal: "bg-teal-700",
+  amber: "bg-amber-700",
+  pink: "bg-pink-700",
+  slate: "bg-slate-700",
 };
 
 const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {
@@ -29,6 +34,11 @@ const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {
   orange: "border-[#ff990a] bg-[#ff990a] hover:brightness-95",
   green: "border-emerald-700 bg-emerald-700 hover:border-emerald-800 hover:bg-emerald-800",
   rose: "border-rose-700 bg-rose-700 hover:border-rose-800 hover:bg-rose-800",
+  indigo: "border-indigo-700 bg-indigo-700 hover:border-indigo-800 hover:bg-indigo-800",
+  teal: "border-teal-700 bg-teal-700 hover:border-teal-800 hover:bg-teal-800",
+  amber: "border-amber-700 bg-amber-700 hover:border-amber-800 hover:bg-amber-800",
+  pink: "border-pink-700 bg-pink-700 hover:border-pink-800 hover:bg-pink-800",
+  slate: "border-slate-700 bg-slate-700 hover:border-slate-800 hover:bg-slate-800",
 };
 
 export type CategoryFilter = "All" | VocabularyCategory;

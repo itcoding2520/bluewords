@@ -7,7 +7,12 @@ export type VocabularyCategoryColor =
   | "violet"
   | "orange"
   | "green"
-  | "rose";
+  | "rose"
+  | "indigo"
+  | "teal"
+  | "amber"
+  | "pink"
+  | "slate";
 
 export interface VocabularyCategoryRow {
   id: string;

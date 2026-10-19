@@ -95,6 +95,11 @@ export const categoryColorStyles: Record<
   orange: "bg-[#ff990a] text-white",
   green: "bg-emerald-700 text-white",
   rose: "bg-rose-700 text-white",
+  indigo: "bg-indigo-700 text-white",
+  teal: "bg-teal-700 text-white",
+  amber: "bg-amber-700 text-white",
+  pink: "bg-pink-700 text-white",
+  slate: "bg-slate-700 text-white",
 };
 
 export const categorySolidColorStyles: Record<
@@ -106,6 +111,11 @@ export const categorySolidColorStyles: Record<
   orange: "bg-[#ff990a] text-white",
   green: "bg-emerald-700 text-white",
   rose: "bg-rose-700 text-white",
+  indigo: "bg-indigo-700 text-white",
+  teal: "bg-teal-700 text-white",
+  amber: "bg-amber-700 text-white",
+  pink: "bg-pink-700 text-white",
+  slate: "bg-slate-700 text-white",
 };
 
 export const categorySolidStyles: Record<string, string> = {

@@ -24,6 +24,11 @@ const colorOptions: Array<{
   { value: "orange", label: "Orange", className: "bg-[#ff990a]" },
   { value: "green", label: "Green", className: "bg-emerald-500" },
   { value: "rose", label: "Rose", className: "bg-rose-500" },
+  { value: "indigo", label: "Indigo", className: "bg-indigo-500" },
+  { value: "teal", label: "Teal", className: "bg-teal-500" },
+  { value: "amber", label: "Amber", className: "bg-amber-500" },
+  { value: "pink", label: "Pink", className: "bg-pink-500" },
+  { value: "slate", label: "Slate", className: "bg-slate-500" },
 ];
 
 interface ManageCategoriesModalProps {
