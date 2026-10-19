@@ -50,6 +50,7 @@ import {
   invalidateVocabularyReviewScheduleCache,
 } from "@/lib/supabase/reviews";
 import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
+import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -192,6 +193,9 @@ function VocabularyStoreProvider({
 
   const refreshWords = useCallback(async (): Promise<void> => {
     if (pendingRequestIdRef.current === requestIdRef.current) return;
+    if (ownerIdRef.current) {
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current);
+    }
 
     const currentRequest = ++requestIdRef.current;
     pendingRequestIdRef.current = currentRequest;
@@ -233,25 +237,6 @@ function VocabularyStoreProvider({
         !mountedRef.current ||
         currentRequest !== requestIdRef.current
       ) {
-        return;
-      }
-
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (
-        !mountedRef.current ||
-        currentRequest !== requestIdRef.current
-      ) {
-        return;
-      }
-
-      if (currentUser?.id !== user.id) {
-        ownerIdRef.current = null;
-        setWords([]);
-        setCategories([]);
-        setIsLoaded(false);
         return;
       }
 
@@ -328,6 +313,7 @@ function VocabularyStoreProvider({
       requestId.current++;
 
       ownerIdRef.current = nextUserId;
+      invalidateDashboardVocabularyOverviewCache();
       setAuthVersion((version) => version + 1);
 
       setWords([]);
@@ -395,6 +381,7 @@ function VocabularyStoreProvider({
         },
         ...current,
       ]);
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
 
       toast.success(`"${row.word}" added successfully!`);
       return true;
@@ -462,6 +449,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
       if (currentWord?.imagePath && currentWord.imagePath !== row.image_path) {
@@ -497,6 +485,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((item) => item.id !== id)
       );
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
       invalidateVocabularyReviewScheduleCache();
@@ -529,6 +518,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((word) => !deletedSet.has(word.id))
       );
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
       invalidateVocabularyReviewScheduleCache();
@@ -561,6 +551,7 @@ function VocabularyStoreProvider({
             : item
         )
       );
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
 
       return true;
     } catch {
@@ -620,6 +611,7 @@ function VocabularyStoreProvider({
           )
         );
       }
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
       toast.success(`Category "${row.name}" updated.`);
@@ -653,6 +645,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
       toast.success(`Category "${category.name}" deleted.`);
@@ -853,6 +846,10 @@ function VocabularyStoreProvider({
         const imagePath = imagePaths.get(word.id);
         return imagePath ? { ...word, imagePath } : word;
       }));
+    }
+
+    if (imported > 0 || savedExistingImages.length > 0) {
+      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
     }
 
     return { imported, duplicates, failed, imagesUploaded, imagesFailed };

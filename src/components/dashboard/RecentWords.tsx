@@ -2,12 +2,12 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type { DashboardRecentWord } from "@/lib/supabase/dashboard-vocabulary";
 
 import { WordRow } from "./WordRow";
 
 interface RecentWordsProps {
-  words: VocabularyWord[];
+  words: DashboardRecentWord[];
 }
 
 export function RecentWords({ words }: RecentWordsProps) {
@@ -46,6 +46,7 @@ export function RecentWords({ words }: RecentWordsProps) {
               meaning={item.meaning}
               category={item.category}
               imagePath={item.imagePath}
+              categoryColor={item.categoryColor}
             />
           ))
         )}

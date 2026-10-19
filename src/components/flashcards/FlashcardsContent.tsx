@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, CalendarClock, Check, Circle, RotateCcw } from "lucide-react";
@@ -195,31 +195,35 @@ export function FlashcardsContent() {
     () => new Map<string, VocabularyReviewScheduleRow>()
   );
   const [areSchedulesLoaded, setAreSchedulesLoaded] = useState(false);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [scheduleLoadFailed, setScheduleLoadFailed] = useState(false);
+  const scheduleRequestRef = useRef<Promise<void> | null>(null);
 
-  useEffect(() => {
-    if (!isLoaded) return;
+  async function loadReviewSchedules() {
+    if (areSchedulesLoaded || scheduleRequestRef.current) return scheduleRequestRef.current;
 
-    let active = true;
-    void getVocabularyReviewSchedules()
+    setIsLoadingSchedules(true);
+    setScheduleLoadFailed(false);
+    const request = getVocabularyReviewSchedules()
       .then((schedules) => {
-        if (active) {
-          setReviewSchedules(
-            new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule]))
-          );
-        }
+        setReviewSchedules(
+          new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule]))
+        );
+        setAreSchedulesLoaded(true);
       })
       .catch((error) => {
         console.error("Failed to load review schedules:", error);
-        if (active) toast.error("Could not load review schedule.");
+        setScheduleLoadFailed(true);
+        toast.error("Could not load review schedule.");
       })
       .finally(() => {
-        if (active) setAreSchedulesLoaded(true);
+        scheduleRequestRef.current = null;
+        setIsLoadingSchedules(false);
       });
 
-    return () => {
-      active = false;
-    };
-  }, [isLoaded]);
+    scheduleRequestRef.current = request;
+    return request;
+  }
 
   const statusCounts = useMemo(() => {
     const categoryWords = words.filter(
@@ -421,18 +425,19 @@ export function FlashcardsContent() {
         <button
           type="button"
           aria-pressed={reviewMode === "due"}
-          disabled={!areSchedulesLoaded}
+          disabled={isLoadingSchedules}
           onClick={() => {
             setReviewMode("due");
             setIndex(0);
             setIsRevealed(false);
+            void loadReviewSchedules();
           }}
           className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-wait disabled:opacity-50 ${reviewMode === "due" ? "border-amber-500 bg-amber-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
         >
           <CalendarClock size={16} />
           Due now
           <span className={`rounded-full px-2 py-0.5 text-xs ${reviewMode === "due" ? "bg-white/20" : "bg-amber-50 text-amber-700"}`}>
-            {areSchedulesLoaded ? dueCount : "…"}
+            {areSchedulesLoaded ? dueCount : isLoadingSchedules ? "…" : "—"}
           </span>
         </button>
         {reviewMode === "due" && (
@@ -492,28 +497,24 @@ export function FlashcardsContent() {
                       <button
                         type="button"
                         onClick={() => void handleRecordReview(false)}
-                        disabled={isSavingReview || !areSchedulesLoaded}
+                        disabled={isSavingReview}
                         className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
                       >
                         <RotateCcw size={14} />
                         {isSavingReview
                           ? "Saving..."
-                          : !areSchedulesLoaded
-                            ? "Loading..."
-                            : "Need practice"}
+                          : "Need practice"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleRecordReview(true)}
-                        disabled={isSavingReview || !areSchedulesLoaded}
+                        disabled={isSavingReview}
                         className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
                       >
                         <Check size={14} />
                         {isSavingReview
                           ? "Saving..."
-                          : !areSchedulesLoaded
-                            ? "Loading..."
-                            : "Remembered"}
+                          : "Remembered"}
                       </button>
                     </div>
                   )}
@@ -572,13 +573,28 @@ export function FlashcardsContent() {
       ) : (
         <Card className="px-6 py-16 text-center">
           <h2 className="font-semibold text-slate-900">
-            {reviewMode === "due" ? "You are all caught up" : "No flashcards yet"}
+            {reviewMode === "due"
+              ? isLoadingSchedules
+                ? "Loading due cards..."
+                : scheduleLoadFailed
+                  ? "Could not load review schedule"
+                  : "You are all caught up"
+              : "No flashcards yet"}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             {reviewMode === "due"
-              ? "There are no new or due words in this category and status."
+              ? scheduleLoadFailed
+                ? "Check your connection and try loading the review schedule again."
+                : isLoadingSchedules
+                  ? "Checking for new and due words."
+                  : "There are no new or due words in this category and status."
               : "Add vocabulary or choose a category with words to start studying."}
           </p>
+          {reviewMode === "due" && scheduleLoadFailed && (
+            <Button className="mt-4" variant="secondary" onClick={() => void loadReviewSchedules()}>
+              Try again
+            </Button>
+          )}
         </Card>
       )}
     </div>
