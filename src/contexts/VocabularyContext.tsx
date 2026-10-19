@@ -41,7 +41,10 @@ import {
 } from "@/lib/vocabulary-csv";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
-import { invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/reviews";
+import {
+  invalidateLatestVocabularyReviewsCache,
+  invalidateVocabularyReviewScheduleCache,
+} from "@/lib/supabase/reviews";
 import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import { toast } from "sonner";
 
@@ -505,6 +508,7 @@ function VocabularyStoreProvider({
       );
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
+      invalidateVocabularyReviewScheduleCache();
 
       toast.success(`"${word.word}" deleted successfully!`);
       return true;
@@ -536,6 +540,7 @@ function VocabularyStoreProvider({
       );
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
+      invalidateVocabularyReviewScheduleCache();
 
       return deletedIds.length;
     } catch (error) {

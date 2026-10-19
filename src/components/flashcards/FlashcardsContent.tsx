@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, Check, Circle, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Check, Circle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -13,10 +13,44 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
-import { recordVocabularyReview } from "@/lib/supabase/reviews";
+import {
+  getVocabularyReviewSchedules,
+  recordVocabularyReview,
+} from "@/lib/supabase/reviews";
+import type { VocabularyReviewScheduleRow } from "@/types/database";
 
 interface Flashcard {
   word: VocabularyWord;
+}
+
+let currentReviewTime = 0;
+let reviewClockInterval: ReturnType<typeof setInterval> | null = null;
+const reviewClockListeners = new Set<() => void>();
+
+function subscribeToReviewClock(listener: () => void) {
+  reviewClockListeners.add(listener);
+
+  if (!reviewClockInterval) {
+    const updateTime = () => {
+      currentReviewTime = Date.now();
+      reviewClockListeners.forEach((notify) => notify());
+    };
+
+    queueMicrotask(updateTime);
+    reviewClockInterval = setInterval(updateTime, 60_000);
+  }
+
+  return () => {
+    reviewClockListeners.delete(listener);
+    if (reviewClockListeners.size === 0 && reviewClockInterval) {
+      clearInterval(reviewClockInterval);
+      reviewClockInterval = null;
+    }
+  };
+}
+
+function getReviewClockSnapshot() {
+  return currentReviewTime;
 }
 
 let currentShuffleSeed = 0;
@@ -145,12 +179,47 @@ export function FlashcardsContent() {
     getShuffleSeed,
     () => 0
   );
+  const now = useSyncExternalStore(
+    subscribeToReviewClock,
+    getReviewClockSnapshot,
+    () => 0
+  );
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState<VocabularyStatus>("learning");
   const [index, setIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const [isSavingReview, setIsSavingReview] = useState(false);
+  const [reviewMode, setReviewMode] = useState<"all" | "due">("all");
+  const [reviewSchedules, setReviewSchedules] = useState(
+    () => new Map<string, VocabularyReviewScheduleRow>()
+  );
+  const [areSchedulesLoaded, setAreSchedulesLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    let active = true;
+    void getVocabularyReviewSchedules()
+      .then((schedules) => {
+        if (active) {
+          setReviewSchedules(
+            new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule]))
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load review schedules:", error);
+        if (active) toast.error("Could not load review schedule.");
+      })
+      .finally(() => {
+        if (active) setAreSchedulesLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isLoaded]);
 
   const statusCounts = useMemo(() => {
     const categoryWords = words.filter(
@@ -164,13 +233,33 @@ export function FlashcardsContent() {
   }, [category, words]);
 
   const deck = useMemo(() => {
-    const filteredWords = words.filter(
-      (word) =>
-        word.status === status &&
-        (category === "all" || word.category === category)
-    );
+    const filteredWords = words.filter((word) => {
+      if (
+        word.status !== status ||
+        (category !== "all" && word.category !== category)
+      ) {
+        return false;
+      }
+      if (reviewMode === "all") return true;
+      if (!areSchedulesLoaded) return false;
+
+      const schedule = reviewSchedules.get(word.id);
+      return !schedule || new Date(schedule.due_at).getTime() <= now;
+    });
     return shuffleDeck(buildDeck(filteredWords), shuffleSeed);
-  }, [category, shuffleSeed, status, words]);
+  }, [areSchedulesLoaded, category, now, reviewMode, reviewSchedules, shuffleSeed, status, words]);
+
+  const dueCount = useMemo(() => words.filter((word) => {
+    if (
+      word.status !== status ||
+      (category !== "all" && word.category !== category)
+    ) {
+      return false;
+    }
+
+    const schedule = reviewSchedules.get(word.id);
+    return !schedule || new Date(schedule.due_at).getTime() <= now;
+  }).length, [category, now, reviewSchedules, status, words]);
 
   const card = deck.length > 0 ? deck[index % deck.length] : undefined;
 
@@ -208,8 +297,28 @@ export function FlashcardsContent() {
 
     setIsSavingReview(true);
     try {
-      await recordVocabularyReview(card.word.id, remembered);
-      moveCard(1);
+      const { schedule } = await recordVocabularyReview(
+        card.word.id,
+        remembered,
+        {
+          word: card.word.word,
+          meaning: card.word.meaning,
+          category: card.word.category,
+        }
+      );
+      setReviewSchedules((current) => {
+        const next = new Map(current);
+        next.set(schedule.vocabulary_word_id, schedule);
+        return next;
+      });
+
+      if (reviewMode === "due") {
+        const nextDeckLength = deck.length - 1;
+        setIndex((current) => (current >= nextDeckLength ? 0 : current));
+        setIsRevealed(false);
+      } else {
+        moveCard(1);
+      }
     } catch (error) {
       console.error("Failed to save flashcard review:", error);
       toast.error("Could not save this review. Please try again.");
@@ -302,6 +411,47 @@ export function FlashcardsContent() {
         </fieldset>
       </div>
 
+      <div
+        className="mb-5 flex flex-wrap items-center gap-2"
+        role="group"
+        aria-label="Flashcard review mode"
+      >
+        <button
+          type="button"
+          aria-pressed={reviewMode === "all"}
+          onClick={() => {
+            setReviewMode("all");
+            setIndex(0);
+            setIsRevealed(false);
+          }}
+          className={`cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition ${reviewMode === "all" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+        >
+          All cards
+        </button>
+        <button
+          type="button"
+          aria-pressed={reviewMode === "due"}
+          disabled={!areSchedulesLoaded}
+          onClick={() => {
+            setReviewMode("due");
+            setIndex(0);
+            setIsRevealed(false);
+          }}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-wait disabled:opacity-50 ${reviewMode === "due" ? "border-amber-500 bg-amber-500 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+        >
+          <CalendarClock size={16} />
+          Due now
+          <span className={`rounded-full px-2 py-0.5 text-xs ${reviewMode === "due" ? "bg-white/20" : "bg-amber-50 text-amber-700"}`}>
+            {areSchedulesLoaded ? dueCount : "…"}
+          </span>
+        </button>
+        {reviewMode === "due" && (
+          <span className="text-xs text-slate-500">
+            Includes new words and reviews that have reached their due date.
+          </span>
+        )}
+      </div>
+
       {card ? (
         <>
           <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
@@ -352,20 +502,28 @@ export function FlashcardsContent() {
                       <button
                         type="button"
                         onClick={() => void handleRecordReview(false)}
-                        disabled={isSavingReview}
+                        disabled={isSavingReview || !areSchedulesLoaded}
                         className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
                       >
                         <RotateCcw size={14} />
-                        {isSavingReview ? "Saving..." : "Need practice"}
+                        {isSavingReview
+                          ? "Saving..."
+                          : !areSchedulesLoaded
+                            ? "Loading..."
+                            : "Need practice"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleRecordReview(true)}
-                        disabled={isSavingReview}
+                        disabled={isSavingReview || !areSchedulesLoaded}
                         className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
                       >
                         <Check size={14} />
-                        {isSavingReview ? "Saving..." : "Remembered"}
+                        {isSavingReview
+                          ? "Saving..."
+                          : !areSchedulesLoaded
+                            ? "Loading..."
+                            : "Remembered"}
                       </button>
                     </div>
                   )}
@@ -423,9 +581,13 @@ export function FlashcardsContent() {
         </>
       ) : (
         <Card className="px-6 py-16 text-center">
-          <h2 className="font-semibold text-slate-900">No flashcards yet</h2>
+          <h2 className="font-semibold text-slate-900">
+            {reviewMode === "due" ? "You are all caught up" : "No flashcards yet"}
+          </h2>
           <p className="mt-2 text-sm text-slate-500">
-            Add vocabulary or choose a category with words to start studying.
+            {reviewMode === "due"
+              ? "There are no new or due words in this category and status."
+              : "Add vocabulary or choose a category with words to start studying."}
           </p>
         </Card>
       )}
