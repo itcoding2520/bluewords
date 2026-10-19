@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
 
 const TIME_ZONE = "Asia/Ho_Chi_Minh";
 const supabase = createClient();
@@ -15,37 +16,16 @@ export interface LearningAnalytics {
   dailyActivity: DailyReviewActivity[];
 }
 
-const analyticsCache = new Map<string, LearningAnalytics>();
-const analyticsRequests = new Map<string, Promise<LearningAnalytics>>();
+const analyticsCache = createInvalidatableAsyncCache();
 
 export function invalidateLearningAnalyticsCache(userId?: string): void {
-  if (userId) {
-    analyticsCache.delete(userId);
-    return;
-  }
-
-  analyticsCache.clear();
+  analyticsCache.invalidate(userId);
 }
 
 export async function getLearningAnalytics(
   userId: string
 ): Promise<LearningAnalytics> {
-  const cached = analyticsCache.get(userId);
-  if (cached) return cached;
-
-  const pending = analyticsRequests.get(userId);
-  if (pending) return pending;
-
-  const request = loadLearningAnalytics(userId);
-  analyticsRequests.set(userId, request);
-
-  try {
-    const analytics = await request;
-    analyticsCache.set(userId, analytics);
-    return analytics;
-  } finally {
-    analyticsRequests.delete(userId);
-  }
+  return analyticsCache.get(userId, () => loadLearningAnalytics(userId));
 }
 
 async function loadLearningAnalytics(userId: string): Promise<LearningAnalytics> {
