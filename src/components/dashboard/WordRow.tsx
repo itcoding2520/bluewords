@@ -5,7 +5,7 @@ import {
   categoryColorStyles,
   categoryStyles,
 } from "@/data/vocabulary";
-import { useVocabulary } from "@/contexts/VocabularyContext";
+import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
@@ -15,6 +15,7 @@ interface WordRowProps {
   meaning: string;
   category: string;
   imagePath?: string | null;
+  categoryColor?: VocabularyCategoryColor | null;
 }
 
 export function WordRow({
@@ -22,12 +23,9 @@ export function WordRow({
   meaning,
   category,
   imagePath,
+  categoryColor,
 }: WordRowProps) {
-  const { categories } = useVocabulary();
   const imageUrl = useVocabularyImageUrl(imagePath);
-  const categoryColor = categories.find(
-    (item) => item.name === category
-  )?.color;
 
   return (
     <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">

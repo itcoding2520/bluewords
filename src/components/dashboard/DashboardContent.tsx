@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-
-import { useVocabulary } from "@/contexts/VocabularyContext";
+import {
+  getDashboardVocabularyOverview,
+  type DashboardVocabularyOverview,
+} from "@/lib/supabase/dashboard-vocabulary";
 
 import { DashboardHeader } from "./DashboardHeader";
 import { Stats } from "./Stats";
@@ -60,37 +62,53 @@ export function DashboardContent({
     };
   }, [supabase]);
 
-  const { words, isLoaded } = useVocabulary();
+  const [overviewState, setOverviewState] = useState<
+    | { userId: string; status: "loading" }
+    | { userId: string; status: "error" }
+    | { userId: string; status: "loaded"; data: DashboardVocabularyOverview }
+  >({ userId, status: "loading" });
+  const currentOverviewState = overviewState.userId === userId
+    ? overviewState
+    : null;
 
-  const stats = useMemo(() => {
-    const total = words.length;
+  useEffect(() => {
+    let active = true;
 
-    const mastered = words.filter(
-      (word) => word.status === "mastered"
-    ).length;
+    void getDashboardVocabularyOverview(userId)
+      .then((result) => {
+        if (active) setOverviewState({ userId, status: "loaded", data: result });
+      })
+      .catch((error) => {
+        console.error("Failed to load dashboard vocabulary overview:", error);
+        if (active) setOverviewState({ userId, status: "error" });
+      });
 
-    const learning = total - mastered;
-
-    const progress =
-      total === 0
-        ? 0
-        : Math.round((mastered / total) * 100);
-
-    return {
-      total,
-      mastered,
-      learning,
-      progress,
+    return () => {
+      active = false;
     };
-  }, [words]);
+  }, [userId]);
 
-  if (!isLoaded) {
+  if (!currentOverviewState || currentOverviewState.status === "loading") {
     return (
-      <div className="py-16 text-sm text-slate-500">
+      <div className="py-16 text-sm text-slate-500" role="status">
         Loading dashboard...
       </div>
     );
   }
+
+  if (currentOverviewState.status === "error") {
+    return (
+      <div className="py-16 text-sm text-slate-500" role="alert">
+        Could not load dashboard data. Please refresh and try again.
+      </div>
+    );
+  }
+
+  const overview = currentOverviewState.data;
+
+  const progress = overview.total === 0
+    ? 0
+    : Math.round((overview.mastered / overview.total) * 100);
 
   return (
     <>
@@ -101,20 +119,20 @@ export function DashboardContent({
       />
 
       <Stats
-        total={stats.total}
-        learning={stats.learning}
-        mastered={stats.mastered}
+        total={overview.total}
+        learning={overview.learning}
+        mastered={overview.mastered}
       />
 
       <ProgressCard
-        total={stats.total}
-        mastered={stats.mastered}
-        progress={stats.progress}
+        total={overview.total}
+        mastered={overview.mastered}
+        progress={progress}
       />
 
       <LearningInsights userId={userId} />
 
-      <RecentWords words={words.slice(0, 10)} />
+      <RecentWords words={overview.recentWords} />
     </>
   );
 }
