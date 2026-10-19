@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Download, FileUp, X } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,16 @@ import {
   previewVocabularyCsvImport,
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
+import { validateVocabularyImage } from "@/lib/supabase/vocabulary-images";
+
+function normalizeImageName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase()
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-z0-9]/g, "");
+}
 
 interface VocabularyCsvToolsProps {
   words: VocabularyWord[];
@@ -31,13 +41,59 @@ export function VocabularyCsvTools({
 }: VocabularyCsvToolsProps) {
   const { importWords } = useVocabulary();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<VocabularyCsvPreview | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+
+  const imageMatch = useMemo(() => {
+    const supported = imageFiles.filter((file) => !validateVocabularyImage(file));
+    const invalidCount = imageFiles.length - supported.length;
+    const filesByName = new Map<string, File>();
+    const ambiguousNames = new Set<string>();
+
+    for (const file of supported) {
+      const key = normalizeImageName(file.name);
+      if (filesByName.has(key)) {
+        filesByName.delete(key);
+        ambiguousNames.add(key);
+      } else if (!ambiguousNames.has(key)) {
+        filesByName.set(key, file);
+      }
+    }
+
+    const imageFilesByWord = new Map<string, File>();
+    const importableNames = new Set((preview?.items ?? []).map((item) => normalizeImageName(item.word)));
+    const currentWordsByName = new Map(words.map((word) => [normalizeImageName(word.word), word]));
+    let alreadyHasImage = 0;
+
+    for (const [key, file] of filesByName) {
+      if (ambiguousNames.has(key)) continue;
+      const existingWord = currentWordsByName.get(key);
+      if (existingWord && !existingWord.imagePath) {
+        imageFilesByWord.set(key, file);
+      } else if (existingWord?.imagePath) {
+        alreadyHasImage++;
+      } else if (importableNames.has(key)) {
+        imageFilesByWord.set(key, file);
+      }
+    }
+
+    return {
+      imageFilesByWord,
+      matched: imageFilesByWord.size,
+      unmatched: [...filesByName.keys()].filter((key) =>
+        !importableNames.has(key) && !currentWordsByName.has(key)
+      ).length + ambiguousNames.size,
+      invalidCount,
+      alreadyHasImage,
+    };
+  }, [imageFiles, preview, words]);
 
   async function handleExport() {
     if (exportWords.length === 0) {
@@ -102,12 +158,20 @@ export function VocabularyCsvTools({
     }
   }
 
+  function handleImageFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedImages = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(file.name)
+    );
+    setImageFiles(selectedImages);
+    event.currentTarget.value = "";
+  }
+
   async function handleImport() {
     if (!preview || preview.items.length === 0 || isImporting) return;
 
     setIsImporting(true);
     try {
-      const result = await importWords(preview.items);
+      const result = await importWords(preview.items, imageMatch.imageFilesByWord);
       if (result.limitExceeded) {
         toast.error(`Import is limited to ${MAX_VOCABULARY_IMPORT_WORDS} words at a time.`);
         return;
@@ -115,7 +179,10 @@ export function VocabularyCsvTools({
       const duplicateTotal = preview.duplicates + result.duplicates;
 
       if (result.imported > 0) {
-        toast.success(`Imported ${result.imported} words.`);
+        toast.success(`Imported ${result.imported} words and ${result.imagesUploaded} images.`);
+      }
+      if (result.imagesFailed > 0) {
+        toast.error(`${result.imagesFailed} image(s) could not be uploaded. The vocabulary words were still imported.`);
       }
       if (duplicateTotal > 0) {
         toast.info(`Skipped ${duplicateTotal} duplicate words.`);
@@ -128,6 +195,8 @@ export function VocabularyCsvTools({
 
       setPreview(null);
       setFileName("");
+      setImageFiles([]);
+      if (imageInputRef.current) imageInputRef.current.value = "";
       if (result.failed === 0) setOpen(false);
     } finally {
       setIsImporting(false);
@@ -241,6 +310,18 @@ export function VocabularyCsvTools({
               onChange={(event) => void handleFileChange(event)}
               className="sr-only"
             />
+            <input
+              ref={(element) => {
+                imageInputRef.current = element;
+                element?.setAttribute("webkitdirectory", "");
+              }}
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              aria-label="Choose image folder"
+              onChange={handleImageFilesChange}
+              className="sr-only"
+            />
 
             <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
               <p className="text-sm text-slate-600">
@@ -262,6 +343,16 @@ export function VocabularyCsvTools({
               </p>
             </div>
 
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-800">Optional word images</p>
+                <p className="mt-1 text-xs text-slate-500">Choose a folder of images named after each word, e.g. apple.jpg. We match by filename and upload only after you import.</p>
+              </div>
+              <Button variant="secondary" onClick={() => imageInputRef.current?.click()} disabled={isImporting}>
+                <FileUp size={16} /> {imageFiles.length ? `${imageFiles.length} images selected` : "Choose image folder"}
+              </Button>
+            </div>
+
             {preview && (
               <div className="mt-5">
                 <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
@@ -270,6 +361,15 @@ export function VocabularyCsvTools({
                   <Summary value={preview.duplicates} label="Duplicates" />
                   <Summary value={preview.errors.length} label="Errors" />
                 </div>
+
+                {imageFiles.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800">
+                    {imageMatch.matched} image(s) match words and will be uploaded with this import.
+                    {imageMatch.alreadyHasImage > 0 && ` ${imageMatch.alreadyHasImage} matching word(s) already have images and won't be overwritten.`}
+                    {imageMatch.unmatched > 0 && ` ${imageMatch.unmatched} image(s) have no unique matching word.`}
+                    {imageMatch.invalidCount > 0 && ` ${imageMatch.invalidCount} image(s) are unsupported or exceed 5 MB and will be skipped.`}
+                  </div>
+                )}
 
                 {preview.categoryFallbacks > 0 && (
                   <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">

@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+shirt,word,noun,áo sơ mi,Clothes,learning,/ʃɜːrt/,shirt.jpg
+T-shirt,word,noun,áo thun,Clothes,learning,/ˈtiː.ʃɜːrt/,t-shirt.jpg
+blouse,word,noun,áo kiểu nữ,Clothes,learning,/blaʊs/,blouse.jpg
+sweater,word,noun,áo len,Clothes,learning,/ˈswet.ər/,sweater.jpg
+jacket,word,noun,áo khoác,Clothes,learning,/ˈdʒæk.ɪt/,jacket.jpg
+coat,word,noun,áo choàng,Clothes,learning,/koʊt/,coat.jpg
+dress,word,noun,váy liền,Clothes,learning,/dres/,dress.jpg
+skirt,word,noun,chân váy,Clothes,learning,/skɜːrt/,skirt.jpg
+trousers,word,noun,quần dài,Clothes,learning,/ˈtraʊ.zərz/,trousers.jpg
+jeans,word,noun,quần jeans,Clothes,learning,/dʒiːnz/,jeans.jpg
+shorts,word,noun,quần short,Clothes,learning,/ʃɔːrts/,shorts.jpg
+suit,word,noun,bộ com lê,Clothes,learning,/suːt/,suit.jpg
+uniform,word,noun,đồng phục,Clothes,learning,/ˈjuː.nɪ.fɔːrm/,uniform.jpg
+pajamas,word,noun,đồ ngủ,Clothes,learning,/pəˈdʒɑː.məz/,pajamas.jpg
+underwear,word,noun,đồ lót,Clothes,learning,/ˈʌn.dər.wer/,underwear.jpg
+socks,word,noun,tất,Clothes,learning,/sɑːks/,socks.jpg
+shoes,word,noun,giày,Clothes,learning,/ʃuːz/,shoes.jpg
+sneakers,word,noun,giày thể thao,Clothes,learning,/ˈsniː.kərz/,sneakers.jpg
+boots,word,noun,"ủng, bốt",Clothes,learning,/buːts/,boots.jpg
+sandals,word,noun,dép xăng đan,Clothes,learning,/ˈsæn.dəlz/,sandals.jpg
+hat,word,noun,mũ,Clothes,learning,/hæt/,hat.jpg
+cap,word,noun,mũ lưỡi trai,Clothes,learning,/kæp/,cap.jpg
+scarf,word,noun,khăn quàng cổ,Clothes,learning,/skɑːrf/,scarf.jpg
+gloves,word,noun,găng tay,Clothes,learning,/ɡlʌvz/,gloves.jpg
+belt,word,noun,thắt lưng,Clothes,learning,/belt/,belt.jpg

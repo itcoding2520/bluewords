@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+hot,word,adjective,nóng,Weather,learning,/hɒt/,hot.jpg
+warm,word,adjective,ấm,Weather,learning,/wɔːm/,warm.jpg
+cold,word,adjective,lạnh,Weather,learning,/kəʊld/,cold.jpg
+dry,word,adjective,khô,Weather,learning,/draɪ/,dry.jpg
+wet,word,adjective,ẩm ướt,Weather,learning,/wet/,wet.jpg
+rainy,word,adjective,trời mưa,Weather,learning,/ˈreɪ.ni/,rainy.jpg
+sunny,word,adjective,trời nắng,Weather,learning,/ˈsʌn.i/,sunny.jpg
+cloudy,word,adjective,nhiều mây,Weather,learning,/ˈklaʊ.di/,cloudy.jpg
+windy,word,adjective,có gió,Weather,learning,/ˈwɪn.di/,windy.jpg
+drizzle,word,noun,mưa phùn,Weather,learning,/ˈdrɪz.əl/,drizzle.jpg
+shower,word,noun,mưa rào nhẹ,Weather,learning,/ˈʃaʊər/,shower.jpg
+freezing,word,adjective,băng giá,Weather,learning,/ˈfriː.zɪŋ/,freezing.jpg
+icy,word,adjective,đóng băng,Weather,learning,/ˈaɪ.si/,icy.jpg
+tornado,word,noun,lốc xoáy,Weather,learning,/tɔːrˈneɪ.doʊ/,tornado.jpg
+stormy,word,adjective,có bão,Weather,learning,/ˈstɔːr.mi/,stormy.jpg
+thunder,word,noun,tiếng sấm,Weather,learning,/ˈθʌn.dər/,thunder.jpg
+thunderstorm,word,noun,bão có sấm chớp,Weather,learning,/ˈθʌn.dər.stɔːrm/,thunderstorm.jpg
+gale,word,noun,gió giật mạnh,Weather,learning,/ɡeɪl/,gale.jpg
+fog,word,noun,sương mù,Weather,learning,/fɒɡ/,fog.jpg
+foggy,word,adjective,sương mù dày,Weather,learning,/ˈfɒɡ.i/,foggy.jpg
+mist,word,noun,sương mù nhẹ,Weather,learning,/mɪst/,mist.jpg
+snowy,word,adjective,có tuyết,Weather,learning,/ˈsnoʊ.i/,snowy.jpg
+sleeting,word,adjective,mưa tuyết,Weather,learning,/ˈsliː.tɪŋ/,sleeting.jpg
+lightning,word,noun,sét,Weather,learning,/ˈlaɪt.nɪŋ/,lightning.jpg
+partly cloudy,word,adjective,trời có mây rải rác,Weather,learning,/ˈpɑːrt.li ˈklaʊ.di/,partly-cloudy.jpg

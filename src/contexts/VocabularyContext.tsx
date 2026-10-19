@@ -39,7 +39,10 @@ import {
   MAX_VOCABULARY_IMPORT_WORDS,
   type VocabularyCsvWord,
 } from "@/lib/vocabulary-csv";
-import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
+import {
+  deleteVocabularyImages,
+  uploadVocabularyImage,
+} from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
 import {
   invalidateLatestVocabularyReviewsCache,
@@ -68,11 +71,14 @@ interface VocabularyContextValue {
   ) => Promise<VocabularyCategoryRow | null>;
   deleteCategory: (id: string) => Promise<boolean>;
   importWords: (
-    words: VocabularyCsvWord[]
+    words: VocabularyCsvWord[],
+    imageFilesByWord?: Map<string, File>
   ) => Promise<{
     imported: number;
     duplicates: number;
     failed: number;
+    imagesUploaded: number;
+    imagesFailed: number;
     limitExceeded?: boolean;
   }>;
 }
@@ -678,11 +684,14 @@ function VocabularyStoreProvider({
   }
 
   async function importWords(
-    importedWords: VocabularyCsvWord[]
+    importedWords: VocabularyCsvWord[],
+    imageFilesByWord?: Map<string, File>
   ): Promise<{
     imported: number;
     duplicates: number;
     failed: number;
+    imagesUploaded: number;
+    imagesFailed: number;
     limitExceeded?: boolean;
   }> {
     if (importedWords.length > MAX_VOCABULARY_IMPORT_WORDS) {
@@ -690,6 +699,8 @@ function VocabularyStoreProvider({
         imported: 0,
         duplicates: 0,
         failed: 0,
+        imagesUploaded: 0,
+        imagesFailed: 0,
         limitExceeded: true,
       };
     }
@@ -697,8 +708,11 @@ function VocabularyStoreProvider({
     let imported = 0;
     let duplicates = 0;
     let failed = 0;
+    let imagesUploaded = 0;
+    let imagesFailed = 0;
     let nextIndex = 0;
     const savedWords: VocabularyWord[] = [];
+    const savedExistingImages: Array<{ id: string; imagePath: string }> = [];
 
     async function importNext() {
       while (nextIndex < importedWords.length) {
@@ -724,6 +738,36 @@ function VocabularyStoreProvider({
             word.detailedMeanings ?? []
           );
 
+          let imagePath = row.image_path ?? null;
+          const imageKey = word.word
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "")
+            .toLocaleLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+          const imageFile = imageFilesByWord?.get(imageKey);
+
+          if (imageFile) {
+            let uploadedPath: string | null = null;
+            try {
+              uploadedPath = await uploadVocabularyImage(row.id, imageFile);
+              const updatedRow = await updateVocabularyWord(row.id, {
+                image_path: uploadedPath,
+              });
+              imagePath = updatedRow.image_path ?? uploadedPath;
+              imagesUploaded++;
+            } catch (imageError) {
+              if (uploadedPath) {
+                try {
+                  await deleteVocabularyImages([uploadedPath]);
+                } catch (cleanupError) {
+                  console.error("Failed to clean up imported vocabulary image:", cleanupError);
+                }
+              }
+              imagesFailed++;
+              console.error("Failed to import vocabulary image:", word.word, imageError);
+            }
+          }
+
           savedWords.push({
             id: row.id,
             word: row.word,
@@ -732,7 +776,7 @@ function VocabularyStoreProvider({
             status: row.status,
             type: row.type ?? "word",
             ipa: row.ipa ?? null,
-            imagePath: row.image_path ?? null,
+            imagePath,
             detailedMeanings,
           });
           imported++;
@@ -772,11 +816,61 @@ function VocabularyStoreProvider({
       )
     );
 
+    const importedWordKeys = new Set(savedWords.map((word) =>
+      word.word.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase().replace(/[^a-z0-9]/g, "")
+    ));
+    const existingImageCandidates = [...(imageFilesByWord ?? new Map())].flatMap(([key, file]) => {
+      if (importedWordKeys.has(key)) return [];
+      const existingWord = words.find((word) => {
+        const normalized = word.word.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
+        return normalized === key && !word.imagePath;
+      });
+      return existingWord ? [{ word: existingWord, file }] : [];
+    });
+    let imageIndex = 0;
+
+    async function importExistingImage() {
+      while (imageIndex < existingImageCandidates.length) {
+        const { word, file } = existingImageCandidates[imageIndex++];
+        let uploadedPath: string | null = null;
+        try {
+          uploadedPath = await uploadVocabularyImage(word.id, file);
+          const row = await updateVocabularyWord(word.id, { image_path: uploadedPath });
+          savedExistingImages.push({ id: row.id, imagePath: row.image_path ?? uploadedPath });
+          imagesUploaded++;
+        } catch (imageError) {
+          if (uploadedPath) {
+            try {
+              await deleteVocabularyImages([uploadedPath]);
+            } catch (cleanupError) {
+              console.error("Failed to clean up imported vocabulary image:", cleanupError);
+            }
+          }
+          imagesFailed++;
+          console.error("Failed to import image for existing vocabulary:", word.word, imageError);
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(4, existingImageCandidates.length) },
+        () => importExistingImage()
+      )
+    );
+
     if (savedWords.length) {
       setWords((current) => [...savedWords.reverse(), ...current]);
     }
+    if (savedExistingImages.length) {
+      const imagePaths = new Map(savedExistingImages.map(({ id, imagePath }) => [id, imagePath]));
+      setWords((current) => current.map((word) => {
+        const imagePath = imagePaths.get(word.id);
+        return imagePath ? { ...word, imagePath } : word;
+      }));
+    }
 
-    return { imported, duplicates, failed };
+    return { imported, duplicates, failed, imagesUploaded, imagesFailed };
   }
 
   return (

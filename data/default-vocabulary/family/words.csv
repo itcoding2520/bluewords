@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+grandpa,word,noun,ông,Family,learning,/ˈgræn.pɑː/,grandpa.jpg
+grandma,word,noun,bà,Family,learning,/ˈɡræn.mɑː/,grandma.jpg
+grandparent,word,noun,ông bà,Family,learning,/ˈɡræn.peə.rənt/,grandparent.jpg
+mum,word,noun,mẹ,Family,learning,/mʌm/,mum.jpg
+dad,word,noun,bố,Family,learning,/dæd/,dad.jpg
+parents,word,noun,bố mẹ,Family,learning,/ˈpeə.rənts/,parents.jpg
+brother,word,noun,anh/em trai,Family,learning,/ˈbrʌð.ər/,brother.jpg
+sister,word,noun,chị/em gái,Family,learning,/ˈsɪs.tə/,sister.jpg
+baby,word,noun,em bé,Family,learning,/ˈbeɪ.bi/,baby.jpg
+grandson,word,noun,cháu trai (của ông bà),Family,learning,/ˈɡræn.sʌn/,grandson.jpg
+uncle,word,noun,"chú, bác trai, cậu",Family,learning,/ˈʌŋkl/,uncle.jpg
+aunt,word,noun,cô,Family,learning,/ænt / ɑːnt/,aunt.jpg
+cousin,word,noun,anh/chị/em họ,Family,learning,/ˈkʌzn/,cousin.jpg
+granddaughter,word,noun,cháu gái,Family,learning,/ˈɡræn.dɔː.tər/,granddaughter.jpg
+nephew,word,noun,cháu trai (con anh chị em),Family,learning,/ˈnef.juː/,nephew.jpg
+niece,word,noun,cháu gái (con anh chị em),Family,learning,/niːs/,niece.jpg
+son,word,noun,con trai,Family,learning,/sʌn/,son.jpg
+daughter,word,noun,con gái,Family,learning,/ˈdɔː.tər/,daughter.jpg
+father-in-law,word,noun,bố chồng/bố vợ,Family,learning,/ˈfɑː.ðər.ɪn.lɔː/,father-in-law.jpg
+mother-in-law,word,noun,mẹ chồng/mẹ vợ,Family,learning,/ˈmʌð.ər.ɪn.lɔː/,mother-in-law.jpg
+stepfather,word,noun,bố dượng,Family,learning,/ˈstep.fɑː.ðər/,stepfather.jpg
+stepmother,word,noun,mẹ kế,Family,learning,/ˈstep.mʌð.ər/,stepmother.jpg
+stepbrother,word,noun,anh/em trai cùng cha/mẹ kế,Family,learning,/ˈstep.brʌð.ər/,stepbrother.jpg
+stepsister,word,noun,chị/em gái cùng cha/mẹ kế,Family,learning,/ˈstep.sɪs.tər/,stepsister.jpg
+in-laws,word,noun,họ hàng bên chồng/vợ,Family,learning,/ˈɪn.lɔːz/,in-laws.jpg

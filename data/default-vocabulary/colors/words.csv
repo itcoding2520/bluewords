@@ -1,0 +1,26 @@
+﻿word,type,part_of_speech,meaning,category,status,ipa,image_file
+red,word,adjective,màu đỏ,Colors,learning,/red/,red.jpg
+black,word,adjective,màu đen,Colors,learning,/blæk/,black.jpg
+white,word,adjective,màu trắng,Colors,learning,/waɪt/,white.jpg
+yellow,word,adjective,màu vàng,Colors,learning,/ˈjel.oʊ/,yellow.jpg
+orange,word,adjective,màu cam,Colors,learning,/ˈɔːr.ɪndʒ/,orange.jpg
+pink,word,adjective,màu hồng,Colors,learning,/pɪŋk/,pink.jpg
+purple,word,adjective,màu tím,Colors,learning,/ˈpɜːr.pəl/,purple.jpg
+gray,word,adjective,màu xám,Colors,learning,/ɡreɪ/,gray.jpg
+brown,word,adjective,màu nâu,Colors,learning,/braʊn/,brown.jpg
+green,word,adjective,màu xanh lá cây,Colors,learning,/ɡriːn/,green.jpg
+blue,word,adjective,màu xanh dương,Colors,learning,/bluː/,blue.jpg
+navy blue,word,adjective,xanh hải quân,Colors,learning,/ˈneɪ.vi bluː/,navy-blue.jpg
+light blue,word,adjective,xanh nhạt,Colors,learning,/laɪt bluː/,light-blue.jpg
+dark green,word,adjective,xanh đậm,Colors,learning,/dɑːrk ɡriːn/,dark-green.jpg
+light green,word,adjective,xanh nhạt,Colors,learning,/laɪt ɡriːn/,light-green.jpg
+beige,word,adjective,be,Colors,learning,/beɪʒ/,beige.jpg
+ivory,word,adjective,trắng ngà,Colors,learning,/ˈaɪ.vər.i/,ivory.jpg
+silver,word,adjective,bạc,Colors,learning,/ˈsɪl.vər/,silver.jpg
+gold,word,adjective,vàng kim,Colors,learning,/ɡoʊld/,gold.jpg
+turquoise,word,adjective,xanh ngọc,Colors,learning,/ˈtɜːr.kwɔɪz/,turquoise.jpg
+teal,word,adjective,xanh mòng két,Colors,learning,/tiːl/,teal.jpg
+maroon,word,adjective,đỏ rượu,Colors,learning,/məˈruːn/,maroon.jpg
+magenta,word,adjective,hồng tím,Colors,learning,/məˈdʒen.tə/,magenta.jpg
+cyan,word,adjective,xanh lơ,Colors,learning,/ˈsaɪ.æn/,cyan.jpg
+violet,word,adjective,tím violet,Colors,learning,/ˈvaɪə.lət/,violet.jpg

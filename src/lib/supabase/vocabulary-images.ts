@@ -69,10 +69,19 @@ export async function deleteVocabularyImages(paths: Array<string | null | undefi
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw new Error("You must be logged in to delete images.");
 
-  const ownedPaths = safePaths.filter((path) => path.startsWith(`${user.id}/`));
-  if (ownedPaths.length !== safePaths.length) {
+  // Starter images are shared assets and must never be removed by a user's
+  // vocabulary edits or deletes.
+  const ownedPaths = safePaths.filter(
+    (path) => path.startsWith(`${user.id}/`) && !path.startsWith("default-vocabulary/")
+  );
+  const unsupportedPaths = safePaths.filter(
+    (path) => !path.startsWith(`${user.id}/`) && !path.startsWith("default-vocabulary/")
+  );
+  if (unsupportedPaths.length > 0) {
     throw new Error("Cannot delete an image outside your account.");
   }
+
+  if (ownedPaths.length === 0) return;
 
   const { error } = await supabase.storage
     .from(VOCABULARY_IMAGES_BUCKET)
