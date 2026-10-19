@@ -1,7 +1,3 @@
-
-import Link from "next/link";
-import { Plus } from "lucide-react";
-
 interface DashboardHeaderProps {
   dateLabel: string;
   greeting: string;
