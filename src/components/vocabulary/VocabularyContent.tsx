@@ -120,7 +120,10 @@ export function VocabularyContent() {
 
       const matchesSearch =
         item.word.toLowerCase().includes(query) ||
-        item.meaning.toLowerCase().includes(query);
+        item.meaning.toLowerCase().includes(query) ||
+        item.detailedMeanings?.some((meaning) =>
+          meaning.meaning.toLowerCase().includes(query)
+        );
 
       const matchesCategory =
         selectedCategory === "All" ||

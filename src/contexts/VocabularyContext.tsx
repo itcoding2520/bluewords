@@ -18,6 +18,7 @@ import {
   getVocabularyWords,
   addVocabularyWord,
   updateVocabularyWord,
+  updateVocabularyWordWithMeanings,
   deleteVocabularyWord,
   deleteVocabularyWords,
   getVocabularyMeanings,
@@ -443,22 +444,25 @@ function VocabularyStoreProvider({
         : updatedWord.ipa?.trim() || (wordChanged || !currentWord?.ipa
           ? await fetchEnglishIpa(updatedWord.word)
           : currentWord.ipa);
-      const row = await updateVocabularyWord(updatedWord.id, {
-        word: updatedWord.word,
-        meaning: updatedWord.meaning,
-        category: updatedWord.category,
-        status: updatedWord.status,
-        type,
-        ipa,
-        image_path: updatedWord.imagePath ?? null,
-      });
-
-      const savedMeanings = await saveVocabularyMeanings(
-        updatedWord.id,
-        updatedWord.detailedMeanings ??
-          currentWord?.detailedMeanings ??
-          []
-      );
+      const { word: row, meanings: meaningRows } =
+        await updateVocabularyWordWithMeanings({
+          id: updatedWord.id,
+          word: updatedWord.word,
+          meaning: updatedWord.meaning,
+          category: updatedWord.category,
+          status: updatedWord.status,
+          type,
+          ipa,
+          image_path: updatedWord.imagePath ?? null,
+          meanings: (updatedWord.detailedMeanings ??
+            currentWord?.detailedMeanings ?? [])
+            .filter((item) => item.meaning.trim())
+            .map((item) => ({
+              part_of_speech: item.partOfSpeech,
+              meaning: item.meaning.trim(),
+            })),
+        });
+      const savedMeanings = meaningRows.map(mapVocabularyMeaning);
 
       setWords((current) =>
         current.map((word) =>

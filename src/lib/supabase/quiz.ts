@@ -4,6 +4,7 @@ import type {
   VocabularyQuizMode,
   VocabularyQuizSessionRow,
 } from "@/types/database";
+import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 
 const supabase = createClient();
 
@@ -66,14 +67,17 @@ export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionR
     throw new Error("You must be logged in to view quiz history.");
   }
 
-  const { data, error } = await supabase
-    .from("vocabulary_quiz_sessions")
-    .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at")
-    .eq("user_id", user.id)
-    .order("completed_at", { ascending: false });
+  return fetchAllPages<VocabularyQuizSessionRow>(async (from, to) => {
+    const { data, error } = await supabase
+      .from("vocabulary_quiz_sessions")
+      .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
 
-  if (error) throw error;
-  return (data ?? []) as VocabularyQuizSessionRow[];
+    return { data: (data ?? []) as VocabularyQuizSessionRow[], error };
+  });
 }
 
 export async function getVocabularyQuizAnswers(
