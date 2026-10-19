@@ -4,6 +4,10 @@ import {
   type VocabularyType,
 } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
+import {
+  protectSpreadsheetCell,
+  restoreSpreadsheetCell,
+} from "@/lib/spreadsheet-csv-safety.mjs";
 
 export const MAX_VOCABULARY_IMPORT_WORDS = 50;
 
@@ -225,7 +229,9 @@ export function previewVocabularyCsvImport(
     }
 
     const value = (name: (typeof VOCABULARY_CSV_HEADERS)[number]) =>
-      (record.fields[columnIndex.get(name)!] ?? "").trim();
+      restoreSpreadsheetCell(
+        record.fields[columnIndex.get(name)!] ?? ""
+      ).trim();
     const word = value("word");
     const typeValue = normalized(value("type"));
     const partOfSpeechValue = normalized(value("part_of_speech"));
@@ -358,6 +364,7 @@ export function previewVocabularyCsvImport(
 }
 
 function escapeCsv(value: string): string {
+  value = protectSpreadsheetCell(value);
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
