@@ -370,7 +370,16 @@ export function VocabularyContent() {
         </div>
       )}
 
-      <VocabularyCsvTools words={words} categories={categories} />
+      <VocabularyCsvTools
+        words={words}
+        exportWords={
+          selectedCategory === "All"
+            ? pageWords
+            : words.filter((word) => word.category === selectedCategory)
+        }
+        exportCategory={selectedCategory}
+        categories={categories}
+      />
 
       <VocabularyToolbar
         search={search}

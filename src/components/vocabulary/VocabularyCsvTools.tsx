@@ -15,15 +15,18 @@ import {
   previewVocabularyCsvImport,
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
-import { fetchEnglishIpa } from "@/lib/dictionary";
 
 interface VocabularyCsvToolsProps {
   words: VocabularyWord[];
+  exportWords: VocabularyWord[];
+  exportCategory: string;
   categories: VocabularyCategoryRow[];
 }
 
 export function VocabularyCsvTools({
   words,
+  exportWords,
+  exportCategory,
   categories,
 }: VocabularyCsvToolsProps) {
   const { importWords } = useVocabulary();
@@ -34,40 +37,39 @@ export function VocabularyCsvTools({
   const [isReading, setIsReading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   async function handleExport() {
-    if (words.length === 0) {
+    if (exportWords.length === 0) {
       toast.info("There are no words to export yet.");
       return;
     }
 
     setIsExporting(true);
     try {
-      const wordsWithIpa: VocabularyWord[] = [];
-      for (let index = 0; index < words.length; index += 10) {
-        const batch = await Promise.all(
-          words.slice(index, index + 10).map(async (word) => ({
-            ...word,
-            ipa: word.type === "expression"
-              ? null
-              : word.ipa?.trim() || await fetchEnglishIpa(word.word),
-          }))
-        );
-        wordsWithIpa.push(...batch);
-      }
-
-      const blob = new Blob([exportVocabularyCsv(wordsWithIpa)], {
+      const blob = new Blob([exportVocabularyCsv(exportWords)], {
         type: "text/csv;charset=utf-8",
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "bluewords-vocabulary.csv";
+      const date = new Date();
+      const dateSuffix = `${String(date.getDate()).padStart(2, "0")}${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}${date.getFullYear()}`;
+      const categoryFileName = exportCategory
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "All";
+      link.download = `${categoryFileName}_${dateSuffix}.csv`;
       document.body.append(link);
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast.success(`Exported ${words.length} words.`);
+      toast.success(`Exported ${exportWords.length} words.`);
+      setExportOpen(false);
     } finally {
       setIsExporting(false);
     }
@@ -139,11 +141,67 @@ export function VocabularyCsvTools({
           <FileUp size={16} />
           Import CSV
         </Button>
-        <Button variant="secondary" onClick={() => void handleExport()} disabled={isExporting}>
+        <Button variant="secondary" onClick={() => setExportOpen(true)}>
           <Download size={16} />
-          {isExporting ? "Preparing export..." : "Export CSV"}
+          Export CSV
         </Button>
       </div>
+
+      <Dialog.Root open={exportOpen} onOpenChange={(nextOpen) => {
+        if (!isExporting) setExportOpen(nextOpen);
+      }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-24px)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-slate-950">
+                  Confirm vocabulary export
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm text-slate-500">
+                  Review the data that will be included in your CSV file.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  disabled={isExporting}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
+                >
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            <dl className="mt-5 space-y-3 rounded-xl bg-slate-50 p-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Category</dt>
+                <dd className="font-medium text-slate-900">{exportCategory}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">Words</dt>
+                <dd className="font-medium text-slate-900">{exportWords.length}</dd>
+              </div>
+              {exportCategory === "All" && (
+                <p className="text-xs text-slate-500">
+                  All is selected, so only words on the current page (including the active search) will be exported.
+                </p>
+              )}
+            </dl>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setExportOpen(false)} disabled={isExporting}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleExport()} disabled={isExporting || exportWords.length === 0}>
+                <Download size={16} />
+                {isExporting ? "Exporting..." : "Export"}
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <Dialog.Root
         open={open}
