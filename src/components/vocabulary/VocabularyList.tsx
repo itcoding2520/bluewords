@@ -1,4 +1,5 @@
 
+import type { RefObject } from "react";
 import { SearchX } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
@@ -7,6 +8,13 @@ import { VocabularyRow } from "./VocabularyRow";
 
 interface VocabularyListProps {
   words: VocabularyWord[];
+  selectedIds: Set<string>;
+  selectPageRef: RefObject<HTMLInputElement | null>;
+  isPageSelected: boolean;
+  isPagePartiallySelected: boolean;
+  isBulkDeleting: boolean;
+  onTogglePageSelection: () => void;
+  onToggleSelected: (id: string) => void;
   onToggleMastered: (id: string) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
@@ -14,6 +22,13 @@ interface VocabularyListProps {
 
 export function VocabularyList({
   words,
+  selectedIds,
+  selectPageRef,
+  isPageSelected,
+  isPagePartiallySelected,
+  isBulkDeleting,
+  onTogglePageSelection,
+  onToggleSelected,
   onToggleMastered,
   onEdit,
   onDelete,
@@ -22,24 +37,34 @@ export function VocabularyList({
     <Card className="mt-5">
       {/* Desktop table header */}
 
-      <div className="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] items-center gap-5 border-b border-slate-100 bg-slate-50/70 px-6 py-3 lg:grid">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:gap-5">
+        <input
+          ref={selectPageRef}
+          type="checkbox"
+          aria-label="Select all words on this page"
+          aria-checked={isPagePartiallySelected ? "mixed" : isPageSelected}
+          checked={isPageSelected}
+          onChange={onTogglePageSelection}
+          disabled={words.length === 0 || isBulkDeleting}
+          className="col-start-1 row-start-1 size-4 cursor-pointer justify-self-center rounded border-slate-300 accent-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed"
+        />
+        <span className="sr-only col-start-2 row-start-1 text-xs font-semibold uppercase tracking-wide text-slate-400 lg:not-sr-only">
           Word
         </span>
 
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
           Meaning
         </span>
 
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
           Category
         </span>
 
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <span className="hidden text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">
           Status
         </span>
 
-        <span className="sr-only">Actions</span>
+        <span className="hidden lg:block lg:col-start-6" aria-hidden="true" />
       </div>
 
       {words.length === 0 ? (
@@ -61,6 +86,8 @@ export function VocabularyList({
           <VocabularyRow
             key={item.id}
             item={item}
+            selected={selectedIds.has(item.id)}
+            onToggleSelected={onToggleSelected}
             onToggleMastered={onToggleMastered}
             onEdit={onEdit}
             onDelete={onDelete}

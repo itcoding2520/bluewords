@@ -13,9 +13,9 @@ export function Stats({
   mastered,
 }: StatsProps) {
   return (
-    <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-10 lg:grid-cols-3 lg:gap-5">
+    <section className="mt-6 grid grid-cols-3 gap-2 lg:mt-10 lg:gap-5">
       <StatCard
-        label="Total words"
+        label="Total"
         value={total}
         description="In your vocabulary"
         variant="blue"

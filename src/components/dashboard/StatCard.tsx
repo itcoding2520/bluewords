@@ -28,7 +28,7 @@ const variantStyles: Record<
   orange: {
     card: "border-orange-100 bg-orange-50",
     label: "text-orange-700",
-    value: "text-orange-950",
+    value: "text-text-orange-950",
     description: "text-orange-600",
   },
   green: {

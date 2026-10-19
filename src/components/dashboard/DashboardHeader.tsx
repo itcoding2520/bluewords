@@ -1,7 +1,3 @@
-
-import Link from "next/link";
-import { Plus } from "lucide-react";
-
 interface DashboardHeaderProps {
   dateLabel: string;
   greeting: string;
@@ -34,14 +30,6 @@ export function DashboardHeader({
           Small progress is still progress. Keep going.
         </p>
       </div>
-
-      <Link
-        href="/vocabulary"
-        className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
-      >
-        <Plus size={17} />
-        Add word
-      </Link>
     </header>
   );
 }
