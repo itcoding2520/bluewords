@@ -11,8 +11,8 @@ import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Select";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
+import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import {
   getVocabularyReviewSchedules,
   recordVocabularyReview,
@@ -344,21 +344,16 @@ export function FlashcardsContent() {
       </header>
 
       <div className="mb-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <label className="text-sm font-medium text-slate-600">
-          Category
-          <Select
-            value={category}
-            onChange={(event) => changeCategory(event.target.value)}
-            className="mt-2"
-          >
-            <option value="all">All categories</option>
-            {categories.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </Select>
-        </label>
+        <div>
+          <p className="mb-2 text-sm font-medium text-slate-600">Category</p>
+          <CategoryDropdown
+            category={category}
+            categories={categories}
+            includeAll
+            fullWidth
+            onChange={changeCategory}
+          />
+        </div>
 
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-slate-600">

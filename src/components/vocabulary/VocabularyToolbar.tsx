@@ -79,15 +79,21 @@ function FilterButton({
 }
 
 interface CategoryDropdownProps {
-  category: CategoryFilter;
+  category: string;
   categories: VocabularyCategoryRow[];
-  onChange: (value: CategoryFilter) => void;
+  onChange: (value: string) => void;
+  includeAll?: boolean;
+  allLabel?: string;
+  fullWidth?: boolean;
 }
 
-function CategoryDropdown({
+export function CategoryDropdown({
   category,
   categories,
   onChange,
+  includeAll = false,
+  allLabel = "All categories",
+  fullWidth = false,
 }: CategoryDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -95,7 +101,16 @@ function CategoryDropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const listboxId = useId();
-  const selectedCategory = categories.find((item) => item.name === category);
+  const options = [
+    ...(includeAll
+      ? [{ id: "all-categories", name: allLabel, value: "all", color: null }]
+      : []),
+    ...categories.map((item) => ({ ...item, value: item.name })),
+  ];
+  const selectedOption = options.find((item) => item.value === category);
+  const selectedCategory = selectedOption?.color
+    ? categories.find((item) => item.name === selectedOption.name)
+    : undefined;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -117,8 +132,8 @@ function CategoryDropdown({
   }, [isOpen]);
 
   function openMenu() {
-    if (categories.length === 0) return;
-    const selectedIndex = categories.findIndex((item) => item.name === category);
+    if (options.length === 0) return;
+    const selectedIndex = options.findIndex((item) => item.value === category);
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
     setIsOpen(true);
   }
@@ -134,7 +149,7 @@ function CategoryDropdown({
       event.preventDefault();
       if (isOpen) {
         const delta = event.key === "ArrowDown" ? 1 : -1;
-        const nextIndex = (activeIndex + delta + categories.length) % categories.length;
+        const nextIndex = (activeIndex + delta + options.length) % options.length;
         setActiveIndex(nextIndex);
         optionRefs.current[nextIndex]?.focus();
       } else {
@@ -156,13 +171,13 @@ function CategoryDropdown({
   ) {
     let nextIndex = index;
 
-    if (event.key === "ArrowDown") nextIndex = (index + 1) % categories.length;
-    else if (event.key === "ArrowUp") nextIndex = (index - 1 + categories.length) % categories.length;
+    if (event.key === "ArrowDown") nextIndex = (index + 1) % options.length;
+    else if (event.key === "ArrowUp") nextIndex = (index - 1 + options.length) % options.length;
     else if (event.key === "Home") nextIndex = 0;
-    else if (event.key === "End") nextIndex = categories.length - 1;
+    else if (event.key === "End") nextIndex = options.length - 1;
     else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      chooseCategory(categories[index].name);
+      chooseCategory(options[index].value);
       return;
     } else if (event.key === "Escape") {
       event.preventDefault();
@@ -181,7 +196,7 @@ function CategoryDropdown({
   return (
     <div
       ref={rootRef}
-      className="relative min-w-0 max-w-[240px] flex-1"
+      className={`relative min-w-0 ${fullWidth ? "w-full max-w-none flex-none" : "max-w-[240px] flex-1"}`}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           setIsOpen(false);
@@ -211,7 +226,7 @@ function CategoryDropdown({
           <ListFilter size={15} aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 truncate">
-          {selectedCategory?.name ?? "Select category"}
+          {selectedOption?.name ?? "Select category"}
         </span>
         <ChevronDown
           size={16}
@@ -227,14 +242,15 @@ function CategoryDropdown({
           id={listboxId}
           role="listbox"
           aria-label="Vocabulary categories"
-          className="absolute right-0 z-50 mt-2 max-h-72 w-full min-w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-950/5"
+          className="hide-scrollbar absolute right-0 z-50 mt-2 max-h-72 w-full min-w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-950/5"
         >
           <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
             Choose a category
           </div>
-          {categories.map((item, index) => {
-            const isSelected = item.name === category;
+          {options.map((item, index) => {
+            const isSelected = item.value === category;
             const isActive = index === activeIndex;
+            const itemColor = item.color;
 
             return (
               <div
@@ -245,21 +261,27 @@ function CategoryDropdown({
                 role="option"
                 aria-selected={isSelected}
                 tabIndex={isActive ? 0 : -1}
-                onClick={() => chooseCategory(item.name)}
+                onClick={() => chooseCategory(item.value)}
                 onFocus={() => setActiveIndex(index)}
                 onKeyDown={(event) => handleOptionKeyDown(event, index)}
                 className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus:outline-none ${
-                  isSelected
-                    ? `${CATEGORY_TRIGGER_STYLES[item.color]} font-semibold text-white`
+                  isSelected && itemColor
+                    ? `${CATEGORY_TRIGGER_STYLES[itemColor]} font-semibold text-white`
+                    : isSelected
+                      ? "bg-slate-950 font-semibold text-white"
                     : isActive
                       ? "bg-slate-50 text-slate-900"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-2.5">
-                  <span className={`size-2.5 shrink-0 rounded-full ${
-                    CATEGORY_COLOR_STYLES[item.color]
-                  } ${isSelected ? "ring-2 ring-white/40" : ""}`} />
+                  {itemColor ? (
+                    <span className={`size-2.5 shrink-0 rounded-full ${
+                      CATEGORY_COLOR_STYLES[itemColor]
+                    } ${isSelected ? "ring-2 ring-white/40" : ""}`} />
+                  ) : (
+                    <ListFilter size={14} className={isSelected ? "text-white/90" : "text-slate-400"} aria-hidden="true" />
+                  )}
                   <span className="truncate">{item.name}</span>
                 </span>
                 {isSelected && <Check size={15} aria-hidden="true" className="shrink-0" />}
@@ -330,7 +352,7 @@ export function VocabularyToolbar({
           <CategoryDropdown
             category={category}
             categories={categories}
-            onChange={onCategoryChange}
+            onChange={(value) => onCategoryChange(value as CategoryFilter)}
           />
         </div>
       </div>

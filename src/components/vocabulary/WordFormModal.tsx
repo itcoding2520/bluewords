@@ -215,7 +215,7 @@ export function WordFormModal({
             titleRef.current?.focus();
           }}
           aria-describedby="word-modal-description"
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
+          className="hide-scrollbar fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:w-[calc(100%-48px)] sm:rounded-3xl sm:p-6"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -430,7 +430,7 @@ export function WordFormModal({
                                 .value as PartOfSpeech,
                             })
                           }
-                          className="mt-1.5"
+                          containerClassName="mt-1.5"
                         >
                           {PARTS_OF_SPEECH.map((partOfSpeech) => (
                             <option
@@ -495,7 +495,7 @@ export function WordFormModal({
                 onChange={(event) =>
                   setType(event.target.value as VocabularyType)
                 }
-                className="mt-2"
+                containerClassName="mt-2"
               >
                 {VOCABULARY_TYPES.map((vocabularyType) => (
                   <option key={vocabularyType} value={vocabularyType}>
@@ -517,11 +517,9 @@ export function WordFormModal({
                 id="category"
                 value={category}
                 onChange={(event) =>
-                  setCategory(
-                    event.target.value as VocabularyCategory
-                  )
+                  setCategory(event.target.value as VocabularyCategory)
                 }
-                className="mt-2"
+                containerClassName="mt-2"
               >
                 {categories.map((categoryOption) => (
                   <option key={categoryOption.id} value={categoryOption.name}>

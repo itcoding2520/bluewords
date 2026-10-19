@@ -31,7 +31,7 @@ export function DeleteConfirmModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
 
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-white p-5 shadow-xl sm:p-6">
+        <Dialog.Content className="hide-scrollbar fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-white p-5 shadow-xl sm:p-6">
           
           <Dialog.Title className="mt-4 text-lg font-semibold text-slate-950">
             Delete word?

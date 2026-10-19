@@ -152,7 +152,7 @@ export function VocabularyCsvTools({
       }}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-24px)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+          <Dialog.Content className="hide-scrollbar fixed left-1/2 top-1/2 z-50 w-[calc(100%-24px)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Dialog.Title className="text-lg font-semibold text-slate-950">
@@ -211,7 +211,7 @@ export function VocabularyCsvTools({
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:p-6">
+          <Dialog.Content className="hide-scrollbar fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-4 shadow-xl sm:max-h-[calc(100dvh-48px)] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Dialog.Title className="text-lg font-semibold text-slate-950 sm:text-xl">
@@ -278,7 +278,7 @@ export function VocabularyCsvTools({
                 )}
 
                 {preview.errors.length > 0 && (
-                  <div className="mt-3 max-h-32 overflow-y-auto rounded-lg bg-red-50 p-3 text-xs text-red-700">
+                  <div className="hide-scrollbar mt-3 max-h-32 overflow-y-auto rounded-lg bg-red-50 p-3 text-xs text-red-700">
                     <p className="font-semibold">Rows with errors</p>
                     <ul className="mt-1 list-inside list-disc space-y-1">
                       {preview.errors.slice(0, 10).map((issue, index) => (
