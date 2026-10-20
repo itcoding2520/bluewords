@@ -374,16 +374,20 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
   ];
 
   for (const word of words) {
-    const meanings = word.detailedMeanings?.filter(
-      (item) => item.meaning.trim()
-    );
+    // RPC and older stored records may contain incomplete meaning objects.
+    // Skip malformed details and fall back to the word's legacy meaning.
+    const meanings = Array.isArray(word.detailedMeanings)
+      ? word.detailedMeanings.filter(
+          (item) => typeof item?.meaning === "string" && item.meaning.trim().length > 0
+        )
+      : [];
 
-    if (meanings?.length) {
+    if (meanings.length) {
       for (const item of meanings) {
         rows.push([
           word.word,
           word.type ?? "word",
-          item.partOfSpeech,
+          typeof item.partOfSpeech === "string" ? item.partOfSpeech : "",
           item.meaning,
           word.category,
           word.status,
