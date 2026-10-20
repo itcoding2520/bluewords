@@ -80,6 +80,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
+  const showStickyStart = phase === "setup" && tab === "play";
 
   useEffect(() => {
     if ((phase !== "playing" && phase !== "results") || startedAt === null) return;
@@ -187,7 +188,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
 
   if (phase === "setup") {
     return (
-      <div>
+      <div className={showStickyStart ? "pb-24 sm:pb-0" : ""}>
         <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
         <header className="mb-6">
           <p className="text-sm font-medium text-blue-600">Vocabulary game</p>
@@ -249,9 +250,14 @@ export function WordSearchContent({ userId }: { userId: string }) {
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">Words can appear left-to-right, top-to-bottom, or diagonally downward.</p>
-            <Button onClick={startGame} disabled={targetCount === 0} className="min-h-12 w-full sm:w-auto">Start game</Button>
+            <Button onClick={startGame} disabled={targetCount === 0} className="hidden min-h-12 w-full sm:inline-flex sm:w-auto">Start game</Button>
           </div>
         </Card>
+        )}
+        {showStickyStart && (
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+            <Button onClick={startGame} disabled={targetCount === 0} className="min-h-12 w-full"><Gamepad2 size={17} /> Start game</Button>
+          </div>
         )}
       </div>
     );
