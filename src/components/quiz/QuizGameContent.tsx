@@ -114,6 +114,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
   const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
   const maximumQuestions = eligibleWords.length;
   const selectedQuestionCount = questionCount;
+  const showStickyStart = tab === "play" && phase === "setup";
   const currentQuestion = questions[questionIndex];
   const currentAnswer = answers[questionIndex];
   const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
@@ -269,7 +270,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
     total > 0 ? Math.round((score / total) * 5) : 0;
 
   return (
-    <div>
+    <div className={showStickyStart ? "pb-24 sm:pb-0" : ""}>
       <header className="mb-6">
         <p className="text-sm font-medium text-blue-600">Practice through play</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Vocabulary Quiz</h1>
@@ -386,8 +387,20 @@ export function QuizGameContent({ userId }: { userId: string }) {
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
           </div><p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p></fieldset>
           {maximumQuestions < 10 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add vocabulary with meanings from at least four distinct answers, and have at least 10 eligible words."}</p>}
-          <div className="mt-7 flex justify-end"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
+          <div className="mt-7 hidden justify-end sm:flex"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
         </Card>
+      )}
+
+      {showStickyStart && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+          <Button
+            onClick={startQuiz}
+            disabled={maximumQuestions < selectedQuestionCount}
+            className="min-h-12 w-full"
+          >
+            <Gamepad2 size={17} /> Start quiz
+          </Button>
+        </div>
       )}
 
       {phase === "playing" && currentQuestion && (
