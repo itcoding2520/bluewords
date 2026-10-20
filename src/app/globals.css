@@ -43,35 +43,12 @@ body {
 
 .word-search-grid--10 {
   --word-search-grid-count: 10;
-  --word-search-cell-size: 36px;
 }
 
 .word-search-grid--15 {
   --word-search-grid-count: 15;
-  --word-search-cell-size: 24px;
 }
 
 .word-search-grid--20 {
   --word-search-grid-count: 20;
-  --word-search-cell-size: 18px;
-}
-
-@media (min-width: 1024px) {
-  .word-search-grid {
-    width: max-content;
-    max-width: none;
-    grid-template-columns: repeat(var(--word-search-grid-count), var(--word-search-cell-size));
-  }
-
-  .word-search-grid--10 {
-    --word-search-cell-size: 72px;
-  }
-
-  .word-search-grid--15 {
-    --word-search-cell-size: 60px;
-  }
-
-  .word-search-grid--20 {
-    --word-search-cell-size: 54px;
-  }
 }
