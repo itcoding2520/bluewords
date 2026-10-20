@@ -52,14 +52,21 @@ test("places unique words in a complete square grid and detects their forward pa
   }
 });
 
-test("matches exact cells incrementally as letters are selected", () => {
+test("matches word letters incrementally anywhere along an allowed forward path", () => {
   const puzzle = createWordSearchPuzzle([{ id: "apple", word: "apple" }], 10, 1, seededRandom());
   const word = puzzle.words[0];
 
-  assert.equal(findWordSearchSelectionPrefix(puzzle, [word.cells[0]])?.complete, false);
-  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells.slice(0, -1))?.complete, false);
-  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells)?.word.id, "apple");
-  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells)?.complete, true);
-  assert.equal(findWordSearchSelectionPrefix(puzzle, [word.cells[0], word.cells[2]]), null);
-  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells, new Set(["apple"])), null);
+  const alternatePath = Array.from({ length: word.normalized.length }, (_, column) => ({ row: 9, column }));
+  assert.notDeepEqual(alternatePath, word.cells);
+  alternatePath.forEach(({ row, column }, index) => {
+    puzzle.letters[row][column] = word.normalized[index];
+  });
+
+  assert.equal(findWordSearchSelectionPrefix(puzzle, [alternatePath[0]])?.complete, false);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, alternatePath.slice(0, -1))?.complete, false);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, alternatePath)?.word.id, "apple");
+  assert.equal(findWordSearchSelectionPrefix(puzzle, alternatePath)?.complete, true);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, [...alternatePath].reverse()), null);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, [alternatePath[0], alternatePath[2]]), null);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, alternatePath, new Set(["apple"])), null);
 });

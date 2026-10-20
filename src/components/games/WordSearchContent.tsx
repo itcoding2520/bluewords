@@ -62,6 +62,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
   const [tab, setTab] = useState<Tab>("play");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
+  const [foundWordPaths, setFoundWordPaths] = useState<Record<string, CellPosition[]>>({});
   const [selectedCells, setSelectedCells] = useState<CellPosition[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -146,6 +147,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
     }
     setPuzzle(nextPuzzle);
     setFoundIds(new Set());
+    setFoundWordPaths({});
     setSelectedCells([]);
     setElapsedSeconds(0);
     saveStartedRef.current = null;
@@ -173,6 +175,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
     const nextFoundIds = new Set(foundIds);
     nextFoundIds.add(match.word.id);
     setFoundIds(nextFoundIds);
+    setFoundWordPaths((paths) => ({ ...paths, [match.word.id]: selection }));
     setSelectedCells([]);
 
     if (nextFoundIds.size === puzzle.words.length) {
@@ -256,7 +259,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
 
   if (!puzzle) return null;
 
-  const foundCells = new Set(puzzle.words.filter((word) => foundIds.has(word.id)).flatMap((word) => word.cells.map(({ row, column }) => `${row}:${column}`)));
+  const foundCells = new Set(Object.values(foundWordPaths).flatMap((path) => path.map(({ row, column }) => `${row}:${column}`)));
   const cellSize = gridSize === 10 ? 36 : gridSize === 20 ? 27 : 23;
 
   return (

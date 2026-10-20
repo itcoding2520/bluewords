@@ -136,7 +136,8 @@ export function findWordSearchSelection(puzzle, first, last) {
 }
 
 /**
- * Match a sequence of individually selected cells against a placed word.
+ * Match a sequence of individually selected cells against any word using
+ * the permitted forward directions, regardless of its original placement.
  *
  * @param {WordSearchPuzzle} puzzle
  * @param {WordSearchCell[]} cells
@@ -145,11 +146,18 @@ export function findWordSearchSelection(puzzle, first, last) {
  */
 export function findWordSearchSelectionPrefix(puzzle, cells, excludedIds = new Set()) {
   if (cells.length === 0) return null;
-  const word = puzzle.words.find((candidate) =>
-    !excludedIds.has(candidate.id)
-    && cells.length <= candidate.cells.length
-    && cells.every(({ row, column }, index) => candidate.cells[index].row === row && candidate.cells[index].column === column),
-  );
+  if (cells.length > 1) {
+    const path = getWordSearchSelectionPath(cells[0], cells.at(-1));
+    if (!path || path.length !== cells.length || !path.every(({ row, column }, index) => row === cells[index].row && column === cells[index].column)) return null;
+  }
 
-  return word ? { word, complete: cells.length === word.cells.length } : null;
+  const selected = cells.map(({ row, column }) => puzzle.letters[row]?.[column] ?? "").join("");
+  if (!selected || selected.length !== cells.length) return null;
+
+  const remainingWords = puzzle.words.filter((candidate) => !excludedIds.has(candidate.id));
+  const completeWord = remainingWords.find((candidate) => candidate.normalized === selected);
+  if (completeWord) return { word: completeWord, complete: true };
+
+  const word = remainingWords.find((candidate) => candidate.normalized.startsWith(selected));
+  return word ? { word, complete: false } : null;
 }
