@@ -32,3 +32,7 @@ test("quiz answer actions stay available at the bottom of the mobile screen", ()
   assert.match(source, /className="hidden sm:inline-flex">Check/);
   assert.match(source, /className="hidden sm:inline-flex">\{questionIndex \+ 1 === questions\.length/);
 });
+
+test("quiz progress header sticks below the mobile app header while scrolling", () => {
+  assert.match(source, /sticky top-25 z-20[\s\S]*?lg:top-0/);
+});
