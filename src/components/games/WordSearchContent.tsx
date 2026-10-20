@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -260,8 +260,6 @@ export function WordSearchContent({ userId }: { userId: string }) {
   if (!puzzle) return null;
 
   const foundCells = new Set(Object.values(foundWordPaths).flatMap((path) => path.map(({ row, column }) => `${row}:${column}`)));
-  const cellSize = gridSize === 10 ? 36 : gridSize === 20 ? 27 : 23;
-
   return (
     <div className="pb-8">
       <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
@@ -285,7 +283,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
           <Card className="min-w-0 p-3 sm:p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="overflow-x-auto overscroll-x-contain pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div className={`mx-auto grid w-max gap-[2px] touch-manipulation select-none ${gridSize === 30 ? "lg:[--word-search-cell-size:46px]" : gridSize === 20 ? "lg:[--word-search-cell-size:54px]" : "lg:[--word-search-cell-size:72px]"}`} style={{ gridTemplateColumns: `repeat(${gridSize}, var(--word-search-cell-size))`, "--word-search-cell-size": `${cellSize}px` } as CSSProperties}>
+              <div className={`word-search-grid word-search-grid--${gridSize} mx-auto grid w-max gap-[2px] touch-manipulation select-none`} style={{ gridTemplateColumns: `repeat(${gridSize}, var(--word-search-cell-size))` }}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);

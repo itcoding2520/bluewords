@@ -33,3 +33,29 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.word-search-grid--10 {
+  --word-search-cell-size: 36px;
+}
+
+.word-search-grid--20 {
+  --word-search-cell-size: 27px;
+}
+
+.word-search-grid--30 {
+  --word-search-cell-size: 23px;
+}
+
+@media (min-width: 1024px) {
+  .word-search-grid--10 {
+    --word-search-cell-size: 72px;
+  }
+
+  .word-search-grid--20 {
+    --word-search-cell-size: 54px;
+  }
+
+  .word-search-grid--30 {
+    --word-search-cell-size: 46px;
+  }
+}
