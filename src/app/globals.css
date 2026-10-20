@@ -33,3 +33,22 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.word-search-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(var(--word-search-grid-count), minmax(0, 1fr));
+}
+
+.word-search-grid--10 {
+  --word-search-grid-count: 10;
+}
+
+.word-search-grid--15 {
+  --word-search-grid-count: 15;
+}
+
+.word-search-grid--20 {
+  --word-search-grid-count: 20;
+}

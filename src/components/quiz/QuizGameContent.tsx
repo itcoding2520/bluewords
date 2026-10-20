@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -111,11 +112,14 @@ export function QuizGameContent({ userId }: { userId: string }) {
     [category, words]
   );
   const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
+  const typeWordCount = categoryWords.filter((word) => Boolean(word.imagePath)).length;
   const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
   const maximumQuestions = eligibleWords.length;
   const selectedQuestionCount = questionCount;
+  const showStickyStart = tab === "play" && phase === "setup";
   const currentQuestion = questions[questionIndex];
   const currentAnswer = answers[questionIndex];
+  const showStickyGameAction = tab === "play" && phase === "playing" && Boolean(currentQuestion) && (mode === "type-word" || Boolean(currentAnswer));
   const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
 
   useEffect(() => {
@@ -125,6 +129,23 @@ export function QuizGameContent({ userId }: { userId: string }) {
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
+
+  useEffect(() => {
+    if (phase !== "playing" || currentAnswer?.correct !== true) return;
+
+    const timeout = window.setTimeout(() => {
+      if (questionIndex + 1 >= questions.length) {
+        setElapsedSeconds(startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000));
+        setPhase("results");
+        return;
+      }
+
+      setQuestionIndex((index) => index + 1);
+      setInput("");
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt, mode]);
 
   const loadHistory = useCallback(async (
     forceRefresh = false,
@@ -269,7 +290,10 @@ export function QuizGameContent({ userId }: { userId: string }) {
     total > 0 ? Math.round((score / total) * 5) : 0;
 
   return (
-    <div>
+    <div className={showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}>
+      <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+        <ArrowLeft size={16} /> Back to Games
+      </Link>
       <header className="mb-6">
         <p className="text-sm font-medium text-blue-600">Practice through play</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Vocabulary Quiz</h1>
@@ -323,7 +347,6 @@ export function QuizGameContent({ userId }: { userId: string }) {
                   </p>
                   <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
                     <label className="flex items-center gap-2 whitespace-nowrap">
-                      Rows per page
                       <span className="relative inline-flex">
                         <select
                           aria-label="Quiz history rows per page"
@@ -377,30 +400,69 @@ export function QuizGameContent({ userId }: { userId: string }) {
       {tab === "play" && phase === "setup" && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
           <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600"><Gamepad2 size={22} /></span><div><h2 className="text-lg font-semibold text-slate-950">Set up your game</h2><p className="mt-1 text-sm text-slate-500">Choose a category, question type, and number of words. There’s no time limit.</p></div></div>
-          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend><div className="grid gap-3 sm:grid-cols-2">
-            <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
-            <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={categoryWords.filter((word) => Boolean(word.imagePath)).length} onClick={() => setMode("type-word")} />
-          </div></fieldset>
+          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend>
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              <CompactModeButton active={mode === "choose-meaning"} title="Choose meaning" count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
+              <CompactModeButton active={mode === "type-word"} title="Type word" count={typeWordCount} onClick={() => setMode("type-word")} />
+            </div>
+            <div className="hidden gap-3 sm:grid sm:grid-cols-2">
+              <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
+              <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={typeWordCount} onClick={() => setMode("type-word")} />
+            </div>
+          </fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><div className="w-full md:w-1/2"><CategoryDropdown category={category} categories={categories} onChange={setCategory} includeAll allLabel="All categories" fullWidth /></div><p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p></fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
           </div><p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p></fieldset>
           {maximumQuestions < 10 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add vocabulary with meanings from at least four distinct answers, and have at least 10 eligible words."}</p>}
-          <div className="mt-7 flex justify-end"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
+          <div className="mt-7 hidden justify-end sm:flex"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
         </Card>
+      )}
+
+      {showStickyStart && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+          <Button
+            onClick={startQuiz}
+            disabled={maximumQuestions < selectedQuestionCount}
+            className="min-h-12 w-full"
+          >
+            <Gamepad2 size={17} /> Start quiz
+          </Button>
+        </div>
+      )}
+
+      {showStickyGameAction && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+          {mode === "type-word" && !currentAnswer ? (
+            <Button
+              type="submit"
+              form="quiz-type-word-answer"
+              disabled={!input.trim()}
+              className="min-h-12 w-full"
+            >
+              Check answer
+            </Button>
+          ) : (
+            <div className="w-full">
+              <Button onClick={goToNextQuestion} className="min-h-12 w-full">
+                {questionIndex + 1 === questions.length ? "See results" : "Next question"}
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       {phase === "playing" && currentQuestion && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4"><button type="button" onClick={backToSetup} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
+          <div className="sticky top-25 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:mt-0 lg:rounded-none lg:px-0 lg:py-0 lg:pb-4"><button type="button" onClick={backToSetup} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>
           <div className="flex min-h-[360px] flex-col items-center justify-center py-8 text-center">
-            {mode === "type-word" ? <><QuizImage word={currentQuestion.word} /><p className="mt-5 text-sm text-slate-500">What is this word?</p><form onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()}>Check</Button>}</form></> : <>
+            {mode === "type-word" ? <><QuizImage word={currentQuestion.word} /><p className="mt-5 text-sm text-slate-500">What is this word?</p><form id="quiz-type-word-answer" onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()} className="hidden sm:inline-flex">Check</Button>}</form></> : <>
               {currentQuestion.word.imagePath ? <QuizImage word={currentQuestion.word} /> : <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.word.word}</p>}
               {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
               <p className="mt-4 text-sm text-slate-500">Choose the correct meaning</p><div className="mt-4 grid w-full max-w-xl gap-2 sm:grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === currentQuestion.meaning ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
             </>}
-            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status"><p className={`inline-flex items-center gap-2 text-sm font-semibold ${currentAnswer.correct ? "text-emerald-700" : "text-red-700"}`}>{currentAnswer.correct ? <Check size={17} /> : <X size={17} />}{currentAnswer.correct ? "Correct!" : `The answer is: ${mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning}`}</p><Button onClick={goToNextQuestion}>{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
+            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-700"><X size={17} />{`The answer is: ${mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning}`}</p>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
           </div>
         </Card>
       )}
@@ -429,7 +491,22 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 function ModeCard({ active, title, description, count, onClick }: { active: boolean; title: string; description: string; count: number; onClick: () => void }) {
-  return <button type="button" aria-pressed={active} onClick={onClick} className={`rounded-xl border p-4 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-900">{title}</span><span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{count} available</span></span><span className="mt-2 block text-sm leading-5 text-slate-500">{description}</span></button>;
+  return <button type="button" aria-pressed={active} onClick={onClick} className={`cursor-pointer rounded-xl border p-4 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-900">{title}</span><span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{count} available</span></span><span className="mt-2 block text-sm leading-5 text-slate-500">{description}</span></button>;
+}
+
+function CompactModeButton({ active, title, count, onClick }: { active: boolean; title: string; count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={`${title}, ${count} available`}
+      onClick={onClick}
+      className={`flex min-h-[68px] min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}
+    >
+      <span className="text-sm font-semibold leading-5 text-slate-900">{title}</span>
+      <span className="mt-0.5 text-xs text-slate-500">{count} available</span>
+    </button>
+  );
 }
 
 function ChoiceButton({ active, disabled = false, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {

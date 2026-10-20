@@ -116,3 +116,19 @@ export type VocabularyQuizAnswerInsert = Omit<
   VocabularyQuizAnswerRow,
   "id" | "session_id" | "user_id" | "created_at" | "prompt_type"
 >;
+
+export type WordSearchDifficulty = "easy" | "medium" | "hard";
+
+export type WordSearchSessionRow = {
+  id: string;
+  user_id: string;
+  grid_size: 10 | 15 | 20 | 30;
+  difficulty: WordSearchDifficulty;
+  category: string;
+  word_count: number;
+  duration_seconds: number;
+  words: string[];
+  started_at: string;
+  completed_at: string;
+  created_at: string;
+};
