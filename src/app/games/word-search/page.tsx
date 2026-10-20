@@ -10,5 +10,7 @@ export default async function WordSearchPage() {
 
   if (error || !data?.claims) redirect("/login");
 
-  return <AppLayout><WordSearchContent /></AppLayout>;
+  const userId = typeof data.claims.sub === "string" ? data.claims.sub : "";
+
+  return <AppLayout><WordSearchContent userId={userId} /></AppLayout>;
 }

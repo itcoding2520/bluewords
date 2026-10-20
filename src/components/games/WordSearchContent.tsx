@@ -1,19 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, Clock3, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
+import type { WordSearchSessionRow } from "@/types/database";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type GridSize = 10 | 20 | 30;
 type Difficulty = "easy" | "medium" | "hard";
 type Phase = "setup" | "playing" | "results";
+type Tab = "play" | "history";
 type CellPosition = { row: number; column: number };
 
 const GRID_SIZES: GridSize[] = [10, 20, 30];
@@ -35,6 +38,11 @@ function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+function formatHistoryDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
 function selectableWords(words: VocabularyWord[], category: string, difficulty: Difficulty, size: GridSize) {
   const seen = new Set<string>();
   return words.flatMap((word) => {
@@ -45,18 +53,29 @@ function selectableWords(words: VocabularyWord[], category: string, difficulty: 
   });
 }
 
-export function WordSearchContent() {
+export function WordSearchContent({ userId }: { userId: string }) {
   const { words, categories, isLoaded } = useVocabulary();
   const [gridSize, setGridSize] = useState<GridSize>(10);
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [category, setCategory] = useState("all");
   const [phase, setPhase] = useState<Phase>("setup");
+  const [tab, setTab] = useState<Tab>("play");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
   const [selectedCells, setSelectedCells] = useState<CellPosition[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState("");
+  const [saveRetryCount, setSaveRetryCount] = useState(0);
+  const [history, setHistory] = useState<WordSearchSessionRow[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
+  const saveStartedRef = useRef<number | null>(null);
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
@@ -70,6 +89,55 @@ export function WordSearchContent() {
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
 
+  const loadHistory = useCallback(async (forceRefresh = false, page = historyPage) => {
+    const cached = getCachedWordSearchSessions(userId, page, 10);
+    if (cached && !forceRefresh) {
+      setHistory(cached.rows);
+      setHistoryTotal(cached.total);
+      setHistoryError("");
+      setHistoryLoading(false);
+      return;
+    }
+
+    setHistoryLoading(!cached);
+    setHistoryError("");
+    try {
+      const result = await getWordSearchSessions({ page, pageSize: 10, forceRefresh });
+      setHistory(result.rows);
+      setHistoryTotal(result.total);
+    } catch {
+      setHistoryError("Could not load game history. Please try again.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [historyPage, userId]);
+
+  useEffect(() => {
+    if (phase !== "results" || startedAt === null || !puzzle || saveStartedRef.current === startedAt) return;
+    saveStartedRef.current = startedAt;
+    const completedAt = Date.now();
+    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
+    setElapsedSeconds(durationSeconds);
+    setSaveState("saving");
+    setSaveError("");
+
+    void saveWordSearchSession({
+      gridSize,
+      difficulty,
+      category,
+      words: puzzle.words.map(({ word }) => word),
+      durationSeconds,
+      startedAt: new Date(startedAt).toISOString(),
+      completedAt: new Date(completedAt).toISOString(),
+    }).then(() => {
+      setSaveState("saved");
+    }).catch((error: unknown) => {
+      saveStartedRef.current = null;
+      setSaveState("error");
+      setSaveError(error instanceof Error ? error.message : "Could not save this game attempt.");
+    });
+  }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt]);
+
   function startGame() {
     const nextPuzzle = createWordSearchPuzzle(candidates, gridSize, targetCount);
     if (nextPuzzle.words.length === 0) {
@@ -80,8 +148,11 @@ export function WordSearchContent() {
     setFoundIds(new Set());
     setSelectedCells([]);
     setElapsedSeconds(0);
+    saveStartedRef.current = null;
     setStartedAt(Date.now());
     setGameError("");
+    setSaveState("idle");
+    setSaveError("");
     setPhase("playing");
   }
 
@@ -121,6 +192,33 @@ export function WordSearchContent() {
           <p className="mt-2 text-sm text-slate-500">Find every vocabulary word in the letter grid as quickly as you can.</p>
         </header>
 
+        <div className="mb-5 flex gap-2 border-b border-slate-200">
+          <button type="button" onClick={() => { setTab("play"); setSelectedHistory(null); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium ${tab === "play" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}><Gamepad2 size={16} /> Play</button>
+          <button type="button" onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium ${tab === "history" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}><History size={16} /> History</button>
+        </div>
+
+        {tab === "history" ? (
+          <Card className="max-w-3xl p-5 sm:p-8">
+            {selectedHistory ? (
+              <>
+                <button type="button" onClick={() => setSelectedHistory(null)} className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> All game attempts</button>
+                <h2 className="text-xl font-semibold text-slate-950">Word Search review</h2>
+                <p className="mt-1 text-sm text-slate-500">{new Date(selectedHistory.completed_at).toLocaleString()} · {selectedHistory.grid_size} × {selectedHistory.grid_size} · {selectedHistory.difficulty} · {selectedHistory.category === "all" ? "All categories" : selectedHistory.category} · {formatHistoryDuration(selectedHistory.duration_seconds)}</p>
+                <h3 className="mt-6 text-sm font-semibold text-slate-700">Words found</h3>
+                <ul className="mt-3 flex flex-wrap gap-2">{selectedHistory.words.map((word) => <li key={word} className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{word}</li>)}</ul>
+              </>
+            ) : (
+              <>
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-slate-950">Your Word Search history</h2><p className="mt-1 text-sm text-slate-500">Review completed boards, settings, and solve times.</p></div><Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading}><RotateCcw size={15} /> Refresh</Button></div>
+                {historyError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{historyError}</p>}
+                {historyLoading ? <p className="py-10 text-center text-sm text-slate-500">Loading game history…</p> : history.length === 0 ? <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed games yet. Your finished rounds will appear here.</p> : (
+                  <div className="space-y-3">{history.map((session) => <button key={session.id} type="button" onClick={() => setSelectedHistory(session)} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/40"><span><span className="block font-semibold text-slate-900">{session.word_count} words · {session.grid_size} × {session.grid_size} · {session.difficulty}</span><span className="mt-1 block text-xs text-slate-500">{new Date(session.completed_at).toLocaleString()} · {session.category === "all" ? "All categories" : session.category}</span></span><span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><Clock3 size={15} /> {formatHistoryDuration(session.duration_seconds)} <span aria-hidden="true" className="ml-2 text-slate-400">›</span></span></button>)}</div>
+                )}
+                {!historyLoading && !historyError && historyTotal > 0 && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500"><span>Page {historyPage} of {Math.max(1, Math.ceil(historyTotal / 10))}</span><div className="flex gap-2"><Button variant="secondary" aria-label="Previous history page" disabled={historyPage <= 1} onClick={() => { const nextPage = historyPage - 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronLeft size={16} /></Button><Button variant="secondary" aria-label="Next history page" disabled={historyPage >= Math.ceil(historyTotal / 10)} onClick={() => { const nextPage = historyPage + 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronRight size={16} /></Button></div></div>}
+              </>
+            )}
+          </Card>
+        ) : (
         <Card className="max-w-3xl p-5 sm:p-8">
           <fieldset>
             <legend className="mb-3 text-sm font-semibold text-slate-700">Grid size</legend>
@@ -151,6 +249,7 @@ export function WordSearchContent() {
             <Button onClick={startGame} disabled={targetCount === 0} className="min-h-12 w-full sm:w-auto">Start game</Button>
           </div>
         </Card>
+        )}
       </div>
     );
   }
@@ -173,7 +272,10 @@ export function WordSearchContent() {
           <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Check size={27} /></span>
           <h2 className="mt-4 text-2xl font-bold text-slate-950">All words found!</h2>
           <p className="mt-2 text-slate-500">You found {puzzle.words.length} words in {formatDuration(elapsedSeconds)}.</p>
-          <div className="mt-6 flex justify-center"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button></div>
+          {saveState === "saving" && <p role="status" className="mt-3 text-sm text-slate-500">Saving your game history…</p>}
+          {saveState === "saved" && <p role="status" className="mt-3 text-sm text-emerald-700">Game saved to your history.</p>}
+          {saveState === "error" && <div className="mt-3"><p role="alert" className="text-sm text-red-600">{saveError}</p><Button variant="secondary" className="mt-2" onClick={() => { saveStartedRef.current = null; setSaveRetryCount((count) => count + 1); }}>Retry save</Button></div>}
+          <div className="mt-6 flex flex-wrap justify-center gap-3"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button>{saveState === "saved" && <Button variant="secondary" onClick={() => { setPhase("setup"); setTab("history"); setHistoryPage(1); setSelectedHistory(null); void loadHistory(true, 1); }}><History size={16} /> View history</Button>}</div>
         </Card>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
