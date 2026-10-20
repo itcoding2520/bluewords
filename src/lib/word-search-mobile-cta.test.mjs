@@ -13,3 +13,7 @@ test("word search setup keeps the mobile start action fixed above the safe area"
 test("word search setup keeps an inline start action on desktop only", () => {
   assert.match(source, /className="hidden min-h-12 w-full sm:inline-flex sm:w-auto"/);
 });
+
+test("word search timer remains sticky while a round is in progress", () => {
+  assert.match(source, /phase === "playing" && <div className="sticky top-25 z-20[\s\S]*?lg:top-0[\s\S]*?formatDuration\(elapsedSeconds\)/);
+});
