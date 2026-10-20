@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { Toaster } from "sonner";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,7 +50,9 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <VocabularyProvider>{children}</VocabularyProvider>
+        <VocabularyProvider>
+          <AppLayout>{children}</AppLayout>
+        </VocabularyProvider>
 
         <Toaster
           position="bottom-right"

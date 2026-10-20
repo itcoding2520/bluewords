@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Brain, Gamepad2, Grid3X3 } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
 
 const games = [
   {
@@ -50,6 +51,8 @@ export function GamesContent() {
           </Link>
         ))}
       </div>
+
+      <GamesLeaderboard />
 
       <div className="mt-6 flex items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-4 text-sm text-slate-500">
         <Gamepad2 size={19} className="shrink-0 text-slate-400" />

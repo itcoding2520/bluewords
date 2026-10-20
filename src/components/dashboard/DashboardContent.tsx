@@ -12,6 +12,11 @@ import { Stats } from "./Stats";
 import { ProgressCard } from "./ProgressCard";
 import { RecentWords } from "./RecentWords";
 import { LearningInsights } from "./LearningInsights";
+import {
+  getUserProfile,
+  USER_PROFILE_UPDATED_EVENT,
+  type UserProfile,
+} from "@/lib/supabase/user-profile";
 
 interface DashboardContentProps {
   dateLabel: string;
@@ -26,17 +31,35 @@ export function DashboardContent({
 }: DashboardContentProps) {
   const [supabase] = useState(() => createClient());
   const [email, setEmail] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    let currentUserId: string | null = null;
+
+    function syncUser(user: { id: string; email?: string } | null) {
+      currentUserId = user?.id ?? null;
+      setEmail(user?.email ?? null);
+      if (!user) {
+        setNickname(null);
+        return;
+      }
+
+      void getUserProfile(user.id)
+        .then((profile) => { if (active && currentUserId === user.id) setNickname(profile?.nickname ?? null); })
+        .catch(() => { if (active && currentUserId === user.id) setNickname(null); });
+    }
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) {
-        setEmail(session?.user.email ?? null);
-      }
+      if (active) syncUser(session?.user ?? null);
     });
+
+    function handleProfileUpdated(event: Event) {
+      setNickname((event as CustomEvent<UserProfile>).detail.nickname);
+    }
+    window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
 
     async function loadSession() {
       const {
@@ -51,7 +74,7 @@ export function DashboardContent({
         return;
       }
 
-      setEmail(session?.user.email ?? null);
+      syncUser(session?.user ?? null);
     }
 
     void loadSession();
@@ -59,6 +82,7 @@ export function DashboardContent({
     return () => {
       active = false;
       subscription.unsubscribe();
+      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
     };
   }, [supabase]);
 
@@ -116,6 +140,7 @@ export function DashboardContent({
         dateLabel={dateLabel}
         greeting={greeting}
         email={email}
+        nickname={nickname}
       />
 
       <Stats

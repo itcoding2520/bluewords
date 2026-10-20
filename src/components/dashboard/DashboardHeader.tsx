@@ -2,13 +2,16 @@ interface DashboardHeaderProps {
   dateLabel: string;
   greeting: string;
   email?: string | null;
+  nickname?: string | null;
 }
 
 export function DashboardHeader({
   dateLabel,
   greeting,
   email,
+  nickname,
 }: DashboardHeaderProps) {
+  const displayName = nickname?.trim() || email;
   return (
     <header className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
@@ -20,9 +23,9 @@ export function DashboardHeader({
           {greeting} 👋
         </h1>
 
-        {email && (
+        {displayName && (
           <p className="mt-2 break-all text-sm font-medium text-blue-600">
-            Welcome back, {email}
+            Welcome back, {displayName}
           </p>
         )}
 
