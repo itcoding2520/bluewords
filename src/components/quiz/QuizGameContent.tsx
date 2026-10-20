@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
 
@@ -290,6 +291,9 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
   return (
     <div className={showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}>
+      <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+        <ArrowLeft size={16} /> Back to Games
+      </Link>
       <header className="mb-6">
         <p className="text-sm font-medium text-blue-600">Practice through play</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Vocabulary Quiz</h1>
