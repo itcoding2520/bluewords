@@ -88,6 +88,7 @@ export type VocabularyQuizSessionRow = {
   mode: VocabularyQuizMode;
   question_count: number;
   correct_count: number;
+  is_perfect: boolean;
   duration_seconds: number;
   started_at: string;
   completed_at: string;
