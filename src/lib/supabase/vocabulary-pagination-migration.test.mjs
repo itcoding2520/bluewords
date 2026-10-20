@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const migrationUrl = new URL(
-  "./migrations/20261020110000_add_vocabulary_server_pagination.sql",
+  "./migrations/20261020140000_fix_vocabulary_page_meaning_payload.sql",
   import.meta.url
 );
 const migration = await readFile(migrationUrl, "utf8");
@@ -22,4 +22,11 @@ test("vocabulary page RPC searches legacy and detailed meanings and is authentic
   assert.match(migration, /SECURITY INVOKER/i);
   assert.match(migration, /FROM PUBLIC, anon/i);
   assert.match(migration, /TO authenticated/i);
+});
+
+test("vocabulary page RPC explicitly includes detailed meaning fields in its JSON payload", () => {
+  assert.match(migration, /'vocabulary_meanings', COALESCE\(meanings\.items/i);
+  assert.match(migration, /'part_of_speech', detail\.part_of_speech/i);
+  assert.match(migration, /'meaning', detail\.meaning/i);
+  assert.match(migration, /ORDER BY detail\.created_at ASC, detail\.id ASC/i);
 });
