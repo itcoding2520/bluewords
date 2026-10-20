@@ -118,7 +118,7 @@ export function WordSearchContent() {
   if (phase === "setup") {
     return (
       <div>
-        <Link href="/games" className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> All games</Link>
+        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
         <header className="mb-6">
           <p className="text-sm font-medium text-blue-600">Vocabulary game</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Word Search</h1>
@@ -166,7 +166,7 @@ export function WordSearchContent() {
 
   return (
     <div className="pb-8">
-      <Link href="/games" className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> All games</Link>
+      <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Find the words</h1></div>
         <div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm"><Clock3 size={16} />{formatDuration(elapsedSeconds)}</div>
@@ -177,7 +177,7 @@ export function WordSearchContent() {
           <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Check size={27} /></span>
           <h2 className="mt-4 text-2xl font-bold text-slate-950">All words found!</h2>
           <p className="mt-2 text-slate-500">You found {puzzle.words.length} words in {formatDuration(elapsedSeconds)}.</p>
-          <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button><Link href="/games" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Choose another game</Link></div>
+          <div className="mt-6 flex justify-center"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button></div>
         </Card>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
