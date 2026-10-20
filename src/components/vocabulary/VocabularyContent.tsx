@@ -24,6 +24,10 @@ import type {
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
 import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+import {
+  getCachedVocabularyPage,
+  setCachedVocabularyPage,
+} from "@/lib/supabase/vocabulary-page-cache.mjs";
 
 function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
   return {
@@ -55,6 +59,12 @@ export function VocabularyContent() {
     refreshWords,
     authVersion,
   } = useVocabulary({ loadWords: false });
+  const initialCachedPage = getCachedVocabularyPage(authVersion, {
+    page: 1,
+    pageSize: 10,
+    search: "",
+    category: null,
+  }) as { rows: VocabularyWord[]; total: number } | null;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -68,10 +78,16 @@ export function VocabularyContent() {
   );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [pageWords, setPageWords] = useState<VocabularyWord[]>([]);
-  const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(null);
-  const [totalWords, setTotalWords] = useState(0);
-  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [pageWords, setPageWords] = useState<VocabularyWord[]>(
+    () => initialCachedPage?.rows ?? []
+  );
+  const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(
+    () => initialCachedPage ? authVersion : null
+  );
+  const [totalWords, setTotalWords] = useState(
+    () => initialCachedPage?.total ?? 0
+  );
+  const [isPageLoading, setIsPageLoading] = useState(!initialCachedPage);
   const [pageRequest, setPageRequest] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
@@ -177,12 +193,27 @@ export function VocabularyContent() {
     if (!categoriesLoaded) return;
     const requestId = ++pageRequestId.current;
     let cancelled = false;
-    void getVocabularyWordPage({
+    const query = {
       page: currentPage,
       pageSize,
       search: debouncedSearch,
       category: selectedCategory === "All" ? null : selectedCategory,
-    }).then((result) => {
+    };
+    const cachedPage = getCachedVocabularyPage(authVersion, query) as {
+      rows: VocabularyWord[];
+      total: number;
+    } | null;
+    const pageResult = cachedPage
+      ? Promise.resolve(cachedPage)
+      : getVocabularyWordPage(query).then((result) => {
+          const mappedResult = {
+            rows: result.rows.map(mapPageWord),
+            total: result.total,
+          };
+          setCachedVocabularyPage(authVersion, query, mappedResult);
+          return mappedResult;
+        });
+    void pageResult.then((result) => {
       if (cancelled || requestId !== pageRequestId.current) return;
       setTotalWords(result.total);
       const resultPageCount = Math.max(1, Math.ceil(result.total / pageSize));
@@ -190,7 +221,7 @@ export function VocabularyContent() {
         setPage(resultPageCount);
         return;
       }
-      setPageWords(result.rows.map(mapPageWord));
+      setPageWords(result.rows);
       if (loadedAuthVersionRef.current !== authVersion) {
         loadedAuthVersionRef.current = authVersion;
         setSelectedIds(new Set());
@@ -532,6 +563,7 @@ export function VocabularyContent() {
 
       <VocabularyList
         words={currentPageWords}
+        isLoading={isPageLoading || loadedAuthVersion !== authVersion}
         selectedIds={selectedIds}
         selectPageRef={selectPageRef}
         isPageSelected={isPageSelected}
@@ -543,10 +575,6 @@ export function VocabularyContent() {
         onEdit={handleEditWord}
         onDelete={handleDeleteWord}
       />
-
-      {(isPageLoading || loadedAuthVersion !== authVersion) && (
-        <p role="status" className="py-5 text-center text-sm text-slate-500">Loading vocabulary...</p>
-      )}
 
       <div className="mt-4 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <p aria-live="polite" className="shrink-0">

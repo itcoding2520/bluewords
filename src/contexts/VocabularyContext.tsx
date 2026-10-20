@@ -54,6 +54,7 @@ import {
 } from "@/lib/supabase/reviews";
 import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
+import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { toast } from "sonner";
 
 interface VocabularyContextValue {
@@ -408,6 +409,7 @@ function VocabularyStoreProvider({
         },
         ...current,
       ]);
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
 
       toast.success(`"${row.word}" added successfully!`);
@@ -479,6 +481,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
@@ -515,6 +518,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((item) => item.id !== id)
       );
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
@@ -549,6 +553,7 @@ function VocabularyStoreProvider({
       setWords((current) =>
         current.filter((word) => !deletedSet.has(word.id))
       );
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
       invalidateLearningAnalyticsCache();
@@ -580,6 +585,7 @@ function VocabularyStoreProvider({
             : item
         )
       );
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
 
       return true;
@@ -599,6 +605,7 @@ function VocabularyStoreProvider({
       setCategories((current) =>
         sortCategories([...current, row])
       );
+      invalidateVocabularyPageCache();
       toast.success(`Category "${row.name}" added.`);
       return row;
     } catch (error) {
@@ -630,6 +637,7 @@ function VocabularyStoreProvider({
           )
         )
       );
+      invalidateVocabularyPageCache();
 
       if (previous.name !== row.name) {
         setWords((current) =>
@@ -674,6 +682,7 @@ function VocabularyStoreProvider({
             : word
         )
       );
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
@@ -878,6 +887,7 @@ function VocabularyStoreProvider({
     }
 
     if (imported > 0 || savedExistingImages.length > 0) {
+      invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
     }
 
