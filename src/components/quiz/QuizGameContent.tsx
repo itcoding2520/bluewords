@@ -291,7 +291,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
   return (
     <div className={showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}>
-      <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+      <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
         <ArrowLeft size={16} /> Back to Games
       </Link>
       <header className="mb-6">
