@@ -40,7 +40,7 @@ export function UserAvatar({
     <span
       role="img"
       aria-label={`${label} avatar`}
-      className={`grid ${sizeClassName} shrink-0 place-items-center overflow-hidden rounded-full ${avatarColors[getColorIndex(label)]} bg-cover bg-center text-sm font-semibold text-white`}
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-full ${avatarColors[getColorIndex(label)]} bg-cover bg-center text-lg font-semibold text-white ${sizeClassName}`}
       style={imageUrl ? { backgroundImage: `url(${JSON.stringify(imageUrl)})` } : undefined}
     >
       {!imageUrl && getInitial(label)}
