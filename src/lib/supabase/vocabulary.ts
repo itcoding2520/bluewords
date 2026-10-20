@@ -15,6 +15,11 @@ export type VocabularyWordWithMeaningsRow = VocabularyWordRow & {
   vocabulary_meanings: VocabularyMeaningRow[];
 };
 
+export interface VocabularyWordPage {
+  rows: VocabularyWordWithMeaningsRow[];
+  total: number;
+}
+
 type VocabularyWordInput = Pick<
   VocabularyWordRow,
   "word" | "meaning" | "category" | "status"
@@ -39,6 +44,73 @@ export async function getVocabularyWords(): Promise<
       error,
     };
   });
+}
+
+export async function getVocabularyWordPage(input: {
+  page: number;
+  pageSize: number;
+  search: string;
+  category: string | null;
+}): Promise<VocabularyWordPage> {
+  const { data, error } = await supabase.rpc("get_vocabulary_page", {
+    p_page: input.page,
+    p_page_size: input.pageSize,
+    p_search: input.search.trim() || null,
+    p_category: input.category,
+  });
+
+  if (error) throw error;
+
+  const result = data as { rows?: unknown; total?: unknown } | null;
+  return {
+    rows: Array.isArray(result?.rows)
+      ? result.rows as VocabularyWordWithMeaningsRow[]
+      : [],
+    total: typeof result?.total === "number" ? result.total : 0,
+  };
+}
+
+export async function getVocabularyWordsForCategory(
+  category: string
+): Promise<VocabularyWordWithMeaningsRow[]> {
+  const rows: VocabularyWordWithMeaningsRow[] = [];
+  let page = 1;
+  while (true) {
+    const result = await getVocabularyWordPage({
+      page,
+      pageSize: 100,
+      search: "",
+      category,
+    });
+    rows.push(...result.rows);
+    if (rows.length >= result.total || result.rows.length === 0) return rows;
+    page++;
+  }
+}
+
+export async function getVocabularyWordById(
+  id: string
+): Promise<VocabularyWordRow | null> {
+  const { data, error } = await supabase
+    .from("vocabulary_words")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as VocabularyWordRow | null;
+}
+
+export async function getVocabularyWordImagePaths(
+  ids: string[]
+): Promise<Array<{ id: string; image_path: string | null }>> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from("vocabulary_words")
+    .select("id, image_path")
+    .in("id", [...new Set(ids)]);
+  if (error) throw error;
+  return (data ?? []) as Array<{ id: string; image_path: string | null }>;
 }
 
 export async function addVocabularyWord(

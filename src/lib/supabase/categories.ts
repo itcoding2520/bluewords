@@ -58,6 +58,17 @@ export async function getVocabularyCategoriesForUser(
   return (data ?? []) as VocabularyCategoryRow[];
 }
 
+export async function getVocabularyCategories(): Promise<VocabularyCategoryRow[]> {
+  const { data, error } = await supabase
+    .from("vocabulary_categories")
+    .select("*")
+    .order("is_default", { ascending: false })
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as VocabularyCategoryRow[];
+}
+
 export async function addVocabularyCategory(input: {
   name: string;
   color: VocabularyCategoryColor;

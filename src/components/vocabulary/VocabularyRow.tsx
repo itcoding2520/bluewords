@@ -25,7 +25,7 @@ interface VocabularyRowProps {
   item: VocabularyWord;
   selected: boolean;
   onToggleSelected: (id: string) => void;
-  onToggleMastered: (id: string) => Promise<boolean>;
+  onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
 }
@@ -62,7 +62,7 @@ export function VocabularyRow({
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const { categories } = useVocabulary();
+  const { categories } = useVocabulary({ loadWords: false, loadCategories: false });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const togglingRef = useRef(false);
@@ -113,7 +113,7 @@ export function VocabularyRow({
     setIsToggling(true);
 
     try {
-      await onToggleMastered(item.id);
+      await onToggleMastered(item.id, item.status);
     } finally {
       togglingRef.current = false;
       setIsToggling(false);

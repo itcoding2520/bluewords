@@ -16,6 +16,8 @@ import type {
 } from "@/data/vocabulary";
 import {
   getVocabularyWords,
+  getVocabularyWordById,
+  getVocabularyWordImagePaths,
   addVocabularyWord,
   updateVocabularyWord,
   updateVocabularyWordWithMeanings,
@@ -29,6 +31,7 @@ import {
 import {
   addVocabularyCategory,
   deleteVocabularyCategory,
+  getVocabularyCategories,
   getVocabularyCategoriesForUser,
   updateVocabularyCategory,
   type VocabularyCategoryColor,
@@ -57,13 +60,15 @@ interface VocabularyContextValue {
   words: VocabularyWord[];
   categories: VocabularyCategoryRow[];
   isLoaded: boolean;
+  categoriesLoaded: boolean;
   authVersion: number;
   addWord: (word: VocabularyWord) => Promise<boolean>;
   updateWord: (word: VocabularyWord) => Promise<boolean>;
   deleteWord: (id: string) => Promise<boolean>;
   deleteWords: (ids: string[]) => Promise<number>;
-  toggleMastered: (id: string) => Promise<boolean>;
+  toggleMastered: (id: string, currentStatus?: VocabularyWord["status"]) => Promise<boolean>;
   refreshWords: () => Promise<void>;
+  refreshCategories: () => Promise<void>;
   addCategory: (input: {
     name: string;
     color: VocabularyCategoryColor;
@@ -184,12 +189,29 @@ function VocabularyStoreProvider({
     VocabularyCategoryRow[]
   >([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [authVersion, setAuthVersion] = useState(0);
 
   const requestIdRef = useRef(0);
   const pendingRequestIdRef = useRef<number | null>(null);
   const ownerIdRef = useRef<string | null>(null);
+  const categoriesRequestIdRef = useRef(0);
   const mountedRef = useRef(false);
+
+  const refreshCategories = useCallback(async (): Promise<void> => {
+    const requestId = ++categoriesRequestIdRef.current;
+    try {
+      const rows = await getVocabularyCategories();
+      if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
+      setCategories(rows);
+      setCategoriesLoaded(true);
+    } catch (error) {
+      if (requestId !== categoriesRequestIdRef.current) return;
+      console.error("Failed to refresh vocabulary categories:", error);
+      setCategoriesLoaded(true);
+      toast.error("Failed to load categories.");
+    }
+  }, []);
 
   const refreshWords = useCallback(async (): Promise<void> => {
     if (pendingRequestIdRef.current === requestIdRef.current) return;
@@ -217,6 +239,7 @@ function VocabularyStoreProvider({
         ownerIdRef.current = null;
         setWords([]);
         setCategories([]);
+        setCategoriesLoaded(true);
         setIsLoaded(true);
         return;
       }
@@ -225,6 +248,7 @@ function VocabularyStoreProvider({
         ownerIdRef.current = user.id;
         setWords([]);
         setCategories([]);
+        setCategoriesLoaded(false);
         setIsLoaded(false);
       }
 
@@ -268,6 +292,7 @@ function VocabularyStoreProvider({
         )
       );
       setCategories(categoryRows);
+      setCategoriesLoaded(true);
 
       setIsLoaded(true);
     } catch (error) {
@@ -311,6 +336,7 @@ function VocabularyStoreProvider({
       }
 
       requestId.current++;
+      categoriesRequestIdRef.current++;
 
       ownerIdRef.current = nextUserId;
       invalidateDashboardVocabularyOverviewCache();
@@ -318,6 +344,7 @@ function VocabularyStoreProvider({
 
       setWords([]);
       setCategories([]);
+      setCategoriesLoaded(nextUserId === null);
       setIsLoaded(nextUserId === null);
 
     });
@@ -405,13 +432,16 @@ function VocabularyStoreProvider({
       const currentWord = words.find(
         (word) => word.id === updatedWord.id
       );
+      const storedWord = currentWord ? null : await getVocabularyWordById(updatedWord.id);
+      const previousImagePath = currentWord?.imagePath ?? storedWord?.image_path ?? null;
+      const previousIpa = currentWord?.ipa ?? storedWord?.ipa ?? updatedWord.ipa;
       const type = updatedWord.type ?? "word";
-      const wordChanged = currentWord?.word.trim().toLowerCase() !== updatedWord.word.trim().toLowerCase();
+      const wordChanged = (currentWord?.word ?? storedWord?.word ?? updatedWord.word).trim().toLowerCase() !== updatedWord.word.trim().toLowerCase();
       const ipa = type !== "word"
         ? null
-        : updatedWord.ipa?.trim() || (wordChanged || !currentWord?.ipa
+        : updatedWord.ipa?.trim() || (wordChanged || !previousIpa
           ? await fetchEnglishIpa(updatedWord.word)
-          : currentWord.ipa);
+          : previousIpa);
       const { word: row, meanings: meaningRows } =
         await updateVocabularyWordWithMeanings({
           id: updatedWord.id,
@@ -452,8 +482,8 @@ function VocabularyStoreProvider({
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
-      if (currentWord?.imagePath && currentWord.imagePath !== row.image_path) {
-        void deleteVocabularyImages([currentWord.imagePath]).catch((error) =>
+      if (previousImagePath && previousImagePath !== row.image_path) {
+        void deleteVocabularyImages([previousImagePath]).catch((error) =>
           console.error("Could not remove replaced vocabulary image:", error)
         );
       }
@@ -471,13 +501,13 @@ function VocabularyStoreProvider({
   async function deleteWord(id: string): Promise<boolean> {
     const word = words.find((item) => item.id === id);
 
-    if (!word) return false;
-
     try {
+      const storedWord = word ? null : await getVocabularyWordById(id);
       await deleteVocabularyWord(id);
 
-      if (word.imagePath) {
-        void deleteVocabularyImages([word.imagePath]).catch((error) =>
+      const imagePath = word?.imagePath ?? storedWord?.image_path;
+      if (imagePath) {
+        void deleteVocabularyImages([imagePath]).catch((error) =>
           console.error("Could not remove vocabulary image:", error)
         );
       }
@@ -490,7 +520,7 @@ function VocabularyStoreProvider({
       invalidateLearningAnalyticsCache();
       invalidateVocabularyReviewScheduleCache();
 
-      toast.success(`"${word.word}" deleted successfully!`);
+      toast.success(`"${word?.word ?? storedWord?.word ?? "Word"}" deleted successfully!`);
       return true;
     } catch {
       toast.error("Failed to delete word.");
@@ -503,11 +533,12 @@ function VocabularyStoreProvider({
     if (uniqueIds.length === 0) return 0;
 
     try {
+      const imageRows = await getVocabularyWordImagePaths(uniqueIds);
       const deletedIds = await deleteVocabularyWords(uniqueIds);
       const deletedSet = new Set(deletedIds);
-      const deletedImagePaths = words
+      const deletedImagePaths = imageRows
         .filter((word) => deletedSet.has(word.id))
-        .map((word) => word.imagePath);
+        .map((word) => word.image_path);
 
       if (deletedImagePaths.some(Boolean)) {
         void deleteVocabularyImages(deletedImagePaths).catch((error) =>
@@ -531,13 +562,11 @@ function VocabularyStoreProvider({
     }
   }
 
-  async function toggleMastered(id: string): Promise<boolean> {
+  async function toggleMastered(id: string, currentStatus?: VocabularyWord["status"]): Promise<boolean> {
     const word = words.find((item) => item.id === id);
 
-    if (!word) return false;
-
     const nextStatus =
-      word.status === "mastered" ? "learning" : "mastered";
+      (word?.status ?? currentStatus) === "mastered" ? "learning" : "mastered";
 
     try {
       const row = await updateVocabularyWord(id, {
@@ -861,6 +890,7 @@ function VocabularyStoreProvider({
         words,
         categories,
         isLoaded,
+        categoriesLoaded,
         authVersion,
         addWord,
         updateWord,
@@ -868,6 +898,7 @@ function VocabularyStoreProvider({
         deleteWords,
         toggleMastered,
         refreshWords,
+        refreshCategories,
         addCategory,
         updateCategory,
         deleteCategory,
@@ -879,21 +910,34 @@ function VocabularyStoreProvider({
   );
 }
 
-export function useVocabulary() {
+export function useVocabulary(options: {
+  loadWords?: boolean;
+  loadCategories?: boolean;
+} = {}) {
   const context = useContext(VocabularyContext);
   const isLoaded = context?.isLoaded;
+  const categoriesLoaded = context?.categoriesLoaded;
   const authVersion = context?.authVersion;
   const refreshWords = context?.refreshWords;
+  const refreshCategories = context?.refreshCategories;
+  const loadWords = options.loadWords ?? true;
+  const loadCategories = options.loadCategories ?? loadWords;
 
   useEffect(() => {
-    if (isLoaded !== false || !refreshWords) return;
+    if (!loadWords || isLoaded !== false || !refreshWords) return;
 
     const loadTimer = setTimeout(() => {
       void refreshWords();
     }, 0);
 
     return () => clearTimeout(loadTimer);
-  }, [authVersion, isLoaded, refreshWords]);
+  }, [authVersion, isLoaded, loadWords, refreshWords]);
+
+  useEffect(() => {
+    if (loadCategories || categoriesLoaded !== false || !refreshCategories) return;
+    const loadTimer = setTimeout(() => void refreshCategories(), 0);
+    return () => clearTimeout(loadTimer);
+  }, [authVersion, categoriesLoaded, loadCategories, refreshCategories]);
 
   if (!context) {
     throw new Error(

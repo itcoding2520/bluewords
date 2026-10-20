@@ -23,19 +23,38 @@ import type {
 } from "./VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
+import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+
+function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
+  return {
+    id: row.id,
+    word: row.word,
+    meaning: row.meaning,
+    category: row.category as VocabularyWord["category"],
+    status: row.status,
+    type: row.type ?? "word",
+    ipa: row.ipa ?? null,
+    imagePath: row.image_path ?? null,
+    detailedMeanings: (row.vocabulary_meanings ?? []).map((meaning) => ({
+      id: meaning.id,
+      partOfSpeech: meaning.part_of_speech,
+      meaning: meaning.meaning,
+    })),
+  };
+}
 
 export function VocabularyContent() {
   const {
-    words,
     categories,
-    isLoaded,
+    categoriesLoaded,
     addWord,
     updateWord,
     deleteWord,
     deleteWords,
     toggleMastered,
     refreshWords,
-  } = useVocabulary();
+    authVersion,
+  } = useVocabulary({ loadWords: false });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -49,17 +68,38 @@ export function VocabularyContent() {
   );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [pageWords, setPageWords] = useState<VocabularyWord[]>([]);
+  const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(null);
+  const [totalWords, setTotalWords] = useState(0);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [pageRequest, setPageRequest] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
+  const [hasLegacyData, setHasLegacyData] = useState(false);
+  const [categoryExportCount, setCategoryExportCount] = useState(0);
+  const [isExportCountLoading, setIsExportCountLoading] = useState(false);
+  const pageRequestId = useRef(0);
+  const loadedAuthVersionRef = useRef<number | null>(null);
   const selectPageRef = useRef<HTMLInputElement>(null);
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
-  const importPreview = useMemo(() => {
-    if (!isLoaded) {
-      return null;
-    }
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-    return previewVocabularyImport(words);
-  }, [words, isLoaded]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setHasLegacyData(previewVocabularyImport([]).total > 0);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const importPreview = useMemo(() => {
+    if (!hasLegacyData) return null;
+    return previewVocabularyImport(legacyCloudWords);
+  }, [hasLegacyData, legacyCloudWords]);
 
   const hasPendingImport =
   importPreview !== null &&
@@ -86,10 +126,11 @@ export function VocabularyContent() {
     setIsImporting(true);
 
     try {
-      const result = await importLegacyVocabulary(words);
+      const result = await importLegacyVocabulary(legacyCloudWords);
 
       // Đọc lại dữ liệu cloud để Dashboard và Vocabulary cập nhật.
       await refreshWords();
+      setPageRequest((value) => value + 1);
 
       if (result.failed === 0) {
         setShowImportPreview(false);
@@ -114,44 +155,80 @@ export function VocabularyContent() {
     }
   }
 
-  const filteredWords = useMemo(() => {
-    return words.filter((item) => {
-      const query = search.toLowerCase();
-
-      const matchesSearch =
-        item.word.toLowerCase().includes(query) ||
-        item.meaning.toLowerCase().includes(query) ||
-        item.detailedMeanings?.some((meaning) =>
-          meaning.meaning.toLowerCase().includes(query)
-        );
-
-      const matchesCategory =
-        selectedCategory === "All" ||
-        item.category === selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [words, search, selectedCategory]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredWords.length / pageSize));
+  const visibleTotalWords = loadedAuthVersion === authVersion ? totalWords : 0;
+  const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
   const currentPage = Math.min(page, pageCount);
-  const pageWords = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredWords.slice(start, start + pageSize);
-  }, [filteredWords, currentPage, pageSize]);
-  const selectedOnPage = pageWords.filter((word) =>
+  const currentPageWords = loadedAuthVersion === authVersion ? pageWords : [];
+  const selectedOnPage = currentPageWords.filter((word) =>
     selectedIds.has(word.id)
   ).length;
   const isPageSelected =
-    pageWords.length > 0 && selectedOnPage === pageWords.length;
+    currentPageWords.length > 0 && selectedOnPage === currentPageWords.length;
   const isPagePartiallySelected =
-    selectedOnPage > 0 && selectedOnPage < pageWords.length;
+    selectedOnPage > 0 && selectedOnPage < currentPageWords.length;
   const firstVisibleWord =
-    filteredWords.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const lastVisibleWord = Math.min(
     currentPage * pageSize,
-    filteredWords.length
+    visibleTotalWords
   );
+
+  useEffect(() => {
+    if (!categoriesLoaded) return;
+    const requestId = ++pageRequestId.current;
+    let cancelled = false;
+    void getVocabularyWordPage({
+      page: currentPage,
+      pageSize,
+      search: debouncedSearch,
+      category: selectedCategory === "All" ? null : selectedCategory,
+    }).then((result) => {
+      if (cancelled || requestId !== pageRequestId.current) return;
+      setTotalWords(result.total);
+      const resultPageCount = Math.max(1, Math.ceil(result.total / pageSize));
+      if (currentPage > resultPageCount) {
+        setPage(resultPageCount);
+        return;
+      }
+      setPageWords(result.rows.map(mapPageWord));
+      if (loadedAuthVersionRef.current !== authVersion) {
+        loadedAuthVersionRef.current = authVersion;
+        setSelectedIds(new Set());
+      }
+      setLoadedAuthVersion(authVersion);
+      setIsPageLoading(false);
+    }).catch((error) => {
+      if (cancelled || requestId !== pageRequestId.current) return;
+      console.error("Failed to load vocabulary page:", error);
+      setPageWords([]);
+      setTotalWords(0);
+      setIsPageLoading(false);
+      toast.error("Failed to load vocabulary.");
+    });
+    return () => { cancelled = true; };
+  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory]);
+
+  useEffect(() => {
+    if (selectedCategory === "All") return;
+    let cancelled = false;
+    void getVocabularyWordPage({
+      page: 1,
+      pageSize: 1,
+      search: "",
+      category: selectedCategory,
+    }).then(({ total }) => {
+      if (!cancelled) {
+        setCategoryExportCount(total);
+        setIsExportCountLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setCategoryExportCount(0);
+        setIsExportCountLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [authVersion, categories, pageWords.length, selectedCategory]);
 
   useEffect(() => {
     if (selectPageRef.current) {
@@ -192,12 +269,17 @@ export function VocabularyContent() {
 
   function handleSearchChange(value: string) {
     setSearch(value);
+    setIsPageLoading(true);
+    setPageWords([]);
     setPage(1);
     setSelectedIds(new Set());
   }
 
   function handleCategoryChange(value: CategoryFilter) {
     setCategory(value);
+    setIsPageLoading(true);
+    setIsExportCountLoading(value !== "All");
+    setPageWords([]);
     setPage(1);
     setSelectedIds(new Set());
   }
@@ -215,9 +297,9 @@ export function VocabularyContent() {
     setSelectedIds((current) => {
       const next = new Set(current);
       if (isPageSelected) {
-        pageWords.forEach((word) => next.delete(word.id));
+        currentPageWords.forEach((word) => next.delete(word.id));
       } else {
-        pageWords.forEach((word) => next.add(word.id));
+        currentPageWords.forEach((word) => next.add(word.id));
       }
       return next;
     });
@@ -237,6 +319,8 @@ export function VocabularyContent() {
       const deletedCount = await deleteWords([...selectedIds]);
       if (deletedCount > 0) {
         setSelectedIds(new Set());
+        setIsPageLoading(true);
+        setPageRequest((value) => value + 1);
         toast.success(
           `Deleted ${deletedCount} ${deletedCount === 1 ? "word" : "words"}.`
         );
@@ -256,6 +340,9 @@ export function VocabularyContent() {
       const success = await deleteWord(deletingWord.id);
 
       if (success) {
+        setIsPageLoading(true);
+        setPageWords([]);
+        setPageRequest((value) => value + 1);
         setSelectedIds((current) => {
           const next = new Set(current);
           next.delete(deletingWord.id);
@@ -281,6 +368,10 @@ export function VocabularyContent() {
         : await addWord(submittedWord);
 
       if (success) {
+        setPage(1);
+        setIsPageLoading(true);
+        setPageWords([]);
+        setPageRequest((value) => value + 1);
         handleCloseForm();
       }
       return success;
@@ -289,8 +380,32 @@ export function VocabularyContent() {
     }
   }
 
+  async function handleToggleMastered(id: string, status: VocabularyWord["status"]) {
+    const success = await toggleMastered(id, status);
+    if (success) {
+      setIsPageLoading(true);
+      setPageWords([]);
+      setPageRequest((value) => value + 1);
+    }
+    return success;
+  }
 
-  if (!isLoaded) {
+
+  async function handleLegacyPreviewToggle() {
+    if (showImportPreview) {
+      setShowImportPreview(false);
+      return;
+    }
+    setShowImportPreview(true);
+    try {
+      const allWords = await getVocabularyWords();
+      setLegacyCloudWords(allWords.map(mapPageWord));
+    } catch {
+      toast.error("Failed to prepare the legacy vocabulary preview.");
+    }
+  }
+
+  if (!categoriesLoaded) {
     return (
       <div className="py-16 text-sm text-slate-500">
         Loading vocabulary...
@@ -319,7 +434,7 @@ export function VocabularyContent() {
 
             <button
               type="button"
-              onClick={() => setShowImportPreview((current) => !current)}
+              onClick={() => void handleLegacyPreviewToggle()}
               disabled={isImporting}
               className="rounded-lg cursor-pointer border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:opacity-50"
             >
@@ -374,14 +489,20 @@ export function VocabularyContent() {
       )}
 
       <VocabularyCsvTools
-        words={words}
-        exportWords={
-          selectedCategory === "All"
-            ? pageWords
-            : words.filter((word) => word.category === selectedCategory)
-        }
+        exportCount={selectedCategory === "All" ? currentPageWords.length : categoryExportCount}
+        isExportCountLoading={isExportCountLoading}
+        loadExportWords={async () => {
+          if (selectedCategory === "All") return currentPageWords;
+          const rows = await getVocabularyWordsForCategory(selectedCategory);
+          return rows.map(mapPageWord);
+        }}
         exportCategory={selectedCategory}
         categories={categories}
+        onImportComplete={() => {
+          setPage(1);
+          setIsPageLoading(true);
+          setPageRequest((value) => value + 1);
+        }}
       />
 
       <VocabularyToolbar
@@ -392,7 +513,7 @@ export function VocabularyContent() {
         onCategoryChange={handleCategoryChange}
       />
 
-      {selectedIds.size > 0 && (
+      {loadedAuthVersion === authVersion && selectedIds.size > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
             <span aria-live="polite" className="text-sm font-medium text-slate-600">
               {selectedIds.size} selected
@@ -410,7 +531,7 @@ export function VocabularyContent() {
       )}
 
       <VocabularyList
-        words={pageWords}
+        words={currentPageWords}
         selectedIds={selectedIds}
         selectPageRef={selectPageRef}
         isPageSelected={isPageSelected}
@@ -418,14 +539,18 @@ export function VocabularyContent() {
         isBulkDeleting={isBulkDeleting}
         onTogglePageSelection={handleTogglePageSelection}
         onToggleSelected={handleToggleSelected}
-        onToggleMastered={toggleMastered}
+        onToggleMastered={handleToggleMastered}
         onEdit={handleEditWord}
         onDelete={handleDeleteWord}
       />
 
+      {(isPageLoading || loadedAuthVersion !== authVersion) && (
+        <p role="status" className="py-5 text-center text-sm text-slate-500">Loading vocabulary...</p>
+      )}
+
       <div className="mt-4 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <p aria-live="polite" className="shrink-0">
-          Showing {firstVisibleWord}–{lastVisibleWord} of {filteredWords.length} words
+          Showing {firstVisibleWord}–{lastVisibleWord} of {visibleTotalWords} words
         </p>
 
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 sm:justify-end">
@@ -437,6 +562,8 @@ export function VocabularyContent() {
                 onChange={(event) => {
                   setPageSize(Number(event.target.value));
                   setPage(1);
+                  setIsPageLoading(true);
+                  setPageWords([]);
                 }}
                 className="h-10 w-[76px] cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
               >
@@ -455,7 +582,11 @@ export function VocabularyContent() {
             <Button
               variant="secondary"
               aria-label="Previous page"
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              onClick={() => {
+                setIsPageLoading(true);
+                setPageWords([]);
+                setPage((current) => Math.max(1, current - 1));
+              }}
               disabled={currentPage <= 1}
               className="size-10 px-0"
             >
@@ -464,7 +595,11 @@ export function VocabularyContent() {
             <Button
               variant="secondary"
               aria-label="Next page"
-              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              onClick={() => {
+                setIsPageLoading(true);
+                setPageWords([]);
+                setPage((current) => Math.min(pageCount, current + 1));
+              }}
               disabled={currentPage >= pageCount}
               className="size-10 px-0"
             >
@@ -478,7 +613,7 @@ export function VocabularyContent() {
         <WordFormModal
           key={editingWord?.id ?? "new"}
           open={isFormOpen}
-          words={words}
+          words={currentPageWords}
           categories={categories}
           editingWord={editingWord}
           onClose={handleCloseForm}

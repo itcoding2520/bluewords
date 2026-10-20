@@ -15,7 +15,7 @@ interface VocabularyListProps {
   isBulkDeleting: boolean;
   onTogglePageSelection: () => void;
   onToggleSelected: (id: string) => void;
-  onToggleMastered: (id: string) => Promise<boolean>;
+  onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
 }
