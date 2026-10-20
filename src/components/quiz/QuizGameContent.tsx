@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -265,7 +265,8 @@ export function QuizGameContent({ userId }: { userId: string }) {
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
   const chosenModeLabel = (value: QuizMode) => value === "type-word" ? "Type the word" : "Choose the meaning";
-  const scoreLabel = (score: number, total: number) => `${total ? Math.round((score / total) * 100) : 0}%`;
+  const quizRating = (score: number, total: number) =>
+    total > 0 ? Math.round((score / total) * 5) : 0;
 
   return (
     <div>
@@ -310,7 +311,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
               ) : (
                 <div className="space-y-3">
                   {history.map((session) => <button key={session.id} type="button" onClick={() => void openHistoryReview(session)} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/40">
-                    <span><span className="block font-semibold text-slate-900">{session.correct_count}/{session.question_count} correct <span className="ml-1 text-sm font-medium text-blue-600">{scoreLabel(session.correct_count, session.question_count)}</span></span><span className="mt-1 block text-xs text-slate-500">{new Date(session.completed_at).toLocaleString()} · {chosenModeLabel(session.mode)}</span></span>
+                    <span><span className="block font-semibold text-slate-900">{session.correct_count}/{session.question_count} correct <span role="img" aria-label={`${quizRating(session.correct_count, session.question_count)} out of 5 stars`} className="ml-2 inline-flex align-middle text-amber-500">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={15} aria-hidden="true" fill={index < quizRating(session.correct_count, session.question_count) ? "currentColor" : "none"} />)}</span></span><span className="mt-1 block text-xs text-slate-500">{new Date(session.completed_at).toLocaleString()} · {chosenModeLabel(session.mode)}</span></span>
                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><Clock3 size={15} /> {formatTime(session.duration_seconds)} <span aria-hidden="true" className="ml-2 text-slate-400">›</span></span>
                   </button>)}
                 </div>
