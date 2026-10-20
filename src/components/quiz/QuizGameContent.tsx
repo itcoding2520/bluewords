@@ -144,7 +144,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
     }, 800);
 
     return () => window.clearTimeout(timeout);
-  }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt]);
+  }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt, mode]);
 
   const loadHistory = useCallback(async (
     forceRefresh = false,
