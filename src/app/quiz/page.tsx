@@ -12,9 +12,11 @@ export default async function QuizPage() {
     redirect("/login");
   }
 
+  const userId = typeof data.claims.sub === "string" ? data.claims.sub : "";
+
   return (
     <AppLayout>
-      <QuizGameContent />
+      <QuizGameContent userId={userId} />
     </AppLayout>
   );
 }

@@ -8,6 +8,7 @@ import { VocabularyRow } from "./VocabularyRow";
 
 interface VocabularyListProps {
   words: VocabularyWord[];
+  isLoading: boolean;
   selectedIds: Set<string>;
   selectPageRef: RefObject<HTMLInputElement | null>;
   isPageSelected: boolean;
@@ -15,13 +16,14 @@ interface VocabularyListProps {
   isBulkDeleting: boolean;
   onTogglePageSelection: () => void;
   onToggleSelected: (id: string) => void;
-  onToggleMastered: (id: string) => Promise<boolean>;
+  onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
 }
 
 export function VocabularyList({
   words,
+  isLoading,
   selectedIds,
   selectPageRef,
   isPageSelected,
@@ -67,7 +69,12 @@ export function VocabularyList({
         <span className="hidden lg:block lg:col-start-6" aria-hidden="true" />
       </div>
 
-      {words.length === 0 ? (
+      {words.length === 0 && isLoading ? (
+        <div role="status" className="flex min-h-60 flex-col items-center justify-center gap-3 px-4 text-sm text-slate-500">
+          <span className="size-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
+          Loading vocabulary...
+        </div>
+      ) : words.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-4 py-12 text-center sm:px-6 sm:py-16">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
             <SearchX size={21} />

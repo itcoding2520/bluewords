@@ -45,7 +45,7 @@ export function ManageCategoriesModal({
     addCategory,
     updateCategory,
     deleteCategory,
-  } = useVocabulary();
+  } = useVocabulary({ loadWords: false, loadCategories: false });
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] =
     useState<VocabularyCategoryColor>("blue");

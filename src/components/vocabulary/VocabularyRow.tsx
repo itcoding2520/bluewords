@@ -12,7 +12,6 @@ import {
 import {
   categorySolidColorStyles,
   categorySolidStyles,
-  type VocabularyMeaning,
   type VocabularyWord,
 } from "@/data/vocabulary";
 import { cn } from "@/lib/cn";
@@ -25,28 +24,39 @@ interface VocabularyRowProps {
   item: VocabularyWord;
   selected: boolean;
   onToggleSelected: (id: string) => void;
-  onToggleMastered: (id: string) => Promise<boolean>;
+  onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
   onEdit: (word: VocabularyWord) => void;
   onDelete: (word: VocabularyWord) => void;
 }
 
-function DetailedMeanings({
-  meanings,
+function GridMeanings({
+  item,
 }: {
-  meanings?: VocabularyMeaning[];
+  item: VocabularyWord;
 }) {
-  if (!meanings?.length) return null;
+  const detailedMeanings = (item.detailedMeanings ?? []).filter(
+    (meaning) => typeof meaning.meaning === "string" && meaning.meaning.trim()
+  );
+  const hasPartOfSpeech = detailedMeanings.some(
+    (meaning) => typeof meaning.partOfSpeech === "string" && meaning.partOfSpeech.trim()
+  );
+
+  if (!detailedMeanings.length) {
+    return <p className="break-words">{item.meaning}</p>;
+  }
 
   return (
-    <ul aria-label="Detailed meanings" className="mt-2 space-y-1.5">
-      {meanings.map((meaning, index) => (
+    <ul aria-label="Detailed meanings" className="space-y-1.5">
+      {detailedMeanings.map((meaning, index) => (
         <li
           key={meaning.id ?? `${meaning.partOfSpeech}-${index}`}
           className="break-words text-xs text-slate-500"
         >
-          <span className="mr-1.5 inline-flex rounded-md bg-blue-50 px-1.5 py-0.5 font-medium capitalize text-blue-700">
-            {meaning.partOfSpeech}
-          </span>
+          {hasPartOfSpeech && meaning.partOfSpeech && (
+            <span className="mr-1.5 inline-flex rounded-md bg-blue-50 px-1.5 py-0.5 font-medium capitalize text-blue-700">
+              {meaning.partOfSpeech}
+            </span>
+          )}
           {meaning.meaning}
         </li>
       ))}
@@ -62,7 +72,7 @@ export function VocabularyRow({
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const { categories } = useVocabulary();
+  const { categories } = useVocabulary({ loadWords: false, loadCategories: false });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const togglingRef = useRef(false);
@@ -71,10 +81,6 @@ export function VocabularyRow({
     (category) => category.name === item.category
   )?.color;
   const imageUrl = useVocabularyImageUrl(item.imagePath);
-  const hasPartOfSpeechMeanings = Boolean(
-    item.detailedMeanings?.some((meaning) => meaning.partOfSpeech)
-  );
-
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -113,7 +119,7 @@ export function VocabularyRow({
     setIsToggling(true);
 
     try {
-      await onToggleMastered(item.id);
+      await onToggleMastered(item.id, item.status);
     } finally {
       togglingRef.current = false;
       setIsToggling(false);
@@ -158,22 +164,16 @@ export function VocabularyRow({
             </span>
 
             <div className="mt-1 lg:hidden">
-              {!hasPartOfSpeechMeanings && (
-                <p className="break-words text-sm text-slate-500">
-                  {item.meaning}
-                </p>
-              )}
-              <DetailedMeanings meanings={item.detailedMeanings} />
+              <div className="text-sm text-slate-500">
+                <GridMeanings item={item} />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Meaning - desktop */}
         <div className="hidden min-w-0 text-sm text-slate-500 lg:col-start-3 lg:block">
-          {!hasPartOfSpeechMeanings && (
-            <p className="break-words">{item.meaning}</p>
-          )}
-          <DetailedMeanings meanings={item.detailedMeanings} />
+          <GridMeanings item={item} />
         </div>
 
         {/* Category and status share a compact row on mobile. */}

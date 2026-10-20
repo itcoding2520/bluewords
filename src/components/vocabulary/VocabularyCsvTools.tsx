@@ -27,19 +27,23 @@ function normalizeImageName(value: string) {
 }
 
 interface VocabularyCsvToolsProps {
-  words: VocabularyWord[];
-  exportWords: VocabularyWord[];
+  exportCount: number;
+  isExportCountLoading: boolean;
+  loadExportWords: () => Promise<VocabularyWord[]>;
   exportCategory: string;
   categories: VocabularyCategoryRow[];
+  onImportComplete: () => void;
 }
 
 export function VocabularyCsvTools({
-  words,
-  exportWords,
+  exportCount,
+  isExportCountLoading,
+  loadExportWords,
   exportCategory,
   categories,
+  onImportComplete,
 }: VocabularyCsvToolsProps) {
-  const { importWords } = useVocabulary();
+  const { importWords, refreshWords, words: allWords } = useVocabulary({ loadWords: false, loadCategories: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -69,7 +73,7 @@ export function VocabularyCsvTools({
 
     const imageFilesByWord = new Map<string, File>();
     const importableNames = new Set((preview?.items ?? []).map((item) => normalizeImageName(item.word)));
-    const currentWordsByName = new Map(words.map((word) => [normalizeImageName(word.word), word]));
+    const currentWordsByName = new Map(allWords.map((word) => [normalizeImageName(word.word), word]));
     let alreadyHasImage = 0;
 
     for (const [key, file] of filesByName) {
@@ -93,17 +97,23 @@ export function VocabularyCsvTools({
       invalidCount,
       alreadyHasImage,
     };
-  }, [imageFiles, preview, words]);
+  }, [allWords, imageFiles, preview]);
+
+  async function handleOpenImport() {
+    await refreshWords();
+    setOpen(true);
+  }
 
   async function handleExport() {
-    if (exportWords.length === 0) {
+    if (exportCount === 0) {
       toast.info("There are no words to export yet.");
       return;
     }
 
     setIsExporting(true);
     try {
-      const blob = new Blob([exportVocabularyCsv(exportWords)], {
+      const wordsToExport = await loadExportWords();
+      const blob = new Blob([exportVocabularyCsv(wordsToExport)], {
         type: "text/csv;charset=utf-8",
       });
       const url = URL.createObjectURL(blob);
@@ -124,7 +134,7 @@ export function VocabularyCsvTools({
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast.success(`Exported ${exportWords.length} words.`);
+      toast.success(`Exported ${wordsToExport.length} words.`);
       setExportOpen(false);
     } finally {
       setIsExporting(false);
@@ -146,7 +156,7 @@ export function VocabularyCsvTools({
         previewVocabularyCsvImport(
           csv,
           categories.map((category) => category.name),
-          words.map((word) => word.word)
+          allWords.map((word) => word.word)
         )
       );
     } catch (error) {
@@ -198,6 +208,7 @@ export function VocabularyCsvTools({
       setImageFiles([]);
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (result.failed === 0) setOpen(false);
+      if (result.imported > 0 || result.imagesUploaded > 0) onImportComplete();
     } finally {
       setIsImporting(false);
     }
@@ -206,7 +217,7 @@ export function VocabularyCsvTools({
   return (
     <>
       <div className="mt-5 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        <Button variant="secondary" onClick={() => void handleOpenImport()}>
           <FileUp size={16} />
           Import CSV
         </Button>
@@ -250,7 +261,7 @@ export function VocabularyCsvTools({
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-500">Words</dt>
-                <dd className="font-medium text-slate-900">{exportWords.length}</dd>
+                <dd className="font-medium text-slate-900">{isExportCountLoading ? "Loading…" : exportCount}</dd>
               </div>
               {exportCategory === "All" && (
                 <p className="text-xs text-slate-500">
@@ -263,7 +274,7 @@ export function VocabularyCsvTools({
               <Button variant="secondary" onClick={() => setExportOpen(false)} disabled={isExporting}>
                 Cancel
               </Button>
-              <Button onClick={() => void handleExport()} disabled={isExporting || exportWords.length === 0}>
+              <Button onClick={() => void handleExport()} disabled={isExporting || isExportCountLoading || exportCount === 0}>
                 <Download size={16} />
                 {isExporting ? "Exporting..." : "Export"}
               </Button>
