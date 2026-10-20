@@ -38,8 +38,9 @@ test("correct quiz answers automatically advance after brief feedback", () => {
   assert.match(source, /window\.setTimeout\(\(\) => \{/);
   assert.match(source, /\}, 800\);/);
   assert.match(source, /setQuestionIndex\(\(index\) => index \+ 1\)/);
-  assert.match(source, /Moving to the next question…/);
-  assert.match(source, /currentAnswer\.correct \? <p className="text-sm text-slate-500">Moving to the next question/);
+  assert.match(source, /Moving automatically…/);
+  assert.match(source, /<Button onClick=\{goToNextQuestion\} className="hidden sm:inline-flex">/);
+  assert.match(source, /<Button onClick=\{goToNextQuestion\} className="min-h-12 w-full">/);
 });
 
 test("quiz progress header sticks below the mobile app header while scrolling", () => {
