@@ -22,6 +22,7 @@ import { cn } from "@/lib/cn";
 import Image from "next/image";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import {
+  getCachedUserProfile,
   getUserProfile,
   USER_PROFILE_UPDATED_EVENT,
   type UserProfile,
@@ -73,12 +74,14 @@ export function Sidebar() {
 
     async function loadProfile(userId: string) {
       currentUserId = userId;
+      const cachedProfile = getCachedUserProfile(userId);
+      if (active && cachedProfile !== undefined) setProfile(cachedProfile);
       try {
         const nextProfile = await getUserProfile(userId);
         if (active && currentUserId === userId) setProfile(nextProfile);
       } catch (profileError) {
         console.error("Failed to load user profile:", profileError);
-        if (active && currentUserId === userId) setProfile(null);
+        // Keep the cached avatar/profile visible if the network is temporarily unavailable.
       }
     }
 
