@@ -111,6 +111,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
     [category, words]
   );
   const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
+  const typeWordCount = categoryWords.filter((word) => Boolean(word.imagePath)).length;
   const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
   const maximumQuestions = eligibleWords.length;
   const selectedQuestionCount = questionCount;
@@ -378,10 +379,16 @@ export function QuizGameContent({ userId }: { userId: string }) {
       {tab === "play" && phase === "setup" && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
           <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600"><Gamepad2 size={22} /></span><div><h2 className="text-lg font-semibold text-slate-950">Set up your game</h2><p className="mt-1 text-sm text-slate-500">Choose a category, question type, and number of words. There’s no time limit.</p></div></div>
-          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend><div className="grid gap-3 sm:grid-cols-2">
-            <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
-            <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={categoryWords.filter((word) => Boolean(word.imagePath)).length} onClick={() => setMode("type-word")} />
-          </div></fieldset>
+          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend>
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              <CompactModeButton active={mode === "choose-meaning"} title="Choose meaning" count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
+              <CompactModeButton active={mode === "type-word"} title="Type word" count={typeWordCount} onClick={() => setMode("type-word")} />
+            </div>
+            <div className="hidden gap-3 sm:grid sm:grid-cols-2">
+              <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
+              <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={typeWordCount} onClick={() => setMode("type-word")} />
+            </div>
+          </fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><div className="w-full md:w-1/2"><CategoryDropdown category={category} categories={categories} onChange={setCategory} includeAll allLabel="All categories" fullWidth /></div><p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p></fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
@@ -443,6 +450,21 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function ModeCard({ active, title, description, count, onClick }: { active: boolean; title: string; description: string; count: number; onClick: () => void }) {
   return <button type="button" aria-pressed={active} onClick={onClick} className={`rounded-xl border p-4 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-900">{title}</span><span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{count} available</span></span><span className="mt-2 block text-sm leading-5 text-slate-500">{description}</span></button>;
+}
+
+function CompactModeButton({ active, title, count, onClick }: { active: boolean; title: string; count: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={`${title}, ${count} available`}
+      onClick={onClick}
+      className={`flex min-h-[68px] min-w-0 flex-col items-start justify-center rounded-xl border px-3 py-2 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}
+    >
+      <span className="text-sm font-semibold leading-5 text-slate-900">{title}</span>
+      <span className="mt-0.5 text-xs text-slate-500">{count} available</span>
+    </button>
+  );
 }
 
 function ChoiceButton({ active, disabled = false, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {

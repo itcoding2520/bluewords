@@ -17,3 +17,10 @@ test("quiz setup uses a separate non-sticky start action on desktop", () => {
   assert.match(source, /mt-7 hidden justify-end sm:flex/);
   assert.match(source, /className="min-h-12 w-full"/);
 });
+
+test("quiz question type cards are compact and side-by-side on mobile", () => {
+  assert.match(source, /grid grid-cols-2 gap-2 sm:hidden/);
+  assert.match(source, /CompactModeButton active=\{mode === "choose-meaning"\}/);
+  assert.match(source, /CompactModeButton active=\{mode === "type-word"\}/);
+  assert.match(source, /hidden gap-3 sm:grid sm:grid-cols-2/);
+});
