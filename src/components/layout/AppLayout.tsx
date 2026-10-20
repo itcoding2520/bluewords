@@ -1,5 +1,8 @@
 
+"use client";
+
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 
 interface AppLayoutProps {
@@ -7,6 +10,10 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const pathname = usePathname();
+
+  if (pathname === "/login" || pathname.startsWith("/auth/")) return children;
+
   return (
     <main className="min-h-screen bg-[#F7F8FA]">
       <div className="flex min-h-screen">

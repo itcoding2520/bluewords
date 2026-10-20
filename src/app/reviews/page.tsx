@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { AppLayout } from "@/components/layout/AppLayout";
 import { ReviewHistoryContent } from "@/components/reviews/ReviewHistoryContent";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,9 +13,5 @@ export default async function ReviewsPage() {
 
   const userId = typeof data.claims.sub === "string" ? data.claims.sub : "";
 
-  return (
-    <AppLayout>
-      <ReviewHistoryContent userId={userId} />
-    </AppLayout>
-  );
+  return <ReviewHistoryContent userId={userId} />;
 }

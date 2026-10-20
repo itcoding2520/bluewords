@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { formatDate, getGreeting } from "@/lib/formatDate";
 
@@ -20,13 +19,9 @@ export default async function Home() {
     redirect("/login");
   }
 
-  return (
-    <AppLayout>
-      <DashboardContent
-        dateLabel={formatDate(localDate)}
-        greeting={getGreeting(localDate)}
-        userId={data.claims.sub}
-      />
-    </AppLayout>
-  );
+  return <DashboardContent
+    dateLabel={formatDate(localDate)}
+    greeting={getGreeting(localDate)}
+    userId={data.claims.sub}
+  />;
 }

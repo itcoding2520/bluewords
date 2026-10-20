@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { VocabularyContent } from "@/components/vocabulary/VocabularyContent";
 
 export default async function VocabularyPage() {
@@ -12,9 +11,5 @@ export default async function VocabularyPage() {
     redirect("/login");
   }
   
-  return (
-    <AppLayout>
-      <VocabularyContent />
-    </AppLayout>
-  );
+  return <VocabularyContent />;
 }

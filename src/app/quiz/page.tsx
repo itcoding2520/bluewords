@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { AppLayout } from "@/components/layout/AppLayout";
 import { QuizGameContent } from "@/components/quiz/QuizGameContent";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,9 +13,5 @@ export default async function QuizPage() {
 
   const userId = typeof data.claims.sub === "string" ? data.claims.sub : "";
 
-  return (
-    <AppLayout>
-      <QuizGameContent userId={userId} />
-    </AppLayout>
-  );
+  return <QuizGameContent userId={userId} />;
 }
