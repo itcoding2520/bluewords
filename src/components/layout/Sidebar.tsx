@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   LogOut,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +20,12 @@ import { logout } from "@/app/login/actions";
 
 import { cn } from "@/lib/cn";
 import Image from "next/image";
+import { UserAvatar } from "@/components/user/UserAvatar";
+import {
+  getUserProfile,
+  USER_PROFILE_UPDATED_EVENT,
+  type UserProfile,
+} from "@/lib/supabase/user-profile";
 
 const navigation = [
   {
@@ -42,6 +49,11 @@ const navigation = [
     icon: Gamepad2,
   },
   {
+    label: "Profile",
+    href: "/profile",
+    icon: UserRound,
+  },
+  {
     label: "Review results",
     href: "/reviews",
     icon: History,
@@ -53,9 +65,22 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [supabase] = useState(() => createClient());
   const [email, setEmail] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     let active = true;
+    let currentUserId: string | null = null;
+
+    async function loadProfile(userId: string) {
+      currentUserId = userId;
+      try {
+        const nextProfile = await getUserProfile(userId);
+        if (active && currentUserId === userId) setProfile(nextProfile);
+      } catch (profileError) {
+        console.error("Failed to load user profile:", profileError);
+        if (active && currentUserId === userId) setProfile(null);
+      }
+    }
 
     // Lấy session hiện tại để hiển thị email.
     async function loadSession() {
@@ -72,6 +97,11 @@ export function Sidebar() {
       }
 
       setEmail(session?.user.email ?? null);
+      if (session?.user.id) void loadProfile(session.user.id);
+      else {
+        currentUserId = null;
+        setProfile(null);
+      }
     }
 
     void loadSession();
@@ -84,12 +114,24 @@ export function Sidebar() {
         if (!active) return;
 
         setEmail(session?.user.email ?? null);
+        if (session?.user.id) void loadProfile(session.user.id);
+        else {
+          currentUserId = null;
+          setProfile(null);
+        }
       }
     );
+
+    function handleProfileUpdated(event: Event) {
+      setProfile((event as CustomEvent<UserProfile>).detail);
+    }
+
+    window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
 
     return () => {
       active = false;
       subscription.unsubscribe();
+      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
     };
   }, [supabase]);
 
@@ -146,6 +188,10 @@ export function Sidebar() {
               <Image src="/logo.png" alt="Blue words" width={128} height={128} loading="eager"/>
             </Link>
 
+            <Link href="/profile" onClick={closeSidebar} className="mt-3 flex justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500" aria-label="Open profile">
+              <UserAvatar nickname={profile?.nickname} email={email} avatarPath={profile?.avatar_path} sizeClassName="size-12 text-base ring-2 ring-blue-50" />
+            </Link>
+
             <p className="mt-1 text-xs text-slate-400">
               Learn a little every day.
             </p>
@@ -193,22 +239,11 @@ export function Sidebar() {
         
         <div className="mt-auto border-t border-slate-100 pt-5">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-              <span className="text-sm font-semibold">
-                {email?.charAt(0).toUpperCase() ?? "U"}
-              </span>
-            </div>
-
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900">
-                Hello 👋
+              <p className="break-all text-sm font-semibold text-slate-900">
+                Hello, {profile?.nickname || email || "..."} 👋
               </p>
-              <p
-                className="truncate text-xs text-slate-500"
-                title={email ?? undefined}
-              >
-                {email ?? "Loading account..."}
-              </p>
+              <Link href="/profile" onClick={closeSidebar} className="text-xs text-blue-600 hover:text-blue-700">Manage profile</Link>
             </div>
           </div>
 

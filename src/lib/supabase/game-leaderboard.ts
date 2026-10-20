@@ -10,6 +10,7 @@ function getSupabase() {
 export type QuizLeaderboardRow = {
   rank_position: number;
   player_name: string;
+  avatar_path: string | null;
   correct_count: number;
   question_count: number;
   duration_seconds: number;
@@ -19,6 +20,7 @@ export type QuizLeaderboardRow = {
 export type WordSearchLeaderboardRow = {
   rank_position: number;
   player_name: string;
+  avatar_path: string | null;
   category: string;
   word_count: number;
   duration_seconds: number;

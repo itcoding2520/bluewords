@@ -4,6 +4,7 @@ import { useEffect, useState, type ComponentProps } from "react";
 import { ChevronDown, Clock3, RefreshCw, Trophy } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import {
   getQuizLeaderboard,
   getWordSearchLeaderboard,
@@ -146,6 +147,7 @@ export function GamesLeaderboard() {
                       : `${row.word_count} words · ${row.category}`;
                     return <li key={`${row.rank_position}-${row.player_name}`} className={`flex min-h-16 items-center gap-3 rounded-xl border px-3 py-3 sm:px-4 ${row.is_you ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white"}`}>
                       <span className={`grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold ${row.rank_position === 1 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{row.rank_position}</span>
+                      <UserAvatar nickname={row.player_name} fallbackName={row.player_name} avatarPath={row.avatar_path} sizeClassName="size-10 text-xs" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-slate-900">{row.is_you ? "You" : row.player_name}{row.rank_position === 1 ? " 🏆" : ""}</span>
                         <span className="mt-0.5 block text-xs text-slate-500">{resultLabel}</span>
