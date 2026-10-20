@@ -343,7 +343,6 @@ export function QuizGameContent({ userId }: { userId: string }) {
                   </p>
                   <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
                     <label className="flex items-center gap-2 whitespace-nowrap">
-                      Rows per page
                       <span className="relative inline-flex">
                         <select
                           aria-label="Quiz history rows per page"
@@ -488,7 +487,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 function ModeCard({ active, title, description, count, onClick }: { active: boolean; title: string; description: string; count: number; onClick: () => void }) {
-  return <button type="button" aria-pressed={active} onClick={onClick} className={`rounded-xl border p-4 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-900">{title}</span><span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{count} available</span></span><span className="mt-2 block text-sm leading-5 text-slate-500">{description}</span></button>;
+  return <button type="button" aria-pressed={active} onClick={onClick} className={`cursor-pointer rounded-xl border p-4 text-left transition ${active ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200 hover:bg-slate-50"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-slate-900">{title}</span><span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{count} available</span></span><span className="mt-2 block text-sm leading-5 text-slate-500">{description}</span></button>;
 }
 
 function CompactModeButton({ active, title, count, onClick }: { active: boolean; title: string; count: number; onClick: () => void }) {
