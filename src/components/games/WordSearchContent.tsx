@@ -282,12 +282,12 @@ export function WordSearchContent({ userId }: { userId: string }) {
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
           <Card className="min-w-0 p-3 sm:p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
-            <div className="overflow-x-auto overscroll-x-contain pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div className={`word-search-grid word-search-grid--${gridSize} mx-auto grid w-max gap-[2px] touch-manipulation select-none`} style={{ gridTemplateColumns: `repeat(${gridSize}, var(--word-search-cell-size))` }}>
+            <div className="min-w-0 overflow-hidden pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
+              <div className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
-                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square place-items-center rounded-[5px] font-semibold transition ${gridSize === 30 ? "text-[10px] lg:text-[20px]" : gridSize === 20 ? "text-xs lg:text-2xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
+                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 30 ? "text-[7px] lg:text-[20px]" : gridSize === 20 ? "text-[10px] lg:text-2xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
                 }))}
               </div>
             </div>

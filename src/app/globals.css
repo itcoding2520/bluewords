@@ -34,19 +34,35 @@ body {
   display: none;
 }
 
+.word-search-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(var(--word-search-grid-count), minmax(0, 1fr));
+}
+
 .word-search-grid--10 {
+  --word-search-grid-count: 10;
   --word-search-cell-size: 36px;
 }
 
 .word-search-grid--20 {
+  --word-search-grid-count: 20;
   --word-search-cell-size: 27px;
 }
 
 .word-search-grid--30 {
+  --word-search-grid-count: 30;
   --word-search-cell-size: 23px;
 }
 
 @media (min-width: 1024px) {
+  .word-search-grid {
+    width: max-content;
+    max-width: none;
+    grid-template-columns: repeat(var(--word-search-grid-count), var(--word-search-cell-size));
+  }
+
   .word-search-grid--10 {
     --word-search-cell-size: 72px;
   }
