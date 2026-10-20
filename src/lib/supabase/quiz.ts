@@ -108,8 +108,10 @@ export async function getVocabularyQuizHistory(input: {
   const to = from + input.pageSize - 1;
   const { data, error, count } = await supabase
     .from("vocabulary_quiz_sessions")
-    .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at", { count: "exact" })
+    .select("id, user_id, mode, question_count, correct_count, is_perfect, duration_seconds, started_at, completed_at, created_at", { count: "exact" })
     .eq("user_id", user.id)
+    .order("is_perfect", { ascending: false })
+    .order("duration_seconds", { ascending: true })
     .order("completed_at", { ascending: false })
     .order("id", { ascending: false })
     .range(from, to);

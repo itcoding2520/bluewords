@@ -55,6 +55,8 @@ export async function getWordSearchSessions(input: {
     .from("word_search_sessions")
     .select("id, user_id, grid_size, difficulty, category, word_count, duration_seconds, words, started_at, completed_at, created_at", { count: "exact" })
     .eq("user_id", user.id)
+    .order("category", { ascending: true })
+    .order("duration_seconds", { ascending: true })
     .order("completed_at", { ascending: false })
     .order("id", { ascending: false })
     .range(from, to);
