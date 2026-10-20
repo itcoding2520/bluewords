@@ -350,7 +350,7 @@ export function VocabularyCsvTools({
                 Choose file
               </Button>
               <p className="mt-3 text-xs text-slate-500">
-                Columns: word, type, part_of_speech, meaning, category, status, ipa (optional). Max {MAX_VOCABULARY_IMPORT_WORDS} words per import.
+                Columns: word, type, meaning, part_of_speech, detailed_meaning, category, status, ipa (optional). Max {MAX_VOCABULARY_IMPORT_WORDS} words per import. Older files without detailed_meaning are also supported.
               </p>
             </div>
 

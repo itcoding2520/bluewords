@@ -14,16 +14,15 @@ export const MAX_VOCABULARY_IMPORT_WORDS = 50;
 export const VOCABULARY_CSV_HEADERS = [
   "word",
   "type",
-  "part_of_speech",
   "meaning",
+  "part_of_speech",
+  "detailed_meaning",
   "category",
   "status",
   "ipa",
 ] as const;
 
-const REQUIRED_CSV_HEADERS = VOCABULARY_CSV_HEADERS.filter(
-  (header) => header !== "ipa"
-);
+const REQUIRED_CSV_HEADERS = ["word", "type", "meaning", "category", "status"];
 
 export type VocabularyCsvWord = Omit<VocabularyWord, "id">;
 
@@ -53,10 +52,10 @@ interface CsvParseResult {
 interface WordGroup {
   word: string;
   type: VocabularyType;
+  meaning: string;
   category: string;
   status: VocabularyWord["status"];
-  meanings: Array<{ partOfSpeech: PartOfSpeech; meaning: string }>;
-  plainMeanings: string[];
+  detailedMeanings: Array<{ partOfSpeech: PartOfSpeech; meaning: string }>;
   seenMeanings: Set<string>;
   ipa: string | null;
 }
@@ -236,6 +235,13 @@ export function previewVocabularyCsvImport(
     const typeValue = normalized(value("type"));
     const partOfSpeechValue = normalized(value("part_of_speech"));
     const meaning = value("meaning");
+    // Older CSVs used `meaning` for the part-of-speech meaning. Continue to
+    // accept them when the new, explicit `detailed_meaning` column is absent.
+    const detailedMeaning = columnIndex.has("detailed_meaning")
+      ? value("detailed_meaning")
+      : partOfSpeechValue
+        ? meaning
+        : "";
     const rawCategory = value("category");
     const statusValue = normalized(value("status"));
     const ipa = columnIndex.has("ipa") ? value("ipa") || null : null;
@@ -271,6 +277,12 @@ export function previewVocabularyCsvImport(
     if (typeValue === "expression" && partOfSpeechValue) {
       rowErrors.push("Expressions must leave part_of_speech blank.");
     }
+    if (detailedMeaning && !partOfSpeech) {
+      rowErrors.push("Detailed meaning requires a valid part_of_speech.");
+    }
+    if (partOfSpeech && !detailedMeaning) {
+      rowErrors.push("Detailed meaning is required when part_of_speech is provided.");
+    }
 
     const category = categoriesByName.get(normalized(rawCategory));
     if (!category) fallbackWords.add(key);
@@ -289,12 +301,13 @@ export function previewVocabularyCsvImport(
     if (existingGroup) {
       if (
         existingGroup.type !== type ||
+        normalized(existingGroup.meaning) !== normalized(meaning) ||
         existingGroup.category !== resolvedCategory ||
         existingGroup.status !== status
       ) {
         errors.push({
           line: record.line,
-          message: `Rows for "${word}" must use the same type, category, and status.`,
+          message: `Rows for "${word}" must use the same meaning, type, category, and status.`,
         });
         invalidGroups.add(key);
         continue;
@@ -303,10 +316,10 @@ export function previewVocabularyCsvImport(
       groups.set(key, {
         word,
         type,
+        meaning,
         category: resolvedCategory,
         status,
-        meanings: [],
-        plainMeanings: [],
+        detailedMeanings: [],
         seenMeanings: new Set(),
         ipa,
       });
@@ -314,14 +327,12 @@ export function previewVocabularyCsvImport(
 
     const group = groups.get(key)!;
     if (!group.ipa && ipa) group.ipa = ipa;
-    if (partOfSpeech) {
-      const meaningKey = `${normalized(partOfSpeech)}\u0000${normalized(meaning)}`;
+    if (partOfSpeech && detailedMeaning) {
+      const meaningKey = `${normalized(partOfSpeech)}\u0000${normalized(detailedMeaning)}`;
       if (!group.seenMeanings.has(meaningKey)) {
         group.seenMeanings.add(meaningKey);
-        group.meanings.push({ partOfSpeech, meaning });
+        group.detailedMeanings.push({ partOfSpeech, meaning: detailedMeaning });
       }
-    } else if (!group.plainMeanings.some((item) => normalized(item) === normalized(meaning))) {
-      group.plainMeanings.push(meaning);
     }
   }
 
@@ -329,20 +340,15 @@ export function previewVocabularyCsvImport(
   for (const [key, group] of groups) {
     if (invalidGroups.has(key)) continue;
 
-    const allMeanings = [
-      ...group.meanings.map((item) => item.meaning),
-      ...group.plainMeanings,
-    ];
-
     items.push({
       word: group.word,
-      meaning: allMeanings.join("; "),
+      meaning: group.meaning,
       type: group.type,
       category: group.category,
       status: group.status,
       imagePath: null,
       ipa: group.ipa,
-      detailedMeanings: group.meanings,
+      detailedMeanings: group.detailedMeanings,
     });
   }
 
@@ -387,6 +393,7 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
         rows.push([
           word.word,
           word.type ?? "word",
+          word.meaning,
           typeof item.partOfSpeech === "string" ? item.partOfSpeech : "",
           item.meaning,
           word.category,
@@ -398,8 +405,9 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
       rows.push([
         word.word,
         word.type ?? "word",
-        "",
         word.meaning,
+        "",
+        "",
         word.category,
         word.status,
         word.ipa ?? "",
