@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Clock3, RefreshCw, Trophy } from "lucide-react";
+import { useEffect, useState, type ComponentProps } from "react";
+import { ChevronDown, Clock3, RefreshCw, Trophy } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import {
@@ -25,7 +25,24 @@ function formatTime(totalSeconds: number): string {
     : `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-const selectClassName = "min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+const selectClassName = "min-h-10 rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+
+function LeaderboardSelect(props: ComponentProps<"select">) {
+  const { children, className = "", ...selectProps } = props;
+
+  return (
+    <span className="relative inline-flex">
+      <select {...selectProps} className={`${selectClassName} appearance-none ${className}`}>
+        {children}
+      </select>
+      <ChevronDown
+        size={15}
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+      />
+    </span>
+  );
+}
 
 export function GamesLeaderboard() {
   const [game, setGame] = useState<GameTab>("quiz");
@@ -95,23 +112,23 @@ export function GamesLeaderboard() {
           <div className="flex flex-wrap gap-2" aria-label="Leaderboard filters">
             {game === "quiz" ? <>
               <label className="sr-only" htmlFor="leaderboard-quiz-mode">Quiz mode</label>
-              <select id="leaderboard-quiz-mode" className={selectClassName} value={quizMode} onChange={(event) => { setLoading(true); setError(""); setQuizMode(event.target.value as QuizMode); }}>
+              <LeaderboardSelect id="leaderboard-quiz-mode" value={quizMode} onChange={(event) => { setLoading(true); setError(""); setQuizMode(event.target.value as QuizMode); }}>
                 <option value="choose-meaning">Choose the meaning</option>
                 <option value="type-word">Type the word</option>
-              </select>
+              </LeaderboardSelect>
               <label className="sr-only" htmlFor="leaderboard-question-count">Number of questions</label>
-              <select id="leaderboard-question-count" className={selectClassName} value={questionCount} onChange={(event) => { setLoading(true); setError(""); setQuestionCount(Number(event.target.value) as 10 | 20 | 30); }}>
+              <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => { setLoading(true); setError(""); setQuestionCount(Number(event.target.value) as 10 | 20 | 30); }}>
                 <option value={10}>10 questions</option><option value={20}>20 questions</option><option value={30}>30 questions</option>
-              </select>
+              </LeaderboardSelect>
             </> : <>
               <label className="sr-only" htmlFor="leaderboard-grid-size">Grid size</label>
-              <select id="leaderboard-grid-size" className={selectClassName} value={gridSize} onChange={(event) => { setLoading(true); setError(""); setGridSize(Number(event.target.value) as 10 | 15 | 20); }}>
+              <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => { setLoading(true); setError(""); setGridSize(Number(event.target.value) as 10 | 15 | 20); }}>
                 <option value={10}>10 × 10 grid</option><option value={15}>15 × 15 grid</option><option value={20}>20 × 20 grid</option>
-              </select>
+              </LeaderboardSelect>
               <label className="sr-only" htmlFor="leaderboard-difficulty">Difficulty</label>
-              <select id="leaderboard-difficulty" className={selectClassName} value={difficulty} onChange={(event) => { setLoading(true); setError(""); setDifficulty(event.target.value as Difficulty); }}>
+              <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => { setLoading(true); setError(""); setDifficulty(event.target.value as Difficulty); }}>
                 <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
-              </select>
+              </LeaderboardSelect>
             </>}
           </div>
 
