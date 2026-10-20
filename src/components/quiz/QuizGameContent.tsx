@@ -11,7 +11,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
-import { getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
+import { getCachedVocabularyQuizAnswers, getCachedVocabularyQuizHistory, getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
 
@@ -80,7 +80,7 @@ function QuizImage({ word, className = "" }: { word: VocabularyWord; className?:
   return <Image src={imageUrl} alt="Vocabulary quiz prompt" width={240} height={240} unoptimized className={`size-48 rounded-2xl border border-slate-100 object-cover ${className}`} />;
 }
 
-export function QuizGameContent() {
+export function QuizGameContent({ userId }: { userId: string }) {
   const { words, categories, isLoaded } = useVocabulary();
   const [mode, setMode] = useState<QuizMode>("choose-meaning");
   const [category, setCategory] = useState("all");
@@ -123,8 +123,16 @@ export function QuizGameContent() {
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
 
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
+  const loadHistory = useCallback(async (forceRefresh = false) => {
+    const cachedHistory = getCachedVocabularyQuizHistory(userId);
+    if (cachedHistory && !forceRefresh) {
+      setHistory(cachedHistory);
+      setHistoryError("");
+      setHistoryLoading(false);
+      return;
+    }
+
+    setHistoryLoading(!cachedHistory);
     setHistoryError("");
     try {
       setHistory(await getVocabularyQuizHistory());
@@ -133,7 +141,7 @@ export function QuizGameContent() {
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
@@ -225,6 +233,13 @@ export function QuizGameContent() {
 
   async function openHistoryReview(session: VocabularyQuizSessionRow) {
     setSelectedHistory(session);
+    setHistoryError("");
+    const cachedAnswers = getCachedVocabularyQuizAnswers(userId, session.id);
+    if (cachedAnswers) {
+      setHistoryAnswers(cachedAnswers);
+      setReviewLoading(false);
+      return;
+    }
     setReviewLoading(true);
     try {
       setHistoryAnswers(await getVocabularyQuizAnswers(session.id));
@@ -276,7 +291,7 @@ export function QuizGameContent() {
             <>
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div><h2 className="text-xl font-semibold text-slate-950">Your quiz journey</h2><p className="mt-1 text-sm text-slate-500">Review scores, time, and answers from every completed quiz.</p></div>
-                <Button variant="secondary" onClick={() => void loadHistory()} disabled={historyLoading}><RotateCcw size={15} /> Refresh</Button>
+                <Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading}><RotateCcw size={15} /> Refresh</Button>
               </div>
               {historyError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{historyError}</p>}
               {historyLoading ? <p className="py-10 text-center text-sm text-slate-500">Loading quiz history…</p> : history.length === 0 ? (

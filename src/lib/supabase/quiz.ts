@@ -5,8 +5,36 @@ import type {
   VocabularyQuizSessionRow,
 } from "@/types/database";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
+import {
+  getCachedQuizAnswers,
+  getCachedQuizHistory,
+  invalidateQuizHistoryCache,
+  setCachedQuizAnswers,
+  setCachedQuizHistory,
+} from "@/lib/supabase/quiz-history-cache.mjs";
 
 const supabase = createClient();
+
+export function getCachedVocabularyQuizHistory(
+  userId: string
+): VocabularyQuizSessionRow[] | null {
+  return getCachedQuizHistory(userId);
+}
+
+export function getCachedVocabularyQuizAnswers(
+  userId: string,
+  sessionId: string
+): VocabularyQuizAnswerRow[] | null {
+  return getCachedQuizAnswers(userId, sessionId);
+}
+
+export function invalidateVocabularyQuizHistoryCache(userId?: string): void {
+  if (userId) {
+    invalidateQuizHistoryCache(userId);
+  } else {
+    invalidateQuizHistoryCache();
+  }
+}
 
 export interface SaveVocabularyQuizAnswer {
   vocabulary_word_id: string;
@@ -54,6 +82,7 @@ export async function saveVocabularyQuizSession(
   });
 
   if (error) throw error;
+  invalidateVocabularyQuizHistoryCache(user.id);
   return data as string;
 }
 
@@ -67,7 +96,10 @@ export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionR
     throw new Error("You must be logged in to view quiz history.");
   }
 
-  return fetchAllPages<VocabularyQuizSessionRow>(async (from, to) => {
+  const cached = getCachedQuizHistory(user.id);
+  if (cached) return cached;
+
+  const history = await fetchAllPages<VocabularyQuizSessionRow>(async (from, to) => {
     const { data, error } = await supabase
       .from("vocabulary_quiz_sessions")
       .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at")
@@ -78,6 +110,8 @@ export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionR
 
     return { data: (data ?? []) as VocabularyQuizSessionRow[], error };
   });
+  setCachedQuizHistory(user.id, history);
+  return history;
 }
 
 export async function getVocabularyQuizAnswers(
@@ -92,6 +126,9 @@ export async function getVocabularyQuizAnswers(
     throw new Error("You must be logged in to review a quiz.");
   }
 
+  const cached = getCachedQuizAnswers(user.id, sessionId);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from("vocabulary_quiz_answers")
     .select("id, session_id, user_id, vocabulary_word_id, question_position, prompt_type, word_text, prompt_text, expected_answer, selected_answer, is_correct, part_of_speech, choices, image_path, created_at")
@@ -100,5 +137,7 @@ export async function getVocabularyQuizAnswers(
     .order("question_position", { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as VocabularyQuizAnswerRow[];
+  const answers = (data ?? []) as VocabularyQuizAnswerRow[];
+  setCachedQuizAnswers(user.id, sessionId, answers);
+  return answers;
 }
