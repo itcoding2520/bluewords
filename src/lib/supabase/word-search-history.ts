@@ -13,7 +13,7 @@ export function getCachedWordSearchSessions(userId: string, page = 1, pageSize =
 }
 
 export async function saveWordSearchSession(input: {
-  gridSize: 10 | 20 | 30;
+  gridSize: 10 | 15 | 20;
   difficulty: WordSearchDifficulty;
   category: string;
   words: string[];

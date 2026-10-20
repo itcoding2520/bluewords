@@ -122,7 +122,7 @@ export type WordSearchDifficulty = "easy" | "medium" | "hard";
 export type WordSearchSessionRow = {
   id: string;
   user_id: string;
-  grid_size: 10 | 20 | 30;
+  grid_size: 10 | 15 | 20 | 30;
   difficulty: WordSearchDifficulty;
   category: string;
   word_count: number;

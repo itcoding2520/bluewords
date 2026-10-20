@@ -13,13 +13,13 @@ import type { WordSearchSessionRow } from "@/types/database";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
-type GridSize = 10 | 20 | 30;
+type GridSize = 10 | 15 | 20;
 type Difficulty = "easy" | "medium" | "hard";
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
 type CellPosition = { row: number; column: number };
 
-const GRID_SIZES: GridSize[] = [10, 20, 30];
+const GRID_SIZES: GridSize[] = [10, 15, 20];
 const DIFFICULTIES: { value: Difficulty; label: string; description: string }[] = [
   { value: "easy", label: "Easy", description: "Shorter words and fewer targets." },
   { value: "medium", label: "Medium", description: "A mix of short and longer words." },
@@ -28,8 +28,8 @@ const DIFFICULTIES: { value: Difficulty; label: string; description: string }[] 
 
 const WORD_TARGETS: Record<GridSize, Record<Difficulty, number>> = {
   10: { easy: 5, medium: 7, hard: 9 },
+  15: { easy: 8, medium: 12, hard: 16 },
   20: { easy: 12, medium: 17, hard: 22 },
-  30: { easy: 20, medium: 28, hard: 36 },
 };
 
 const MIN_WORD_LENGTH: Record<Difficulty, number> = { easy: 2, medium: 4, hard: 6 };
@@ -287,7 +287,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
-                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 30 ? "text-[7px] lg:text-[20px]" : gridSize === 20 ? "text-[10px] lg:text-2xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
+                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 20 ? "text-[8px] lg:text-base" : gridSize === 15 ? "text-[10px] lg:text-xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
                 }))}
               </div>
             </div>
