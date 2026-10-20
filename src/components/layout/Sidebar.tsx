@@ -30,6 +30,11 @@ import {
 
 const navigation = [
   {
+    label: "Profile",
+    href: "/profile",
+    icon: UserRound,
+  },
+  {
     label: "Overview",
     href: "/",
     icon: LayoutDashboard,
@@ -48,11 +53,6 @@ const navigation = [
     label: "Games",
     href: "/games",
     icon: Gamepad2,
-  },
-  {
-    label: "Profile",
-    href: "/profile",
-    icon: UserRound,
   },
   {
     label: "Review results",
