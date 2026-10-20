@@ -15,5 +15,5 @@ test("word search setup keeps an inline start action on desktop only", () => {
 });
 
 test("word search timer remains sticky while a round is in progress", () => {
-  assert.match(source, /phase === "playing" && <div className="sticky top-25 z-20[\s\S]*?lg:top-0[\s\S]*?formatDuration\(elapsedSeconds\)/);
+  assert.match(source, /phase === "playing" \? \([\s\S]*?<div className="sticky top-25 z-20[\s\S]*?href="\/games"[\s\S]*?Back to Games[\s\S]*?formatDuration\(elapsedSeconds\)/);
 });

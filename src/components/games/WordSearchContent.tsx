@@ -268,12 +268,17 @@ export function WordSearchContent({ userId }: { userId: string }) {
   const foundCells = new Set(Object.values(foundWordPaths).flatMap((path) => path.map(({ row, column }) => `${row}:${column}`)));
   return (
     <div className="pb-8">
-      <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+      {phase === "playing" ? (
+        <div className="sticky top-25 z-20 -mx-2 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-2 py-2.5 backdrop-blur lg:top-0 lg:mx-0 lg:bg-slate-50/95">
+          <Link href="/games" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+          <div className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><Clock3 size={16} />{formatDuration(elapsedSeconds)}</div>
+        </div>
+      ) : (
+        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+      )}
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Find the words</h1></div>
       </header>
-
-      {phase === "playing" && <div className="sticky top-25 z-20 -mx-2 mb-4 flex justify-end border-b border-slate-200 bg-white/95 px-2 py-2.5 backdrop-blur lg:top-0 lg:mx-0 lg:bg-slate-50/95"><div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><Clock3 size={16} />{formatDuration(elapsedSeconds)}</div></div>}
 
       {phase === "results" ? (
         <Card className="max-w-3xl p-6 text-center sm:p-10">
