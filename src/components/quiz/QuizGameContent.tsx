@@ -129,6 +129,23 @@ export function QuizGameContent({ userId }: { userId: string }) {
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
 
+  useEffect(() => {
+    if (phase !== "playing" || currentAnswer?.correct !== true) return;
+
+    const timeout = window.setTimeout(() => {
+      if (questionIndex + 1 >= questions.length) {
+        setElapsedSeconds(startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000));
+        setPhase("results");
+        return;
+      }
+
+      setQuestionIndex((index) => index + 1);
+      setInput("");
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt]);
+
   const loadHistory = useCallback(async (
     forceRefresh = false,
     page = historyPage,
@@ -422,6 +439,10 @@ export function QuizGameContent({ userId }: { userId: string }) {
             >
               Check answer
             </Button>
+          ) : currentAnswer?.correct ? (
+            <div role="status" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-700">
+              <Check size={17} /> Correct! Moving to the next question…
+            </div>
           ) : (
             <Button onClick={goToNextQuestion} className="min-h-12 w-full">
               {questionIndex + 1 === questions.length ? "See results" : "Next question"}
@@ -440,7 +461,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
               {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
               <p className="mt-4 text-sm text-slate-500">Choose the correct meaning</p><div className="mt-4 grid w-full max-w-xl gap-2 sm:grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === currentQuestion.meaning ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
             </>}
-            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status"><p className={`inline-flex items-center gap-2 text-sm font-semibold ${currentAnswer.correct ? "text-emerald-700" : "text-red-700"}`}>{currentAnswer.correct ? <Check size={17} /> : <X size={17} />}{currentAnswer.correct ? "Correct!" : `The answer is: ${mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning}`}</p><Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
+            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status"><p className={`inline-flex items-center gap-2 text-sm font-semibold ${currentAnswer.correct ? "text-emerald-700" : "text-red-700"}`}>{currentAnswer.correct ? <Check size={17} /> : <X size={17} />}{currentAnswer.correct ? "Correct!" : `The answer is: ${mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning}`}</p>{currentAnswer.correct ? <p className="text-sm text-slate-500">Moving to the next question…</p> : <Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button>}</div>}
           </div>
         </Card>
       )}

@@ -33,6 +33,15 @@ test("quiz answer actions stay available at the bottom of the mobile screen", ()
   assert.match(source, /className="hidden sm:inline-flex">\{questionIndex \+ 1 === questions\.length/);
 });
 
+test("correct quiz answers automatically advance after brief feedback", () => {
+  assert.match(source, /currentAnswer\?\.correct !== true/);
+  assert.match(source, /window\.setTimeout\(\(\) => \{/);
+  assert.match(source, /\}, 800\);/);
+  assert.match(source, /setQuestionIndex\(\(index\) => index \+ 1\)/);
+  assert.match(source, /Moving to the next question…/);
+  assert.match(source, /currentAnswer\.correct \? <p className="text-sm text-slate-500">Moving to the next question/);
+});
+
 test("quiz progress header sticks below the mobile app header while scrolling", () => {
   assert.match(source, /sticky top-25 z-20[\s\S]*?lg:top-0/);
 });
