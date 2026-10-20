@@ -10,7 +10,7 @@ const source = await readFile(
 test("quiz setup keeps a mobile start action fixed above the safe area", () => {
   assert.match(source, /const showStickyStart = tab === "play" && phase === "setup"/);
   assert.match(source, /fixed inset-x-0 bottom-0[\s\S]*?pb-\[calc\(0\.75rem\+env\(safe-area-inset-bottom\)\)\][\s\S]*?sm:hidden/);
-  assert.match(source, /showStickyStart \? "pb-24 sm:pb-0"/);
+  assert.match(source, /showStickyStart \|\| showStickyGameAction \? "pb-24 sm:pb-0"/);
 });
 
 test("quiz setup uses a separate non-sticky start action on desktop", () => {
@@ -23,4 +23,12 @@ test("quiz question type cards are compact and side-by-side on mobile", () => {
   assert.match(source, /CompactModeButton active=\{mode === "choose-meaning"\}/);
   assert.match(source, /CompactModeButton active=\{mode === "type-word"\}/);
   assert.match(source, /hidden gap-3 sm:grid sm:grid-cols-2/);
+});
+
+test("quiz answer actions stay available at the bottom of the mobile screen", () => {
+  assert.match(source, /const showStickyGameAction = tab === "play" && phase === "playing"/);
+  assert.match(source, /form="quiz-type-word-answer"/);
+  assert.match(source, /id="quiz-type-word-answer" onSubmit=\{handleSubmit\}/);
+  assert.match(source, /className="hidden sm:inline-flex">Check/);
+  assert.match(source, /className="hidden sm:inline-flex">\{questionIndex \+ 1 === questions\.length/);
 });
