@@ -200,7 +200,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
     if (maximumQuestions < selectedQuestionCount) return;
     const pool = mode === "type-word"
       ? shuffle(eligibleWords).map((word) => ({ word, meaning: "", partOfSpeech: null, choices: [] }))
-      : buildMeaningQuestions(categoryWords);
+      : shuffle(meaningQuestions);
     const nextQuestions = pool.slice(0, selectedQuestionCount);
     if (nextQuestions.length !== selectedQuestionCount) return;
     const now = Date.now();
