@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { createWordSearchPuzzle, findWordSearchSelection, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 
 type GridSize = 10 | 20 | 30;
 type Difficulty = "easy" | "medium" | "hard";
@@ -53,7 +53,7 @@ export function WordSearchContent() {
   const [phase, setPhase] = useState<Phase>("setup");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
-  const [selectedStart, setSelectedStart] = useState<CellPosition | null>(null);
+  const [selectedCells, setSelectedCells] = useState<CellPosition[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
@@ -78,7 +78,7 @@ export function WordSearchContent() {
     }
     setPuzzle(nextPuzzle);
     setFoundIds(new Set());
-    setSelectedStart(null);
+    setSelectedCells([]);
     setElapsedSeconds(0);
     setStartedAt(Date.now());
     setGameError("");
@@ -87,26 +87,22 @@ export function WordSearchContent() {
 
   function handleCellSelection(position: CellPosition) {
     if (!puzzle || phase !== "playing") return;
-    if (!selectedStart) {
-      setSelectedStart(position);
+    const selection = [...selectedCells, position];
+    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
+    if (!match) {
+      setSelectedCells([position]);
       return;
     }
 
-    const foundWord = findWordSearchSelection(puzzle, selectedStart, position);
-    if (!foundWord) {
-      setSelectedStart(position);
-      return;
-    }
-
-    if (foundIds.has(foundWord.id)) {
-      setSelectedStart(null);
+    setSelectedCells(selection);
+    if (!match.complete) {
       return;
     }
 
     const nextFoundIds = new Set(foundIds);
-    nextFoundIds.add(foundWord.id);
+    nextFoundIds.add(match.word.id);
     setFoundIds(nextFoundIds);
-    setSelectedStart(null);
+    setSelectedCells([]);
 
     if (nextFoundIds.size === puzzle.words.length) {
       setPhase("results");
@@ -182,17 +178,17 @@ export function WordSearchContent() {
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
           <Card className="min-w-0 p-3 sm:p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedStart(null)} className="text-blue-600 hover:text-blue-800">Clear selection</button></div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="overflow-x-auto overscroll-x-contain pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
               <div className="mx-auto grid w-max gap-[2px] touch-manipulation select-none" style={{ gridTemplateColumns: `repeat(${gridSize}, ${cellSize}px)` }}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
-                  const selected = selectedStart?.row === rowIndex && selectedStart.column === columnIndex;
+                  const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
                   return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square place-items-center rounded-[5px] font-semibold transition ${gridSize === 30 ? "text-[10px]" : gridSize === 20 ? "text-xs" : "text-sm"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
                 }))}
               </div>
             </div>
-            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedStart ? "Now select the last letter of the word." : "Select a word’s first letter, then its last letter."}</p>
+            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Tap the next letter in order.` : "Tap each letter in order. Words run left-to-right, top-to-bottom, or diagonally."}</p>
           </Card>
 
           <Card className="p-5">

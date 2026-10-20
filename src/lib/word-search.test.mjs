@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createWordSearchPuzzle,
   findWordSearchSelection,
+  findWordSearchSelectionPrefix,
   getWordSearchSelectionPath,
   normalizeWordSearchWord,
 } from "./word-search.mjs";
@@ -49,4 +50,16 @@ test("places unique words in a complete square grid and detects their forward pa
     const last = word.cells.at(-1);
     assert.equal(findWordSearchSelection(puzzle, first, last)?.id, word.id);
   }
+});
+
+test("matches exact cells incrementally as letters are selected", () => {
+  const puzzle = createWordSearchPuzzle([{ id: "apple", word: "apple" }], 10, 1, seededRandom());
+  const word = puzzle.words[0];
+
+  assert.equal(findWordSearchSelectionPrefix(puzzle, [word.cells[0]])?.complete, false);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells.slice(0, -1))?.complete, false);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells)?.word.id, "apple");
+  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells)?.complete, true);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, [word.cells[0], word.cells[2]]), null);
+  assert.equal(findWordSearchSelectionPrefix(puzzle, word.cells, new Set(["apple"])), null);
 });

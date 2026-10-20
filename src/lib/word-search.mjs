@@ -134,3 +134,22 @@ export function findWordSearchSelection(puzzle, first, last) {
   const selected = path.map(({ row, column }) => puzzle.letters[row]?.[column] ?? "").join("");
   return puzzle.words.find((word) => word.normalized === selected) ?? null;
 }
+
+/**
+ * Match a sequence of individually selected cells against a placed word.
+ *
+ * @param {WordSearchPuzzle} puzzle
+ * @param {WordSearchCell[]} cells
+ * @param {Set<string>} [excludedIds]
+ * @returns {{ word: PlacedWord; complete: boolean } | null}
+ */
+export function findWordSearchSelectionPrefix(puzzle, cells, excludedIds = new Set()) {
+  if (cells.length === 0) return null;
+  const word = puzzle.words.find((candidate) =>
+    !excludedIds.has(candidate.id)
+    && cells.length <= candidate.cells.length
+    && cells.every(({ row, column }, index) => candidate.cells[index].row === row && candidate.cells[index].column === column),
+  );
+
+  return word ? { word, complete: cells.length === word.cells.length } : null;
+}
