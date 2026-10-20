@@ -37,8 +37,8 @@ const navigation = [
     icon: BookOpenCheck,
   },
   {
-    label: "Quiz game",
-    href: "/quiz",
+    label: "Games",
+    href: "/games",
     icon: Gamepad2,
   },
   {
