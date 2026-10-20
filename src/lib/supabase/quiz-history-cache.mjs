@@ -1,12 +1,16 @@
 const histories = new Map();
 const answersBySession = new Map();
 
-export function getCachedQuizHistory(userId) {
-  return histories.get(userId) ?? null;
+function historyKey(userId, page = 1, pageSize = 10) {
+  return `${userId}:${page}:${pageSize}`;
 }
 
-export function setCachedQuizHistory(userId, history) {
-  histories.set(userId, history);
+export function getCachedQuizHistory(userId, page = 1, pageSize = 10) {
+  return histories.get(historyKey(userId, page, pageSize)) ?? null;
+}
+
+export function setCachedQuizHistory(userId, page, pageSize, history) {
+  histories.set(historyKey(userId, page, pageSize), history);
 }
 
 export function getCachedQuizAnswers(userId, sessionId) {
@@ -19,7 +23,9 @@ export function setCachedQuizAnswers(userId, sessionId, answers) {
 
 export function invalidateQuizHistoryCache(userId) {
   if (userId) {
-    histories.delete(userId);
+    for (const key of histories.keys()) {
+      if (key.startsWith(`${userId}:`)) histories.delete(key);
+    }
     for (const key of answersBySession.keys()) {
       if (key.startsWith(`${userId}:`)) answersBySession.delete(key);
     }

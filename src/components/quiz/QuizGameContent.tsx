@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Check, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -94,6 +94,9 @@ export function QuizGameContent({ userId }: { userId: string }) {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [history, setHistory] = useState<VocabularyQuizSessionRow[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [selectedHistory, setSelectedHistory] = useState<VocabularyQuizSessionRow | null>(null);
@@ -123,10 +126,15 @@ export function QuizGameContent({ userId }: { userId: string }) {
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
 
-  const loadHistory = useCallback(async (forceRefresh = false) => {
-    const cachedHistory = getCachedVocabularyQuizHistory(userId);
+  const loadHistory = useCallback(async (
+    forceRefresh = false,
+    page = historyPage,
+    pageSize = historyPageSize
+  ) => {
+    const cachedHistory = getCachedVocabularyQuizHistory(userId, page, pageSize);
     if (cachedHistory && !forceRefresh) {
-      setHistory(cachedHistory);
+      setHistory(cachedHistory.rows);
+      setHistoryTotal(cachedHistory.total);
       setHistoryError("");
       setHistoryLoading(false);
       return;
@@ -135,13 +143,15 @@ export function QuizGameContent({ userId }: { userId: string }) {
     setHistoryLoading(!cachedHistory);
     setHistoryError("");
     try {
-      setHistory(await getVocabularyQuizHistory());
+      const result = await getVocabularyQuizHistory({ page, pageSize, forceRefresh });
+      setHistory(result.rows);
+      setHistoryTotal(result.total);
     } catch {
       setHistoryError("Could not load quiz history. Please try again.");
     } finally {
       setHistoryLoading(false);
     }
-  }, [userId]);
+  }, [historyPage, historyPageSize, userId]);
 
   useEffect(() => {
     if (phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
@@ -177,13 +187,14 @@ export function QuizGameContent({ userId }: { userId: string }) {
       }),
     }).then(() => {
       setSaveState("saved");
-      void loadHistory();
+      setHistoryPage(1);
+      void loadHistory(true, 1, historyPageSize);
     }).catch((error: unknown) => {
       saveStartedRef.current = null;
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
     });
-  }, [answers, correctCount, loadHistory, mode, phase, questions, startedAt]);
+  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, startedAt]);
 
   function startQuiz() {
     if (maximumQuestions < selectedQuestionCount) return;
@@ -302,6 +313,59 @@ export function QuizGameContent({ userId }: { userId: string }) {
                     <span><span className="block font-semibold text-slate-900">{session.correct_count}/{session.question_count} correct <span className="ml-1 text-sm font-medium text-blue-600">{scoreLabel(session.correct_count, session.question_count)}</span></span><span className="mt-1 block text-xs text-slate-500">{new Date(session.completed_at).toLocaleString()} · {chosenModeLabel(session.mode)}</span></span>
                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><Clock3 size={15} /> {formatTime(session.duration_seconds)} <span aria-hidden="true" className="ml-2 text-slate-400">›</span></span>
                   </button>)}
+                </div>
+              )}
+              {!historyLoading && !historyError && historyTotal > 0 && (
+                <div className="mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                  <p aria-live="polite">
+                    Showing {(historyPage - 1) * historyPageSize + 1}–{Math.min(historyPage * historyPageSize, historyTotal)} of {historyTotal} attempts
+                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+                    <label className="flex items-center gap-2 whitespace-nowrap">
+                      Rows per page
+                      <span className="relative inline-flex">
+                        <select
+                          aria-label="Quiz history rows per page"
+                          value={historyPageSize}
+                          onChange={(event) => {
+                            const nextSize = Number(event.target.value);
+                            setHistoryPageSize(nextSize);
+                            setHistoryPage(1);
+                            void loadHistory(false, 1, nextSize);
+                          }}
+                          className="h-10 w-[76px] cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                        >
+                          {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+                        </select>
+                        <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500"><ChevronDown size={15} /></span>
+                      </span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="whitespace-nowrap">Page {historyPage} of {Math.max(1, Math.ceil(historyTotal / historyPageSize))}</span>
+                      <Button
+                        variant="secondary"
+                        aria-label="Previous quiz history page"
+                        onClick={() => {
+                          const nextPage = Math.max(1, historyPage - 1);
+                          setHistoryPage(nextPage);
+                          void loadHistory(false, nextPage);
+                        }}
+                        disabled={historyPage <= 1}
+                        className="size-10 px-0"
+                      ><ChevronLeft size={17} /></Button>
+                      <Button
+                        variant="secondary"
+                        aria-label="Next quiz history page"
+                        onClick={() => {
+                          const nextPage = Math.min(Math.ceil(historyTotal / historyPageSize), historyPage + 1);
+                          setHistoryPage(nextPage);
+                          void loadHistory(false, nextPage);
+                        }}
+                        disabled={historyPage >= Math.ceil(historyTotal / historyPageSize)}
+                        className="size-10 px-0"
+                      ><ChevronRight size={17} /></Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </>

@@ -4,7 +4,6 @@ import type {
   VocabularyQuizMode,
   VocabularyQuizSessionRow,
 } from "@/types/database";
-import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import {
   getCachedQuizAnswers,
   getCachedQuizHistory,
@@ -16,9 +15,11 @@ import {
 const supabase = createClient();
 
 export function getCachedVocabularyQuizHistory(
-  userId: string
-): VocabularyQuizSessionRow[] | null {
-  return getCachedQuizHistory(userId);
+  userId: string,
+  page = 1,
+  pageSize = 10
+): { rows: VocabularyQuizSessionRow[]; total: number } | null {
+  return getCachedQuizHistory(userId, page, pageSize);
 }
 
 export function getCachedVocabularyQuizAnswers(
@@ -86,7 +87,11 @@ export async function saveVocabularyQuizSession(
   return data as string;
 }
 
-export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionRow[]> {
+export async function getVocabularyQuizHistory(input: {
+  page: number;
+  pageSize: number;
+  forceRefresh?: boolean;
+}): Promise<{ rows: VocabularyQuizSessionRow[]; total: number }> {
   const {
     data: { user },
     error: authError,
@@ -96,22 +101,26 @@ export async function getVocabularyQuizHistory(): Promise<VocabularyQuizSessionR
     throw new Error("You must be logged in to view quiz history.");
   }
 
-  const cached = getCachedQuizHistory(user.id);
-  if (cached) return cached;
+  const cached = getCachedQuizHistory(user.id, input.page, input.pageSize);
+  if (cached && !input.forceRefresh) return cached;
 
-  const history = await fetchAllPages<VocabularyQuizSessionRow>(async (from, to) => {
-    const { data, error } = await supabase
-      .from("vocabulary_quiz_sessions")
-      .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(from, to);
+  const from = (input.page - 1) * input.pageSize;
+  const to = from + input.pageSize - 1;
+  const { data, error, count } = await supabase
+    .from("vocabulary_quiz_sessions")
+    .select("id, user_id, mode, question_count, correct_count, duration_seconds, started_at, completed_at, created_at", { count: "exact" })
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(from, to);
 
-    return { data: (data ?? []) as VocabularyQuizSessionRow[], error };
-  });
-  setCachedQuizHistory(user.id, history);
-  return history;
+  if (error) throw error;
+  const result = {
+    rows: (data ?? []) as VocabularyQuizSessionRow[],
+    total: count ?? data?.length ?? 0,
+  };
+  setCachedQuizHistory(user.id, input.page, input.pageSize, result);
+  return result;
 }
 
 export async function getVocabularyQuizAnswers(
