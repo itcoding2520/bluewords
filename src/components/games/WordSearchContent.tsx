@@ -10,7 +10,7 @@ import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import { createWordSearchPuzzle, findWordSearchSelectionPrefix, getWordSearchSelectionPath, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type GridSize = 10 | 15 | 20;
@@ -18,6 +18,15 @@ type Difficulty = "easy" | "medium" | "hard";
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
 type CellPosition = { row: number; column: number };
+type ActiveDrag = { pointerId: number; start: CellPosition };
+
+function getCellPosition(element: Element | null): CellPosition | null {
+  const cell = element?.closest<HTMLElement>("[data-cell-row][data-cell-column]");
+  if (!cell) return null;
+  const row = Number(cell.dataset.cellRow);
+  const column = Number(cell.dataset.cellColumn);
+  return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
+}
 
 const GRID_SIZES: GridSize[] = [10, 15, 20];
 const DIFFICULTIES: { value: Difficulty; label: string; description: string }[] = [
@@ -77,6 +86,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
   const [historyError, setHistoryError] = useState("");
   const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const saveStartedRef = useRef<number | null>(null);
+  const activeDragRef = useRef<ActiveDrag | null>(null);
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
@@ -159,17 +169,14 @@ export function WordSearchContent({ userId }: { userId: string }) {
     setPhase("playing");
   }
 
-  function handleCellSelection(position: CellPosition) {
-    if (!puzzle || phase !== "playing") return;
-    const selection = [...selectedCells, position];
-    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
-    if (!match) {
-      setSelectedCells([position]);
+  function finishCellSelection(selection: CellPosition[]) {
+    if (!puzzle || phase !== "playing" || selection.length < 2) {
+      setSelectedCells([]);
       return;
     }
-
-    setSelectedCells(selection);
-    if (!match.complete) {
+    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
+    if (!match?.complete) {
+      setSelectedCells([]);
       return;
     }
 
@@ -182,6 +189,39 @@ export function WordSearchContent({ userId }: { userId: string }) {
     if (nextFoundIds.size === puzzle.words.length) {
       setPhase("results");
     }
+  }
+
+  function handleGridPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (phase !== "playing" || event.button !== 0) return;
+    const start = getCellPosition(event.target as Element);
+    if (!start) return;
+    event.preventDefault();
+    activeDragRef.current = { pointerId: event.pointerId, start };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setSelectedCells([start]);
+  }
+
+  function handleGridPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = activeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
+    if (!end) return;
+    setSelectedCells(getWordSearchSelectionPath(drag.start, end) ?? [drag.start]);
+  }
+
+  function handleGridPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = activeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
+    const selection = end ? getWordSearchSelectionPath(drag.start, end) : null;
+    activeDragRef.current = null;
+    finishCellSelection(selection ?? []);
+  }
+
+  function handleGridPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
+    if (activeDragRef.current?.pointerId !== event.pointerId) return;
+    activeDragRef.current = null;
+    setSelectedCells([]);
   }
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
@@ -295,15 +335,15 @@ export function WordSearchContent({ userId }: { userId: string }) {
           <Card className="min-w-0 p-3 sm:p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="min-w-0 overflow-hidden pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
+              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
-                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 20 ? "text-[8px] lg:text-base" : gridSize === 15 ? "text-[10px] lg:text-xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
+                  return <button key={`${rowIndex}-${columnIndex}`} type="button" data-cell-row={rowIndex} data-cell-column={columnIndex} aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 20 ? "text-[8px] lg:text-base" : gridSize === 15 ? "text-[10px] lg:text-xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
                 }))}
               </div>
             </div>
-            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Tap the next letter in order.` : "Tap each letter in order. Words run left-to-right, top-to-bottom, or diagonally."}</p>
+            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Release to check the word.` : "Click and drag from the first letter to the last, then release. Words run left-to-right, top-to-bottom, or diagonally."}</p>
           </Card>
 
           <Card className="p-5">
