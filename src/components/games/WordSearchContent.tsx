@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, History, Info, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { createWordSearchPuzzle, findWordSearchSelectionPrefix, getWordSearchSelectionPath, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type GridSize = 10 | 15 | 20;
@@ -18,13 +20,35 @@ type Difficulty = "easy" | "medium" | "hard";
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
 type CellPosition = { row: number; column: number };
+type ActiveDrag = { pointerId: number; start: CellPosition };
+
+function getCellPosition(element: Element | null): CellPosition | null {
+  const cell = element?.closest<HTMLElement>("[data-cell-row][data-cell-column]");
+  if (!cell) return null;
+  const row = Number(cell.dataset.cellRow);
+  const column = Number(cell.dataset.cellColumn);
+  return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
+}
 
 const GRID_SIZES: GridSize[] = [10, 15, 20];
-const DIFFICULTIES: { value: Difficulty; label: string; description: string }[] = [
-  { value: "easy", label: "Easy", description: "Shorter words and fewer targets." },
-  { value: "medium", label: "Medium", description: "A mix of short and longer words." },
-  { value: "hard", label: "Hard", description: "Longer words and a denser target list." },
+const DIFFICULTIES: { value: Difficulty; label: string }[] = [
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
 ];
+
+const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
+  blue: "bg-blue-500",
+  violet: "bg-violet-500",
+  orange: "bg-orange-500",
+  green: "bg-emerald-500",
+  rose: "bg-rose-500",
+  indigo: "bg-indigo-500",
+  teal: "bg-teal-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  slate: "bg-slate-500",
+};
 
 const WORD_TARGETS: Record<GridSize, Record<Difficulty, number>> = {
   10: { easy: 5, medium: 7, hard: 9 },
@@ -33,6 +57,64 @@ const WORD_TARGETS: Record<GridSize, Record<Difficulty, number>> = {
 };
 
 const MIN_WORD_LENGTH: Record<Difficulty, number> = { easy: 2, medium: 4, hard: 6 };
+const PREVIEW_LETTERS = [
+  ["W", "S", "E", "A", "R", "C", "H", "O"],
+  ["L", "E", "A", "R", "N", "I", "N", "G"],
+  ["T", "I", "M", "E", "F", "U", "N", "D"],
+  ["P", "L", "A", "Y", "E", "R", "S", "X"],
+  ["Q", "M", "K", "T", "V", "O", "C", "A"],
+  ["B", "B", "L", "U", "E", "W", "O", "R"],
+  ["D", "S", "G", "A", "M", "E", "C", "H"],
+  ["I", "P", "S", "F", "O", "C", "U", "S"],
+];
+
+function CategoryChip({
+  name,
+  imagePath,
+  dotClassName,
+  selected,
+  onClick,
+}: {
+  name: string;
+  imagePath: string | null;
+  dotClassName: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const imageUrl = useVocabularyImageUrl(imagePath);
+
+  return (
+    <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
+      {imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
+      <span className="min-w-0 truncate">{name}</span>
+    </button>
+  );
+}
+
+function BoardPreview({ gridSize, difficulty, wordCount }: { gridSize: GridSize; difficulty: Difficulty; wordCount: number }) {
+  return (
+    <Card className="border-indigo-100 bg-indigo-50/70 p-5 sm:p-8">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Your board preview</p>
+      <h2 className="mt-3 text-xl font-bold text-slate-900">Ready when you are</h2>
+      <p className="mt-1 text-sm text-slate-500">A fresh puzzle every round.</p>
+
+      <div role="img" aria-label="Sample word search board with SEARCH highlighted" className="mx-auto mt-5 grid max-w-sm grid-cols-8 gap-1 rounded-2xl border border-indigo-100 bg-white p-3">
+        {PREVIEW_LETTERS.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
+          const highlighted = rowIndex === 0 && columnIndex >= 1 && columnIndex <= 6;
+          return <span key={`${rowIndex}-${columnIndex}`} className={`grid aspect-square place-items-center rounded-md border text-xs font-semibold sm:text-sm ${highlighted ? "border-indigo-200 bg-indigo-100 text-indigo-700" : "border-slate-100 bg-slate-50 text-slate-500"}`}>{letter}</span>;
+        }))}
+      </div>
+
+      <div className="mt-5 border-t border-indigo-200/70 pt-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Game settings</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[`${gridSize} × ${gridSize}`, difficulty[0].toUpperCase() + difficulty.slice(1), `${wordCount} ${wordCount === 1 ? "word" : "words"}`].map((setting) => <span key={setting} className="rounded-full border border-indigo-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700">{setting}</span>)}
+        </div>
+        <p className="mt-5 flex items-center gap-2 text-xs text-slate-500"><Info size={16} className="shrink-0 text-indigo-400" /> Words are chosen from your vocabulary.</p>
+      </div>
+    </Card>
+  );
+}
 
 function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -58,6 +140,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
   const [gridSize, setGridSize] = useState<GridSize>(10);
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [category, setCategory] = useState("all");
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [phase, setPhase] = useState<Phase>("setup");
   const [tab, setTab] = useState<Tab>("play");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
@@ -77,8 +160,24 @@ export function WordSearchContent({ userId }: { userId: string }) {
   const [historyError, setHistoryError] = useState("");
   const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const saveStartedRef = useRef<number | null>(null);
+  const activeDragRef = useRef<ActiveDrag | null>(null);
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
+  const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
+  const categoryOptions = useMemo(() => {
+    const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
+    const firstIllustration = words.find((word) => word.imagePath)?.imagePath ?? null;
+    return [
+      { id: "all-categories", name: "All categories", value: "all", color: "blue" as VocabularyCategoryColor, imagePath: firstIllustration },
+      ...visibleCategories.map((item) => ({
+        id: item.id,
+        name: item.name,
+        value: item.name,
+        color: item.color,
+        imagePath: words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
+      })),
+    ];
+  }, [categories, words]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
   const showStickyStart = phase === "setup" && tab === "play";
 
@@ -159,17 +258,21 @@ export function WordSearchContent({ userId }: { userId: string }) {
     setPhase("playing");
   }
 
-  function handleCellSelection(position: CellPosition) {
-    if (!puzzle || phase !== "playing") return;
-    const selection = [...selectedCells, position];
-    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
-    if (!match) {
-      setSelectedCells([position]);
+  function backToSetup() {
+    activeDragRef.current = null;
+    setSelectedCells([]);
+    setStartedAt(null);
+    setPhase("setup");
+  }
+
+  function finishCellSelection(selection: CellPosition[]) {
+    if (!puzzle || phase !== "playing" || selection.length < 2) {
+      setSelectedCells([]);
       return;
     }
-
-    setSelectedCells(selection);
-    if (!match.complete) {
+    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
+    if (!match?.complete) {
+      setSelectedCells([]);
       return;
     }
 
@@ -184,12 +287,45 @@ export function WordSearchContent({ userId }: { userId: string }) {
     }
   }
 
+  function handleGridPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (phase !== "playing" || event.button !== 0) return;
+    const start = getCellPosition(event.target as Element);
+    if (!start) return;
+    event.preventDefault();
+    activeDragRef.current = { pointerId: event.pointerId, start };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setSelectedCells([start]);
+  }
+
+  function handleGridPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = activeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
+    if (!end) return;
+    setSelectedCells(getWordSearchSelectionPath(drag.start, end) ?? [drag.start]);
+  }
+
+  function handleGridPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = activeDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
+    const selection = end ? getWordSearchSelectionPath(drag.start, end) : null;
+    activeDragRef.current = null;
+    finishCellSelection(selection ?? []);
+  }
+
+  function handleGridPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
+    if (activeDragRef.current?.pointerId !== event.pointerId) return;
+    activeDragRef.current = null;
+    setSelectedCells([]);
+  }
+
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
 
   if (phase === "setup") {
     return (
       <div className={showStickyStart ? "pb-24 sm:pb-0" : ""}>
-        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
         <header className="mb-6">
           <p className="text-sm font-medium text-blue-600">Vocabulary game</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Word Search</h1>
@@ -223,36 +359,48 @@ export function WordSearchContent({ userId }: { userId: string }) {
             )}
           </Card>
         ) : (
-        <Card className="max-w-3xl p-5 sm:p-8">
-          <fieldset>
-            <legend className="mb-3 text-sm font-semibold text-slate-700">Grid size</legend>
-            <div className="grid grid-cols-3 gap-2">
-              {GRID_SIZES.map((size) => <ChoiceButton key={size} active={gridSize === size} onClick={() => setGridSize(size)}>{size} × {size}</ChoiceButton>)}
-            </div>
-          </fieldset>
+        <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="flex min-w-0 flex-col p-5 sm:p-8">
+          <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
+            <fieldset className="min-w-0">
+              <legend className="mb-3 text-sm font-semibold text-slate-700">Grid size</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {GRID_SIZES.map((size) => <ChoiceButton key={size} active={gridSize === size} onClick={() => setGridSize(size)}>{size} × {size}</ChoiceButton>)}
+              </div>
+            </fieldset>
 
-          <fieldset className="mt-6">
-            <legend className="mb-3 text-sm font-semibold text-slate-700">Difficulty</legend>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {DIFFICULTIES.map((option) => <button key={option.value} type="button" aria-pressed={difficulty === option.value} onClick={() => setDifficulty(option.value)} className={`rounded-xl border p-3 text-left transition ${difficulty === option.value ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200"}`}><span className="block text-sm font-semibold text-slate-900">{option.label}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{option.description}</span></button>)}
-            </div>
-          </fieldset>
+            <fieldset className="min-w-0">
+              <legend className="mb-3 text-sm font-semibold text-slate-700">Level</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {DIFFICULTIES.map((option) => <button key={option.value} type="button" aria-pressed={difficulty === option.value} onClick={() => setDifficulty(option.value)} className={`min-h-12 rounded-xl border px-2 text-center text-sm transition ${difficulty === option.value ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 hover:border-blue-200"}`}><span className="block truncate font-semibold text-slate-900">{option.label}</span></button>)}
+              </div>
+            </fieldset>
+          </div>
 
           <fieldset className="mt-6">
             <legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend>
-            <div className="w-full sm:max-w-sm"><CategoryDropdown category={category} categories={categories} onChange={setCategory} includeAll allLabel="All categories" fullWidth /></div>
-            <p className="mt-2 text-xs text-slate-500">All categories gives you a larger word pool. This round will contain up to {WORD_TARGETS[gridSize][difficulty]} words, chosen automatically.</p>
+            <p className="mb-3 text-xs text-slate-500">Pick one category or use all your words.</p>
+            <div id="word-search-categories" className={`grid grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-200 sm:grid-cols-5 ${categoriesExpanded ? "max-h-[1000px]" : "max-h-[11.5rem] sm:max-h-[5.5rem] lg:max-h-[11.5rem]"}`}>
+              {categoryOptions.map((item) => <CategoryChip key={item.id} name={item.name} imagePath={item.imagePath} dotClassName={CATEGORY_DOT_STYLES[item.color]} selected={category === item.value} onClick={() => setCategory(item.value)} />)}
+            </div>
+            {categoryOptions.length > 8 && <div className={`mt-2 flex justify-center ${categoryOptions.length <= 12 ? "hidden" : ""} ${categoryOptions.length <= 10 ? "sm:hidden" : "sm:flex"} ${categoryOptions.length <= 20 ? "lg:hidden" : "lg:flex"}`}>
+              <button type="button" aria-expanded={categoriesExpanded} aria-controls="word-search-categories" onClick={() => setCategoriesExpanded((expanded) => !expanded)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
+                {categoriesExpanded ? "Show less" : "More"}{categoriesExpanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+              </button>
+            </div>}
           </fieldset>
 
           {targetCount < WORD_TARGETS[gridSize][difficulty] && targetCount > 0 && <p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Only {targetCount} words match this category and difficulty. The round will use the available words.</p>}
           {targetCount === 0 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">No words fit this difficulty and category. Try All categories or an easier level.</p>}
           {gameError && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{gameError}</p>}
 
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">Words can appear left-to-right, top-to-bottom, or diagonally downward.</p>
-            <Button onClick={startGame} disabled={targetCount === 0} className="hidden min-h-12 w-full sm:inline-flex sm:w-auto">Start game</Button>
+            <Button onClick={startGame} disabled={targetCount === 0} className="hidden min-h-12 w-full sm:inline-flex sm:w-auto min-w-[115px]">Start game</Button>
           </div>
         </Card>
+        <BoardPreview gridSize={gridSize} difficulty={difficulty} wordCount={targetCount} />
+        </div>
         )}
         {showStickyStart && (
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
@@ -270,11 +418,11 @@ export function WordSearchContent({ userId }: { userId: string }) {
     <div className="pb-8">
       {phase === "playing" ? (
         <div className="sticky top-25 z-20 -mx-2 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-2 py-2.5 backdrop-blur lg:top-0 lg:mx-0 lg:bg-slate-50/95">
-          <Link href="/games" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+          <button type="button" onClick={backToSetup} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Setup</button>
           <div className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><Clock3 size={16} />{formatDuration(elapsedSeconds)}</div>
         </div>
       ) : (
-        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
       )}
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Find the words</h1></div>
@@ -295,22 +443,30 @@ export function WordSearchContent({ userId }: { userId: string }) {
           <Card className="min-w-0 p-3 sm:p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="min-w-0 overflow-hidden pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
+              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
-                  return <button key={`${rowIndex}-${columnIndex}`} type="button" aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} onClick={() => handleCellSelection({ row: rowIndex, column: columnIndex })} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 20 ? "text-[8px] lg:text-base" : gridSize === 15 ? "text-[10px] lg:text-xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
+                  return <button key={`${rowIndex}-${columnIndex}`} type="button" data-cell-row={rowIndex} data-cell-column={columnIndex} aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}, ${letter}`} aria-pressed={selected || found} className={`grid aspect-square min-h-0 min-w-0 w-full place-items-center rounded-[5px] p-0 font-semibold leading-none transition ${gridSize === 20 ? "text-[8px] lg:text-base" : gridSize === 15 ? "text-[10px] lg:text-xl" : "text-sm lg:text-[28px]"} ${found ? "bg-emerald-100 text-emerald-800" : selected ? "bg-blue-600 text-white ring-2 ring-blue-200" : "bg-slate-50 text-slate-700 hover:bg-blue-50"}`}>{letter}</button>;
                 }))}
               </div>
             </div>
-            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Tap the next letter in order.` : "Tap each letter in order. Words run left-to-right, top-to-bottom, or diagonally."}</p>
+            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Release to check the word.` : "Click and drag from the first letter to the last, then release. Words run left-to-right, top-to-bottom, or diagonally."}</p>
           </Card>
 
           <Card className="p-5">
             <h2 className="font-semibold text-slate-950">Words to find</h2>
             <p className="mt-1 text-xs text-slate-500">Find them in any order.</p>
             <ul className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
-              {puzzle.words.map((word) => <li key={word.id} className={`rounded-lg px-3 py-2 text-sm ${foundIds.has(word.id) ? "bg-emerald-50 text-emerald-700 line-through" : "bg-slate-50 text-slate-700"}`}>{word.word}</li>)}
+              {puzzle.words.map((word) => {
+                const vocabularyWord = vocabularyById.get(word.id);
+                const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
+                const found = foundIds.has(word.id);
+                return <li key={word.id} className={`min-w-0 rounded-lg px-3 py-2 ${found ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>
+                  <span className={`inline break-words text-sm font-semibold ${found ? "line-through" : ""}`}>{word.word}</span>
+                  <span className="mt-1 inline pl-1 break-words text-xs leading-4 text-slate-500">({meaning})</span>
+                </li>;
+              })}
             </ul>
           </Card>
         </div>
