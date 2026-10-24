@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
 import { getCachedVocabularyQuizAnswers, getCachedVocabularyQuizHistory, getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
@@ -25,6 +26,8 @@ interface QuizQuestion {
   meaning: string;
   partOfSpeech: string | null;
   choices: string[];
+  choiceType: "meaning" | "word";
+  correctAnswer: string;
 }
 
 interface QuizAnswer {
@@ -33,6 +36,18 @@ interface QuizAnswer {
 }
 
 const QUESTION_COUNTS = [10, 20, 30] as const;
+const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
+  blue: "bg-blue-500",
+  violet: "bg-violet-500",
+  orange: "bg-orange-500",
+  green: "bg-emerald-500",
+  rose: "bg-rose-500",
+  indigo: "bg-indigo-500",
+  teal: "bg-teal-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  slate: "bg-slate-500",
+};
 
 function shuffle<T>(items: T[]): T[] {
   const shuffled = [...items];
@@ -51,22 +66,47 @@ function meaningsFor(word: VocabularyWord): VocabularyMeaning[] {
 function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
   const answerPool = words.flatMap((word) => meaningsFor(word).map((meaning) => ({ meaning: meaning.meaning.trim() })));
   const uniqueAnswers = [...new Map(answerPool.map((answer) => [answer.meaning.toLocaleLowerCase(), answer])).values()];
+  const uniqueWords = [...new Map(words.map((word) => [normalizeQuizAnswer(word.word), word.word.trim()] as const)).values()];
 
   return shuffle(words.flatMap((word) => {
     const wordMeanings = meaningsFor(word);
     if (wordMeanings.length === 0) return [];
     const meaning = shuffle(wordMeanings)[0];
-    const distractors = shuffle(uniqueAnswers
+    const meaningDistractors = shuffle(uniqueAnswers
       .filter((answer) => answer.meaning.toLocaleLowerCase() !== meaning.meaning.trim().toLocaleLowerCase())
       .map((answer) => answer.meaning)).slice(0, 3);
-    if (distractors.length < 3) return [];
+    const normalizedWord = normalizeQuizAnswer(word.word);
+    const wordDistractors = shuffle(uniqueWords.filter((answer) => normalizeQuizAnswer(answer) !== normalizedWord)).slice(0, 3);
+    const canChooseMeaning = meaningDistractors.length === 3;
+    const canChooseWord = wordDistractors.length === 3;
+    if (!canChooseMeaning && !canChooseWord) return [];
+    const choiceType: QuizQuestion["choiceType"] = canChooseMeaning && canChooseWord
+      ? Math.random() < 0.5 ? "meaning" : "word"
+      : canChooseMeaning ? "meaning" : "word";
+    const correctAnswer = choiceType === "meaning" ? meaning.meaning.trim() : word.word.trim();
+    const distractors = choiceType === "meaning" ? meaningDistractors : wordDistractors;
     return [{
       word,
       meaning: meaning.meaning.trim(),
       partOfSpeech: word.type !== "expression" && word.detailedMeanings?.some((item) => item.meaning.trim()) ? meaning.partOfSpeech : null,
-      choices: shuffle([meaning.meaning.trim(), ...distractors]),
+      choices: shuffle([correctAnswer, ...distractors]),
+      choiceType,
+      correctAnswer,
     }];
   }));
+}
+
+function expectedAnswer(question: QuizQuestion, mode: QuizMode) {
+  if (mode === "type-word" || question.choiceType === "word") return question.word.word;
+  // `correctAnswer` was added after quiz questions could already be in React state.
+  // Keep active sessions created by Fast Refresh (or older question objects) answerable.
+  return typeof question.correctAnswer === "string" ? question.correctAnswer : question.meaning;
+}
+
+function promptText(question: QuizQuestion, mode: QuizMode) {
+  if (mode === "type-word") return "Image → Type the word";
+  if (question.choiceType === "word") return "Meaning → Choose the word";
+  return question.word.imagePath ? "Image → Choose the meaning" : "Word → Choose the meaning";
 }
 
 function formatTime(seconds: number) {
@@ -81,10 +121,91 @@ function QuizImage({ word, className = "" }: { word: VocabularyWord; className?:
   return <Image src={imageUrl} alt="Vocabulary quiz prompt" width={240} height={240} unoptimized className={`size-48 rounded-2xl border border-slate-100 object-cover ${className}`} />;
 }
 
+function QuizCategoryChip({
+  name,
+  imagePath,
+  dotClassName,
+  selected,
+  onClick,
+}: {
+  name: string;
+  imagePath: string | null;
+  dotClassName: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const imageUrl = useVocabularyImageUrl(imagePath);
+
+  return (
+    <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
+      {imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
+      <span className="min-w-0 truncate">{name}</span>
+    </button>
+  );
+}
+
+function QuizPreview({
+  mode,
+  category,
+  questionCount,
+  meaningQuestion,
+  typeWord,
+}: {
+  mode: QuizMode;
+  category: string;
+  questionCount: number;
+  meaningQuestion?: QuizQuestion;
+  typeWord?: VocabularyWord;
+}) {
+  const settings = [
+    mode === "choose-meaning" ? "Choose meaning" : "Type the word",
+    category === "all" ? "All categories" : category,
+    `${questionCount} questions`,
+  ];
+
+  return (
+    <Card className="border-indigo-100 bg-indigo-50/70 p-5 sm:p-8">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Your quiz preview</p>
+      <h2 className="mt-3 text-xl font-bold text-slate-900">{mode === "choose-meaning" ? "Choose the meaning" : "Type the word"}</h2>
+      <p className="mt-1 text-sm text-slate-500">This is how a question will look.</p>
+
+      <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-4">
+        {mode === "choose-meaning" ? meaningQuestion ? (
+          <>
+            {meaningQuestion.choiceType === "word"
+              ? <p className="py-5 text-center text-2xl font-bold text-slate-900">{meaningQuestion.meaning}</p>
+              : meaningQuestion.word.imagePath ? <QuizImage word={meaningQuestion.word} className="mx-auto !size-36" /> : <p className="py-5 text-center text-2xl font-bold text-slate-900">{meaningQuestion.word.word}</p>}
+            {meaningQuestion.partOfSpeech && <span className="mt-3 inline-block rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium capitalize text-blue-700">{meaningQuestion.partOfSpeech}</span>}
+            <p className="mt-3 text-xs text-slate-500">{meaningQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p>
+            <div className="mt-3 grid gap-2">
+              {meaningQuestion.choices.map((choice, index) => <div key={`${choice}-${index}`} className={`rounded-lg border px-3 py-2 text-xs ${choice === expectedAnswer(meaningQuestion, mode) ? "border-emerald-200 bg-emerald-50 font-medium text-emerald-800" : "border-slate-200 bg-white text-slate-600"}`}><span className="mr-2 text-[10px] font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</div>)}
+            </div>
+          </>
+        ) : <p className="py-8 text-center text-sm text-slate-500">Add more vocabulary with meanings to preview this question type.</p> : typeWord ? (
+          <>
+            <QuizImage word={typeWord} className="mx-auto !size-36" />
+            <p className="mt-4 text-center text-xs text-slate-500">What is this word?</p>
+            <div className="mt-3 rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs text-slate-400">Type the word…</div>
+          </>
+        ) : <p className="py-8 text-center text-sm text-slate-500">Add images to vocabulary words to preview this question type.</p>}
+      </div>
+
+      <div className="mt-5 border-t border-indigo-200/70 pt-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Quiz settings</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {settings.map((setting) => <span key={setting} className="rounded-full border border-indigo-100 bg-white px-3 py-2 text-xs font-semibold text-slate-700">{setting}</span>)}
+        </div>
+        <p className="mt-5 text-xs text-slate-500">Questions are chosen from your vocabulary.</p>
+      </div>
+    </Card>
+  );
+}
+
 export function QuizGameContent({ userId }: { userId: string }) {
   const { words, categories, isLoaded } = useVocabulary();
   const [mode, setMode] = useState<QuizMode>("choose-meaning");
   const [category, setCategory] = useState("all");
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [phase, setPhase] = useState<Phase>("setup");
   const [tab, setTab] = useState<Tab>("play");
@@ -111,6 +232,19 @@ export function QuizGameContent({ userId }: { userId: string }) {
     () => filterQuizWordsByCategory(words, category),
     [category, words]
   );
+  const categoryOptions = useMemo(() => {
+    const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
+    return [
+      { id: "all-categories", name: "All categories", value: "all", color: "blue" as VocabularyCategoryColor, imagePath: words.find((word) => word.imagePath)?.imagePath ?? null },
+      ...visibleCategories.map((item) => ({
+        id: item.id,
+        name: item.name,
+        value: item.name,
+        color: item.color,
+        imagePath: words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
+      })),
+    ];
+  }, [categories, words]);
   const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
   const typeWordCount = categoryWords.filter((word) => Boolean(word.imagePath)).length;
   const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
@@ -192,12 +326,12 @@ export function QuizGameContent({ userId }: { userId: string }) {
       completed_at: new Date(completedAt).toISOString(),
       answers: questions.map((question, index) => {
         const answer = answers[index];
-        const expected = mode === "type-word" ? question.word.word : question.meaning;
+        const expected = expectedAnswer(question, mode);
         return {
           vocabulary_word_id: question.word.id,
           question_position: index + 1,
           word_text: question.word.word,
-          prompt_text: mode === "type-word" ? "Image → Type the word" : question.word.imagePath ? "Image → Choose the meaning" : "Word → Choose the meaning",
+          prompt_text: promptText(question, mode),
           expected_answer: expected,
           selected_answer: answer?.value ?? "",
           is_correct: answer?.correct ?? false,
@@ -220,7 +354,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
   function startQuiz() {
     if (maximumQuestions < selectedQuestionCount) return;
     const pool = mode === "type-word"
-      ? shuffle(eligibleWords).map((word) => ({ word, meaning: "", partOfSpeech: null, choices: [] }))
+      ? shuffle(eligibleWords).map((word) => ({ word, meaning: "", partOfSpeech: null, choices: [], choiceType: "word" as const, correctAnswer: word.word }))
       : shuffle(meaningQuestions);
     const nextQuestions = pool.slice(0, selectedQuestionCount);
     if (nextQuestions.length !== selectedQuestionCount) return;
@@ -239,7 +373,8 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
   function submitAnswer(value: string) {
     if (!currentQuestion || currentAnswer || !value.trim()) return;
-    const expected = mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning;
+    const expected = expectedAnswer(currentQuestion, mode);
+    if (typeof expected !== "string" || !expected.trim()) return;
     setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected) } }));
   }
 
@@ -291,9 +426,15 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
   return (
     <div className={showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}>
-      <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-        <ArrowLeft size={16} /> Back to Games
-      </Link>
+      {phase === "playing" ? (
+        <button type="button" onClick={backToSetup} className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+          <ArrowLeft size={16} /> Back to Setup
+        </button>
+      ) : (
+        <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+          <ArrowLeft size={16} /> Back to Games
+        </Link>
+      )}
       <header className="mb-6">
         <p className="text-sm font-medium text-blue-600">Practice through play</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Vocabulary Quiz</h1>
@@ -398,7 +539,8 @@ export function QuizGameContent({ userId }: { userId: string }) {
       )}
 
       {tab === "play" && phase === "setup" && (
-        <Card className="mx-auto max-w-3xl p-5 sm:p-8">
+        <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="min-w-0 p-5 sm:p-8">
           <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600"><Gamepad2 size={22} /></span><div><h2 className="text-lg font-semibold text-slate-950">Set up your game</h2><p className="mt-1 text-sm text-slate-500">Choose a category, question type, and number of words. There’s no time limit.</p></div></div>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Question type</legend>
             <div className="grid grid-cols-2 gap-2 sm:hidden">
@@ -406,17 +548,29 @@ export function QuizGameContent({ userId }: { userId: string }) {
               <CompactModeButton active={mode === "type-word"} title="Type word" count={typeWordCount} onClick={() => setMode("type-word")} />
             </div>
             <div className="hidden gap-3 sm:grid sm:grid-cols-2">
-              <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="See a word or image and select its meaning from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
+              <ModeCard active={mode === "choose-meaning"} title="Choose the meaning" description="Match a word or meaning with the correct answer from four choices." count={meaningQuestions.length} onClick={() => setMode("choose-meaning")} />
               <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={typeWordCount} onClick={() => setMode("type-word")} />
             </div>
           </fieldset>
-          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><div className="w-full md:w-1/2"><CategoryDropdown category={category} categories={categories} onChange={setCategory} includeAll allLabel="All categories" fullWidth /></div><p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p></fieldset>
+          <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><p className="mb-3 text-xs text-slate-500">Choose a category for this quiz.</p>
+            <div id="quiz-categories" className={`grid grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-200 sm:grid-cols-5 ${categoriesExpanded ? "max-h-[1000px]" : "max-h-[11.5rem] sm:max-h-[5.5rem] lg:max-h-[11.5rem]"}`}>
+              {categoryOptions.map((item) => <QuizCategoryChip key={item.id} name={item.name} imagePath={item.imagePath} dotClassName={CATEGORY_DOT_STYLES[item.color]} selected={category === item.value} onClick={() => setCategory(item.value)} />)}
+            </div>
+            {categoryOptions.length > 8 && <div className={`mt-2 flex justify-center ${categoryOptions.length <= 12 ? "hidden" : ""} ${categoryOptions.length <= 10 ? "sm:hidden" : "sm:flex"} ${categoryOptions.length <= 20 ? "lg:hidden" : "lg:flex"}`}>
+              <button type="button" aria-expanded={categoriesExpanded} aria-controls="quiz-categories" onClick={() => setCategoriesExpanded((expanded) => !expanded)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
+                {categoriesExpanded ? "Show less" : "More"}{categoriesExpanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+              </button>
+            </div>}
+            <p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p>
+          </fieldset>
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
           </div><p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p></fieldset>
-          {maximumQuestions < 10 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add vocabulary with meanings from at least four distinct answers, and have at least 10 eligible words."}</p>}
+          {maximumQuestions < 10 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add at least 10 eligible vocabulary words with enough distinct words or meanings to create answer choices."}</p>}
           <div className="mt-7 hidden justify-end sm:flex"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
         </Card>
+        <QuizPreview mode={mode} category={category} questionCount={questionCount} meaningQuestion={meaningQuestions[0]} typeWord={categoryWords.find((word) => Boolean(word.imagePath))} />
+        </div>
       )}
 
       {showStickyStart && (
@@ -454,15 +608,17 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
       {phase === "playing" && currentQuestion && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
-          <div className="sticky top-25 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:mt-0 lg:rounded-none lg:px-0 lg:py-0 lg:pb-4"><button type="button" onClick={backToSetup} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
+          <div className="sticky top-25 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:mt-0 lg:rounded-none lg:px-0 lg:py-0 lg:pb-4"><button type="button" onClick={backToSetup} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>
           <div className="flex min-h-[360px] flex-col items-center justify-center py-8 text-center">
-            {mode === "type-word" ? <><QuizImage word={currentQuestion.word} /><p className="mt-5 text-sm text-slate-500">What is this word?</p><form id="quiz-type-word-answer" onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()} className="hidden sm:inline-flex">Check</Button>}</form></> : <>
-              {currentQuestion.word.imagePath ? <QuizImage word={currentQuestion.word} /> : <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.word.word}</p>}
+            {mode === "type-word" ? <><QuizImage word={currentQuestion.word} /><p className="mt-5 inline-flex items-center gap-1.5 text-sm text-slate-500">What is this word?<PronunciationButton word={currentQuestion.word.word} /></p><form id="quiz-type-word-answer" onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()} className="hidden sm:inline-flex">Check</Button>}</form></> : <>
+              {currentQuestion.choiceType === "word"
+                ? <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.meaning}</p>
+                : currentQuestion.word.imagePath ? <QuizImage word={currentQuestion.word} /> : <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.word.word}</p>}
               {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
-              <p className="mt-4 text-sm text-slate-500">Choose the correct meaning</p><div className="mt-4 grid w-full max-w-xl gap-2 sm:grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === currentQuestion.meaning ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
+              <p className="mt-4 text-sm text-slate-500">{currentQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p><div className="mt-4 grid w-full max-w-xl gap-2 sm:grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === expectedAnswer(currentQuestion, mode) ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
             </>}
-            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-700"><X size={17} />{`The answer is: ${mode === "type-word" ? currentQuestion.word.word : currentQuestion.meaning}`}</p>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
+            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-700"><X size={17} />{`The answer is: ${expectedAnswer(currentQuestion, mode)}`}</p>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
           </div>
         </Card>
       )}
@@ -473,7 +629,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
             <p role={saveState === "error" ? "alert" : "status"} className={`mt-3 inline-flex items-center gap-2 text-sm ${saveState === "error" ? "text-red-700" : "text-slate-500"}`}>{saveState === "saving" && <LoaderCircle size={15} className="animate-spin" />}{saveState === "saved" ? "Attempt saved to your history." : saveState === "saving" ? "Saving your quiz history…" : saveState === "error" ? `History was not saved: ${saveError}` : ""}</p>
             {saveState === "error" && <button type="button" onClick={() => { saveStartedRef.current = null; setPhase("setup"); setTimeout(() => setPhase("results"), 0); }} className="ml-2 text-sm font-semibold text-blue-700 underline">Retry save</button>}
           </div>
-          <div className="mt-7 flex flex-col gap-3">{questions.map((question, index) => { const answer = answers[index]; const expected = mode === "type-word" ? question.word.word : question.meaning; return <div key={`${question.word.id}-${index}`} className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4"><div className="min-w-0"><p className="font-semibold text-slate-900">{question.word.word}</p>{mode === "choose-meaning" && <p className="mt-1 text-sm text-slate-600">{expected}</p>}{!answer ? <p className="mt-1 text-xs text-slate-400">Not answered</p> : !answer.correct ? <p className="mt-1 text-xs text-red-600">Your answer: {answer.value}</p> : null}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${answer?.correct ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{answer?.correct ? "Correct" : "Review"}</span></div>; })}</div>
+          <div className="mt-7 flex flex-col gap-3">{questions.map((question, index) => { const answer = answers[index]; const expected = expectedAnswer(question, mode); const prompt = mode === "choose-meaning" && question.choiceType === "word" ? question.meaning : question.word.word; return <div key={`${question.word.id}-${index}`} className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4"><div className="min-w-0"><p className="font-semibold text-slate-900">{prompt}</p>{mode === "choose-meaning" && <p className="mt-1 text-sm text-slate-600">Correct answer: {expected}</p>}{!answer ? <p className="mt-1 text-xs text-slate-400">Not answered</p> : !answer.correct ? <p className="mt-1 text-xs text-red-600">Your answer: {answer.value}</p> : null}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${answer?.correct ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{answer?.correct ? "Correct" : "Review"}</span></div>; })}</div>
           <div className="mt-6 flex flex-wrap justify-end gap-2"><Button variant="secondary" onClick={backToSetup}><ArrowLeft size={16} /> Setup</Button><Button onClick={startQuiz}><RotateCcw size={16} /> Play again</Button></div>
         </Card>
       )}
