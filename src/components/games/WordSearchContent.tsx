@@ -164,6 +164,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
+  const vocabularyByWord = useMemo(() => new Map(words.map((word) => [normalizeWordSearchWord(word.word), word] as const)), [words]);
   const categoryOptions = useMemo(() => {
     const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
     const firstIllustration = words.find((word) => word.imagePath)?.imagePath ?? null;
@@ -345,7 +346,11 @@ export function WordSearchContent({ userId }: { userId: string }) {
                 <h2 className="text-xl font-semibold text-slate-950">Word Search review</h2>
                 <p className="mt-1 text-sm text-slate-500">{new Date(selectedHistory.completed_at).toLocaleString()} · {selectedHistory.grid_size} × {selectedHistory.grid_size} · {selectedHistory.difficulty} · {selectedHistory.category === "all" ? "All categories" : selectedHistory.category} · {formatHistoryDuration(selectedHistory.duration_seconds)}</p>
                 <h3 className="mt-6 text-sm font-semibold text-slate-700">Words found</h3>
-                <ul className="mt-3 flex flex-wrap gap-2">{selectedHistory.words.map((word) => <li key={word} className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{word}</li>)}</ul>
+                <ul className="mt-3 flex flex-wrap gap-2">{selectedHistory.words.map((word) => {
+                  const vocabularyWord = vocabularyByWord.get(normalizeWordSearchWord(word));
+                  const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
+                  return <li key={word} className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700"><span className="font-medium">{word}</span><span className="pl-1 text-xs text-emerald-700/75">({meaning})</span></li>;
+                })}</ul>
               </>
             ) : (
               <>
@@ -361,7 +366,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
         ) : (
         <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="flex min-w-0 flex-col p-5 sm:p-8">
-          <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2">
             <fieldset className="min-w-0">
               <legend className="mb-3 text-sm font-semibold text-slate-700">Grid size</legend>
               <div className="grid grid-cols-3 gap-2">
@@ -424,7 +429,7 @@ export function WordSearchContent({ userId }: { userId: string }) {
       ) : (
         <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
       )}
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <header className="mb-3 md:mb-5 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Find the words</h1></div>
       </header>
 
@@ -440,10 +445,10 @@ export function WordSearchContent({ userId }: { userId: string }) {
         </Card>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
-          <Card className="min-w-0 p-3 sm:p-5">
+          <Card className="order-2 min-w-0 p-3 sm:p-5 lg:order-1">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
-            <div className="min-w-0 overflow-hidden pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-manipulation select-none`}>
+            <div className="min-w-0 overflow-hidden md:pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
+              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-none md:touch-manipulation select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
@@ -451,20 +456,20 @@ export function WordSearchContent({ userId }: { userId: string }) {
                 }))}
               </div>
             </div>
-            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Release to check the word.` : "Click and drag from the first letter to the last, then release. Words run left-to-right, top-to-bottom, or diagonally."}</p>
+            <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500 hidden md:block">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Release to check the word.` : "Click and drag from the first letter to the last, then release. Words run left-to-right, top-to-bottom, or diagonally."}</p>
           </Card>
 
-          <Card className="p-5">
+          <Card className="order-1 p-5 lg:order-2">
             <h2 className="font-semibold text-slate-950">Words to find</h2>
-            <p className="mt-1 text-xs text-slate-500">Find them in any order.</p>
-            <ul className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
+            <p className="mt-1 text-xs text-slate-500 hidden md:block">Find them in any order.</p>
+            <ul className="mt-2 md:mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
               {puzzle.words.map((word) => {
                 const vocabularyWord = vocabularyById.get(word.id);
                 const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
                 const found = foundIds.has(word.id);
-                return <li key={word.id} className={`min-w-0 rounded-lg px-3 py-2 ${found ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>
+                return <li key={word.id} className={`min-w-0 rounded-lg p-2 md:px-3 leading-4 ${found ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>
                   <span className={`inline break-words text-sm font-semibold ${found ? "line-through" : ""}`}>{word.word}</span>
-                  <span className="mt-1 inline pl-1 break-words text-xs leading-4 text-slate-500">({meaning})</span>
+                  <span className="inline pl-1 break-words text-xs leading-4 text-slate-500">({meaning})</span>
                 </li>;
               })}
             </ul>
@@ -476,5 +481,5 @@ export function WordSearchContent({ userId }: { userId: string }) {
 }
 
 function ChoiceButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button type="button" aria-pressed={active} onClick={onClick} className={`min-h-12 cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition ${active ? "border-blue-500 bg-blue-600 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"}`}>{children}</button>;
+  return <button type="button" aria-pressed={active} onClick={onClick} className={`min-h-12 cursor-pointer rounded-xl border p-3 text-sm font-semibold transition ${active ? "border-blue-500 bg-blue-600 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"}`}>{children}</button>;
 }
