@@ -145,9 +145,9 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-30 flex min-h-25 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex min-h-20 sm:min-h-25 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="Blue words" width={100} height={100} loading="eager"/>
+          <Image src="/logo.png" alt="Blue words" width={80} height={80} loading="eager"/>
         </Link>
 
         <button

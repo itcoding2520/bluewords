@@ -118,7 +118,7 @@ function formatTime(seconds: number) {
 function QuizImage({ word, className = "" }: { word: VocabularyWord; className?: string }) {
   const imageUrl = useVocabularyImageUrl(word.imagePath);
   if (!imageUrl) return <div className={`grid size-48 place-items-center rounded-2xl bg-slate-100 text-center text-sm text-slate-400 ${className}`}>{word.imagePath ? "Loading image…" : "No image"}</div>;
-  return <Image src={imageUrl} alt="Vocabulary quiz prompt" width={240} height={240} unoptimized className={`size-48 rounded-2xl border border-slate-100 object-cover ${className}`} />;
+  return <Image src={imageUrl} alt="Vocabulary quiz prompt" width={200} height={200} unoptimized className={`size-30 rounded-2xl border border-slate-100 object-cover ${className}`} />;
 }
 
 function QuizCategoryChip({
@@ -427,18 +427,17 @@ export function QuizGameContent({ userId }: { userId: string }) {
   return (
     <div className={showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}>
       {phase === "playing" ? (
-        <button type="button" onClick={backToSetup} className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+        <button type="button" onClick={backToSetup} className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
           <ArrowLeft size={16} /> Back to Setup
         </button>
       ) : (
-        <Link href="/games" className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+        <Link href="/games" className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
           <ArrowLeft size={16} /> Back to Games
         </Link>
       )}
-      <header className="mb-6">
-        <p className="text-sm font-medium text-blue-600">Practice through play</p>
+      <header className="mb-3 sm:mb-6">
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Vocabulary Quiz</h1>
-        <p className="mt-2 text-sm text-slate-500">Choose how many words to practice. We’ll track how long you take.</p>
+        <p className="mt-2 text-sm text-slate-500 hidden sm:block">Choose how many words to practice. We’ll track how long you take.</p>
       </header>
 
       {phase !== "playing" && (
@@ -610,13 +609,13 @@ export function QuizGameContent({ userId }: { userId: string }) {
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
           <div className="sticky top-25 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:mt-0 lg:rounded-none lg:px-0 lg:py-0 lg:pb-4"><button type="button" onClick={backToSetup} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>
-          <div className="flex min-h-[360px] flex-col items-center justify-center py-8 text-center">
+          <div className="flex md:min-h-[360px] flex-col items-center justify-center pt-3 sm:pt-6 text-center">
             {mode === "type-word" ? <><QuizImage word={currentQuestion.word} /><p className="mt-5 inline-flex items-center gap-1.5 text-sm text-slate-500">What is this word?<PronunciationButton word={currentQuestion.word.word} /></p><form id="quiz-type-word-answer" onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()} className="hidden sm:inline-flex">Check</Button>}</form></> : <>
               {currentQuestion.choiceType === "word"
                 ? <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.meaning}</p>
                 : currentQuestion.word.imagePath ? <QuizImage word={currentQuestion.word} /> : <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.word.word}</p>}
               {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
-              <p className="mt-4 text-sm text-slate-500">{currentQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p><div className="mt-4 grid w-full max-w-xl gap-2 sm:grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === expectedAnswer(currentQuestion, mode) ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
+              <p className="mt-4 text-sm text-slate-500">{currentQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p><div className="mt-4 grid w-full max-w-xl gap-2 grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === expectedAnswer(currentQuestion, mode) ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
             </>}
             {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-700"><X size={17} />{`The answer is: ${expectedAnswer(currentQuestion, mode)}`}</p>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
           </div>
@@ -625,12 +624,12 @@ export function QuizGameContent({ userId }: { userId: string }) {
 
       {tab === "play" && phase === "results" && (
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
+          <div className="mb-5 flex flex-wrap justify-between gap-2"><Button variant="secondary" onClick={backToSetup}><ArrowLeft size={16} /> Setup</Button><Button onClick={startQuiz}><RotateCcw size={16} /> Play again</Button></div>
           <div className="text-center"><p className="text-sm font-medium text-blue-600">Quiz complete</p><h2 className="mt-2 text-3xl font-bold text-slate-950">{correctCount} / {questions.length}</h2><p className="mt-2 text-sm text-slate-500">Correct answers · {formatTime(elapsedSeconds)} elapsed</p>
             <p role={saveState === "error" ? "alert" : "status"} className={`mt-3 inline-flex items-center gap-2 text-sm ${saveState === "error" ? "text-red-700" : "text-slate-500"}`}>{saveState === "saving" && <LoaderCircle size={15} className="animate-spin" />}{saveState === "saved" ? "Attempt saved to your history." : saveState === "saving" ? "Saving your quiz history…" : saveState === "error" ? `History was not saved: ${saveError}` : ""}</p>
             {saveState === "error" && <button type="button" onClick={() => { saveStartedRef.current = null; setPhase("setup"); setTimeout(() => setPhase("results"), 0); }} className="ml-2 text-sm font-semibold text-blue-700 underline">Retry save</button>}
           </div>
           <div className="mt-7 flex flex-col gap-3">{questions.map((question, index) => { const answer = answers[index]; const expected = expectedAnswer(question, mode); const prompt = mode === "choose-meaning" && question.choiceType === "word" ? question.meaning : question.word.word; return <div key={`${question.word.id}-${index}`} className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4"><div className="min-w-0"><p className="font-semibold text-slate-900">{prompt}</p>{mode === "choose-meaning" && <p className="mt-1 text-sm text-slate-600">Correct answer: {expected}</p>}{!answer ? <p className="mt-1 text-xs text-slate-400">Not answered</p> : !answer.correct ? <p className="mt-1 text-xs text-red-600">Your answer: {answer.value}</p> : null}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${answer?.correct ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{answer?.correct ? "Correct" : "Review"}</span></div>; })}</div>
-          <div className="mt-6 flex flex-wrap justify-end gap-2"><Button variant="secondary" onClick={backToSetup}><ArrowLeft size={16} /> Setup</Button><Button onClick={startQuiz}><RotateCcw size={16} /> Play again</Button></div>
         </Card>
       )}
     </div>

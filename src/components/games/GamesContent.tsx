@@ -27,7 +27,6 @@ export function GamesContent() {
   return (
     <div>
       <header className="mb-7">
-        <p className="text-sm font-medium text-blue-600">Practice through play</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Games</h1>
         <p className="mt-2 text-sm text-slate-500">Choose a quick game to strengthen your vocabulary.</p>
       </header>
