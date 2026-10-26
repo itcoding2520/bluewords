@@ -8,15 +8,17 @@ import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import {
   getQuizLeaderboard,
+  getVocabularyGameLeaderboard,
   getWordSearchLeaderboard,
   type QuizLeaderboardRow,
+  type VocabularyGameLeaderboardRow,
   type WordSearchLeaderboardRow,
 } from "@/lib/supabase/game-leaderboard";
 
-type GameTab = "quiz" | "word-search";
+type GameTab = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze";
 type QuizMode = "choose-meaning" | "type-word";
 type Difficulty = "easy" | "medium" | "hard";
-type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow;
+type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
 
 function formatTime(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -63,7 +65,9 @@ export function GamesLeaderboard() {
 
     const request = game === "quiz"
       ? getQuizLeaderboard({ mode: quizMode, questionCount })
-      : getWordSearchLeaderboard({ gridSize, difficulty });
+      : game === "word-search"
+        ? getWordSearchLeaderboard({ gridSize, difficulty })
+        : getVocabularyGameLeaderboard({ gameType: game, roundSize: null });
 
     void request.then((result) => {
       if (active) setRows(result);
@@ -109,6 +113,9 @@ export function GamesLeaderboard() {
           <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Choose leaderboard game">
             <button type="button" role="tab" aria-selected={game === "quiz"} onClick={() => { if (game !== "quiz") { setLoading(true); setError(""); setGame("quiz"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "quiz" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Vocabulary Quiz</button>
             <button type="button" role="tab" aria-selected={game === "word-search"} onClick={() => { if (game !== "word-search") { setLoading(true); setError(""); setGame("word-search"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-search" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Search</button>
+            <button type="button" role="tab" aria-selected={game === "word-match"} onClick={() => { if (game !== "word-match") { setLoading(true); setError(""); setGame("word-match"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-match" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Match</button>
+            <button type="button" role="tab" aria-selected={game === "word-scramble"} onClick={() => { if (game !== "word-scramble") { setLoading(true); setError(""); setGame("word-scramble"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-scramble" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Scramble</button>
+            <button type="button" role="tab" aria-selected={game === "word-maze"} onClick={() => { if (game !== "word-maze") { setLoading(true); setError(""); setGame("word-maze"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-maze" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Maze</button>
           </div>
 
           <div className="flex flex-wrap gap-2" aria-label="Leaderboard filters">
@@ -122,7 +129,7 @@ export function GamesLeaderboard() {
               <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => { setLoading(true); setError(""); setQuestionCount(Number(event.target.value) as 10 | 20 | 30); }}>
                 <option value={10}>10 questions</option><option value={20}>20 questions</option><option value={30}>30 questions</option>
               </LeaderboardSelect>
-            </> : <>
+            </> : game === "word-search" ? <>
               <label className="sr-only" htmlFor="leaderboard-grid-size">Grid size</label>
               <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => { setLoading(true); setError(""); setGridSize(Number(event.target.value) as 10 | 15 | 20); }}>
                 <option value={10}>10 × 10 grid</option><option value={15}>15 × 15 grid</option><option value={20}>20 × 20 grid</option>
@@ -131,20 +138,22 @@ export function GamesLeaderboard() {
               <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => { setLoading(true); setError(""); setDifficulty(event.target.value as Difficulty); }}>
                 <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
               </LeaderboardSelect>
-            </>}
+            </> : null}
           </div>
 
           <p className="text-xs text-slate-500">
-            {game === "quiz" ? "Ranked by correct answers, then fastest time." : "Ranked by fastest time; ties favor more words found. All categories are included."}
+            {game === "quiz" ? "Ranked by correct answers, then fastest time." : game === "word-search" ? "Ranked by fastest time; ties favor more words found. All categories are included." : "Ranked by score, then fastest time. Showing each player's best result."}
           </p>
 
           {error ? <AutoDismissMessage key={error} variant="error">{error}</AutoDismissMessage>
             : loading ? <div className="py-10 text-center text-sm text-slate-500" role="status">Loading leaderboard…</div>
-              : rows.length === 0 ? <div className="rounded-xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">No completed games for this configuration yet. Be the first on the board!</div>
-                : <ol className="space-y-2" aria-label={`${game === "quiz" ? "Quiz" : "Word Search"} rankings`}>
+              : rows.length === 0 ? <div className="rounded-xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">No completed games yet. Be the first on the board!</div>
+                : <ol className="space-y-2" aria-label={`${game} rankings`}>
                   {rows.map((row) => {
                     const resultLabel = "correct_count" in row
-                      ? `${row.correct_count}/${row.question_count} correct`
+                      ? "question_count" in row
+                        ? `${row.correct_count}/${row.question_count} correct`
+                        : `${row.score} points`
                       : `${row.word_count} words · ${row.category}`;
                     return <li key={`${row.rank_position}-${row.player_name}`} className={`games-rank-${row.rank_position} flex min-h-16 items-center gap-3 rounded-xl border px-3 py-3 sm:px-4 ${row.is_you ? "border-blue-200 bg-blue-50/70" : "border-slate-100"}`}>
                       <span className={`grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold ${row.rank_position === 1 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{row.rank_position}</span>
