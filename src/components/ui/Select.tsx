@@ -17,7 +17,7 @@ export function Select({
     <div className={cn("relative", containerClassName)}>
       <select
         className={cn(
-          "h-11 w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-0 pl-4 pr-10 text-base text-slate-900 outline-none transition sm:text-sm",
+          "h-12 w-full cursor-pointer appearance-none rounded-2xl border border-sky-200 bg-white/95 py-0 pl-4 pr-10 text-base text-slate-900 shadow-[0_2px_8px_rgb(39_90_150/0.04)] outline-none transition sm:text-sm",
           "focus:border-blue-400 focus:ring-4 focus:ring-blue-50",
           className
         )}

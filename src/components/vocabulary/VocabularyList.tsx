@@ -36,10 +36,10 @@ export function VocabularyList({
   onDelete,
 }: VocabularyListProps) {
   return (
-    <Card className="mt-5">
+    <Card className="mt-4 overflow-hidden border border-slate-100 bg-white shadow-sm">
       {/* Desktop table header */}
 
-      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:gap-5">
+      <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-slate-100 bg-sky-50/45 px-4 py-3 sm:px-6 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:gap-5">
         <input
           ref={selectPageRef}
           type="checkbox"

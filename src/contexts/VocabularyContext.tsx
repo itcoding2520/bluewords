@@ -14,6 +14,7 @@ import type {
   VocabularyMeaning,
   VocabularyWord,
 } from "@/data/vocabulary";
+import type { VocabularyCategory } from "@/config/vocabulary";
 import {
   getVocabularyWords,
   getVocabularyWordById,
@@ -39,6 +40,7 @@ import {
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
 import type { VocabularyMeaningRow } from "@/types/database";
+import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import {
   MAX_VOCABULARY_IMPORT_WORDS,
   type VocabularyCsvWord,
@@ -61,6 +63,7 @@ interface VocabularyContextValue {
   words: VocabularyWord[];
   categories: VocabularyCategoryRow[];
   isLoaded: boolean;
+  isAuthenticated: boolean;
   categoriesLoaded: boolean;
   authVersion: number;
   addWord: (word: VocabularyWord) => Promise<boolean>;
@@ -71,12 +74,15 @@ interface VocabularyContextValue {
   refreshWords: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   addCategory: (input: {
+    id?: string;
     name: string;
     color: VocabularyCategoryColor;
+    image_path?: string | null;
   }) => Promise<VocabularyCategoryRow | null>;
   updateCategory: (
     id: string,
-    updates: VocabularyCategoryUpdate
+    updates: VocabularyCategoryUpdate,
+    options?: { silent?: boolean }
   ) => Promise<VocabularyCategoryRow | null>;
   deleteCategory: (id: string) => Promise<boolean>;
   importWords: (
@@ -114,6 +120,57 @@ function sortCategories(
     }
 
     return left.name.localeCompare(right.name);
+  });
+}
+
+type PublicSharedVocabulary = {
+  categories: Array<{ id: string; name: string; color: VocabularyCategoryColor; image_path?: string | null }>;
+  words: Array<{ id: string; word: string; meaning: string; ipa: string | null; category: string }>;
+};
+
+async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabulary> {
+  const response = await fetch("/api/public-vocabulary", { cache: "no-store" });
+  if (!response.ok) throw new Error("Could not load approved shared vocabulary.");
+  return await response.json() as PublicSharedVocabulary;
+}
+
+function mapPublicCategories(shared: PublicSharedVocabulary): VocabularyCategoryRow[] {
+  const defaultNames = new Set(defaultVocabularyCategories.map((category) => category.name.trim().toLocaleLowerCase()));
+  return [
+    ...defaultVocabularyCategories.map((category) => ({
+      ...category,
+      image_path: shared.categories.find((item) => item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())?.image_path ?? category.image_path ?? null,
+    })),
+    ...shared.categories.filter((category) => !defaultNames.has(category.name.trim().toLocaleLowerCase())).map((category) => ({
+      id: `community-category-${category.id}`,
+      user_id: "community",
+      name: category.name,
+      color: category.color,
+      is_default: false,
+      created_at: "",
+      updated_at: "",
+      image_path: category.image_path ?? null,
+    })),
+  ];
+}
+
+function mapPublicWords(shared: PublicSharedVocabulary): VocabularyWord[] {
+  const defaultKeys = new Set(defaultVocabularyWords.map((word) => `${word.category.trim().toLocaleLowerCase()}\u0000${word.word.trim().toLocaleLowerCase()}`));
+  return shared.words.flatMap((word) => {
+    const key = `${word.category.trim().toLocaleLowerCase()}\u0000${word.word.trim().toLocaleLowerCase()}`;
+    if (!word.category || defaultKeys.has(key)) return [];
+    return [{
+      id: `community-${word.id}`,
+      word: word.word,
+      meaning: word.meaning,
+      category: word.category as VocabularyCategory,
+      status: "learning" as const,
+      type: "word" as const,
+      ipa: word.ipa,
+      imagePath: null,
+      detailedMeanings: [],
+      isCustom: true,
+    }];
   });
 }
 
@@ -190,6 +247,7 @@ function VocabularyStoreProvider({
     VocabularyCategoryRow[]
   >([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [authVersion, setAuthVersion] = useState(0);
 
@@ -202,9 +260,56 @@ function VocabularyStoreProvider({
   const refreshCategories = useCallback(async (): Promise<void> => {
     const requestId = ++categoriesRequestIdRef.current;
     try {
-      const rows = await getVocabularyCategories();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
+        try {
+          const shared = await loadPublicSharedVocabulary();
+          if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
+          setCategories(mapPublicCategories(shared));
+        } catch (error) {
+          console.error("Could not load guest shared categories:", error);
+          setCategories(defaultVocabularyCategories);
+        }
+        setCategoriesLoaded(true);
+        return;
+      }
+      const [rows, sharedResult] = await Promise.all([
+        getVocabularyCategories(),
+        supabase
+          .from("community_categories")
+          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
+          .eq("status", "published"),
+      ]);
       if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
-      setCategories(rows);
+      if (sharedResult.error) {
+        console.error("Could not load published community categories:", sharedResult.error);
+      }
+      const publishedRows = (sharedResult.data ?? []) as Array<{ name: string; image_path: string | null }>;
+      const categoriesWithSharedImages = rows.map((category) => ({
+        ...category,
+        image_path: publishedRows.find((item) => item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())?.image_path ?? category.image_path ?? null,
+      }));
+      const existingNames = new Set(categoriesWithSharedImages.map((item) => item.name.trim().toLocaleLowerCase()));
+      const sharedCategories = ((sharedResult.data ?? []) as Array<{
+        id: string;
+        owner_id: string;
+        name: string;
+        color: VocabularyCategoryColor;
+        image_path: string | null;
+        created_at: string;
+        updated_at: string;
+      }>).filter((item) => !existingNames.has(item.name.trim().toLocaleLowerCase())).map((item) => ({
+        id: `community-category-${item.id}`,
+        user_id: item.owner_id,
+        name: item.name,
+        color: item.color,
+        is_default: false,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        image_path: item.image_path,
+      }));
+      setCategories(sortCategories([...categoriesWithSharedImages, ...sharedCategories]));
       setCategoriesLoaded(true);
     } catch (error) {
       if (requestId !== categoriesRequestIdRef.current) return;
@@ -212,7 +317,7 @@ function VocabularyStoreProvider({
       setCategoriesLoaded(true);
       toast.error("Failed to load categories.");
     }
-  }, []);
+  }, [supabase]);
 
   const refreshWords = useCallback(async (): Promise<void> => {
     if (pendingRequestIdRef.current === requestIdRef.current) return;
@@ -238,12 +343,24 @@ function VocabularyStoreProvider({
 
       if (authError || !user) {
         ownerIdRef.current = null;
-        setWords([]);
-        setCategories([]);
+        try {
+          const shared = await loadPublicSharedVocabulary();
+          if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
+          setWords([...defaultVocabularyWords, ...mapPublicWords(shared)]);
+          setCategories(mapPublicCategories(shared));
+        } catch (error) {
+          console.error("Could not load guest shared vocabulary:", error);
+          if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
+          setWords(defaultVocabularyWords);
+          setCategories(defaultVocabularyCategories);
+        }
+        setIsAuthenticated(false);
         setCategoriesLoaded(true);
         setIsLoaded(true);
         return;
       }
+
+      setIsAuthenticated(true);
 
       if (ownerIdRef.current !== user.id) {
         ownerIdRef.current = user.id;
@@ -265,8 +382,7 @@ function VocabularyStoreProvider({
         return;
       }
 
-      setWords(
-        rows.map(
+      const personalWords: VocabularyWord[] = rows.map(
           ({
             id,
             word,
@@ -290,9 +406,63 @@ function VocabularyStoreProvider({
               mapVocabularyMeaning
             ),
           })
-        )
-      );
-      setCategories(categoryRows);
+        );
+
+      const { data: communityCategories, error: communityCategoriesError } = await supabase
+        .from("community_categories")
+          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
+        .eq("status", "published");
+      const { data: communityWords, error: communityWordsError } = await supabase
+        .from("community_words")
+        .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
+        .eq("status", "published")
+        .eq("community_categories.status", "published");
+
+      if (communityCategoriesError || communityWordsError) {
+        console.error("Could not load published community vocabulary:", communityCategoriesError ?? communityWordsError);
+      }
+
+      type CommunityCategory = { id: string; owner_id: string; name: string; color: VocabularyCategoryColor; image_path: string | null; status: string; created_at: string; updated_at: string };
+      type CommunityWord = { id: string; word: string; meaning: string; ipa: string | null; community_categories: { id: string; name: string; color: VocabularyCategoryColor; status: string } };
+      const publishedCategoryRows = (communityCategories ?? []) as CommunityCategory[];
+      const categoryNames = new Set(categoryRows.map((item) => item.name.trim().toLocaleLowerCase()));
+      const categoriesWithSharedImages = categoryRows.map((category) => ({
+        ...category,
+        image_path: publishedCategoryRows.find((item) => item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())?.image_path ?? category.image_path ?? null,
+      }));
+      const mergedCategories: VocabularyCategoryRow[] = [
+        ...categoriesWithSharedImages,
+        ...publishedCategoryRows.filter((item) => !categoryNames.has(item.name.trim().toLocaleLowerCase())).map((item) => ({
+          id: `community-category-${item.id}`,
+          user_id: item.owner_id,
+          name: item.name,
+          color: item.color,
+          is_default: false,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          image_path: item.image_path,
+        })),
+      ];
+      const personalKeys = new Set(personalWords.map((item) => `${item.category.trim().toLocaleLowerCase()}\u0000${item.word.trim().toLocaleLowerCase()}`));
+      const sharedWords = ((communityWords ?? []) as unknown as CommunityWord[]).flatMap((item) => {
+        const key = `${item.community_categories.name.trim().toLocaleLowerCase()}\u0000${item.word.trim().toLocaleLowerCase()}`;
+        if (personalKeys.has(key)) return [];
+        return [{
+          id: `community-${item.id}`,
+          word: item.word,
+          meaning: item.meaning,
+          category: item.community_categories.name,
+          status: "learning" as const,
+          type: "word" as const,
+          ipa: item.ipa,
+          imagePath: null,
+          detailedMeanings: [],
+          isCustom: true,
+        }];
+      });
+
+      setWords([...personalWords, ...sharedWords]);
+      setCategories(mergedCategories);
       setCategoriesLoaded(true);
 
       setIsLoaded(true);
@@ -323,6 +493,7 @@ function VocabularyStoreProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (
+        event !== "INITIAL_SESSION" &&
         event !== "SIGNED_IN" &&
         event !== "SIGNED_OUT" &&
         event !== "USER_UPDATED"
@@ -342,9 +513,9 @@ function VocabularyStoreProvider({
       ownerIdRef.current = nextUserId;
       invalidateDashboardVocabularyOverviewCache();
       setAuthVersion((version) => version + 1);
-
-      setWords([]);
-      setCategories([]);
+      setIsAuthenticated(Boolean(nextUserId));
+      setWords(nextUserId ? [] : defaultVocabularyWords);
+      setCategories(nextUserId ? [] : defaultVocabularyCategories);
       setCategoriesLoaded(nextUserId === null);
       setIsLoaded(nextUserId === null);
 
@@ -360,6 +531,15 @@ function VocabularyStoreProvider({
   }, [supabase]);
 
   async function addWord(word: VocabularyWord): Promise<boolean> {
+    const duplicate = words.some((current) =>
+      current.category.trim().replace(/\s+/g, " ").toLowerCase() === word.category.trim().replace(/\s+/g, " ").toLowerCase()
+      && current.word.trim().replace(/\s+/g, " ").toLowerCase() === word.word.trim().replace(/\s+/g, " ").toLowerCase()
+    );
+    if (duplicate) {
+      toast.error(`"${word.word.trim()}" already exists in ${word.category}.`);
+      return false;
+    }
+
     try {
       const type = word.type ?? "word";
       const ipa = type === "word"
@@ -430,6 +610,16 @@ function VocabularyStoreProvider({
   async function updateWord(
     updatedWord: VocabularyWord
   ): Promise<boolean> {
+    const duplicate = words.some((current) =>
+      current.id !== updatedWord.id
+      && current.category.trim().replace(/\s+/g, " ").toLowerCase() === updatedWord.category.trim().replace(/\s+/g, " ").toLowerCase()
+      && current.word.trim().replace(/\s+/g, " ").toLowerCase() === updatedWord.word.trim().replace(/\s+/g, " ").toLowerCase()
+    );
+    if (duplicate) {
+      toast.error(`"${updatedWord.word.trim()}" already exists in ${updatedWord.category}.`);
+      return false;
+    }
+
     try {
       const currentWord = words.find(
         (word) => word.id === updatedWord.id
@@ -502,6 +692,10 @@ function VocabularyStoreProvider({
   }
 
   async function deleteWord(id: string): Promise<boolean> {
+    if (id.startsWith("community-")) {
+      toast.error("Published community words are read-only.");
+      return false;
+    }
     const word = words.find((item) => item.id === id);
 
     try {
@@ -569,6 +763,7 @@ function VocabularyStoreProvider({
 
   async function toggleMastered(id: string, currentStatus?: VocabularyWord["status"]): Promise<boolean> {
     const word = words.find((item) => item.id === id);
+    if (word?.isCustom) return false;
 
     const nextStatus =
       (word?.status ?? currentStatus) === "mastered" ? "learning" : "mastered";
@@ -596,8 +791,10 @@ function VocabularyStoreProvider({
   }
 
   async function addCategory(input: {
+    id?: string;
     name: string;
     color: VocabularyCategoryColor;
+    image_path?: string | null;
   }): Promise<VocabularyCategoryRow | null> {
     try {
       const row = await addVocabularyCategory(input);
@@ -621,7 +818,8 @@ function VocabularyStoreProvider({
 
   async function updateCategory(
     id: string,
-    updates: VocabularyCategoryUpdate
+    updates: VocabularyCategoryUpdate,
+    options?: { silent?: boolean }
   ): Promise<VocabularyCategoryRow | null> {
     const previous = categories.find((category) => category.id === id);
 
@@ -651,15 +849,17 @@ function VocabularyStoreProvider({
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
       invalidateLatestVocabularyReviewsCache();
 
-      toast.success(`Category "${row.name}" updated.`);
+      if (!options?.silent) toast.success(`Category "${row.name}" updated.`);
       return row;
     } catch (error) {
       console.error("Supabase updateCategory error:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update category."
-      );
+      if (!options?.silent) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to update category."
+        );
+      }
       return null;
     }
   }
@@ -900,6 +1100,7 @@ function VocabularyStoreProvider({
         words,
         categories,
         isLoaded,
+        isAuthenticated,
         categoriesLoaded,
         authVersion,
         addWord,

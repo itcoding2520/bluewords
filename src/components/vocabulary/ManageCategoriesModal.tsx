@@ -12,7 +12,7 @@ import type {
   VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
-import { cn } from "@/lib/cn";
+import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 
 const colorOptions: Array<{
   value: VocabularyCategoryColor;
@@ -42,6 +42,7 @@ export function ManageCategoriesModal({
 }: ManageCategoriesModalProps) {
   const {
     categories,
+    words,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -233,10 +234,7 @@ export function ManageCategoriesModal({
                     </form>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className={cn("size-3 rounded-full", color?.className)}
-                      />
+                      <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={color?.className ?? "bg-slate-300"} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-900">
                           {category.name}

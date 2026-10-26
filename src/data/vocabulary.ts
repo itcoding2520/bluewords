@@ -25,6 +25,8 @@ export interface VocabularyWord {
   detailedMeanings?: VocabularyMeaning[];
   imagePath?: string | null;
   ipa?: string | null;
+  /** Approved shared vocabulary is read-only and has no per-user study status. */
+  isCustom?: boolean;
 }
 
 export const initialVocabulary: VocabularyWord[] = [

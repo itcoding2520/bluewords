@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { Toaster } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { GlobalActionOverlay } from "@/components/ui/GlobalActionOverlay";
+import { RouteVocabularyProvider } from "@/components/layout/RouteVocabularyProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,9 +51,11 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <VocabularyProvider>
-          <AppLayout>{children}</AppLayout>
-        </VocabularyProvider>
+        <AppLayout>
+          <RouteVocabularyProvider>{children}</RouteVocabularyProvider>
+        </AppLayout>
+
+        <GlobalActionOverlay />
 
         <Toaster
           position="bottom-right"

@@ -111,7 +111,7 @@ function FlashcardWord({
   const imageUrl = useVocabularyImageUrl(card.word.imagePath);
 
   return (
-    <div className="flex w-full flex-col items-center text-center lg:flex-row lg:justify-center lg:gap-8 lg:text-left">
+    <div className="flex w-full flex-col items-center text-center sm:flex-row sm:justify-center sm:gap-8 sm:text-left">
       {imageUrl && (
         <Image
           src={imageUrl}
@@ -119,7 +119,7 @@ function FlashcardWord({
           width={176}
           height={176}
           unoptimized
-          className={`mb-5 size-36 rounded-2xl border border-slate-100 object-cover sm:size-44 lg:mb-0 lg:size-52 ${showImage ? "" : "hidden lg:block"}`}
+          className={`mb-5 size-36 rounded-2xl border border-slate-100 object-cover sm:size-44 lg:mb-0 lg:size-52 ${showImage ? "" : "hidden sm:block"}`}
         />
       )}
 
@@ -173,7 +173,7 @@ function FlashcardAnswer({ card }: { card: Flashcard }) {
 }
 
 export function FlashcardsContent() {
-  const { words, categories, isLoaded, toggleMastered } = useVocabulary();
+  const { words, categories, isLoaded, isAuthenticated, toggleMastered } = useVocabulary();
   const shuffleSeed = useSyncExternalStore(
     subscribeToShuffleSeed,
     getShuffleSeed,
@@ -200,6 +200,7 @@ export function FlashcardsContent() {
   const scheduleRequestRef = useRef<Promise<void> | null>(null);
 
   async function loadReviewSchedules() {
+    if (!isAuthenticated) return;
     if (areSchedulesLoaded || scheduleRequestRef.current) return scheduleRequestRef.current;
 
     setIsLoadingSchedules(true);
@@ -285,7 +286,7 @@ export function FlashcardsContent() {
   }
 
   async function handleToggleStatus() {
-    if (!card || isTogglingStatus) return;
+    if (!isAuthenticated || !card || card.word.isCustom || isTogglingStatus) return;
 
     setIsTogglingStatus(true);
     try {
@@ -297,7 +298,8 @@ export function FlashcardsContent() {
   }
 
   async function handleRecordReview(remembered: boolean) {
-    if (!card || isSavingReview) return;
+    if (!isAuthenticated || !card || isSavingReview) return;
+    if (card.word.isCustom) { moveCard(1); return; }
 
     setIsSavingReview(true);
     try {
@@ -332,12 +334,11 @@ export function FlashcardsContent() {
 
   return (
     <div>
-      <header className="mb-7">
-        <p className="text-sm font-medium text-blue-600">Daily learning</p>
+      <header className="mb-3 sm:mb-5">
         <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">
           Flashcards
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-slate-500 hidden sm:block">
           Practice your vocabulary in a random order.
         </p>
       </header>
@@ -348,13 +349,14 @@ export function FlashcardsContent() {
           <CategoryDropdown
             category={category}
             categories={categories}
+            words={words}
             includeAll
             fullWidth
             onChange={changeCategory}
           />
         </div>
 
-        <fieldset>
+        {isAuthenticated && <fieldset>
           <legend className="mb-2 text-sm font-medium text-slate-600">
             Vocabulary status
           </legend>
@@ -402,9 +404,10 @@ export function FlashcardsContent() {
               </span>
             </button>
           </div>
-        </fieldset>
+        </fieldset>}
       </div>
 
+      {isAuthenticated && <>
       <div
         className="mb-5 flex flex-wrap items-center gap-2"
         role="group"
@@ -446,6 +449,7 @@ export function FlashcardsContent() {
           </span>
         )}
       </div>
+      </>}
 
       {card ? (
         <>
@@ -456,7 +460,7 @@ export function FlashcardsContent() {
             <span>{category === "all" ? "All categories" : category}</span>
           </div>
 
-          <Card className="h-[420px] overflow-hidden p-0 sm:h-[480px]">
+          <Card className="h-[350px] overflow-hidden p-0 sm:h-[480px]">
             <div className="[perspective:1200px] h-full w-full">
               <div
                 className="relative h-full w-full transition-transform duration-500 ease-in-out [transform-style:preserve-3d] motion-reduce:transition-none"
@@ -492,7 +496,7 @@ export function FlashcardsContent() {
                   <div className="flex w-full flex-1 flex-col items-center justify-center">
                     <FlashcardAnswer card={card} />
                   </div>
-                  {isRevealed && (
+                  {isAuthenticated && !card.word.isCustom && isRevealed && (
                     <div className="mt-4 grid w-full max-w-sm shrink-0 grid-cols-2 gap-2">
                       <button
                         type="button"
@@ -531,7 +535,7 @@ export function FlashcardsContent() {
           </Card>
 
           <div className="mt-5 flex items-center justify-between gap-3">
-            <Button
+            {isAuthenticated && !card.word.isCustom && <Button
               variant="secondary"
               onClick={() => moveCard(-1)}
               disabled={deck.length < 2}
@@ -539,7 +543,7 @@ export function FlashcardsContent() {
             >
               <ArrowLeft size={16} />
               <span className="hidden sm:inline">Previous</span>
-            </Button>
+            </Button>}
             <Button
               variant="secondary"
               onClick={() => void handleToggleStatus()}

@@ -12,13 +12,13 @@ interface ButtonProps
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-slate-950 text-white hover:bg-slate-800",
+    "bg-blue-600 text-white shadow-[0_5px_14px_rgb(37_99_235/0.22)] hover:bg-blue-700 hover:shadow-[0_7px_18px_rgb(37_99_235/0.28)]",
 
   secondary:
-    "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+    "border border-sky-200 bg-white text-blue-700 shadow-sm hover:border-sky-300 hover:bg-sky-50",
 
   ghost:
-    "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+    "text-blue-700 hover:bg-sky-50 hover:text-blue-900",
 };
 
 export function Button({
@@ -31,7 +31,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition",
+        "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500",
         "disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],

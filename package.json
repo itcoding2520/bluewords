@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test src/lib/*.test.mjs src/lib/supabase/*.test.mjs",
+    "db:migrate:phase3": "node scripts/apply-phase-three-migrations.mjs",
     "upload:default-vocabulary-images": "node scripts/upload-default-vocabulary-images.mjs"
   },
   "dependencies": {
@@ -30,8 +31,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "pg": "^8.23.1",
     "playwright": "^1.64.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

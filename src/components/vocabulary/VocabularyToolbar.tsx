@@ -14,6 +14,8 @@ import type {
   VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
+import type { VocabularyWord } from "@/data/vocabulary";
+import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 
 const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-700",
@@ -47,6 +49,7 @@ interface VocabularyToolbarProps {
   search: string;
   category: CategoryFilter;
   categories: VocabularyCategoryRow[];
+  words: VocabularyWord[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: CategoryFilter) => void;
 }
@@ -81,6 +84,7 @@ function FilterButton({
 interface CategoryDropdownProps {
   category: string;
   categories: VocabularyCategoryRow[];
+  words: VocabularyWord[];
   onChange: (value: string) => void;
   includeAll?: boolean;
   allLabel?: string;
@@ -90,6 +94,7 @@ interface CategoryDropdownProps {
 export function CategoryDropdown({
   category,
   categories,
+  words,
   onChange,
   includeAll = false,
   allLabel = "All categories",
@@ -218,13 +223,13 @@ export function CategoryDropdown({
             : "border-blue-100 bg-blue-50/70 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
         }`}
       >
-        <span className={`grid size-7 shrink-0 place-items-center rounded-lg shadow-sm ring-1 ${
+        {selectedCategory ? <CategoryAvatar name={selectedCategory.name} imagePath={selectedCategory.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={CATEGORY_COLOR_STYLES[selectedCategory.color]} /> : <span className={`grid size-7 shrink-0 place-items-center rounded-lg shadow-sm ring-1 ${
           selectedCategory
             ? "bg-white/20 text-white ring-white/20"
             : "bg-white text-blue-600 ring-blue-100"
         }`}>
           <ListFilter size={15} aria-hidden="true" />
-        </span>
+        </span>}
         <span className="min-w-0 flex-1 truncate">
           {selectedOption?.name ?? "Select category"}
         </span>
@@ -276,9 +281,7 @@ export function CategoryDropdown({
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   {itemColor ? (
-                    <span className={`size-2.5 shrink-0 rounded-full ${
-                      CATEGORY_COLOR_STYLES[itemColor]
-                    } ${isSelected ? "ring-2 ring-white/40" : ""}`} />
+                    <CategoryAvatar name={item.name} imagePath={categories.find((entry) => entry.name === item.name)?.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === item.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={CATEGORY_COLOR_STYLES[itemColor]} />
                   ) : (
                     <ListFilter size={14} className={isSelected ? "text-white/90" : "text-slate-400"} aria-hidden="true" />
                   )}
@@ -298,11 +301,12 @@ export function VocabularyToolbar({
   search,
   category,
   categories,
+  words,
   onSearchChange,
   onCategoryChange,
 }: VocabularyToolbarProps) {
   return (
-    <div className="mt-6 flex min-w-0 flex-col gap-4 lg:mt-10 lg:flex-row lg:items-center lg:justify-between">
+    <div className="min-w-0 flex-1 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Search */}
       <div className="relative w-full min-w-0 lg:max-w-md lg:flex-1">
         <Search
@@ -352,6 +356,7 @@ export function VocabularyToolbar({
           <CategoryDropdown
             category={category}
             categories={categories}
+            words={words}
             onChange={(value) => onCategoryChange(value as CategoryFilter)}
           />
         </div>

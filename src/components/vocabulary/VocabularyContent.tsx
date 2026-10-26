@@ -16,8 +16,9 @@ import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
-import { ManageCategoriesModal } from "./ManageCategoriesModal";
+import { CategoryManagementPanel } from "./CategoryManagementPanel";
 import { VocabularyCsvTools } from "./VocabularyCsvTools";
+import { CommunityVocabulary } from "./CommunityVocabulary";
 import type {
   CategoryFilter,
 } from "./VocabularyToolbar";
@@ -28,6 +29,8 @@ import {
   getCachedVocabularyPage,
   setCachedVocabularyPage,
 } from "@/lib/supabase/vocabulary-page-cache.mjs";
+
+const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
 function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
   return {
@@ -47,9 +50,10 @@ function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
   };
 }
 
-export function VocabularyContent() {
+export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const {
     categories,
+    words,
     categoriesLoaded,
     addWord,
     updateWord,
@@ -117,7 +121,7 @@ export function VocabularyContent() {
     return previewVocabularyImport(legacyCloudWords);
   }, [hasLegacyData, legacyCloudWords]);
 
-  const hasPendingImport =
+  const hasPendingImport = isAdmin &&
   importPreview !== null &&
   importPreview.ready.length > 0;
 
@@ -282,18 +286,6 @@ export function VocabularyContent() {
     setEditingWord(null);
   }
 
-  function handleCloseCategories() {
-    setIsCategoriesOpen(false);
-    setPage(1);
-    setSelectedIds(new Set());
-    setCategory((current) =>
-      current === "All" ||
-      categories.some((item) => item.name === current)
-        ? current
-        : "All"
-    );
-  }
-
   function handleDeleteWord(word: VocabularyWord) {
     setDeletingWord(word);
   }
@@ -444,14 +436,22 @@ export function VocabularyContent() {
     );
   }
 
+  if (isCategoriesOpen) {
+    return <>
+      <VocabularyHeader activeTab="categories" onAddWord={handleOpenAdd} onManageCategories={() => setIsCategoriesOpen(false)} />
+      <div className="mt-6"><CategoryManagementPanel /></div>
+    </>;
+  }
+
   return (
     <>
       <VocabularyHeader
+        activeTab="words"
         onAddWord={handleOpenAdd}
         onManageCategories={() => setIsCategoriesOpen(true)}
       />
 
-      {hasPendingImport && (
+      {LEGACY_IMPORT_NOTICE_ENABLED && hasPendingImport && (
         <div className="my-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -519,7 +519,9 @@ export function VocabularyContent() {
         </div>
       )}
 
-      <VocabularyCsvTools
+      <section className="mt-5 rounded-[1.75rem] border border-blue-100/80 bg-white/80 p-3 shadow-[0_12px_35px_rgb(39_90_150/0.08)] backdrop-blur-sm sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+      {isAdmin && <VocabularyCsvTools
         exportCount={selectedCategory === "All" ? currentPageWords.length : categoryExportCount}
         isExportCountLoading={isExportCountLoading}
         loadExportWords={async () => {
@@ -534,15 +536,17 @@ export function VocabularyContent() {
           setIsPageLoading(true);
           setPageRequest((value) => value + 1);
         }}
-      />
+      />}
 
       <VocabularyToolbar
         search={search}
         category={selectedCategory}
         categories={categories}
+        words={words}
         onSearchChange={handleSearchChange}
         onCategoryChange={handleCategoryChange}
       />
+      </div>
 
       {loadedAuthVersion === authVersion && selectedIds.size > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
@@ -576,7 +580,7 @@ export function VocabularyContent() {
         onDelete={handleDeleteWord}
       />
 
-      <div className="mt-4 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-3 px-1 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <p aria-live="polite" className="shrink-0">
           Showing {firstVisibleWord}–{lastVisibleWord} of {visibleTotalWords} words
         </p>
@@ -636,6 +640,9 @@ export function VocabularyContent() {
           </div>
         </div>
       </div>
+      </section>
+
+      <CommunityVocabulary />
 
       {isFormOpen && (
         <WordFormModal
@@ -656,10 +663,6 @@ export function VocabularyContent() {
         onConfirm={handleConfirmDelete}
       />
 
-      <ManageCategoriesModal
-        open={isCategoriesOpen}
-        onClose={handleCloseCategories}
-      />
     </>
   );
 }

@@ -23,7 +23,7 @@ It helps users build their personal vocabulary collection, organize words by cat
 ### ✨ Features
 
 **Authentication & Cloud Storage**
-- **User Authentication** — Sign up, log in, and log out with Supabase Auth.
+- **Optional Authentication** — Guests can explore the starter library and play; sign-in enables personal data and social features.
 - **Personal Vocabulary** — Each user manages their own vocabulary collection.
 - **Cloud Persistence** — Vocabulary is stored in Supabase PostgreSQL and remains available across sessions and devices.
 - **Row Level Security** — Database policies restrict access to each user's own records.
@@ -37,6 +37,8 @@ It helps users build their personal vocabulary collection, organize words by cat
 - **Category Filtering** — Filter vocabulary using your own category list.
 - **Duplicate Prevention** — Prevent duplicate vocabulary entries within the same account.
 - **CSV Import & Export** — Preview and validate CSV files, combine multiple meanings for a word, and export a UTF-8 backup.
+- **Community Vocabulary** — Signed-in users can request publication; admins review custom categories and words before they are shared.
+- **Admin Tools & Notifications** — Admins manage users and published vocabulary; request and review decisions create notifications.
 
 **Dashboard & User Experience**
 - **Dashboard Overview** — Track total words, mastered words, and learning progress.
@@ -45,6 +47,18 @@ It helps users build their personal vocabulary collection, organize words by cat
 - **Responsive Design** — Optimized for desktop, tablet, and mobile.
 - **Interactive Feedback** — Confirmation dialogs, loading states, and toast notifications.
 - **PWA Support** — Includes a web app manifest and app icons for an installable experience.
+
+### Local Node.js version
+
+BlueWords uses Node.js 22, configured in `.nvmrc`. In the project terminal:
+
+```bash
+nvm install
+nvm use
+npm run dev
+```
+
+Run `nvm use` when opening a new terminal for this project. This selects Node only for the current terminal; keep your existing nvm default for other projects. To restore the default in the same terminal, run `nvm use default`.
 
 ### 🛠️ Tech Stack
 
@@ -92,18 +106,28 @@ npm install
 
 #### 3. Configure Supabase
 
-Create a Supabase project and configure the vocabulary database schema, authentication, and Row Level Security policies.
+Create a Supabase project and configure the vocabulary database schema, authentication, and Row Level Security policies. Existing migrations should already be applied in filename order. For the Phase 3 migrations dated `20261025`, add the Supabase **Session pooler** connection string (port `5432`) to `.env.local` as `DATABASE_URL`, then run `npm run db:migrate:phase3`. The script checks that it targets the same project as `NEXT_PUBLIC_SUPABASE_URL`, applies pending migrations, and records them in a private migration ledger so rerunning it is safe. Do not use the Transaction pooler (port `6543`).
 
 Create a `.env.local` file in the project root:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+DATABASE_URL=your_supabase_session_pooler_connection_string
 ```
 
-Use your Supabase project's URL and publishable key.
+Get `DATABASE_URL` from Supabase Dashboard → **Connect** → **Session pooler**. Keep the password private; do not paste it into chat or commit `.env.local`.
 
-**Security:** Never expose a Supabase secret key or `service_role` key through a `NEXT_PUBLIC_` environment variable. Do not commit `.env.local` to Git.
+The service-role key is only used by the server-side admin user API. After migrations are applied and an account exists, bootstrap the first admin once in the Supabase SQL editor:
+
+```sql
+INSERT INTO public.app_admins (user_id)
+SELECT id FROM auth.users WHERE email = 'admin@example.com'
+ON CONFLICT DO NOTHING;
+```
+
+**Security:** Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never expose it through a `NEXT_PUBLIC_` variable, and do not commit `.env.local` to Git.
 
 #### 4. Start the development server
 
