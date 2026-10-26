@@ -20,6 +20,7 @@ const vocabularyRoutes = [
   "/games/word-match",
   "/games/word-maze",
   "/games/word-scramble",
+  "/games/sentence-builder",
   "/games/word-search",
   "/publish",
 ];

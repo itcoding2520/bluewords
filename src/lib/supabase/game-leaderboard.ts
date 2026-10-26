@@ -31,7 +31,7 @@ export type VocabularyGameLeaderboardRow = {
   rank_position: number;
   player_name: string;
   avatar_path: string | null;
-  game_type: "word-match" | "word-scramble" | "word-maze";
+  game_type: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
   round_size: number;
   score: number;
   correct_count: number;
@@ -41,7 +41,7 @@ export type VocabularyGameLeaderboardRow = {
 };
 
 export async function saveVocabularyGameSession(input: {
-  gameType: "word-match" | "word-scramble" | "word-maze";
+  gameType: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
   roundSize: number;
   score: number;
   correctCount: number;
@@ -67,7 +67,7 @@ export async function saveVocabularyGameSession(input: {
 }
 
 export async function getVocabularyGameLeaderboard(input: {
-  gameType: "word-match" | "word-scramble" | "word-maze";
+  gameType: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
   roundSize: number | null;
 }): Promise<VocabularyGameLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_vocabulary_game_leaderboard", {

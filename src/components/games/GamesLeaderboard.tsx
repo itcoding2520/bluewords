@@ -15,7 +15,7 @@ import {
   type WordSearchLeaderboardRow,
 } from "@/lib/supabase/game-leaderboard";
 
-type GameTab = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze";
+type GameTab = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
 type QuizMode = "choose-meaning" | "type-word";
 type Difficulty = "easy" | "medium" | "hard";
 type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
@@ -116,6 +116,7 @@ export function GamesLeaderboard() {
             <button type="button" role="tab" aria-selected={game === "word-match"} onClick={() => { if (game !== "word-match") { setLoading(true); setError(""); setGame("word-match"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-match" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Match</button>
             <button type="button" role="tab" aria-selected={game === "word-scramble"} onClick={() => { if (game !== "word-scramble") { setLoading(true); setError(""); setGame("word-scramble"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-scramble" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Scramble</button>
             <button type="button" role="tab" aria-selected={game === "word-maze"} onClick={() => { if (game !== "word-maze") { setLoading(true); setError(""); setGame("word-maze"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-maze" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Maze</button>
+            <button type="button" role="tab" aria-selected={game === "sentence-builder"} onClick={() => { if (game !== "sentence-builder") { setLoading(true); setError(""); setGame("sentence-builder"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "sentence-builder" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Sentence Builder</button>
           </div>
 
           <div className="flex flex-wrap gap-2" aria-label="Leaderboard filters">

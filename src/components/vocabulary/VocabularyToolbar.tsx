@@ -82,6 +82,9 @@ function FilterButton({
 }
 
 interface CategoryDropdownProps {
+  id?: string;
+  ariaLabel?: string;
+  className?: string;
   category: string;
   categories: VocabularyCategoryRow[];
   words: VocabularyWord[];
@@ -91,7 +94,36 @@ interface CategoryDropdownProps {
   fullWidth?: boolean;
 }
 
+export function getVocabularyDropdownCategories(
+  categories: VocabularyCategoryRow[],
+  words: VocabularyWord[],
+  includeUncategorized = false,
+): VocabularyCategoryRow[] {
+  const byName = new Map(categories.map((category) => [category.name.trim().toLocaleLowerCase(), category]));
+  const namesByKey = new Map<string, string>();
+  for (const rawName of [...categories.map((item) => item.name), ...words.map((word) => word.category)]) {
+    const name = rawName.trim();
+    const key = name.toLocaleLowerCase();
+    if (name && (includeUncategorized || key !== "uncategorized") && !namesByKey.has(key)) namesByKey.set(key, name);
+  }
+  const names = [...namesByKey.values()].sort((left, right) => left.localeCompare(right));
+
+  return names.map((name) => byName.get(name.toLocaleLowerCase()) ?? {
+    id: `category-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    user_id: "",
+    name,
+    color: "slate",
+    image_path: null,
+    is_default: false,
+    created_at: "",
+    updated_at: "",
+  });
+}
+
 export function CategoryDropdown({
+  id,
+  ariaLabel = "Filter vocabulary by category",
+  className = "",
   category,
   categories,
   words,
@@ -201,7 +233,7 @@ export function CategoryDropdown({
   return (
     <div
       ref={rootRef}
-      className={`relative min-w-0 ${fullWidth ? "w-full max-w-none flex-none" : "max-w-[240px] flex-1"}`}
+      className={`relative min-w-0 ${fullWidth ? "w-full max-w-none flex-none" : "max-w-[240px] flex-1"} ${className}`}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           setIsOpen(false);
@@ -209,9 +241,10 @@ export function CategoryDropdown({
       }}
     >
       <button
+        id={id}
         ref={triggerRef}
         type="button"
-        aria-label="Filter vocabulary by category"
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={listboxId}

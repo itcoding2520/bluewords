@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Flag, Heart, Map, RotateCcw, Shie
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Select";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 
@@ -143,7 +143,7 @@ export function WordMazeContent() {
     return result;
   }, [category, words]);
 
-  const categoryOptions = useMemo(() => ["all", ...new Set(categories.map((item) => item.name).filter(Boolean))], [categories]);
+  const categoryDropdownCategories = useMemo(() => getVocabularyDropdownCategories(categories, words, true), [categories, words]);
   const current = round[questionIndex];
   const pathProgress = questionIndex + (feedback === "correct" ? 1 : 0);
   const solvedCount = questionIndex + (feedback === "correct" ? 1 : 0);
@@ -211,9 +211,7 @@ export function WordMazeContent() {
             <div className="word-maze-setup-icon"><Map size={28} /></div>
             <div className="word-maze-setup-copy"><h2>Ready for an adventure?</h2><p>Answer five meaning questions to open the path. You have three lives for the journey.</p></div>
             <label htmlFor="word-maze-category">Choose a category</label>
-            <Select id="word-maze-category" containerClassName="word-maze-category-select" className="word-maze-category-select-control" value={category} onChange={(event) => setCategory(event.target.value)}>
-              {categoryOptions.map((option) => <option key={option} value={option}>{option === "all" ? "All categories" : option}</option>)}
-            </Select>
+            <CategoryDropdown id="word-maze-category" ariaLabel="Word Maze category" className="word-maze-category-select" category={category} categories={categoryDropdownCategories} words={words} onChange={setCategory} includeAll fullWidth />
             <p className="word-maze-availability">{candidates.length} words ready for the maze</p>
             {candidates.length < 5 && <p className="word-maze-warning" role="status">Add at least five words with different meanings to start this adventure.</p>}
             <button type="button" className="word-maze-primary" disabled={candidates.length < 5} onClick={startGame}><Map size={20} /> Start adventure <ArrowRight size={20} /></button>

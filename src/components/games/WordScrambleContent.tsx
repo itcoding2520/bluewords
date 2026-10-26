@@ -9,6 +9,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { Card } from "@/components/ui/Card";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 
@@ -125,12 +126,7 @@ export function WordScrambleContent() {
     });
   }, [category, words]);
 
-  const categoryOptions = useMemo(() => {
-    const names = [...new Set([...categories.map((item) => item.name), ...words.map((word) => word.category)])]
-      .filter((name) => name.trim() && name.trim().toLocaleLowerCase() !== "uncategorized")
-      .sort((left, right) => left.localeCompare(right));
-    return [{ value: "all", label: "All categories" }, ...names.map((name) => ({ value: name, label: name }))];
-  }, [categories, words]);
+  const categoryDropdownCategories = useMemo(() => getVocabularyDropdownCategories(categories, words), [categories, words]);
 
   const currentWord = round[questionIndex];
   const usedTileIds = new Set(answerTileIds);
@@ -238,9 +234,7 @@ export function WordScrambleContent() {
           <Card className="word-scramble-panel">
             <div className="word-scramble-section-title"><span><CaseSensitive size={25} /></span><div><h2>Ready to unscramble?</h2><p>Use the picture and meaning clues to spell each vocabulary word.</p></div></div>
             <label htmlFor="word-scramble-category">Category</label>
-            <select id="word-scramble-category" value={category} onChange={(event) => setCategory(event.target.value)}>
-              {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            <CategoryDropdown id="word-scramble-category" ariaLabel="Word Scramble category" category={category} categories={categoryDropdownCategories} words={words} onChange={setCategory} includeAll fullWidth />
             <fieldset><legend>Questions per round</legend><div className="word-scramble-counts">{QUESTION_COUNTS.map((count) => <button key={count} type="button" aria-pressed={questionCount === count} disabled={candidates.length < count} onClick={() => setQuestionCount(count)} className={questionCount === count ? "is-selected" : ""}>{count} questions</button>)}</div><p>{candidates.length} words available. Words must have 3–10 letters.</p></fieldset>
             {candidates.length < 5 && <p className="word-scramble-empty" role="status">Add at least five eligible words to play Word Scramble.</p>}
             <button type="button" className="word-scramble-primary" disabled={candidates.length < questionCount} onClick={startRound}><CaseSensitive size={20} /> Start game <ArrowRight size={19} /></button>
