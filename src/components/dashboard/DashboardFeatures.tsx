@@ -95,8 +95,10 @@ export function DashboardFeatures({ isAdmin }: { isAdmin: boolean }) {
   return (
     <section className="mt-8">
       <div className="mb-4">
-        <h2 className="text-lg font-extrabold text-slate-900 sm:text-xl">Explore BlueWords ✨</h2>
-        <p className="mt-1 text-sm text-slate-600">Learn a little, play a little, grow every day!</p>
+        <h2 className="text-xl font-extrabold tracking-tight text-blue-950 sm:text-2xl">Explore BlueWords <span aria-hidden="true">✨</span></h2>
+        <p className="page-intro-description mt-2">
+          Learn a little, play a little, grow every day!
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 min-[640px]:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

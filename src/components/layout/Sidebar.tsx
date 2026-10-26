@@ -279,10 +279,12 @@ export function Sidebar() {
             return isAuthenticated || !["/profile", "/reviews"].includes(item.href);
           }).map((item) => {
             const Icon = item.icon;
-            const isActive = (item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`));
+            const isGamesRoute = item.href === "/games" &&
+              (pathname === "/quiz" || pathname.startsWith("/quiz/"));
+            const isActive = isGamesRoute || (item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href ||
+                pathname.startsWith(`${item.href}/`));
             const visibleUnreadCount = isAuthenticated ? unreadNotificationCount : 0;
             const hasUnreadNotifications = item.href === "/notifications" && visibleUnreadCount > 0;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Camera, Check, ImagePlus, Trash2, UserRound } from "lucide-react";
+import { Camera, Check, ImagePlus, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
@@ -135,39 +135,39 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <header className="mb-7">
+    <div className="profile-page mx-auto max-w-5xl">
+      <header className="profile-hero mb-6">
         <p className="text-sm font-medium text-blue-600">Your account</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Profile</h1>
-        <p className="mt-2 text-sm text-slate-500">Choose how you appear in BlueWords and on game leaderboards.</p>
+        <h1 className="page-title mt-1">Profile <Star aria-hidden="true" className="inline size-6 fill-amber-400 text-amber-400" /></h1>
+        <p className="page-intro-description mt-2">Choose how you appear in BlueWords and on game leaderboards.</p>
       </header>
 
-      <form onSubmit={handleSave} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex justify-center sm:justify-start">
+      <form onSubmit={handleSave} className="profile-form rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="profile-avatar-section flex flex-col gap-6 sm:flex-row sm:items-center">
+          <div className="profile-avatar-display flex justify-center sm:justify-start">
             {previewUrl ? (
-              <span role="img" aria-label="New avatar preview" className="size-28 rounded-full bg-cover bg-center ring-4 ring-blue-50" style={{ backgroundImage: `url(${JSON.stringify(previewUrl)})` }} />
+              <span role="img" aria-label="New avatar preview" className="profile-avatar-preview size-40 rounded-full bg-cover bg-center ring-4 ring-blue-50" style={{ backgroundImage: `url(${JSON.stringify(previewUrl)})` }} />
             ) : (
               <UserAvatar
                 nickname={normalizedNickname || profile?.nickname}
                 email={email}
                 fallbackName="User"
                 avatarPath={previewPath}
-                sizeClassName="size-28 text-3xl ring-4 ring-blue-50"
+                sizeClassName="profile-avatar-preview size-40 text-5xl ring-4 ring-white"
               />
             )}
           </div>
 
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <h2 className="text-base font-semibold text-slate-900">Profile picture</h2>
+            <h2 className="text-xl font-extrabold text-slate-900">Profile picture</h2>
             <p className="mt-1 text-sm leading-6 text-slate-500">If you skip the image, we’ll use the first letter of your nickname or email.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+              <label className="profile-avatar-change inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-700 transition hover:bg-slate-50">
                 <ImagePlus size={16} /> {avatarFile || profile?.avatar_path ? "Change image" : "Upload image"}
                 <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={loading || saving} onChange={(event) => { handleAvatarChange(event.target.files?.[0]); event.currentTarget.value = ""; }} />
               </label>
               {(avatarFile || (profile?.avatar_path && !removeAvatar)) && (
-                <button type="button" onClick={() => { setAvatarFile(null); setPreviewUrl(null); setRemoveAvatar(Boolean(profile?.avatar_path)); setError(""); setNotice(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                <button type="button" onClick={() => { setAvatarFile(null); setPreviewUrl(null); setRemoveAvatar(Boolean(profile?.avatar_path)); setError(""); setNotice(""); }} className="profile-avatar-remove inline-flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-bold text-red-600 transition hover:bg-red-50">
                   <Trash2 size={15} /> Remove image
                 </button>
               )}
@@ -181,11 +181,11 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
           </div>
         </div>
 
-        <div className="my-7 border-t border-slate-100" />
+        <div className="profile-divider my-6 border-t border-slate-100" />
 
-        <div className="space-y-5">
-          <div>
-            <label htmlFor="profile-nickname" className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800"><UserRound size={16} /> Nickname</label>
+        <div className="profile-fields space-y-3">
+          <div className="profile-nickname-field">
+            <label htmlFor="profile-nickname" className="mb-2 flex items-center gap-2 text-base font-extrabold text-slate-800"><span className="profile-field-icon"><UserRound size={21} /></span> Nickname <Star aria-hidden="true" className="ml-auto size-5 fill-amber-400 text-amber-400" /></label>
             <input
               id="profile-nickname"
               value={nickname}
@@ -203,9 +203,9 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
             </div>
           </div>
 
-          <div className="rounded-xl bg-slate-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Account email</p>
-            <p className="mt-1 break-all text-sm text-slate-700">{email ?? "Unavailable"}</p>
+          <div className="profile-email-field rounded-xl bg-slate-50 p-4">
+            <p className="flex items-center gap-2 text-base font-extrabold text-slate-800"><span className="profile-field-icon profile-email-icon"><Mail size={20} /></span> Account email</p>
+            <p className="profile-email-value mt-2 flex items-center justify-between gap-3 break-all text-base text-slate-700"><span>{email ?? "Unavailable"}</span><LockKeyhole className="size-5 shrink-0 text-slate-400" /></p>
           </div>
         </div>
 
@@ -213,7 +213,7 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
         {notice && <AutoDismissMessage key={notice} variant="success" className="mt-5 inline-flex items-center gap-2"><Check size={16} /> {notice}</AutoDismissMessage>}
 
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-slate-400">Your nickname and avatar are visible to other users in the game leaderboard. Your email stays private.</p>
+          <p className="profile-privacy-note text-xs leading-5 text-slate-400"><ShieldCheck className="size-7 shrink-0" /><span>Your nickname and avatar are visible to other users in the game leaderboard.<br />Your email stays private.</span></p>
           <Button type="submit" disabled={loading || saving || !hasChanges}>
             {saving ? <><Camera size={16} /> Saving…</> : <><Check size={16} /> Save profile</>}
           </Button>
