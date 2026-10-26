@@ -1,12 +1,13 @@
 import Link from "next/link";
 
-type AdminSection = "requests" | "categories" | "users" | "notifications";
+type AdminSection = "requests" | "categories" | "users" | "notifications" | "sentence-builder";
 
 const sections: Array<{ id: AdminSection; label: string; href: string }> = [
   { id: "requests", label: "Publish requests", href: "/admin" },
   { id: "categories", label: "Categories", href: "/admin/categories" },
   { id: "users", label: "Users", href: "/admin/users" },
   { id: "notifications", label: "Send notification", href: "/admin/notifications" },
+  { id: "sentence-builder", label: "Sentence Builder", href: "/admin/sentence-builder" },
 ];
 
 export function AdminNavigation({ active }: { active: AdminSection }) {

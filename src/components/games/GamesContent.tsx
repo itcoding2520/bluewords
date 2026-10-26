@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Brain, CaseSensitive, Gamepad2, Grid3X3, Map, Search, Shuffle, Star } from "lucide-react";
+import { ArrowRight, Brain, CaseSensitive, Gamepad2, Grid3X3, Map, Search, Shuffle, Star, TextCursorInput } from "lucide-react";
 
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
 
@@ -59,12 +59,21 @@ function WordMazeArtwork() {
   );
 }
 
+function SentenceBuilderArtwork() {
+  return (
+    <div className="game-art game-art-sentence" aria-hidden="true">
+      <span>The</span><span>girl</span><span>eats</span><span>🍎</span>
+    </div>
+  );
+}
+
 const games = [
   { title: "Word Search", description: "Find your vocabulary hidden across a letter grid.", href: "/games/word-search", icon: Grid3X3, theme: "search", Artwork: WordSearchArtwork },
   { title: "Vocabulary Quiz", description: "Practice meanings or recall words from images.", href: "/quiz", icon: Brain, theme: "quiz", Artwork: QuizArtwork },
   { title: "Word Match", description: "Match each English word with its meaning.", href: "/games/word-match", icon: Shuffle, theme: "match", Artwork: WordMatchArtwork },
   { title: "Word Scramble", description: "Unscramble letters with picture and meaning clues.", href: "/games/word-scramble", icon: CaseSensitive, theme: "scramble", Artwork: WordScrambleArtwork },
   { title: "Word Maze Adventure", description: "Choose the right meaning to guide your mascot through the maze.", href: "/games/word-maze", icon: Map, theme: "maze", Artwork: WordMazeArtwork },
+  { title: "Sentence Builder", description: "Arrange word tiles to build a sentence from a picture and Vietnamese clue.", href: "/games/sentence-builder", icon: TextCursorInput, theme: "sentence", Artwork: SentenceBuilderArtwork },
 ];
 
 export function GamesContent({ isAuthenticated }: { isAuthenticated: boolean }) {

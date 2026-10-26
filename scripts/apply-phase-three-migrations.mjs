@@ -27,6 +27,8 @@ const migrations = [
   ["20261026230000", "20261026230000_word_match_pair_sizes_6_8_12.sql"],
   ["20261026240000", "20261026240000_word_match_pair_sizes_6_8_10.sql"],
   ["20261026250000", "20261026250000_word_maze_leaderboard.sql"],
+  ["20261026260000", "20261026260000_sentence_builder.sql"],
+  ["20261026270000", "20261026270000_sentence_builder_login_required.sql"],
 ];
 
 function parseEnv(contents) {

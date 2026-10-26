@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, RotateCcw, Shuffle, Sparkles, Tro
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 
@@ -119,12 +120,7 @@ export function WordMatchContent() {
     });
   }, [category, words]);
 
-  const categoryOptions = useMemo(() => {
-    const names = [...new Set([...categories.map((item) => item.name), ...words.map((word) => word.category)])]
-      .filter((name) => name.trim() && name.trim().toLocaleLowerCase() !== "uncategorized")
-      .sort((left, right) => left.localeCompare(right));
-    return [{ value: "all", label: "All categories" }, ...names.map((name) => ({ value: name, label: name }))];
-  }, [categories, words]);
+  const categoryDropdownCategories = useMemo(() => getVocabularyDropdownCategories(categories, words), [categories, words]);
 
   useEffect(() => {
     if (phase !== "playing" || startedAt === null) return;
@@ -255,9 +251,7 @@ export function WordMatchContent() {
             <div className="word-match-section-heading"><span><Shuffle size={23} /></span><div><h2>Set up your round</h2><p>Choose a category and how many pairs to find.</p></div></div>
 
             <label className="word-match-label" htmlFor="word-match-category">Category</label>
-            <select id="word-match-category" value={category} onChange={(event) => setCategory(event.target.value)} className="word-match-select">
-              {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
+            <CategoryDropdown id="word-match-category" ariaLabel="Word Match category" category={category} categories={categoryDropdownCategories} words={words} onChange={setCategory} includeAll fullWidth />
 
             <fieldset className="word-match-count-fieldset">
               <legend>Number of pairs</legend>
