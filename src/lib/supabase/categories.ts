@@ -19,13 +19,14 @@ export interface VocabularyCategoryRow {
   user_id: string;
   name: string;
   color: VocabularyCategoryColor;
+  image_path?: string | null;
   is_default: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export type VocabularyCategoryUpdate = Partial<
-  Pick<VocabularyCategoryRow, "name" | "color">
+  Pick<VocabularyCategoryRow, "name" | "color" | "image_path">
 >;
 
 async function getAuthenticatedUser() {
@@ -70,8 +71,10 @@ export async function getVocabularyCategories(): Promise<VocabularyCategoryRow[]
 }
 
 export async function addVocabularyCategory(input: {
+  id?: string;
   name: string;
   color: VocabularyCategoryColor;
+  image_path?: string | null;
 }): Promise<VocabularyCategoryRow> {
   const user = await getAuthenticatedUser();
   const name = input.name.trim();
@@ -83,10 +86,12 @@ export async function addVocabularyCategory(input: {
   const { data, error } = await supabase
     .from("vocabulary_categories")
     .insert({
+      ...(input.id ? { id: input.id } : {}),
       user_id: user.id,
       name,
       color: input.color,
       is_default: false,
+      image_path: input.image_path ?? null,
     })
     .select()
     .single();

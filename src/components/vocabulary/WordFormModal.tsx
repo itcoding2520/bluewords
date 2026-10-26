@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import type {
   VocabularyMeaning,
   VocabularyWord,
@@ -26,6 +27,7 @@ import {
   uploadVocabularyImage,
   validateVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
+import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 
 interface WordFormModalProps {
   open: boolean;
@@ -279,9 +281,9 @@ export function WordFormModal({
               />
 
               {errors.word && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
+                <AutoDismissMessage key={errors.word} variant="error" className="mt-1.5 bg-transparent p-0 text-xs font-medium text-red-500">
                   {errors.word}
-                </p>
+                </AutoDismissMessage>
               )}
             </div>
 
@@ -321,12 +323,14 @@ export function WordFormModal({
               />
 
               {errors.meaning && (
-                <p
+                <AutoDismissMessage
+                  key={errors.meaning}
                   id="meaning-error"
-                  className="mt-1.5 text-xs font-medium text-red-500"
+                  variant="error"
+                  className="mt-1.5 bg-transparent p-0 text-xs font-medium text-red-500"
                 >
                   {errors.meaning}
-                </p>
+                </AutoDismissMessage>
               )}
             </div>
 
@@ -376,7 +380,7 @@ export function WordFormModal({
                   </button>
                 )}
               </div>
-              {errors.image && <p role="alert" className="mt-1.5 text-xs font-medium text-red-500">{errors.image}</p>}
+              {errors.image && <AutoDismissMessage key={errors.image} variant="error" className="mt-1.5 bg-transparent p-0 text-xs font-medium text-red-500">{errors.image}</AutoDismissMessage>}
               <p className="mt-1.5 text-xs text-slate-400">JPEG, PNG, or WebP. Images are private to your account.</p>
             </div>
 
@@ -510,7 +514,12 @@ export function WordFormModal({
                 htmlFor="category"
                 className="text-sm font-medium text-slate-700"
               >
-                Category
+                <span className="mb-2 block">Category</span>
+                {categories.find((item) => item.name === category) && <CategoryIdentity
+                  name={category}
+                  imagePath={categories.find((item) => item.name === category)?.image_path}
+                  fallbackWordImagePath={words.find((item) => item.category.trim().toLocaleLowerCase() === category.trim().toLocaleLowerCase() && item.imagePath)?.imagePath}
+                />}
               </label>
 
               <Select

@@ -5,6 +5,7 @@ import { Camera, Check, ImagePlus, Trash2, UserRound } from "lucide-react";
 
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
+import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import {
   deleteUserAvatar,
   getUserProfile,
@@ -208,8 +209,8 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
           </div>
         </div>
 
-        {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {notice && <p role="status" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700"><Check size={16} /> {notice}</p>}
+        {error && <AutoDismissMessage key={error} variant="error" className="mt-5">{error}</AutoDismissMessage>}
+        {notice && <AutoDismissMessage key={notice} variant="success" className="mt-5 inline-flex items-center gap-2"><Check size={16} /> {notice}</AutoDismissMessage>}
 
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs leading-5 text-slate-400">Your nickname and avatar are visible to other users in the game leaderboard. Your email stays private.</p>

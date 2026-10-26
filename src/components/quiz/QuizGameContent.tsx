@@ -7,10 +7,12 @@ import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, G
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
 import { getCachedVocabularyQuizAnswers, getCachedVocabularyQuizHistory, getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
@@ -134,7 +136,9 @@ function QuizCategoryChip({
   selected: boolean;
   onClick: () => void;
 }) {
-  const imageUrl = useVocabularyImageUrl(imagePath);
+  const isCategoryImage = imagePath?.startsWith("category:") ?? false;
+  const wordImageUrl = useVocabularyImageUrl(isCategoryImage ? null : imagePath);
+  const imageUrl = isCategoryImage ? getCategoryImageUrl(imagePath?.slice("category:".length)) : wordImageUrl;
 
   return (
     <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
@@ -201,7 +205,7 @@ function QuizPreview({
   );
 }
 
-export function QuizGameContent({ userId }: { userId: string }) {
+export function QuizGameContent({ userId }: { userId: string | null }) {
   const { words, categories, isLoaded } = useVocabulary();
   const [mode, setMode] = useState<QuizMode>("choose-meaning");
   const [category, setCategory] = useState("all");
@@ -241,7 +245,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
         name: item.name,
         value: item.name,
         color: item.color,
-        imagePath: words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
+        imagePath: item.image_path ? `category:${item.image_path}` : words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
       })),
     ];
   }, [categories, words]);
@@ -286,6 +290,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
     page = historyPage,
     pageSize = historyPageSize
   ) => {
+    if (!userId) return;
     const cachedHistory = getCachedVocabularyQuizHistory(userId, page, pageSize);
     if (cachedHistory && !forceRefresh) {
       setHistory(cachedHistory.rows);
@@ -309,6 +314,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
   }, [historyPage, historyPageSize, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     if (phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
     saveStartedRef.current = startedAt;
     const completedAt = Date.now();
@@ -328,7 +334,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
         const answer = answers[index];
         const expected = expectedAnswer(question, mode);
         return {
-          vocabulary_word_id: question.word.id,
+          vocabulary_word_id: question.word.isCustom ? null : question.word.id,
           question_position: index + 1,
           word_text: question.word.word,
           prompt_text: promptText(question, mode),
@@ -349,7 +355,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
     });
-  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, startedAt]);
+  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, startedAt, userId]);
 
   function startQuiz() {
     if (maximumQuestions < selectedQuestionCount) return;
@@ -399,6 +405,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
   }
 
   async function openHistoryReview(session: VocabularyQuizSessionRow) {
+    if (!userId) return;
     setSelectedHistory(session);
     setHistoryError("");
     const cachedAnswers = getCachedVocabularyQuizAnswers(userId, session.id);
@@ -443,7 +450,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
       {phase !== "playing" && (
         <div className="mb-5 flex gap-2 border-b border-slate-200">
           <TabButton active={tab === "play"} onClick={() => { setTab("play"); setSelectedHistory(null); }}> <Gamepad2 size={16} /> Play quiz</TabButton>
-          <TabButton active={tab === "history"} onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }}> <History size={16} /> History</TabButton>
+          {userId && <TabButton active={tab === "history"} onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }}> <History size={16} /> History</TabButton>}
         </div>
       )}
 
@@ -469,7 +476,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
                 <div><h2 className="text-xl font-semibold text-slate-950">Your quiz journey</h2><p className="mt-1 text-sm text-slate-500">Review scores, time, and answers from every completed quiz.</p></div>
                 <Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading}><RotateCcw size={15} /> Refresh</Button>
               </div>
-              {historyError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{historyError}</p>}
+              {historyError && <AutoDismissMessage key={historyError} variant="error" className="mb-4">{historyError}</AutoDismissMessage>}
               {historyLoading ? <p className="py-10 text-center text-sm text-slate-500">Loading quiz history…</p> : history.length === 0 ? (
                 <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed quizzes yet. Your attempts will appear here.</p>
               ) : (
@@ -565,7 +572,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
           <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
             {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={selectedQuestionCount === count} disabled={count > maximumQuestions} onClick={() => setQuestionCount(count)}>{count}</ChoiceButton>)}
           </div><p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p></fieldset>
-          {maximumQuestions < 10 && <p role="status" className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add at least 10 eligible vocabulary words with enough distinct words or meanings to create answer choices."}</p>}
+          {maximumQuestions < 10 && <AutoDismissMessage variant="warning" className="mt-5">{mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add at least 10 eligible vocabulary words with enough distinct words or meanings to create answer choices."}</AutoDismissMessage>}
           <div className="mt-7 hidden justify-end sm:flex"><Button onClick={startQuiz} disabled={maximumQuestions < selectedQuestionCount}><Gamepad2 size={17} /> Start quiz</Button></div>
         </Card>
         <QuizPreview mode={mode} category={category} questionCount={questionCount} meaningQuestion={meaningQuestions[0]} typeWord={categoryWords.find((word) => Boolean(word.imagePath))} />
@@ -617,7 +624,7 @@ export function QuizGameContent({ userId }: { userId: string }) {
               {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
               <p className="mt-4 text-sm text-slate-500">{currentQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p><div className="mt-4 grid w-full max-w-xl gap-2 grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`min-h-12 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === expectedAnswer(currentQuestion, mode) ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="mr-2 text-xs font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</button>)}</div>
             </>}
-            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-700"><X size={17} />{`The answer is: ${expectedAnswer(currentQuestion, mode)}`}</p>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
+            {currentAnswer && <div className="mt-5 flex w-full max-w-xl flex-col items-center gap-3" role="status">{!currentAnswer.correct && <AutoDismissMessage key={`${questionIndex}:${currentAnswer.value}`} variant="error" className="inline-flex items-center gap-2 bg-transparent p-0 font-semibold"><X size={17} />{`The answer is: ${expectedAnswer(currentQuestion, mode)}`}</AutoDismissMessage>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
           </div>
         </Card>
       )}
@@ -626,7 +633,9 @@ export function QuizGameContent({ userId }: { userId: string }) {
         <Card className="mx-auto max-w-3xl p-5 sm:p-8">
           <div className="mb-5 flex flex-wrap justify-between gap-2"><Button variant="secondary" onClick={backToSetup}><ArrowLeft size={16} /> Setup</Button><Button onClick={startQuiz}><RotateCcw size={16} /> Play again</Button></div>
           <div className="text-center"><p className="text-sm font-medium text-blue-600">Quiz complete</p><h2 className="mt-2 text-3xl font-bold text-slate-950">{correctCount} / {questions.length}</h2><p className="mt-2 text-sm text-slate-500">Correct answers · {formatTime(elapsedSeconds)} elapsed</p>
-            <p role={saveState === "error" ? "alert" : "status"} className={`mt-3 inline-flex items-center gap-2 text-sm ${saveState === "error" ? "text-red-700" : "text-slate-500"}`}>{saveState === "saving" && <LoaderCircle size={15} className="animate-spin" />}{saveState === "saved" ? "Attempt saved to your history." : saveState === "saving" ? "Saving your quiz history…" : saveState === "error" ? `History was not saved: ${saveError}` : ""}</p>
+          {saveState === "saving" && <p role="status" className="mt-3 inline-flex items-center gap-2 text-sm text-slate-500"><LoaderCircle size={15} className="animate-spin" />Saving your quiz history…</p>}
+          {saveState === "saved" && <AutoDismissMessage variant="success" className="mx-auto mt-3 w-fit">Attempt saved to your history.</AutoDismissMessage>}
+          {saveState === "error" && <AutoDismissMessage key={saveError} variant="error" className="mx-auto mt-3 w-fit">History was not saved: {saveError}</AutoDismissMessage>}
             {saveState === "error" && <button type="button" onClick={() => { saveStartedRef.current = null; setPhase("setup"); setTimeout(() => setPhase("results"), 0); }} className="ml-2 text-sm font-semibold text-blue-700 underline">Retry save</button>}
           </div>
           <div className="mt-7 flex flex-col gap-3">{questions.map((question, index) => { const answer = answers[index]; const expected = expectedAnswer(question, mode); const prompt = mode === "choose-meaning" && question.choiceType === "word" ? question.meaning : question.word.word; return <div key={`${question.word.id}-${index}`} className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4"><div className="min-w-0"><p className="font-semibold text-slate-900">{prompt}</p>{mode === "choose-meaning" && <p className="mt-1 text-sm text-slate-600">Correct answer: {expected}</p>}{!answer ? <p className="mt-1 text-xs text-slate-400">Not answered</p> : !answer.correct ? <p className="mt-1 text-xs text-red-600">Your answer: {answer.value}</p> : null}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${answer?.correct ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{answer?.correct ? "Correct" : "Review"}</span></div>; })}</div>

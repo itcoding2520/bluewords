@@ -2,8 +2,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { login, signup } from "./actions";
+import Image from "next/image";
+import Link from "next/link";
+import { Input } from "@/components/ui/Input";
 
 type AuthMode = "login" | "signup";
 
@@ -41,24 +44,20 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-slate-50 px-4 py-10">
+    <main className="login-shell flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-            <BookOpen className="h-7 w-7" />
-          </div>
-
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            BlueWords
-          </h1>
+          <Link href="/" className="inline-flex items-center gap-2" aria-label="BlueWords home">
+            <Image src="/logo.png" alt="BlueWords" width={640} height={225} sizes="240px" loading="eager" unoptimized className="h-[84px] w-60 object-contain" />
+          </Link>
 
           <p className="mt-2 text-sm text-slate-500">
             Build your vocabulary, one word at a time.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-2xl font-semibold text-slate-900">
+        <div className="rounded-3xl border border-white/90 bg-white/90 p-6 shadow-[0_12px_36px_rgb(39_90_150/0.12)] backdrop-blur-sm sm:p-8">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">
             {mode === "login"
               ? "Welcome back"
               : "Create your account"}
@@ -79,14 +78,14 @@ export default function LoginForm() {
                 Email
               </label>
 
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="focus:border-blue-500 focus:ring-blue-500/20"
               />
             </div>
 
@@ -98,7 +97,7 @@ export default function LoginForm() {
                 Password
               </label>
 
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -110,7 +109,7 @@ export default function LoginForm() {
                 minLength={6}
                 required
                 placeholder="Enter your password"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="focus:border-blue-500 focus:ring-blue-500/20"
               />
             </div>
 
@@ -130,7 +129,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-bold text-white shadow-[0_5px_14px_rgb(37_99_235/0.22)] transition hover:bg-blue-700 hover:shadow-[0_7px_18px_rgb(37_99_235/0.28)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />

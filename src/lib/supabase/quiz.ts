@@ -38,7 +38,7 @@ export function invalidateVocabularyQuizHistoryCache(userId?: string): void {
 }
 
 export interface SaveVocabularyQuizAnswer {
-  vocabulary_word_id: string;
+  vocabulary_word_id: string | null;
   question_position: number;
   word_text: string;
   prompt_text: string;
