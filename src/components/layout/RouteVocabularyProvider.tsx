@@ -17,6 +17,9 @@ const vocabularyRoutes = [
   "/vocabulary",
   "/flashcards",
   "/quiz",
+  "/games/word-match",
+  "/games/word-maze",
+  "/games/word-scramble",
   "/games/word-search",
   "/publish",
 ];

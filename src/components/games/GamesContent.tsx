@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Brain, Gamepad2, Grid3X3, Search, Star } from "lucide-react";
+import { ArrowRight, Brain, CaseSensitive, Gamepad2, Grid3X3, Map, Search, Shuffle, Star } from "lucide-react";
 
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
 
@@ -30,9 +30,41 @@ function QuizArtwork() {
   );
 }
 
+function WordMatchArtwork() {
+  return (
+    <div className="game-art game-art-match" aria-hidden="true">
+      <div className="game-match-card game-match-card-word"><span>apple</span><b>WORD</b></div>
+      <div className="game-match-link"><Shuffle size={26} /></div>
+      <div className="game-match-card game-match-card-meaning"><span>quả táo</span><b>MEANING</b></div>
+    </div>
+  );
+}
+
+function WordScrambleArtwork() {
+  return (
+    <div className="game-art game-art-scramble" aria-hidden="true">
+      {["B", "A", "N", "A"].map((letter, index) => <span key={`${letter}-${index}`} style={{ transform: `rotate(${(index - 1.5) * 7}deg) translateY(${index % 2 ? "-.2rem" : ".2rem"})` }}>{letter}</span>)}
+      <CaseSensitive size={28} />
+    </div>
+  );
+}
+
+function WordMazeArtwork() {
+  return (
+    <div className="game-art game-art-maze" aria-hidden="true">
+      <span className="game-maze-start">📘</span>
+      <i /><i /><i /><i />
+      <span className="game-maze-goal">⚑</span>
+    </div>
+  );
+}
+
 const games = [
   { title: "Word Search", description: "Find your vocabulary hidden across a letter grid.", href: "/games/word-search", icon: Grid3X3, theme: "search", Artwork: WordSearchArtwork },
   { title: "Vocabulary Quiz", description: "Practice meanings or recall words from images.", href: "/quiz", icon: Brain, theme: "quiz", Artwork: QuizArtwork },
+  { title: "Word Match", description: "Match each English word with its meaning.", href: "/games/word-match", icon: Shuffle, theme: "match", Artwork: WordMatchArtwork },
+  { title: "Word Scramble", description: "Unscramble letters with picture and meaning clues.", href: "/games/word-scramble", icon: CaseSensitive, theme: "scramble", Artwork: WordScrambleArtwork },
+  { title: "Word Maze Adventure", description: "Choose the right meaning to guide your mascot through the maze.", href: "/games/word-maze", icon: Map, theme: "maze", Artwork: WordMazeArtwork },
 ];
 
 export function GamesContent({ isAuthenticated }: { isAuthenticated: boolean }) {
@@ -47,22 +79,25 @@ export function GamesContent({ isAuthenticated }: { isAuthenticated: boolean }) 
         </div>
       </header>
 
-      <div className="games-card-grid">
-        {games.map(({ title, description, href, icon: Icon, theme, Artwork }) => (
-          <Link key={title} href={href} className={`game-feature game-feature-${theme}`}>
-            <div className="game-feature-copy">
-              <span className="game-feature-icon"><Icon size={30} strokeWidth={2.5} /></span>
-              <h2>{title}</h2>
-              <p>{description}</p>
-              <span className="game-play-button">Play now <ArrowRight size={21} /></span>
-            </div>
-            <Artwork />
-            <Star className="game-card-star" aria-hidden="true" />
-          </Link>
-        ))}
-      </div>
-
       {isAuthenticated && <GamesLeaderboard />}
+
+      <section className="games-library" aria-labelledby="games-library-title">
+        <h2 id="games-library-title"><Gamepad2 size={23} aria-hidden="true" /> Choose a game</h2>
+        <div className="games-card-grid">
+          {games.map(({ title, description, href, icon: Icon, theme, Artwork }) => (
+            <Link key={title} href={href} className={`game-feature game-feature-${theme}`}>
+              <div className="game-feature-copy">
+                <span className="game-feature-icon"><Icon size={30} strokeWidth={2.5} /></span>
+                <h2>{title}</h2>
+                <p>{description}</p>
+                <span className="game-play-button">Play now <ArrowRight size={21} /></span>
+              </div>
+              <Artwork />
+              <Star className="game-card-star" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <div className="games-coming-soon">
         <Gamepad2 size={27} aria-hidden="true" />

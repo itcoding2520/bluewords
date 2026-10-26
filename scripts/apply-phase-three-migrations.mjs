@@ -21,6 +21,12 @@ const migrations = [
   ["20261025210000", "20261025210000_youtube_video_library.sql"],
   ["20261025220000", "20261025220000_video_author_nullable.sql"],
   ["20261025230000", "20261025230000_unique_youtube_video_ids.sql"],
+  ["20261026200000", "20261026200000_add_word_match_and_scramble_leaderboards.sql"],
+  ["20261026210000", "20261026210000_word_match_leaderboard_all_pair_sizes.sql"],
+  ["20261026220000", "20261026220000_all_word_match_scramble_leaderboards.sql"],
+  ["20261026230000", "20261026230000_word_match_pair_sizes_6_8_12.sql"],
+  ["20261026240000", "20261026240000_word_match_pair_sizes_6_8_10.sql"],
+  ["20261026250000", "20261026250000_word_maze_leaderboard.sql"],
 ];
 
 function parseEnv(contents) {
@@ -59,7 +65,7 @@ if (dbUrl.port === "6543") {
 
 const client = new Client({
   connectionString,
-  application_name: "bluewords-phase3-migrator",
+  application_name: "bluewords-database-migrator",
   connectionTimeoutMillis: 15000,
 });
 
@@ -101,9 +107,9 @@ try {
     }
   }
 
-  console.log("Phase 3 migrations are up to date.");
+  console.log("BlueWords database migrations are up to date.");
 } catch (error) {
-  console.error(`Phase 3 migration failed: ${error.message}`);
+  console.error(`BlueWords database migration failed: ${error.message}`);
   process.exitCode = 1;
 } finally {
   try {
