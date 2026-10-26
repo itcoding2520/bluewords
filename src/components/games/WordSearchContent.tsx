@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, History, Info, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, Grid3X3, History, Info, Play, RotateCcw, Star, Tag, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -13,6 +13,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, getWordSearchSelectionPath, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
@@ -89,7 +90,7 @@ function CategoryChip({
 
   return (
     <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
-      {imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
+      {name === "All categories" ? <Grid3X3 size={21} className="shrink-0 text-violet-600" aria-hidden="true" /> : imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
       <span className="min-w-0 truncate">{name}</span>
     </button>
   );
@@ -97,12 +98,13 @@ function CategoryChip({
 
 function BoardPreview({ gridSize, difficulty, wordCount }: { gridSize: GridSize; difficulty: Difficulty; wordCount: number }) {
   return (
-    <Card className="border-indigo-100 bg-indigo-50/70 p-5 sm:p-8">
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Your board preview</p>
+    <Card className="word-search-board-preview relative overflow-hidden border-indigo-100 bg-indigo-50/70 p-5 sm:p-7">
+      <Image src="/images/ui/illustrations/hero-book-mascot.svg" alt="" width={130} height={110} className="word-search-preview-mascot" />
+      <p className="relative z-10 text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Your board preview</p>
       <h2 className="mt-3 text-xl font-bold text-slate-900">Ready when you are</h2>
       <p className="mt-1 text-sm text-slate-500">A fresh puzzle every round.</p>
 
-      <div role="img" aria-label="Sample word search board with SEARCH highlighted" className="mx-auto mt-5 grid max-w-sm grid-cols-8 gap-1 rounded-2xl border border-indigo-100 bg-white p-3">
+      <div role="img" aria-label="Sample word search board with SEARCH highlighted" className="word-search-preview-grid relative z-10 mx-auto mt-5 grid max-w-sm grid-cols-8 gap-1 rounded-2xl border border-indigo-100 bg-white p-3">
         {PREVIEW_LETTERS.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
           const highlighted = rowIndex === 0 && columnIndex >= 1 && columnIndex <= 6;
           return <span key={`${rowIndex}-${columnIndex}`} className={`grid aspect-square place-items-center rounded-md border text-xs font-semibold sm:text-sm ${highlighted ? "border-indigo-200 bg-indigo-100 text-indigo-700" : "border-slate-100 bg-slate-50 text-slate-500"}`}>{letter}</span>;
@@ -120,14 +122,23 @@ function BoardPreview({ gridSize, difficulty, wordCount }: { gridSize: GridSize;
   );
 }
 
+function HistoryWordCard({ word, meaning }: { word: VocabularyWord | undefined; meaning: string }) {
+  const imageUrlFromPath = useVocabularyImageUrl(word?.imagePath);
+  const imageUrl = word?.imageUrl ?? imageUrlFromPath;
+
+  return (
+    <li className="word-search-history-word-card">
+      {imageUrl ? <Image src={imageUrl} alt={`Illustration for ${word?.word ?? "vocabulary word"}`} width={56} height={56} unoptimized className="word-search-history-word-image" /> : <span className="word-search-history-word-placeholder" aria-hidden="true">{word?.word.slice(0, 1).toUpperCase() ?? "?"}</span>}
+      <span className="min-w-0 flex-1"><span className="flex items-center gap-1"><span className="truncate font-extrabold text-indigo-950">{word?.word ?? "Word no longer in your vocabulary"}</span>{word && <PronunciationButton word={word.word} />}</span><span className="mt-1 block truncate text-xs text-slate-500">{meaning}</span></span>
+      <span className="word-search-history-word-check" aria-label="Found"><Check size={14} /></span>
+    </li>
+  );
+}
+
 function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-function formatHistoryDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
-}
 
 function selectableWords(words: VocabularyWord[], category: string, difficulty: Difficulty, size: GridSize) {
   const seen = new Set<string>();
@@ -171,9 +182,8 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   const vocabularyByWord = useMemo(() => new Map(words.map((word) => [normalizeWordSearchWord(word.word), word] as const)), [words]);
   const categoryOptions = useMemo(() => {
     const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
-    const firstIllustration = words.find((word) => word.imagePath)?.imagePath ?? null;
     return [
-      { id: "all-categories", name: "All categories", value: "all", color: "blue" as VocabularyCategoryColor, imagePath: firstIllustration },
+      { id: "all-categories", name: "All categories", value: "all", color: "blue" as VocabularyCategoryColor, imagePath: null },
       ...visibleCategories.map((item) => ({
         id: item.id,
         name: item.name,
@@ -184,6 +194,8 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     ];
   }, [categories, words]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
+  const fastestHistory = history.reduce<WordSearchSessionRow | null>((best, item) => !best || item.duration_seconds < best.duration_seconds ? item : best, null);
+  const averageWordsPerRound = history.length ? Math.round(history.reduce((total, item) => total + item.word_count, 0) / history.length) : 0;
   const showStickyStart = phase === "setup" && tab === "play";
 
   useEffect(() => {
@@ -330,47 +342,74 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
 
   if (phase === "setup") {
     return (
-      <div className={showStickyStart ? "pb-24 sm:pb-0" : ""}>
-        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
-        <header className="mb-6">
-          <p className="text-sm font-medium text-blue-600">Vocabulary game</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Word Search</h1>
-          <p className="mt-2 text-sm text-slate-500">Find every vocabulary word in the letter grid as quickly as you can.</p>
+      <div className={`word-search-setup-page ${showStickyStart ? "pb-24 sm:pb-0" : ""}`}>
+        <Link href="/games" className="word-search-back-link mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
+        <header className="word-search-setup-hero mb-6">
+          <p className="text-sm font-bold text-blue-600">Vocabulary game</p>
+          <h1 className="page-title mt-1 flex items-center gap-2">Word Search <Star className="size-6 fill-amber-400 text-amber-400" /></h1>
+          <p className="page-intro-description mt-2">Find every vocabulary word in the letter grid as quickly as you can.</p>
         </header>
 
-        <div className="mb-5 flex gap-2 border-b border-slate-200">
+        <div className="word-search-setup-tabs mb-5 flex gap-2 border-b border-slate-200">
           <button type="button" onClick={() => { setTab("play"); setSelectedHistory(null); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium ${tab === "play" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}><Gamepad2 size={16} /> Play</button>
           {userId && <button type="button" onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-slate-500 hover:text-slate-800 ${tab === "history" ? "!border-blue-600 !text-blue-700" : ""}`}><History size={16} /> History</button>}
         </div>
 
         {tab === "history" ? (
-          <Card className="max-w-3xl p-5 sm:p-8">
+          <div className="word-search-history-page">
             {selectedHistory ? (
-              <>
-                <button type="button" onClick={() => setSelectedHistory(null)} className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"><ArrowLeft size={16} /> All game attempts</button>
-                <h2 className="text-xl font-semibold text-slate-950">Word Search review</h2>
-                <p className="mt-1 text-sm text-slate-500">{new Date(selectedHistory.completed_at).toLocaleString()} · {selectedHistory.grid_size} × {selectedHistory.grid_size} · {selectedHistory.difficulty} · {selectedHistory.category === "all" ? "All categories" : selectedHistory.category} · {formatHistoryDuration(selectedHistory.duration_seconds)}</p>
-                <h3 className="mt-6 text-sm font-semibold text-slate-700">Words found</h3>
-                <ul className="mt-3 flex flex-wrap gap-2">{selectedHistory.words.map((word) => {
-                  const vocabularyWord = vocabularyByWord.get(normalizeWordSearchWord(word));
-                  const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
-                  return <li key={word} className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700"><span className="font-medium">{word}</span><span className="pl-1 text-xs text-emerald-700/75">({meaning})</span></li>;
-                })}</ul>
-              </>
+              <Card className="word-search-history-detail overflow-hidden p-0">
+                <div className="word-search-history-detail-top">
+                  <button type="button" onClick={() => setSelectedHistory(null)} className="word-search-history-back inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-100 bg-white px-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"><ArrowLeft size={16} /> All game attempts</button>
+                  <div className="word-search-history-detail-hero">
+                    <div className="word-search-history-detail-mascot"><Image src="/images/ui/illustrations/hero-book-mascot.svg" alt="" width={260} height={220} /></div>
+                    <div className="word-search-history-detail-summary">
+                      <p className="text-xs font-bold uppercase tracking-[.14em] text-blue-600">Round complete</p>
+                      <h2 className="mt-2 flex flex-wrap items-center gap-2 text-3xl font-extrabold text-indigo-950 sm:text-5xl"><Trophy className="size-9 fill-amber-400 text-amber-500" /><span className="text-blue-600">{selectedHistory.word_count}</span> words found</h2>
+                      <div className="word-search-history-detail-stats">
+                        <span className="word-search-history-detail-stat word-search-detail-time"><Clock3 /><span><small>Time</small><strong>{formatDuration(selectedHistory.duration_seconds)}</strong></span></span>
+                        <span className="word-search-history-detail-stat word-search-detail-grid"><Grid3X3 /><span><small>Grid size</small><strong>{selectedHistory.grid_size} × {selectedHistory.grid_size}</strong></span></span>
+                        <span className="word-search-history-detail-stat word-search-detail-level"><BarChart3 /><span><small>Level</small><strong className="capitalize">{selectedHistory.difficulty}</strong></span></span>
+                        <span className="word-search-history-detail-stat word-search-detail-category"><Tag /><span><small>Category</small><strong>{selectedHistory.category === "all" ? "All categories" : selectedHistory.category}</strong></span></span>
+                      </div>
+                      <p className="word-search-history-detail-date"><CalendarDays size={17} />{new Date(selectedHistory.completed_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+                <section className="word-search-history-words-section" aria-labelledby="word-search-history-words-title">
+                  <div className="word-search-history-words-heading"><h3 id="word-search-history-words-title"><BookOpen size={27} />Words from this round</h3><Button onClick={() => { setSelectedHistory(null); setTab("play"); }} className="rounded-full px-5"><Play size={16} fill="currentColor" /> Play again</Button></div>
+                  <ul className="word-search-history-word-grid">{selectedHistory.words.map((word) => {
+                    const vocabularyWord = vocabularyByWord.get(normalizeWordSearchWord(word));
+                    const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
+                    return <HistoryWordCard key={word} word={vocabularyWord} meaning={meaning} />;
+                  })}</ul>
+                </section>
+              </Card>
             ) : (
-              <>
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-slate-950">Your Word Search history</h2><p className="mt-1 text-sm text-slate-500">Grouped by category, fastest time first.</p></div><Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading}><RotateCcw size={15} /> Refresh</Button></div>
-                {historyError && <AutoDismissMessage key={historyError} variant="error" className="mb-4">{historyError}</AutoDismissMessage>}
-                {historyLoading ? <p className="py-10 text-center text-sm text-slate-500">Loading game history…</p> : history.length === 0 ? <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed games yet. Your finished rounds will appear here.</p> : (
-                  <div className="space-y-3">{history.map((session) => <button key={session.id} type="button" onClick={() => setSelectedHistory(session)} className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/40"><span><span className="block font-semibold text-slate-900">{session.word_count} words · {session.grid_size} × {session.grid_size} · {session.difficulty}</span><span className="mt-1 block text-xs text-slate-500">{new Date(session.completed_at).toLocaleString()} · {session.category === "all" ? "All categories" : session.category}</span></span><span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><Clock3 size={15} /> {formatHistoryDuration(session.duration_seconds)} <span aria-hidden="true" className="ml-2 text-slate-400">›</span></span></button>)}</div>
-                )}
-                {!historyLoading && !historyError && historyTotal > 0 && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500"><span>Page {historyPage} of {Math.max(1, Math.ceil(historyTotal / 10))}</span><div className="flex gap-2"><Button variant="secondary" aria-label="Previous history page" disabled={historyPage <= 1} onClick={() => { const nextPage = historyPage - 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronLeft size={16} /></Button><Button variant="secondary" aria-label="Next history page" disabled={historyPage >= Math.ceil(historyTotal / 10)} onClick={() => { const nextPage = historyPage + 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronRight size={16} /></Button></div></div>}
-              </>
+              <Card className="word-search-history-dashboard overflow-hidden p-0">
+                <div className="word-search-history-welcome">
+                  <div><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-600">Your progress</p><h2 className="mt-1 text-3xl font-extrabold text-indigo-950 sm:text-4xl">Your game <span className="text-blue-600">journey</span><Star className="ml-2 inline size-6 fill-amber-400 text-amber-400" /></h2><p className="mt-2 max-w-lg text-sm leading-6 text-slate-600 sm:text-base">Great job exploring new words! Keep playing to build your vocabulary and beat your best time.</p></div>
+                  <Image src="/images/ui/illustrations/review-trophy.svg" alt="" width={250} height={180} className="word-search-history-mascot" />
+                </div>
+
+                <div className="word-search-history-stats">
+                  <div className="word-search-history-stat word-search-history-stat-games"><span className="word-search-history-stat-icon"><Gamepad2 size={30} /></span><span><span className="block text-sm font-bold text-blue-700">Total games</span><strong>{historyTotal}</strong></span></div>
+                  <div className="word-search-history-stat word-search-history-stat-time"><span className="word-search-history-stat-icon"><Clock3 size={30} /></span><span><span className="block text-sm font-bold text-emerald-700">Best time on page</span><strong>{fastestHistory ? formatDuration(fastestHistory.duration_seconds) : "—"}</strong></span></div>
+                  <div className="word-search-history-stat word-search-history-stat-words"><span className="word-search-history-stat-icon"><Star size={30} /></span><span><span className="block text-sm font-bold text-violet-700">Avg. words per round</span><strong>{history.length ? averageWordsPerRound : "—"}</strong></span></div>
+                </div>
+
+                <section className="word-search-history-list" aria-labelledby="word-search-history-title">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 id="word-search-history-title" className="text-xl font-extrabold text-indigo-950">Your Word Search history</h3><p className="mt-1 text-sm text-slate-500">Grouped by category, fastest time first.</p></div><Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading} className="rounded-full border-blue-100 bg-white px-5 text-blue-600"><RotateCcw size={15} className={historyLoading ? "animate-spin" : ""} /> Refresh</Button></div>
+                  {historyError && <AutoDismissMessage key={historyError} variant="error" className="mb-4">{historyError}</AutoDismissMessage>}
+                  {historyLoading ? <p role="status" className="py-10 text-center text-sm text-slate-500">Loading your game history…</p> : history.length === 0 ? <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/50 px-5 py-10 text-center"><Trophy className="mx-auto size-9 text-blue-400" /><p className="mt-3 font-bold text-indigo-950">Your journey starts here</p><p className="mt-1 text-sm text-slate-500">Finish a Word Search round and it will appear here.</p><Button className="mt-4" onClick={() => setTab("play")}><Gamepad2 size={16} /> Play a round</Button></div> : <div className="space-y-3">{history.map((session, index) => <button key={session.id} type="button" onClick={() => setSelectedHistory(session)} className={`word-search-history-entry word-search-history-entry-${index % 3} group flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md sm:p-5`}><span className="word-search-history-medal" aria-hidden="true"><Award size={35} /></span><span className="min-w-0 flex-1"><span className="block text-base font-extrabold text-indigo-950 sm:text-lg">{session.word_count} words · {session.grid_size} × {session.grid_size} · {session.difficulty}</span><span className="mt-2 flex flex-wrap gap-1.5"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">{session.grid_size} × {session.grid_size}</span><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold capitalize text-emerald-700">{session.difficulty}</span><span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">{session.category === "all" ? "All categories" : session.category}</span><span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">{session.word_count} words</span></span><span className="mt-2 flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays size={14} />{new Date(session.completed_at).toLocaleString()}</span></span><span className="flex items-center gap-3 text-sm font-bold tabular-nums text-slate-600"><Clock3 size={16} />{formatDuration(session.duration_seconds)}<ArrowRight size={17} className="text-blue-500 transition group-hover:translate-x-1" /></span></button>)}</div>}
+                  {!historyLoading && !historyError && historyTotal > 0 && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500"><span>Page {historyPage} of {Math.max(1, Math.ceil(historyTotal / 10))}</span><div className="flex gap-2"><Button variant="secondary" aria-label="Previous history page" disabled={historyPage <= 1} onClick={() => { const nextPage = historyPage - 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronLeft size={16} /></Button><Button variant="secondary" aria-label="Next history page" disabled={historyPage >= Math.ceil(historyTotal / 10)} onClick={() => { const nextPage = historyPage + 1; setHistoryPage(nextPage); void loadHistory(false, nextPage); }}><ChevronRight size={16} /></Button></div></div>}
+                </section>
+              </Card>
             )}
-          </Card>
+          </div>
         ) : (
-        <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <Card className="flex min-w-0 flex-col p-5 sm:p-8">
+        <div className="word-search-setup-layout grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="word-search-setup-card flex min-w-0 flex-col p-5 sm:p-8">
           <div className="grid gap-5 xl:grid-cols-2">
             <fieldset className="min-w-0">
               <legend className="mb-3 text-sm font-semibold text-slate-700">Grid size</legend>
@@ -387,8 +426,8 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
             </fieldset>
           </div>
 
-          <fieldset className="mt-6">
-            <legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend>
+          <fieldset className="word-search-category-fieldset mt-6">
+            <legend className="mb-3 flex items-center gap-2 text-lg font-extrabold text-indigo-950"><Image src="/images/ui/icons/vocabulary.svg" alt="" width={24} height={24} /> Category</legend>
             <p className="mb-3 text-xs text-slate-500">Pick one category or use all your words.</p>
             <div id="word-search-categories" className={`grid grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-200 sm:grid-cols-5 ${categoriesExpanded ? "max-h-[1000px]" : "max-h-[11.5rem] sm:max-h-[5.5rem] lg:max-h-[11.5rem]"}`}>
               {categoryOptions.map((item) => <CategoryChip key={item.id} name={item.name} imagePath={item.imagePath} dotClassName={CATEGORY_DOT_STYLES[item.color]} selected={category === item.value} onClick={() => setCategory(item.value)} />)}
@@ -406,14 +445,14 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
 
               <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">Words can appear left-to-right, top-to-bottom, or diagonally downward.</p>
-                <Button onClick={startGame} disabled={targetCount === 0} className="hidden min-h-12 w-full sm:inline-flex sm:w-auto" style={{ minWidth: 115 }}>Start game</Button>
+                <Button onClick={startGame} disabled={targetCount === 0} className="word-search-start-button hidden min-h-14 w-full sm:inline-flex sm:w-auto" style={{ minWidth: 180 }}><Gamepad2 size={19} /> Start game</Button>
           </div>
         </Card>
         <BoardPreview gridSize={gridSize} difficulty={difficulty} wordCount={targetCount} />
         </div>
         )}
         {showStickyStart && (
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+          <div className="word-search-sticky-start fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
             <Button onClick={startGame} disabled={targetCount === 0} className="min-h-12 w-full"><Gamepad2 size={17} /> Start game</Button>
           </div>
         )}
@@ -425,7 +464,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
 
   const foundCells = new Set(Object.values(foundWordPaths).flatMap((path) => path.map(({ row, column }) => `${row}:${column}`)));
   return (
-    <div className="pb-8">
+    <div className={phase === "playing" ? "word-search-playing" : "pb-8"}>
       {phase === "playing" ? (
         <div className="sticky top-25 z-20 -mx-2 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-2 py-2.5 backdrop-blur lg:top-0 lg:mx-0 lg:bg-slate-50/95">
           <button type="button" onClick={backToSetup} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Setup</button>
@@ -434,10 +473,10 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
       ) : (
         <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
       )}
-      <header className="mb-3 md:mb-5 flex flex-wrap items-end justify-between gap-3">
+      <header className="word-search-game-heading mb-3 md:mb-5 flex flex-wrap items-end justify-between gap-3">
 
           <p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-950">Find the words</h1>
+          <h1 className="page-title mt-1">Find the words</h1>
 
       </header>
 
@@ -452,11 +491,11 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
           <div className="mt-6 flex flex-wrap justify-center gap-3"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button>{saveState === "saved" && <Button variant="secondary" onClick={() => { setPhase("setup"); setTab("history"); setHistoryPage(1); setSelectedHistory(null); void loadHistory(true, 1); }}><History size={16} /> View history</Button>}</div>
         </Card>
       ) : (
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
-          <Card className="order-2 min-w-0 p-3 sm:p-5 lg:order-1">
+        <div className="word-search-game-layout grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+          <Card className="word-search-board-card order-2 min-w-0 p-3 sm:p-5 lg:order-1">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="min-w-0 overflow-hidden md:pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
-              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-none md:touch-manipulation select-none`}>
+              <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-game-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-none md:touch-manipulation select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
                   const selected = selectedCells.some((cell) => cell.row === rowIndex && cell.column === columnIndex);
                   const found = foundCells.has(`${rowIndex}:${columnIndex}`);
@@ -467,7 +506,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
             <p aria-live="polite" className="mt-2 px-1 text-xs text-slate-500 hidden md:block">{selectedCells.length > 0 ? `${selectedCells.length} letter${selectedCells.length === 1 ? "" : "s"} selected. Release to check the word.` : "Click and drag from the first letter to the last, then release. Words run left-to-right, top-to-bottom, or diagonally."}</p>
           </Card>
 
-          <Card className="order-1 p-5 lg:order-2">
+          <Card className="word-search-words-card order-1 p-5 lg:order-2">
             <h2 className="font-semibold text-slate-950">Words to find</h2>
             <p className="mt-1 text-xs text-slate-500 hidden md:block">Find them in any order.</p>
             <ul className="mt-2 md:mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">

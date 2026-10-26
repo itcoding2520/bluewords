@@ -125,7 +125,7 @@ function sortCategories(
 
 type PublicSharedVocabulary = {
   categories: Array<{ id: string; name: string; color: VocabularyCategoryColor; image_path?: string | null }>;
-  words: Array<{ id: string; word: string; meaning: string; ipa: string | null; category: string }>;
+  words: Array<{ id: string; word: string; meaning: string; ipa: string | null; category: string; imageUrl?: string | null }>;
 };
 
 async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabulary> {
@@ -168,6 +168,7 @@ function mapPublicWords(shared: PublicSharedVocabulary): VocabularyWord[] {
       type: "word" as const,
       ipa: word.ipa,
       imagePath: null,
+      imageUrl: word.imageUrl ?? null,
       detailedMeanings: [],
       isCustom: true,
     }];

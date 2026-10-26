@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { BookOpen, FolderHeart, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import { createClient } from "@/lib/supabase/client";
+import { getCachedPublishRequests, invalidatePublishRequestCache } from "@/lib/supabase/publish-request-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
@@ -28,6 +29,20 @@ export function PublishVocabularyContent() {
   const [communityWordRequests, setCommunityWordRequests] = useState<CommunityWordRequest[]>([]);
   const [requestsLoaded, setRequestsLoaded] = useState(false);
 
+  const loadPublishRequests = useCallback(async () => {
+    const [categoryResult, wordResult] = await Promise.all([
+      supabase.from("community_categories").select("id, owner_id, name, status"),
+      supabase.from("community_words").select("id, owner_id, category_id, normalized_word, word, meaning, ipa, status, community_categories!inner(name)").in("status", ["pending", "published", "rejected"]),
+    ]);
+    if (categoryResult.error || wordResult.error) {
+      throw new Error(categoryResult.error?.message ?? wordResult.error?.message ?? "Could not load request status.");
+    }
+    return {
+      categories: (categoryResult.data ?? []) as CommunityCategoryRequest[],
+      words: ((wordResult.data ?? []) as unknown as Array<CommunityWordRequest & { community_categories: { name: string } }>).map(({ community_categories, ...item }) => ({ ...item, category_name: community_categories.name })),
+    };
+  }, [supabase]);
+
   useEffect(() => {
     let active = true;
     async function loadRequests() {
@@ -37,25 +52,28 @@ export function PublishVocabularyContent() {
         setRequestsLoaded(true);
         return;
       }
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [categoryResult, wordResult] = await Promise.all([
-        supabase.from("community_categories").select("id, owner_id, name, status"),
-        supabase.from("community_words").select("id, owner_id, category_id, normalized_word, word, meaning, ipa, status, community_categories!inner(name)").in("status", ["pending", "published", "rejected"]),
-      ]);
-      if (!active) return;
-      if (categoryResult.error || wordResult.error) {
-        toast.error(categoryResult.error?.message ?? wordResult.error?.message ?? "Could not load request status.");
-      } else {
-        setCommunityCategoryRequests((categoryResult.data ?? []) as CommunityCategoryRequest[]);
-        setCommunityWordRequests(((wordResult.data ?? []) as unknown as Array<CommunityWordRequest & { community_categories: { name: string } }>).map(({ community_categories, ...item }) => ({ ...item, category_name: community_categories.name })));
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setRequestsLoaded(true);
+          return;
+        }
+        const requests = await getCachedPublishRequests(user.id, loadPublishRequests);
+        if (!active) return;
+        setCommunityCategoryRequests(requests.categories);
+        setCommunityWordRequests(requests.words);
+        setRequestsLoaded(true);
+      } catch (error) {
+        if (active) {
+          toast.error(error instanceof Error ? error.message : "Could not load request status.");
+          setRequestsLoaded(true);
+        }
       }
-      setRequestsLoaded(true);
     }
     const loadingTimer = window.setTimeout(() => { if (active) setRequestsLoaded(false); }, 0);
     void loadRequests();
     return () => { active = false; window.clearTimeout(loadingTimer); };
-  }, [isAuthenticated, supabase]);
+  }, [isAuthenticated, loadPublishRequests, supabase]);
 
   const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalize(item.name)));
   const communityCategoryNames = new Map(communityCategoryRequests.map((item) => [item.id, normalize(item.name)]));
@@ -222,16 +240,14 @@ export function PublishVocabularyContent() {
   async function refreshRequests() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const [categoryResult, wordResult] = await Promise.all([
-      supabase.from("community_categories").select("id, owner_id, name, status"),
-      supabase.from("community_words").select("id, owner_id, category_id, normalized_word, word, meaning, ipa, status, community_categories!inner(name)").in("status", ["pending", "published", "rejected"]),
-    ]);
-    if (categoryResult.error || wordResult.error) {
-      toast.error(categoryResult.error?.message ?? wordResult.error?.message ?? "Could not refresh request status.");
-      return;
+    invalidatePublishRequestCache(user.id);
+    try {
+      const requests = await getCachedPublishRequests(user.id, loadPublishRequests, { force: true });
+      setCommunityCategoryRequests(requests.categories);
+      setCommunityWordRequests(requests.words);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not refresh request status.");
     }
-    setCommunityCategoryRequests((categoryResult.data ?? []) as CommunityCategoryRequest[]);
-    setCommunityWordRequests(((wordResult.data ?? []) as unknown as Array<CommunityWordRequest & { community_categories: { name: string } }>).map(({ community_categories, ...item }) => ({ ...item, category_name: community_categories.name })));
   }
 
   function toggleCategoryRequest(categoryName: string, checked: boolean) {
@@ -245,28 +261,26 @@ export function PublishVocabularyContent() {
       : current.filter((id) => !categoryWordIds.includes(id)));
   }
 
-  return <div>
-    <header className="mb-6"><p className="text-sm font-medium text-blue-600">Community vocabulary</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Send category or word requests</h1><p className="mt-2 text-sm text-slate-500">Select multiple items to send requests together. Admins review them before they become visible to everyone, including guests.</p></header>
+  return <div className="publish-vocabulary-page">
+    <header className="mb-6"><p className="text-sm font-semibold text-blue-600">Community vocabulary</p><h1 className="page-title mt-1">Send category or word requests</h1><p className="page-intro-description mt-2">Select multiple items to send requests together. Admins review them before they become visible to everyone, including guests.</p></header>
     {status && <AutoDismissMessage key={status} variant="success" className="mb-4">{status}</AutoDismissMessage>}
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card className="p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Category requests</h2>
-        <p className="mt-1 text-sm text-slate-500">Selecting a category also selects its available words.</p>
-        <div className="mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+    <div className="publish-request-grid">
+      <Card className="publish-request-card publish-category-card p-5 sm:p-6">
+        <div className="publish-request-heading"><span className="publish-request-icon publish-category-icon"><FolderHeart size={29} /></span><div><h2>Category requests</h2><p>Selecting a category also selects its available words.</p></div><Sparkles className="publish-sparkle" size={22} /></div>
+        <div className="publish-request-list mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
           {!requestsLoaded ? <p className="text-sm text-slate-500">Loading request status…</p> : requestableCategories.length ? requestableCategories.map((item) => (
             <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50">
               <input type="checkbox" checked={selectedCategories.includes(item.name)} onChange={(event) => toggleCategoryRequest(item.name, event.target.checked)} />
               <span>{item.name}</span>
               {communityCategoryRequests.some((request) => normalize(request.name) === normalize(item.name) && request.status === "rejected") && <span className="text-xs text-amber-700">Rejected · resubmittable</span>}
             </label>
-          )) : <p className="text-sm text-slate-500">No custom categories to request.</p>}
+          )) : <div className="publish-empty-state"><span className="publish-empty-illustration publish-folder-illustration">📁<span>⭐</span></span><h3>No categories ready to request.</h3><p>Custom categories you can submit for community approval will appear here.</p></div>}
         </div>
-        <Button className="mt-4" onClick={() => void sendCategoryRequests()} disabled={!selectedCategories.length || busy}><Send size={16} /> {busy ? "Sending requests…" : "Send category requests"}</Button>
+        <Button className="publish-send-button mt-4" onClick={() => void sendCategoryRequests()} disabled={!selectedCategories.length || busy}><Send size={16} /> {busy ? "Sending requests…" : "Send category requests"}</Button>
       </Card>
-      <Card className="p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Word requests</h2>
-        <p className="mt-1 text-sm text-slate-500">Choose words you added to your own vocabulary, including words in default categories.</p>
-        <div className="mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+      <Card className="publish-request-card publish-word-card p-5 sm:p-6">
+        <div className="publish-request-heading"><span className="publish-request-icon publish-word-icon"><BookOpen size={29} /></span><div><h2>Word requests</h2><p>Choose words you added to your own vocabulary, including words in default categories.</p></div><Sparkles className="publish-sparkle" size={22} /></div>
+        <div className="publish-request-list mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
           {!requestsLoaded ? <p className="text-sm text-slate-500">Loading request status…</p> : userWords.length ? userWords.map((item) => (
             <label key={item.id} className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50">
               <input type="checkbox" checked={selectedWordIds.includes(item.id)} onChange={(event) => setSelectedWordIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} />
@@ -274,11 +288,11 @@ export function PublishVocabularyContent() {
                 {communityWordRequests.some((request) => request.status === "rejected" && communityCategoryNames.get(request.category_id) === normalize(item.category) && normalize(request.normalized_word) === normalize(item.word)) && <span className="ml-2 text-xs text-amber-700">Rejected · resubmittable</span>}
               </span>
             </label>
-          )) : <p className="text-sm text-slate-500">No words to request yet. Add a word to a default or custom category first.</p>}
+          )) : <div className="publish-empty-state"><span className="publish-empty-illustration publish-word-illustration">Aa<span>✦</span></span><h3>No words ready to request.</h3><p>Words from your vocabulary that are eligible for community approval will appear here.</p></div>}
         </div>
-        <Button className="mt-4" onClick={() => void sendWordRequests()} disabled={!selectedWordIds.length || busy}><Send size={16} /> {busy ? "Sending requests…" : "Send word requests"}</Button>
+        <Button className="publish-send-button publish-word-send mt-4" onClick={() => void sendWordRequests()} disabled={!selectedWordIds.length || busy}><Send size={16} /> {busy ? "Sending requests…" : "Send word requests"}</Button>
       </Card>
     </div>
-    <p className="mt-4 text-xs text-slate-500">You can request added words from your custom categories and the default categories. Only one English word can be published in a given category.</p>
+    <aside className="publish-request-note"><span>💡</span><p>You can request added words from your custom categories and the default categories.<br className="hidden sm:block" /> Only one English word can be published in a given category.</p></aside>
   </div>;
 }

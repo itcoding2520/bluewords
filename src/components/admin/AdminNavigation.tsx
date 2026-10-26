@@ -10,7 +10,7 @@ const sections: Array<{ id: AdminSection; label: string; href: string }> = [
 ];
 
 export function AdminNavigation({ active }: { active: AdminSection }) {
-  return <nav aria-label="Admin sections" className="mb-6 flex gap-2 overflow-x-auto border-b border-slate-200">
+  return <nav aria-label="Admin sections" className="admin-navigation mb-6 flex gap-2 overflow-x-auto border-b border-slate-200">
     {sections.map((section) => {
       const isActive = section.id === active;
       return <Link key={section.id} href={section.href} aria-current={isActive ? "page" : undefined} className={`shrink-0 border-b-2 px-3 py-3 text-sm font-semibold transition ${isActive ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}>

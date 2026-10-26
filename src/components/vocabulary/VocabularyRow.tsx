@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Check,
   Circle,
-  MoreHorizontal,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -19,6 +18,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "./PronunciationButton";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -73,45 +73,23 @@ export function VocabularyRow({
   onDelete,
 }: VocabularyRowProps) {
   const { categories } = useVocabulary({ loadWords: false, loadCategories: false });
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const togglingRef = useRef(false);
   const mastered = item.status === "mastered";
   const categoryColor = categories.find(
     (category) => category.name === item.category
   )?.color;
   const imageUrl = useVocabularyImageUrl(item.imagePath);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isMenuOpen) return;
-
-    function handlePointerDown(event: PointerEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
-        setIsMenuOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isMenuOpen]);
-
+  const wordEmoji: Record<string, string> = {
+    football: "⚽", soccer: "⚽", tennis: "🎾", silver: "🪙", elephant: "🐘",
+    biscuit: "🍪", suit: "🧥", cheek: "😊", happy: "😊", horse: "🐴",
+  };
+  const categoryEmoji: Record<string, string> = {
+    sports: "🏅", animals: "🐾", food: "🍎", clothes: "👕", colors: "🎨",
+    time: "🕒", body: "🙂", fruits: "🍓", actions: "🏃", weather: "🌤️",
+  };
+  const imageFallback = wordEmoji[item.word.toLocaleLowerCase()] ?? categoryEmoji[item.category.toLocaleLowerCase()] ?? "📖";
   async function handleToggleMastered() {
     if (togglingRef.current) return;
 
@@ -127,7 +105,7 @@ export function VocabularyRow({
   }
 
   return (
-    <div className="border-b border-slate-100 px-4 py-4 last:border-none sm:px-6 sm:py-5">
+    <div className="vocabulary-word-row border-b border-slate-100 px-4 py-2 last:border-none sm:px-6 sm:py-2.5">
       <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
         <div className="col-start-1 row-start-1 flex justify-center pt-1">
           <input
@@ -141,15 +119,18 @@ export function VocabularyRow({
 
         {/* Word */}
         <div className="col-start-2 row-start-1 flex min-w-0 items-start gap-3 lg:items-center">
-          {imageUrl && (
+          {imageUrl && failedImageUrl !== imageUrl ? (
             <Image
               src={imageUrl}
               alt={`Illustration for ${item.word}`}
               width={48}
               height={48}
               unoptimized
-              className="size-12 shrink-0 rounded-lg border border-slate-100 object-cover"
+              onError={() => setFailedImageUrl(imageUrl)}
+              className="vocabulary-word-thumbnail size-11 shrink-0 rounded-lg border border-slate-100 object-cover"
             />
+          ) : (
+            <span aria-hidden="true" className="vocabulary-word-fallback">{imageFallback}</span>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -219,49 +200,11 @@ export function VocabularyRow({
         </div>
 
         {/* Actions */}
-        <div
-          ref={menuRef}
-          className="relative col-start-3 row-start-1 justify-self-end lg:col-start-6 lg:row-auto"
-        >
-          <button
-            ref={triggerRef}
-            type="button"
-            aria-label={`Actions for ${item.word}`}
-            aria-expanded={isMenuOpen}
-            aria-haspopup="true"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            className="flex size-9 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:border-none focus-visible:outline-none"
-          >
-            <MoreHorizontal size={18} />
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onEdit(item);
-                }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-              >
-                <Pencil size={15} />
-                Edit
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onDelete(item);
-                }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
-              >
-                <Trash2 size={15} />
-                Delete
-              </button>
-            </div>
-          )}
+        <div className="vocabulary-row-actions relative col-start-3 row-start-1 justify-self-end lg:col-start-6 lg:row-auto">
+          <ActionMenu label={item.word} actions={[
+            { label: "Edit", icon: <Pencil size={15} />, onSelect: () => onEdit(item) },
+            { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => onDelete(item), destructive: true },
+          ]} />
         </div>
       </div>
     </div>

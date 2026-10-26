@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Circle, RotateCcw } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Circle, RotateCcw, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import {
   getCachedLatestVocabularyReviews,
   getCachedLatestVocabularyReviewCounts,
@@ -92,18 +95,18 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
   const lastVisible = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <header className="mb-6">
+    <div className="review-results-page mx-auto max-w-5xl">
+      <header className="review-results-hero mb-6">
         <p className="text-sm font-medium text-blue-600">Daily learning</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">
-          Review results
+        <h1 className="page-title mt-1">
+          Review results <Star aria-hidden="true" className="inline size-6 fill-amber-400 text-amber-400" />
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="page-intro-description mt-2">
           Latest result for each word you have reviewed.
         </p>
       </header>
 
-      <div className="mb-5 grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
+      <div className="review-filter-switch mb-5 grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
         <button
           type="button"
           aria-pressed={filter === "practice"}
@@ -114,6 +117,7 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
               : "text-slate-600 hover:bg-slate-50"
           }`}
         >
+          <Star size={19} className={filter === "practice" ? "fill-current" : ""} />
           <span>Need practice</span>
           <span className={`rounded-full px-2 py-0.5 text-xs ${filter === "practice" ? "bg-white/20" : "bg-amber-50 text-amber-700"}`}>
             {counts.practice}
@@ -129,6 +133,7 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
               : "text-slate-600 hover:bg-slate-50"
           }`}
         >
+          <Check size={19} strokeWidth={3} />
           <span>Remembered</span>
           <span className={`rounded-full px-2 py-0.5 text-xs ${filter === "remembered" ? "bg-white/20" : "bg-emerald-50 text-emerald-700"}`}>
             {counts.remembered}
@@ -150,10 +155,8 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
           </p>
         </Card>
       ) : reviews.length === 0 ? (
-        <Card className="px-5 py-12 text-center">
-          <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-            {filter === "practice" ? <RotateCcw size={20} /> : <Check size={20} />}
-          </div>
+        <Card className="review-empty-state px-5 py-12 text-center">
+          <Image src="/images/ui/illustrations/hero-book-mascot.svg" alt="" width={420} height={300} className="review-empty-art" />
           <h2 className="mt-4 font-semibold text-slate-900">
             {filter === "practice" ? "No words need practice" : "No remembered words yet"}
           </h2>
@@ -162,14 +165,19 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
               ? "Open Flashcards, reveal a meaning, and save your result."
               : "Your latest result for each reviewed word appears here."}
           </p>
+          {total === 0 && <Link href="/flashcards" className="review-empty-cta"><RotateCcw size={19} /> Practice flashcards <ArrowRight size={20} /></Link>}
         </Card>
       ) : (
         <Card className="divide-y divide-slate-100 overflow-hidden p-0">
           {reviews.map((review) => (
             <article
               key={review.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6"
+              className="review-result-row flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6"
             >
+              <ReviewWordImage
+                word={review.vocabulary_words?.word ?? "Deleted vocabulary"}
+                imagePath={review.vocabulary_words?.image_path}
+              />
               <div className="min-w-0 flex-1">
                 <h2 className="break-words font-semibold text-slate-950">
                   {review.vocabulary_words?.word ?? "Deleted vocabulary"}
@@ -228,4 +236,13 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
       )}
     </div>
   );
+}
+
+function ReviewWordImage({ word, imagePath }: { word: string; imagePath?: string | null }) {
+  const imageUrl = useVocabularyImageUrl(imagePath);
+  if (!imageUrl) {
+    return <span className="review-word-placeholder" aria-hidden="true">{word.slice(0, 1).toLocaleUpperCase()}</span>;
+  }
+
+  return <Image src={imageUrl} alt={`Image of ${word}`} width={72} height={72} unoptimized className="review-word-image" />;
 }

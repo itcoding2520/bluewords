@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Download, Pencil, RefreshCw, Search, UserPlus, X } from "lucide-react";
+import { Download, Pencil, RefreshCw, Search, Trash2, UserPlus, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 
 type AdminUser = {
   id: string;
@@ -37,6 +39,7 @@ function formattedDate(value: string) {
 }
 
 export function AdminUsersManagement() {
+  const confirmDialog = useConfirmDialog();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -177,7 +180,8 @@ export function AdminUsersManagement() {
   }
 
   async function removeUser(user: AdminUser) {
-    if (!window.confirm(`Remove ${user.email ?? user.id}? This permanently deletes their account, vocabulary, and history.`)) return;
+    const confirmed = await confirmDialog({ title: "Remove user?", description: `Remove ${user.email ?? user.id}? This permanently deletes their account, vocabulary, and history.`, confirmLabel: "Remove" });
+    if (!confirmed) return;
     await performUserAction("delete", { userId: user.id });
   }
 
@@ -201,11 +205,11 @@ export function AdminUsersManagement() {
     }
   }
 
-  return <div>
+  return <div className="admin-users-page">
     <AdminNavigation active="users" />
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div><p className="text-sm font-medium text-blue-600">Administration</p><h1 className="mt-1 text-2xl font-bold text-slate-950">User management</h1><p className="mt-2 text-sm text-slate-500">Search, manage, and export accounts.</p></div>
-      <div className="flex flex-wrap gap-2">
+    <header className="admin-users-hero mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="admin-users-hero-copy"><p className="text-sm font-semibold text-blue-600">Administration</p><h1 className="page-title mt-1">User management</h1><p className="page-intro-description mt-2">Search, manage, and export accounts.</p></div>
+      <div className="admin-users-actions flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => { invalidateAdminDataCache(); setRefreshKey((value) => value + 1); }} disabled={loading}><RefreshCw size={16} /> Refresh</Button>
         <Button variant="secondary" onClick={() => void exportUsers()} disabled={exporting}>{exporting ? "Exporting…" : <><Download size={16} /> Export CSV</>}</Button>
         <Button onClick={() => setShowAddForm((value) => !value)}><UserPlus size={16} /> Add user</Button>
@@ -242,23 +246,25 @@ export function AdminUsersManagement() {
       </Dialog.Portal>
     </Dialog.Root>
 
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
-        <div><h2 className="font-semibold text-slate-900">Users <span className="font-normal text-slate-500">({total})</span></h2><p className="mt-1 text-xs text-slate-500">Search matches email and nickname.</p></div>
-        <label className="relative block w-full sm:max-w-sm"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search users…" aria-label="Search users" className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /></label>
+    <section className="admin-users-card overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="admin-users-toolbar flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
+        <h2 className="font-semibold text-slate-900">Users <span className="font-normal text-slate-500">({total})</span></h2>
+        <label className="admin-users-search relative block w-full sm:max-w-sm"><Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search by email or nickname…" aria-label="Search users" className="h-10 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /></label>
       </div>
 
-      {loading ? <p className="p-8 text-center text-sm text-slate-500">Loading users…</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">No users match this search.</p> : <div className="divide-y divide-slate-100">
-        {users.map((user) => <article key={user.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{user.email ?? "No email"}</p><p className="mt-1 text-xs text-slate-500">{user.nickname || "No nickname"} · Joined {formattedDate(user.created_at)} · {user.last_sign_in_at ? `Last active ${formattedDate(user.last_sign_in_at)}` : "Never signed in"}</p></div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" disabled={busy === user.id} onClick={() => openEditUser(user)}><Pencil size={15} /> Edit</Button>
-            <Button variant="secondary" disabled={busy === user.id} onClick={() => void removeUser(user)}><X size={15} /> Remove</Button>
-          </div>
-        </article>)}
+      {loading ? <p className="p-8 text-center text-sm text-slate-500">Loading users…</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">No users match this search.</p> : <div className="admin-users-table-wrap">
+        <div className="admin-users-table-head" aria-hidden="true"><span>User</span><span>Joined</span><span>Last activity</span><span /></div>
+        <div className="admin-users-list">
+          {users.map((user) => <article key={user.id} className="admin-users-row">
+            <div className="admin-users-identity"><span className="admin-users-avatar" aria-hidden="true">{(user.nickname || user.email || "?").trim().charAt(0).toUpperCase()}</span><span className="admin-users-identity-copy"><strong>{user.email ?? "No email"}</strong><small>{user.nickname || "No nickname"}</small></span></div>
+            <div className="admin-users-joined"><span className="admin-users-mobile-label">Joined</span><span>{formattedDate(user.created_at)}</span></div>
+            <div className={`admin-users-activity${user.last_sign_in_at ? " is-active" : " is-never"}`}><span className="admin-users-mobile-label">Last activity</span><span className="admin-users-activity-pill"><i aria-hidden="true" />{user.last_sign_in_at ? `Last active ${formattedDate(user.last_sign_in_at)}` : "Never signed in"}</span></div>
+            <div className="admin-users-row-actions"><ActionMenu label={user.email ?? user.nickname ?? "user"} disabled={busy === user.id} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => openEditUser(user) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void removeUser(user), destructive: true }]} /></div>
+          </article>)}
+        </div>
       </div>}
 
-      <footer className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <footer className="admin-users-pagination flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <p aria-live="polite">Showing {firstVisible}–{lastVisible} of {total} users</p>
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2"><span className="sr-only">Rows per page</span><select aria-label="Rows per page" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm">{[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}</select></label>

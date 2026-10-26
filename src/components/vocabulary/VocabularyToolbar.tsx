@@ -72,7 +72,7 @@ function FilterButton({
       aria-pressed={active}
       className={
         active
-          ? "shrink-0 whitespace-nowrap rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white"
+          ? "shrink-0 whitespace-nowrap rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_5px_12px_rgb(37_99_235/0.2)]"
           : "cursor-pointer shrink-0 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
       }
     >
@@ -306,7 +306,7 @@ export function VocabularyToolbar({
   onCategoryChange,
 }: VocabularyToolbarProps) {
   return (
-    <div className="min-w-0 flex-1 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="vocabulary-filter-toolbar min-w-0 flex-1 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Search */}
       <div className="relative w-full min-w-0 lg:max-w-md lg:flex-1">
         <Search

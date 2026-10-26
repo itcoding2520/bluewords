@@ -13,6 +13,7 @@ import type {
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 
 const colorOptions: Array<{
   value: VocabularyCategoryColor;
@@ -40,6 +41,7 @@ export function ManageCategoriesModal({
   open,
   onClose,
 }: ManageCategoriesModalProps) {
+  const confirmDialog = useConfirmDialog();
   const {
     categories,
     words,
@@ -98,9 +100,11 @@ export function ManageCategoriesModal({
   async function handleDelete(category: VocabularyCategoryRow) {
     if (isSaving || category.is_default) return;
 
-    const confirmed = window.confirm(
-      `Delete "${category.name}"? Words in this category will move to Uncategorized.`
-    );
+    const confirmed = await confirmDialog({
+      title: "Delete category?",
+      description: `Delete “${category.name}”? Words in this category will move to Uncategorized.`,
+      confirmLabel: "Delete",
+    });
 
     if (!confirmed) return;
 

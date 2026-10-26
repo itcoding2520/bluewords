@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 
 const colors: Array<{ value: VocabularyCategoryColor; label: string; dot: string }> = [
   { value: "blue", label: "Blue", dot: "bg-blue-500" },
@@ -27,6 +29,7 @@ const colors: Array<{ value: VocabularyCategoryColor; label: string; dot: string
 ];
 
 export function CategoryManagementPanel() {
+  const confirmDialog = useConfirmDialog();
   const { categories, words, addCategory, updateCategory, deleteCategory, refreshCategories } = useVocabulary({ loadWords: false, loadCategories: false });
   const [supabase] = useState(() => createClient());
   const [isAdmin, setIsAdmin] = useState(false);
@@ -182,25 +185,28 @@ export function CategoryManagementPanel() {
 
   async function handleDelete(category: VocabularyCategoryRow) {
     if (isSaving || category.is_default) return;
-    if (!window.confirm(`Delete “${category.name}”? Words in this category will move to Uncategorized.`)) return;
+    const confirmed = await confirmDialog({ title: "Delete category?", description: `Delete “${category.name}”? Words in this category will move to Uncategorized.`, confirmLabel: "Delete" });
+    if (!confirmed) return;
     setIsSaving(true);
     await deleteCategory(category.id);
     setIsSaving(false);
   }
 
-  return <section>
-    <p className="mb-5 text-sm text-slate-500">Organize your words and add an optional image for category chips in games.</p>
-    <form onSubmit={(event) => void handleAdd(event)} className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_150px_minmax(180px,0.8fr)_auto] sm:items-end sm:p-5">
-      <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category name<Input value={name} onChange={(event) => setName(event.target.value)} placeholder="New category" maxLength={50} /></label>
-      <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<Select value={color} onChange={(event) => setColor(event.target.value as VocabularyCategoryColor)}>{colors.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
-      <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category image <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewImage(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-700" /></label>
-      <Button type="submit" disabled={!name.trim() || isSaving}><Plus size={16} /> Add category</Button>
-    </form>
+  return <section className="category-management-panel">
+    <div className="category-add-card">
+      <div className="category-add-heading"><span className="category-add-illustration"><ImagePlus size={34} /></span><div><h2>Add a new category</h2><p>Create a category to organize your words. You can also add a custom image for game chips.</p></div></div>
+      <form onSubmit={(event) => void handleAdd(event)} className="category-add-form">
+        <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category name<Input value={name} onChange={(event) => setName(event.target.value)} placeholder="New category" maxLength={50} /></label>
+        <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<Select value={color} onChange={(event) => setColor(event.target.value as VocabularyCategoryColor)}>{colors.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+        <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category image <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewImage(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-700" /></label>
+        <Button type="submit" disabled={!name.trim() || isSaving}><Plus size={16} /> Add category</Button>
+      </form>
+    </div>
 
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 px-5 py-4 text-sm font-semibold text-slate-900">{managedCategories.length} categories</div>
-      <div className="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-medium text-slate-700">Filter by
+    <div className="category-list-panel">
+      <div className="category-list-toolbar">
+        <h2>{managedCategories.length} categories</h2>
+        <label className="category-inline-filter">Filter by
           <Select aria-label="Filter categories" value={filterBy} onChange={(event) => { setFilterBy(event.target.value as typeof filterBy); setPage(1); }}>
             <option value="all">All categories</option>
             <option value="mine">By me</option>
@@ -208,7 +214,7 @@ export function CategoryManagementPanel() {
             <option value="community">Community</option>
           </Select>
         </label>
-        <label className="grid gap-1.5 text-sm font-medium text-slate-700">Sort by
+        <label className="category-inline-filter">Sort by
           <Select aria-label="Sort categories" value={sortBy} onChange={(event) => { setSortBy(event.target.value as typeof sortBy); setPage(1); }}>
             <option value="name">A → Z</option>
             <option value="newest">Newest</option>
@@ -216,27 +222,28 @@ export function CategoryManagementPanel() {
           </Select>
         </label>
       </div>
+      <div className="category-card-grid">
       {pageCategories.map((category) => {
         const selectedColor = colors.find((option) => option.value === category.color) ?? colors[0];
         const isReadOnly = category.user_id === "community";
         const isProtectedDefault = isDefaultCategory(category);
         const isPublishedShared = category.id.startsWith("community-category-");
         const canManageCategory = isAdmin || (!isProtectedDefault && !isReadOnly && !isPublishedShared);
-        return <article key={category.id} className="border-b border-slate-100 p-4 last:border-0 sm:px-5">
-          {editing?.id === category.id ? <form onSubmit={(event) => void handleUpdate(event)} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_minmax(180px,0.8fr)_auto] sm:items-end">
+        return <article key={category.id} className="category-item-card">
+          {editing?.id === category.id ? <form onSubmit={(event) => void handleUpdate(event)} className="category-edit-form grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_minmax(180px,0.8fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category name<Input value={editName} disabled={category.is_default} onChange={(event) => setEditName(event.target.value)} maxLength={50} /></label>
             <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<Select value={editColor} onChange={(event) => setEditColor(event.target.value as VocabularyCategoryColor)}>{colors.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
             <label className="grid gap-1.5 text-sm font-medium text-slate-700">{isProtectedDefault ? "Default category image" : "Change category image"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={category.is_default && !isAdmin} onChange={(event) => setEditImage(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-700 disabled:opacity-50" /></label>
             <div className="flex gap-2"><Button type="submit" disabled={isSaving}><Check size={16} /> Save</Button><Button type="button" variant="secondary" onClick={() => setEditing(null)} disabled={isSaving}><X size={16} /></Button></div>
-          </form> : <div className="flex flex-wrap items-center gap-3">
-            <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={selectedColor.dot} sizeClass="size-11" shapeClass="rounded-xl" />
-            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{category.name}</p><p className="mt-0.5 text-xs text-slate-500">{isAdmin && categoryAuthors[category.name.trim().toLocaleLowerCase()] ? `By ${categoryAuthors[category.name.trim().toLocaleLowerCase()]}` : isReadOnly ? "Published community category" : category.is_default ? "Default category" : category.image_path ? "Custom image" : "Uses the first word image in games"}</p></div>
-            {canManageCategory && <Button type="button" variant="secondary" onClick={() => startEdit(category)} disabled={isSaving}><Pencil size={15} /> Edit</Button>}
-            {canManageCategory && !category.is_default && <Button type="button" variant="secondary" onClick={() => void handleDelete(category)} disabled={isSaving} aria-label={`Delete ${category.name}`}><Trash2 size={15} /></Button>}
+          </form> : <div className="category-item-content">
+            <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={selectedColor.dot} sizeClass="size-20" shapeClass="rounded-2xl" />
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{category.name}</p><p className="mt-1 text-xs text-slate-500">{isAdmin && categoryAuthors[category.name.trim().toLocaleLowerCase()] ? `By ${categoryAuthors[category.name.trim().toLocaleLowerCase()]}` : isReadOnly ? "Published community category" : category.is_default ? "Default category" : category.image_path ? "Custom image" : "Uses the first word image in games"}</p></div>
+            {canManageCategory && <ActionMenu label={category.name} disabled={isSaving} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => startEdit(category) }, ...(!category.is_default ? [{ label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void handleDelete(category), destructive: true }] : [])]} />}
           </div>}
         </article>;
       })}
-      {!managedCategories.length && <p className="p-8 text-center text-sm text-slate-500"><ImagePlus className="mx-auto mb-2" size={22} />No categories yet.</p>}
+      {!managedCategories.length && <p className="category-empty-state"><ImagePlus className="mx-auto mb-2" size={22} />No categories yet.</p>}
+      </div>
       {!!managedCategories.length && <footer className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <p aria-live="polite">Showing {firstVisibleCategory}–{lastVisibleCategory} of {managedCategories.length} categories</p>
         <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">

@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
+import { getCachedVideosPage, invalidateVideosCache, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 
 const PAGE_SIZE = 24;
 
@@ -47,6 +50,7 @@ function getYoutubeVideoId(value: string): string | null {
 }
 
 export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
+  const confirmDialog = useConfirmDialog();
   const [supabase] = useState(() => createClient());
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -59,22 +63,34 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   const loadVideos = useCallback(async () => {
+    const cached = peekCachedVideosPage(page, PAGE_SIZE) as { videos: VideoRow[]; total: number } | null;
+    if (cached) {
+      setVideos(cached.videos);
+      setTotal(cached.total);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     const start = (page - 1) * PAGE_SIZE;
-    const { data, count, error } = await supabase
-      .from("videos")
-      .select("id, title, youtube_url, created_by, created_at, updated_at", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(start, start + PAGE_SIZE - 1);
-
-    if (error) {
-      toast.error(error.message || "Could not load videos.");
-    } else {
-      setVideos((data ?? []) as VideoRow[]);
-      setTotal(count ?? 0);
+    try {
+      const result = await getCachedVideosPage(page, PAGE_SIZE, async () => {
+        const { data, count, error } = await supabase
+          .from("videos")
+          .select("id, title, youtube_url, created_by, created_at, updated_at", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(start, start + PAGE_SIZE - 1);
+        if (error) throw error;
+        return { videos: (data ?? []) as VideoRow[], total: count ?? 0 };
+      }) as { videos: VideoRow[]; total: number };
+      setVideos(result.videos);
+      setTotal(result.total);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not load videos.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [page, supabase]);
 
   useEffect(() => {
@@ -145,6 +161,7 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
         setPage(1);
         toast.success("Video added.");
       }
+      invalidateVideosCache();
       resetForm();
       if (editingId || page === 1) {
         await loadVideos();
@@ -163,13 +180,15 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
 
   async function deleteVideo(video: VideoRow) {
     if (!isAdmin || isSaving) return;
-    if (!window.confirm(`Delete “${video.title}”?`)) return;
+    const confirmed = await confirmDialog({ title: "Delete video?", description: `Delete “${video.title}” from the video library?`, confirmLabel: "Delete" });
+    if (!confirmed) return;
 
     setIsSaving(true);
     try {
       const { error } = await supabase.from("videos").delete().eq("id", video.id);
       if (error) throw error;
       toast.success("Video deleted.");
+      invalidateVideosCache();
       const nextTotal = Math.max(0, total - 1);
       const nextPage = Math.max(1, Math.min(page, Math.ceil(nextTotal / PAGE_SIZE) || 1));
       if (nextPage !== page) setPage(nextPage);
@@ -187,8 +206,8 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
     <div>
       <header className="mb-6">
         <p className="text-sm font-medium text-blue-600">Video library</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-950">Videos</h1>
-        <p className="mt-2 text-sm text-slate-500">Watch videos shared by the BlueWords admins.</p>
+        <h1 className="page-title mt-1">Videos</h1>
+        <p className="page-intro-description mt-2">Watch videos shared by the BlueWords admins.</p>
       </header>
 
       {isAdmin && (
@@ -233,7 +252,7 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
           <p className="mt-3 text-sm text-slate-500">No videos have been added yet.</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {videos.map((video) => {
             const videoId = getYoutubeVideoId(video.youtube_url);
             return (
@@ -281,14 +300,7 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
                   <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-900 sm:min-h-12 sm:text-base sm:leading-6">{video.title}</h3>
                   <p className="mt-1 text-xs text-slate-500">{new Date(video.created_at).toLocaleDateString()}</p>
                   {isAdmin && (
-                    <div className="mt-auto flex gap-2 border-t border-slate-100 pt-3">
-                      <Button type="button" variant="secondary" className="px-3 py-2 text-xs" onClick={() => startEditing(video)} disabled={isSaving} aria-label={`Edit ${video.title}`}>
-                        <Pencil size={14} /> <span className="hidden sm:inline">Edit</span>
-                      </Button>
-                      <Button type="button" variant="secondary" className="px-3 py-2 text-xs text-red-600 hover:bg-red-50" onClick={() => void deleteVideo(video)} disabled={isSaving} aria-label={`Delete ${video.title}`}>
-                        <Trash2 size={14} /> <span className="hidden sm:inline">Delete</span>
-                      </Button>
-                    </div>
+                    <div className="mt-auto flex justify-end border-t border-slate-100 pt-3"><ActionMenu label={video.title} disabled={isSaving} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => startEditing(video) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void deleteVideo(video), destructive: true }]} /></div>
                   )}
                 </div>
               </Card>

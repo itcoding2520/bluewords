@@ -24,6 +24,7 @@ import type {
 } from "./VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
 import {
   getCachedVocabularyPage,
@@ -51,6 +52,7 @@ function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
 }
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
+  const confirmDialog = useConfirmDialog();
   const {
     categories,
     words,
@@ -136,10 +138,12 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Import ${importPreview.ready.length} words into your account?\n\n` +
-        "Your old localStorage data will be kept."
-    );
+    const confirmed = await confirmDialog({
+      title: "Import vocabulary?",
+      description: `Import ${importPreview.ready.length} words into your account? Your old localStorage data will be kept.`,
+      confirmLabel: "Import words",
+      destructive: false,
+    });
 
     if (!confirmed) return;
 
@@ -332,9 +336,11 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     if (selectedIds.size === 0 || isBulkDeleting) return;
 
     const count = selectedIds.size;
-    const confirmed = window.confirm(
-      `Delete ${count} selected ${count === 1 ? "word" : "words"}? This cannot be undone.`
-    );
+    const confirmed = await confirmDialog({
+      title: `Delete ${count} ${count === 1 ? "word" : "words"}?`,
+      description: "This action cannot be undone.",
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
 
     setIsBulkDeleting(true);
@@ -519,8 +525,8 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         </div>
       )}
 
-      <section className="mt-5 rounded-[1.75rem] border border-blue-100/80 bg-white/80 p-3 shadow-[0_12px_35px_rgb(39_90_150/0.08)] backdrop-blur-sm sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="vocabulary-words-section mt-5 rounded-[1.75rem] border border-blue-100/80 bg-white/80 p-3 shadow-[0_12px_35px_rgb(39_90_150/0.08)] backdrop-blur-sm sm:p-5">
+      <div className="vocabulary-toolbar-row flex flex-wrap items-center justify-between gap-3">
       {isAdmin && <VocabularyCsvTools
         exportCount={selectedCategory === "All" ? currentPageWords.length : categoryExportCount}
         isExportCountLoading={isExportCountLoading}

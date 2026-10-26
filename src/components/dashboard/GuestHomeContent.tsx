@@ -39,8 +39,8 @@ export function GuestHomeContent() {
     <div>
       <header className="mb-7">
         <p className="text-sm font-medium text-blue-600">Welcome to BlueWords</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">Learn words, play, and explore</h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-500">You can explore default and approved community vocabulary and use flashcards and games without an account. Sign in to manage your own words, keep game history, and join the leaderboards.</p>
+        <h1 className="page-title mt-1">Learn words, play, and explore</h1>
+        <p className="page-intro-description mt-2 max-w-2xl">You can explore default and approved community vocabulary and use flashcards and games without an account. Sign in to manage your own words, keep game history, and join the leaderboards.</p>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

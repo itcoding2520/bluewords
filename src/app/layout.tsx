@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GlobalActionOverlay } from "@/components/ui/GlobalActionOverlay";
 import { RouteVocabularyProvider } from "@/components/layout/RouteVocabularyProvider";
+import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,18 +52,20 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AppLayout>
-          <RouteVocabularyProvider>{children}</RouteVocabularyProvider>
-        </AppLayout>
+        <ConfirmDialogProvider>
+          <AppLayout>
+            <RouteVocabularyProvider>{children}</RouteVocabularyProvider>
+          </AppLayout>
 
-        <GlobalActionOverlay />
+          <GlobalActionOverlay />
 
-        <Toaster
-          position="bottom-right"
-          richColors
-          closeButton
-          duration={3000}
-        />
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            duration={3000}
+          />
+        </ConfirmDialogProvider>
       </body>
     </html>
   );

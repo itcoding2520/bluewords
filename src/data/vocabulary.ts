@@ -24,6 +24,8 @@ export interface VocabularyWord {
   type?: VocabularyType;
   detailedMeanings?: VocabularyMeaning[];
   imagePath?: string | null;
+  /** Temporary server-signed URL for approved public vocabulary images. */
+  imageUrl?: string | null;
   ipa?: string | null;
   /** Approved shared vocabulary is read-only and has no per-user study status. */
   isCustom?: boolean;

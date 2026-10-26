@@ -3,13 +3,22 @@
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bell, CheckCheck, RefreshCw } from "lucide-react";
+import { ArrowRight, Bell, BookOpen, CheckCheck, Clock3, FolderOpen, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getCachedNotifications, invalidateNotificationsCache, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 
 type NotificationRow = { id: string; title: string; body: string; kind: string; entity_type: string | null; entity_id: string | null; read_at: string | null; created_at: string };
+const NOTIFICATION_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+
+function recentNotifications(rows: NotificationRow[], now = Date.now()) {
+  const cutoff = now - NOTIFICATION_LOOKBACK_MS;
+  return rows.filter((item) => {
+    const createdAt = new Date(item.created_at).getTime();
+    return Number.isFinite(createdAt) && createdAt >= cutoff && createdAt <= now;
+  });
+}
 
 export function NotificationsContent() {
   const router = useRouter();
@@ -28,17 +37,19 @@ export function NotificationsContent() {
     }
     const cachedRows = peekCachedNotifications(user.id) as NotificationRow[] | null;
     if (cachedRows) {
-      setNotifications(cachedRows);
+      setNotifications(recentNotifications(cachedRows));
       setLoading(false);
     } else setLoading(true);
     try {
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
       const rows = await getCachedNotifications(user.id, async () => {
-        const { data, error: queryError } = await supabase.from("notifications").select("id, title, body, kind, entity_type, entity_id, read_at, created_at").order("created_at", { ascending: false }).limit(100);
+        const { data, error: queryError } = await supabase.from("notifications").select("id, title, body, kind, entity_type, entity_id, read_at, created_at").gte("created_at", cutoff).lte("created_at", now.toISOString()).order("created_at", { ascending: false }).limit(100);
         if (queryError) throw queryError;
         return (data ?? []) as NotificationRow[];
       }, { force });
       setError("");
-      setNotifications(rows);
+      setNotifications(recentNotifications(rows));
       setLoading(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load notifications.");
@@ -68,7 +79,9 @@ export function NotificationsContent() {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
     if (!user) return;
-    const { error: updateError } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("recipient_id", user.id).is("read_at", null);
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
+    const { error: updateError } = await supabase.from("notifications").update({ read_at: now.toISOString() }).eq("recipient_id", user.id).gte("created_at", cutoff).lte("created_at", now.toISOString()).is("read_at", null);
     if (updateError) setError(updateError.message);
     else {
       invalidateNotificationsCache(user.id);
@@ -104,27 +117,33 @@ export function NotificationsContent() {
     router.push("/admin");
   }
 
-  return <div>
-    <header className="mb-6 flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-blue-600">Updates</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Notifications</h1></div><div className="flex gap-2"><Button variant="secondary" onClick={() => void refresh(true)}><RefreshCw size={16} /> Refresh</Button><Button variant="secondary" onClick={() => void markAllRead()}><CheckCheck size={16} /> Mark all read</Button></div></header>
+  const unreadCount = notifications.filter((item) => !item.read_at).length;
+
+  return <div className="notifications-page">
+    <header className="notifications-hero mb-6">
+      <div className="notifications-heading"><p className="text-sm font-bold text-blue-600">Updates</p><h1 className="page-title mt-1">Notifications</h1><p className="page-intro-description mt-2">Stay updated on word and category requests</p></div>
+      <div className="notifications-actions"><Button variant="secondary" onClick={() => void refresh(true)}><RefreshCw size={17} /> Refresh</Button><Button onClick={() => void markAllRead()} disabled={unreadCount === 0}><CheckCheck size={17} /> Mark all read {unreadCount > 0 && <span className="notification-unread-count">{unreadCount}</span>}</Button></div>
+    </header>
     {error && <AutoDismissMessage key={error} variant="error" className="mb-4">{error}</AutoDismissMessage>}
-    {loading && notifications.length === 0 ? <div aria-label="Loading notifications" className="space-y-3">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-white" />)}</div> : <div className="space-y-3">
-      {notifications.map((item) => (
-        <article key={item.id} className={`rounded-2xl border p-4 ${item.read_at ? "border-slate-200 bg-white" : "border-blue-200 bg-blue-50/60"}`}>
+    {loading && notifications.length === 0 ? <div aria-label="Loading notifications" className="space-y-3">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-white" />)}</div> : <div className="notifications-list space-y-3">
+      {notifications.map((item, index) => (
+        <article key={item.id} className={`notification-card notification-card-${index % 4} ${item.read_at ? "is-read" : "is-unread"}`}>
           {item.read_at ? (
-            <div className="flex gap-3">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-white text-blue-600"><Bell size={17} /></span>
+            <div className="notification-main">
+              <span className="notification-icon">{item.entity_type === "category" ? <FolderOpen size={32} /> : <BookOpen size={32} />}</span>
               <NotificationDetails item={item} />
             </div>
           ) : (
-            <button type="button" onClick={() => void markAsRead(item)} className="flex w-full cursor-pointer gap-3 text-left">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-white text-blue-600"><Bell size={17} /></span>
+            <button type="button" onClick={() => void markAsRead(item)} className="notification-main notification-main-button">
+              <span className="notification-icon">{item.entity_type === "category" ? <FolderOpen size={32} /> : <BookOpen size={32} />}</span>
               <NotificationDetails item={item} />
+              <span className="notification-unread-dot" aria-label="Unread" />
             </button>
           )}
-          {item.kind === "publish_request" && <Link href="/admin" onClick={(event) => void reviewRequest(event, item)} className="ml-12 mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">Review <ArrowRight size={15} /></Link>}
+          {item.kind === "publish_request" && <Link href="/admin" onClick={(event) => void reviewRequest(event, item)} className="notification-review-link">Review <ArrowRight size={18} /></Link>}
         </article>
       ))}
-      {notifications.length === 0 && <p className="rounded-2xl border border-slate-200 bg-white py-12 text-center text-sm text-slate-500">You’re all caught up.</p>}
+      {notifications.length === 0 && <p className="notifications-empty rounded-2xl border border-slate-200 bg-white py-12 text-center text-sm text-slate-500"><Bell className="mx-auto mb-3 size-8 text-blue-400" />You’re all caught up.</p>}
     </div>}
   </div>;
 }
@@ -133,6 +152,6 @@ function NotificationDetails({ item }: { item: NotificationRow }) {
   return <span className="min-w-0 flex-1">
     <span className="block font-semibold text-slate-900">{item.title}</span>
     <span className="mt-1 block text-sm text-slate-600">{item.body}</span>
-    <time className="mt-2 block text-xs text-slate-400">{new Date(item.created_at).toLocaleString()}</time>
+    <time className="notification-time mt-2 block text-xs text-slate-400" dateTime={item.created_at}><Clock3 size={15} />{new Date(item.created_at).toLocaleString()}</time>
   </span>;
 }

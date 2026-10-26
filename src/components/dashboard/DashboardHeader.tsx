@@ -28,18 +28,19 @@ export function DashboardHeader({
             {dateLabel}
           </p>
 
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+          <h1 className="page-title mt-3">
             {greeting} <span className="text-blue-700">👋</span>
           </h1>
 
           {displayName && (
-            <p className="mt-1 break-all text-sm font-semibold text-blue-700 sm:text-base">
+            <p className="mt-2 inline-flex max-w-full break-words items-center rounded-r-xl border-l-4 border-blue-500 bg-white/85 px-3 py-2 text-sm font-extrabold leading-snug text-blue-800 shadow-sm sm:text-base">
               Welcome back, {displayName}
             </p>
           )}
 
-          <p className="mt-2 text-sm text-slate-700 sm:text-base">
-            Every word you learn is a little win. Keep going!
+          <p className="page-intro-description page-intro-slogan mt-2 flex max-w-fit items-center gap-2 sm:mt-3">
+            <Sparkles size={17} className="shrink-0 text-amber-500" aria-hidden="true" />
+            <span>Every word you learn is a little win. Keep going!</span>
           </p>
         </div>
 

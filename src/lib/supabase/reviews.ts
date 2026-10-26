@@ -5,6 +5,7 @@ import type {
   VocabularyReviewScheduleRow,
 } from "@/types/database";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
+import { getVocabularyWordImagePaths } from "@/lib/supabase/vocabulary";
 
 const supabase = createClient();
 const latestReviewsByPage = new Map<string, LatestVocabularyReviewsPage>();
@@ -18,6 +19,7 @@ export interface VocabularyReviewWithWord extends VocabularyReviewRow {
     word: string;
     meaning: string;
     category: string;
+    image_path: string | null;
   } | null;
 }
 
@@ -155,6 +157,14 @@ export async function getLatestVocabularyReviews(input: {
     category: string;
   }>;
 
+  let imagePathByWordId = new Map<string, string | null>();
+  try {
+    const imageRows = await getVocabularyWordImagePaths(reviews.map((review) => review.vocabulary_word_id));
+    imagePathByWordId = new Map(imageRows.map((row) => [row.id, row.image_path]));
+  } catch {
+    // Keep review history available if image metadata cannot be loaded.
+  }
+
   const mappedReviews: VocabularyReviewWithWord[] = reviews.map((review) => ({
     id: review.id,
     user_id: review.user_id,
@@ -165,6 +175,7 @@ export async function getLatestVocabularyReviews(input: {
       word: review.word,
       meaning: review.meaning,
       category: review.category,
+      image_path: imagePathByWordId.get(review.vocabulary_word_id) ?? null,
     },
   }));
   const result = { reviews: mappedReviews, total: count ?? 0 };

@@ -216,7 +216,7 @@ export function VocabularyCsvTools({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className="vocabulary-csv-tools flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => void handleOpenImport()}>
           <FileUp size={16} />
           Import CSV
