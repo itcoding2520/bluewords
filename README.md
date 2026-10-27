@@ -10,7 +10,7 @@ BlueWords is built with Next.js 16 App Router, TypeScript, Tailwind CSS 4, and S
 
 ## Screenshots
 
-These screenshots were captured from the current app on October 27, 2026. The available local browser session was signed out, so these show the public/guest experience. Pages that need an account—personal review history, assignments, and assessment results—are described below but are not represented as signed-in screenshots. Design mockups are listed separately in [the portfolio screenshot guide](docs/portfolio/README.md).
+These screenshots were captured from the current app on October 27, 2026. The available local browser session was signed out, so these show the public/guest experience. Pages that need an account—personal review history, assignments, and assessment results—are described below but are not represented as signed-in screenshots. The [portfolio screenshot guide](docs/portfolio/README.md) lists the real app captures; supplied design mockups are not stored in this repository.
 
 ### Overview
 

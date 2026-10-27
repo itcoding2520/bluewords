@@ -17,35 +17,4 @@ Assignments, personal review history, and assessment results require an authenti
 
 The original [`public/screenshots/dashboard.png`](../../public/screenshots/dashboard.png) and [`public/screenshots/vocabulary.png`](../../public/screenshots/vocabulary.png) are historical product screenshots from an earlier UI version. They are retained for history and should not be presented as current screens.
 
-## Design mockups
-
-The `*-mockup.png` files below are reference designs supplied during product development. They are not browser captures of the current website.
-
-### Phase 2 — Personal learning experience
-
-![Profile dashboard mockup](screenshots/phase-2-profile-dashboard-mockup.png)
-![Flashcards dashboard mockup](screenshots/phase-2-flashcards-dashboard-mockup.png)
-![Category organizer mockup](screenshots/phase-2-category-organizer-mockup.png)
-
-### Phase 3 — Community and administration
-
-![Publish requests mockup](screenshots/phase-3-publish-requests-mockup.png)
-![Notifications mockup](screenshots/phase-3-notifications-mockup.png)
-![Admin category management mockup](screenshots/phase-3-admin-categories-mockup.png)
-
-### Phase 4 — Vocabulary games
-
-![Word Match mockup](screenshots/phase-4-word-match-mockup.png)
-![Word Scramble mockup](screenshots/phase-4-word-scramble-mockup.png)
-![Word Maze Adventure mockup](screenshots/phase-4-word-maze-mockup.png)
-![Sentence Builder mockup](screenshots/phase-4-sentence-builder-mockup.png)
-
-### Phase 5 — Assessments
-
-These are the user-provided Phase 5 design mockups, saved for portfolio reference. They are not browser captures of the current website.
-
-![Learner assignments mockup](screenshots/phase-5-assignments-mockup.png)
-![Assessment-taking mockup](screenshots/phase-5-assessment-mockup.png)
-![Assessment results and history mockup](screenshots/phase-5-results-history-mockup.png)
-![Administrator assessment management mockup](screenshots/phase-5-admin-assessment-mockup.png)
-![Corrected results and history mockup](screenshots/phase-5-results-history-corrected-mockup.png)
+Design mockups supplied during product development are intentionally excluded from Git. This guide contains only actual application captures and historical screenshots.
