@@ -14,7 +14,7 @@ import type {
   VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 
 const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
@@ -44,14 +44,17 @@ const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {
 };
 
 export type CategoryFilter = "All" | VocabularyCategory;
+export type VocabularyStatusFilter = "all" | VocabularyStatus;
 
 interface VocabularyToolbarProps {
   search: string;
   category: CategoryFilter;
+  status: VocabularyStatusFilter;
   categories: VocabularyCategoryRow[];
   words: VocabularyWord[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: CategoryFilter) => void;
+  onStatusChange: (value: VocabularyStatusFilter) => void;
 }
 
 interface FilterButtonProps {
@@ -91,6 +94,13 @@ interface CategoryDropdownProps {
   onChange: (value: string) => void;
   includeAll?: boolean;
   allLabel?: string;
+  listLabel?: string;
+  options?: Array<{
+    id: string;
+    name: string;
+    value: string;
+    color?: VocabularyCategoryColor | null;
+  }>;
   fullWidth?: boolean;
 }
 
@@ -130,6 +140,8 @@ export function CategoryDropdown({
   onChange,
   includeAll = false,
   allLabel = "All categories",
+  listLabel = "Choose a category",
+  options: customOptions,
   fullWidth = false,
 }: CategoryDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -138,11 +150,16 @@ export function CategoryDropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const listboxId = useId();
-  const options = [
+  const options: Array<{
+    id: string;
+    name: string;
+    value: string;
+    color?: VocabularyCategoryColor | null;
+  }> = [
     ...(includeAll
       ? [{ id: "all-categories", name: allLabel, value: "all", color: null }]
       : []),
-    ...categories.map((item) => ({ ...item, value: item.name })),
+    ...(customOptions ?? categories.map((item) => ({ ...item, value: item.name }))),
   ];
   const selectedOption = options.find((item) => item.value === category);
   const selectedCategory = selectedOption?.color
@@ -279,11 +296,11 @@ export function CategoryDropdown({
         <div
           id={listboxId}
           role="listbox"
-          aria-label="Vocabulary categories"
+          aria-label={listLabel}
           className="hide-scrollbar absolute right-0 z-50 mt-2 max-h-72 w-full min-w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-950/5"
         >
           <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Choose a category
+            {listLabel}
           </div>
           {options.map((item, index) => {
             const isSelected = item.value === category;
@@ -333,10 +350,12 @@ export function CategoryDropdown({
 export function VocabularyToolbar({
   search,
   category,
+  status,
   categories,
   words,
   onSearchChange,
   onCategoryChange,
+  onStatusChange,
 }: VocabularyToolbarProps) {
   return (
     <div className="vocabulary-filter-toolbar min-w-0 flex-1 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -372,18 +391,32 @@ export function VocabularyToolbar({
         )}
       </div>
 
-      {/* Category filters */}
-      <div className="min-w-0 w-full lg:w-auto">
+      <div className="flex min-w-0 w-full flex-wrap items-center gap-3 lg:w-auto lg:justify-end">
+        <CategoryDropdown
+          ariaLabel="Filter vocabulary by status"
+          category={status}
+          categories={[]}
+          words={[]}
+          includeAll
+          allLabel="All words"
+          listLabel="Choose a status"
+          options={[
+            { id: "status-learning", name: "Learning", value: "learning" },
+            { id: "status-mastered", name: "Mastered", value: "mastered" },
+          ]}
+          onChange={(value) => onStatusChange(value as VocabularyStatusFilter)}
+        />
+        {/* Category filters */}
         <div
           role="group"
           aria-label="Filter vocabulary by category"
-          className="flex min-w-0 items-center gap-2"
+          className="flex min-w-0 flex-1 items-center gap-2 lg:flex-none"
         >
           <FilterButton
             active={category === "All"}
             onClick={() => onCategoryChange("All")}
           >
-            All
+            All categories
           </FilterButton>
 
           <CategoryDropdown

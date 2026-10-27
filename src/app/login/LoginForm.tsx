@@ -48,7 +48,7 @@ export default function LoginForm() {
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <Link href="/" className="inline-flex items-center gap-2" aria-label="BlueWords home">
-            <Image src="/logo.png" alt="BlueWords" width={640} height={225} sizes="240px" loading="eager" unoptimized className="h-[84px] w-60 object-contain" />
+            <Image src="/logo.webp" alt="BlueWords" width={640} height={225} sizes="240px" loading="eager" className="h-[84px] w-60 object-contain" />
           </Link>
 
           <p className="mt-2 text-sm text-slate-500">

@@ -7,6 +7,7 @@ import type {
   VocabularyWordUpdate,
 } from "@/types/database";
 import type { VocabularyType } from "@/config/vocabulary";
+import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 
 const supabase = createClient();
@@ -51,12 +52,14 @@ export async function getVocabularyWordPage(input: {
   pageSize: number;
   search: string;
   category: string | null;
+  status?: VocabularyStatus | null;
 }): Promise<VocabularyWordPage> {
   const { data, error } = await supabase.rpc("get_vocabulary_page", {
     p_page: input.page,
     p_page_size: input.pageSize,
     p_search: input.search.trim() || null,
     p_category: input.category,
+    p_status: input.status ?? null,
   });
 
   if (error) throw error;
@@ -81,6 +84,7 @@ export async function getVocabularyWordsForCategory(
       pageSize: 100,
       search: "",
       category,
+      status: null,
     });
     rows.push(...result.rows);
     if (rows.length >= result.total || result.rows.length === 0) return rows;

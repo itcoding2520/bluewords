@@ -783,6 +783,7 @@ function VocabularyStoreProvider({
       );
       invalidateVocabularyPageCache();
       invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
+      invalidateLatestVocabularyReviewsCache();
 
       return true;
     } catch {

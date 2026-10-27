@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, CalendarClock, Check, Circle, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Check, Circle, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -190,7 +190,6 @@ export function FlashcardsContent() {
   const [index, setIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
-  const [isSavingReview, setIsSavingReview] = useState(false);
   const [reviewMode, setReviewMode] = useState<"all" | "due">("all");
   const [reviewSchedules, setReviewSchedules] = useState(
     () => new Map<string, VocabularyReviewScheduleRow>()
@@ -289,43 +288,40 @@ export function FlashcardsContent() {
   async function handleToggleStatus() {
     if (!isAuthenticated || !card || card.word.isCustom || isTogglingStatus) return;
 
+    const remembered = card.word.status === "learning";
+    const nextStatus: VocabularyStatus = remembered ? "mastered" : "learning";
     setIsTogglingStatus(true);
     try {
-      const updated = await toggleMastered(card.word.id);
-      if (updated) setIsRevealed(false);
+      const updated = await toggleMastered(card.word.id, card.word.status);
+      if (!updated) return;
+
+      // Keep the changed card visible so the same button can switch it back.
+      const nextDeck = shuffleDeck(
+        buildDeck(
+          words
+            .map((word) => word.id === card.word.id ? { ...word, status: nextStatus } : word)
+            .filter((word) => word.status === nextStatus && (category === "all" || word.category === category))
+        ),
+        shuffleSeed
+      );
+      setStatus(nextStatus);
+      setReviewMode("all");
+      setIndex(Math.max(0, nextDeck.findIndex((item) => item.word.id === card.word.id)));
+      setIsRevealed(false);
+
+      try {
+        const { schedule } = await recordVocabularyReview(card.word.id, remembered);
+        setReviewSchedules((current) => {
+          const next = new Map(current);
+          next.set(schedule.vocabulary_word_id, schedule);
+          return next;
+        });
+      } catch (error) {
+        console.error("Failed to save flashcard review:", error);
+        toast.error("Status changed, but review activity could not be recorded.");
+      }
     } finally {
       setIsTogglingStatus(false);
-    }
-  }
-
-  async function handleRecordReview(remembered: boolean) {
-    if (!isAuthenticated || !card || isSavingReview) return;
-    if (card.word.isCustom) { moveCard(1); return; }
-
-    setIsSavingReview(true);
-    try {
-      const { schedule } = await recordVocabularyReview(
-        card.word.id,
-        remembered
-      );
-      setReviewSchedules((current) => {
-        const next = new Map(current);
-        next.set(schedule.vocabulary_word_id, schedule);
-        return next;
-      });
-
-      if (reviewMode === "due") {
-        const nextDeckLength = deck.length - 1;
-        setIndex((current) => (current >= nextDeckLength ? 0 : current));
-        setIsRevealed(false);
-      } else {
-        moveCard(1);
-      }
-    } catch (error) {
-      console.error("Failed to save flashcard review:", error);
-      toast.error("Could not save this review. Please try again.");
-    } finally {
-      setIsSavingReview(false);
     }
   }
 
@@ -492,32 +488,6 @@ export function FlashcardsContent() {
                   <div className="flex w-full flex-1 flex-col items-center justify-center">
                     <FlashcardAnswer card={card} />
                   </div>
-                  {isAuthenticated && !card.word.isCustom && isRevealed && (
-                    <div className="mt-4 grid w-full max-w-sm shrink-0 grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleRecordReview(false)}
-                        disabled={isSavingReview}
-                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
-                      >
-                        <RotateCcw size={14} />
-                        {isSavingReview
-                          ? "Saving..."
-                          : "Need practice"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleRecordReview(true)}
-                        disabled={isSavingReview}
-                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-sm"
-                      >
-                        <Check size={14} />
-                        {isSavingReview
-                          ? "Saving..."
-                          : "Remembered"}
-                      </button>
-                    </div>
-                  )}
                   <Button
                     variant="secondary"
                     onClick={() => setIsRevealed(false)}
@@ -540,26 +510,25 @@ export function FlashcardsContent() {
               <ArrowLeft size={16} />
               <span>Previous</span>
             </Button>}
-            <Button
+            {isAuthenticated && !card.word.isCustom && <Button
               variant="secondary"
               onClick={() => void handleToggleStatus()}
               disabled={isTogglingStatus}
-              aria-label={`Mark ${card.word.word} as ${status === "learning" ? "mastered" : "learning"}`}
+              aria-label={`Mark ${card.word.word} as ${card.word.status === "learning" ? "mastered" : "learning"}`}
+              title={`Change status to ${card.word.status === "learning" ? "Mastered" : "Learning"}`}
               className={
-                status === "learning"
+                card.word.status === "learning"
                   ? "flashcards-learning-action text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                   : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
               }
             >
-              {status === "learning" ? <Circle size={15} /> : <Check size={15} />}
+              {card.word.status === "learning" ? <Circle size={15} /> : <Check size={15} />}
               <span>
                 {isTogglingStatus
                   ? "Saving..."
-                  : status === "learning"
-                    ? "Learning"
-                    : "Mastered"}
+                  : card.word.status === "learning" ? "Learning" : "Mastered"}
               </span>
-            </Button>
+            </Button>}
             <Button
               onClick={() => moveCard(1)}
               disabled={deck.length < 2}

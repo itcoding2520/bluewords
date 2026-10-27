@@ -21,6 +21,7 @@ import { VocabularyCsvTools } from "./VocabularyCsvTools";
 import { CommunityVocabulary } from "./CommunityVocabulary";
 import type {
   CategoryFilter,
+  VocabularyStatusFilter,
 } from "./VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
@@ -70,9 +71,11 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     pageSize: 10,
     search: "",
     category: null,
+    status: null,
   }) as { rows: VocabularyWord[]; total: number } | null;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("All");
+  const [status, setStatus] = useState<VocabularyStatusFilter>("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
@@ -206,6 +209,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       pageSize,
       search: debouncedSearch,
       category: selectedCategory === "All" ? null : selectedCategory,
+      status: status === "all" ? null : status,
     };
     const cachedPage = getCachedVocabularyPage(authVersion, query) as {
       rows: VocabularyWord[];
@@ -245,7 +249,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       toast.error("Failed to load vocabulary.");
     });
     return () => { cancelled = true; };
-  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory]);
+  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory, status]);
 
   useEffect(() => {
     if (selectedCategory === "All") return;
@@ -306,6 +310,14 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     setCategory(value);
     setIsPageLoading(true);
     setIsExportCountLoading(value !== "All");
+    setPageWords([]);
+    setPage(1);
+    setSelectedIds(new Set());
+  }
+
+  function handleStatusChange(value: VocabularyStatusFilter) {
+    setStatus(value);
+    setIsPageLoading(true);
     setPageWords([]);
     setPage(1);
     setSelectedIds(new Set());
@@ -547,10 +559,12 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       <VocabularyToolbar
         search={search}
         category={selectedCategory}
+        status={status}
         categories={categories}
         words={words}
         onSearchChange={handleSearchChange}
         onCategoryChange={handleCategoryChange}
+        onStatusChange={handleStatusChange}
       />
       </div>
 

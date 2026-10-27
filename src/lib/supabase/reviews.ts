@@ -4,12 +4,14 @@ import type {
   VocabularyReviewRow,
   VocabularyReviewScheduleRow,
 } from "@/types/database";
+import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { getVocabularyWordImagePaths } from "@/lib/supabase/vocabulary";
 
 const supabase = createClient();
 const latestReviewsByPage = new Map<string, LatestVocabularyReviewsPage>();
 const latestReviewCountsByUser = new Map<string, LatestVocabularyReviewCounts>();
+const latestReviewHistoryByUser = new Map<string, VocabularyReviewWithWord[]>();
 const schedulesByUser = new Map<string, VocabularyReviewScheduleRow[]>();
 
 const REVIEW_HISTORY_PAGE_SIZE = 20;
@@ -20,6 +22,7 @@ export interface VocabularyReviewWithWord extends VocabularyReviewRow {
     meaning: string;
     category: string;
     image_path: string | null;
+    status: VocabularyStatus;
   } | null;
 }
 
@@ -29,27 +32,27 @@ export interface LatestVocabularyReviewsPage {
 }
 
 export interface LatestVocabularyReviewCounts {
-  practice: number;
-  remembered: number;
+  learning: number;
+  mastered: number;
 }
 
 function reviewPageCacheKey(
   userId: string,
-  remembered: boolean,
+  status: VocabularyStatus,
   page: number,
   pageSize: number
 ): string {
-  return `${userId}:${remembered ? "remembered" : "practice"}:${page}:${pageSize}`;
+  return `${userId}:${status}:${page}:${pageSize}`;
 }
 
 export function getCachedLatestVocabularyReviews(
   userId: string,
-  remembered: boolean,
+  status: VocabularyStatus,
   page = 1,
   pageSize = REVIEW_HISTORY_PAGE_SIZE
 ): LatestVocabularyReviewsPage | null {
   return latestReviewsByPage.get(
-    reviewPageCacheKey(userId, remembered, page, pageSize)
+    reviewPageCacheKey(userId, status, page, pageSize)
   ) ?? null;
 }
 
@@ -62,6 +65,83 @@ export function getCachedLatestVocabularyReviewCounts(
 export function invalidateLatestVocabularyReviewsCache(): void {
   latestReviewsByPage.clear();
   latestReviewCountsByUser.clear();
+  latestReviewHistoryByUser.clear();
+}
+
+interface LatestReviewRpcRow {
+  id: string;
+  user_id: string;
+  vocabulary_word_id: string;
+  remembered: boolean;
+  reviewed_at: string;
+  word: string;
+  meaning: string;
+  category: string;
+  status: VocabularyStatus;
+}
+
+async function mapLatestReviewRows(
+  rows: LatestReviewRpcRow[]
+): Promise<VocabularyReviewWithWord[]> {
+  let imagePathByWordId = new Map<string, string | null>();
+  const wordIds = [...new Set(rows.map((review) => review.vocabulary_word_id))];
+  try {
+    const imageRows = [];
+    for (let start = 0; start < wordIds.length; start += 100) {
+      imageRows.push(...await getVocabularyWordImagePaths(wordIds.slice(start, start + 100)));
+    }
+    imagePathByWordId = new Map(imageRows.map((row) => [row.id, row.image_path]));
+  } catch {
+    // Keep review history available if image metadata cannot be loaded.
+  }
+
+  return rows.map((review) => ({
+    id: review.id,
+    user_id: review.user_id,
+    vocabulary_word_id: review.vocabulary_word_id,
+    remembered: review.remembered,
+    reviewed_at: review.reviewed_at,
+    vocabulary_words: {
+      word: review.word,
+      meaning: review.meaning,
+      category: review.category,
+      image_path: imagePathByWordId.get(review.vocabulary_word_id) ?? null,
+      status: review.status,
+    },
+  }));
+}
+
+export function getCachedLatestVocabularyReviewHistory(
+  userId: string
+): VocabularyReviewWithWord[] | null {
+  return latestReviewHistoryByUser.get(userId) ?? null;
+}
+
+export async function getLatestVocabularyReviewHistory(
+  expectedUserId: string
+): Promise<VocabularyReviewWithWord[]> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user || user.id !== expectedUserId) {
+    throw new Error("You must be logged in to view review history.");
+  }
+
+  const cached = latestReviewHistoryByUser.get(user.id);
+  if (cached) return cached;
+
+  const rows = await fetchAllPages<LatestReviewRpcRow>(async (from, to) => {
+    const { data, error } = await supabase
+      .rpc("get_vocabulary_review_history")
+      .order("reviewed_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
+    return { data: (data ?? []) as LatestReviewRpcRow[], error };
+  });
+  const reviews = await mapLatestReviewRows(rows);
+  latestReviewHistoryByUser.set(user.id, reviews);
+  return reviews;
 }
 
 export function invalidateVocabularyReviewScheduleCache(userId?: string): void {
@@ -105,7 +185,7 @@ export async function getVocabularyReviewSchedules(): Promise<
 }
 
 export async function getLatestVocabularyReviews(input: {
-  remembered: boolean;
+  status: VocabularyStatus;
   page: number;
   pageSize?: number;
 }): Promise<LatestVocabularyReviewsPage> {
@@ -128,7 +208,7 @@ export async function getLatestVocabularyReviews(input: {
 
   const cacheKey = reviewPageCacheKey(
     user.id,
-    input.remembered,
+    input.status,
     input.page,
     pageSize
   );
@@ -139,45 +219,14 @@ export async function getLatestVocabularyReviews(input: {
   const to = from + pageSize - 1;
   const { data, error, count } = await supabase
     .rpc("get_latest_vocabulary_reviews", {}, { count: "exact" })
-    .eq("remembered", input.remembered)
+    .eq("status", input.status)
     .order("reviewed_at", { ascending: false })
     .order("id", { ascending: false })
     .range(from, to);
 
   if (error) throw error;
 
-  const reviews = (data ?? []) as Array<{
-    id: string;
-    user_id: string;
-    vocabulary_word_id: string;
-    remembered: boolean;
-    reviewed_at: string;
-    word: string;
-    meaning: string;
-    category: string;
-  }>;
-
-  let imagePathByWordId = new Map<string, string | null>();
-  try {
-    const imageRows = await getVocabularyWordImagePaths(reviews.map((review) => review.vocabulary_word_id));
-    imagePathByWordId = new Map(imageRows.map((row) => [row.id, row.image_path]));
-  } catch {
-    // Keep review history available if image metadata cannot be loaded.
-  }
-
-  const mappedReviews: VocabularyReviewWithWord[] = reviews.map((review) => ({
-    id: review.id,
-    user_id: review.user_id,
-    vocabulary_word_id: review.vocabulary_word_id,
-    remembered: review.remembered,
-    reviewed_at: review.reviewed_at,
-    vocabulary_words: {
-      word: review.word,
-      meaning: review.meaning,
-      category: review.category,
-      image_path: imagePathByWordId.get(review.vocabulary_word_id) ?? null,
-    },
-  }));
+  const mappedReviews = await mapLatestReviewRows((data ?? []) as LatestReviewRpcRow[]);
   const result = { reviews: mappedReviews, total: count ?? 0 };
   latestReviewsByPage.set(cacheKey, result);
   return result;
@@ -202,10 +251,10 @@ export async function getLatestVocabularyReviewCounts(): Promise<LatestVocabular
 
   if (error) throw error;
 
-  const counts: LatestVocabularyReviewCounts = { practice: 0, remembered: 0 };
+  const counts: LatestVocabularyReviewCounts = { learning: 0, mastered: 0 };
   for (const row of data ?? []) {
-    if (row.remembered) counts.remembered = Number(row.review_count);
-    else counts.practice = Number(row.review_count);
+    if (row.status === "mastered") counts.mastered = Number(row.review_count);
+    else if (row.status === "learning") counts.learning = Number(row.review_count);
   }
 
   latestReviewCountsByUser.set(user.id, counts);
