@@ -8,6 +8,7 @@ import {
   Library,
   BookOpenCheck,
   History,
+  ClipboardCheck,
   Gamepad2,
   Clapperboard,
   Menu,
@@ -58,6 +59,7 @@ const navigation = [
     href: "/games",
     icon: Gamepad2,
   },
+  { label: "Assignments", href: "/assignments", icon: ClipboardCheck },
   {
     label: "Videos",
     href: "/videos",
@@ -92,8 +94,10 @@ export function Sidebar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminChecked, setIsAdminChecked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [pendingAssignmentCount, setPendingAssignmentCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -130,9 +134,16 @@ export function Sidebar() {
       setIsAuthenticated(Boolean(session?.user.id));
       setAuthUserId(session?.user.id ?? null);
       if (session?.user.id) {
+        setIsAdminChecked(false);
         const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
-        if (active) setIsAdmin(Boolean(admin));
-      } else setIsAdmin(false);
+        if (active) {
+          setIsAdmin(Boolean(admin));
+          setIsAdminChecked(true);
+        }
+      } else {
+        setIsAdmin(false);
+        setIsAdminChecked(true);
+      }
       if (session?.user.id) void loadProfile(session.user.id);
       else {
         currentUserId = null;
@@ -153,10 +164,14 @@ export function Sidebar() {
         setIsAuthenticated(Boolean(session?.user.id));
         setAuthUserId(session?.user.id ?? null);
         setIsAdmin(false);
+        setIsAdminChecked(!session?.user.id);
         if (session?.user.id) {
           const userId = session.user.id;
           void supabase.from("app_admins").select("user_id").eq("user_id", userId).maybeSingle().then(({ data: admin }) => {
-            if (active) setIsAdmin(Boolean(admin));
+            if (active) {
+              setIsAdmin(Boolean(admin));
+              setIsAdminChecked(true);
+            }
           });
         }
         if (session?.user.id) void loadProfile(session.user.id);
@@ -191,6 +206,7 @@ export function Sidebar() {
         .from("notifications")
         .select("id", { count: "exact", head: true })
         .eq("recipient_id", authUserId)
+        .neq("kind", "assessment_assigned")
         .is("read_at", null);
       if (active && !error) setUnreadNotificationCount(count ?? 0);
     }
@@ -206,6 +222,24 @@ export function Sidebar() {
     };
   }, [authUserId, isAuthenticated, supabase]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !authUserId) {
+      const resetTimer = window.setTimeout(() => setPendingAssignmentCount(0), 0);
+      return () => window.clearTimeout(resetTimer);
+    }
+    let active = true;
+    async function refreshAssignments() {
+      try {
+        const response = await fetch("/api/assessments", { cache: "no-store" });
+        const payload = await response.json();
+        if (active && response.ok) setPendingAssignmentCount((payload.assignments ?? []).filter((item: { status: string }) => item.status !== "completed").length);
+      } catch { /* Keep the last known badge count while offline. */ }
+    }
+    void refreshAssignments();
+    const timer = window.setInterval(() => { void refreshAssignments(); }, 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [authUserId, isAuthenticated]);
+
   function closeSidebar() {
     setIsOpen(false);
   }
@@ -215,7 +249,7 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-30 flex min-h-20 items-center justify-between border-b border-sky-100 bg-white/95 px-4 shadow-sm backdrop-blur lg:hidden">
         <Link href="/" className="flex items-center gap-2" aria-label="BlueWords home">
-          <Image src="/logo.png" alt="BlueWords" width={420} height={148} sizes="160px" loading="eager" unoptimized className="h-14 w-40 object-contain" />
+          <Image src="/logo.webp" alt="BlueWords" width={420} height={148} sizes="160px" loading="eager" className="h-14 w-40 object-contain" />
         </Link>
 
         <button
@@ -257,7 +291,7 @@ export function Sidebar() {
               aria-label="BlueWords home"
               className="flex min-w-0 items-center gap-2"
             >
-              <Image src="/logo.png" alt="BlueWords" width={500} height={176} sizes="200px" loading="eager" unoptimized className="h-[68px] w-[190px] object-contain" />
+              <Image src="/logo.webp" alt="BlueWords" width={500} height={176} sizes="200px" loading="eager" className="h-[68px] w-[190px] object-contain" />
             </Link>
 
           <button
@@ -275,6 +309,7 @@ export function Sidebar() {
             if (item.href === "/admin") return isAuthenticated && isAdmin;
             if (item.href === "/videos") return isAuthenticated;
             if (item.href === "/notifications") return isAuthenticated;
+            if (item.href === "/assignments") return isAuthenticated && isAdminChecked && !isAdmin;
             if (item.href === "/publish") return isAuthenticated && !isAdmin;
             return isAuthenticated || !["/profile", "/reviews"].includes(item.href);
           }).map((item) => {
@@ -312,6 +347,7 @@ export function Sidebar() {
                 )}
                 <span className="min-w-0 flex-1">{item.label}</span>
                 {item.href === "/notifications" && visibleUnreadCount > 0 && <span className="min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{visibleUnreadCount > 99 ? "99+" : visibleUnreadCount}</span>}
+                {item.href === "/assignments" && pendingAssignmentCount > 0 && <span className="min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{pendingAssignmentCount > 99 ? "99+" : pendingAssignmentCount}</span>}
               </Link>
             );
           })}
