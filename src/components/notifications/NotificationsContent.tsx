@@ -15,6 +15,7 @@ const NOTIFICATION_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 function recentNotifications(rows: NotificationRow[], now = Date.now()) {
   const cutoff = now - NOTIFICATION_LOOKBACK_MS;
   return rows.filter((item) => {
+    if (item.kind === "assessment_assigned") return false;
     const createdAt = new Date(item.created_at).getTime();
     return Number.isFinite(createdAt) && createdAt >= cutoff && createdAt <= now;
   });
@@ -44,7 +45,7 @@ export function NotificationsContent() {
       const now = new Date();
       const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
       const rows = await getCachedNotifications(user.id, async () => {
-        const { data, error: queryError } = await supabase.from("notifications").select("id, title, body, kind, entity_type, entity_id, read_at, created_at").gte("created_at", cutoff).lte("created_at", now.toISOString()).order("created_at", { ascending: false }).limit(100);
+        const { data, error: queryError } = await supabase.from("notifications").select("id, title, body, kind, entity_type, entity_id, read_at, created_at").neq("kind", "assessment_assigned").gte("created_at", cutoff).lte("created_at", now.toISOString()).order("created_at", { ascending: false }).limit(100);
         if (queryError) throw queryError;
         return (data ?? []) as NotificationRow[];
       }, { force });
@@ -81,7 +82,7 @@ export function NotificationsContent() {
     if (!user) return;
     const now = new Date();
     const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
-    const { error: updateError } = await supabase.from("notifications").update({ read_at: now.toISOString() }).eq("recipient_id", user.id).gte("created_at", cutoff).lte("created_at", now.toISOString()).is("read_at", null);
+    const { error: updateError } = await supabase.from("notifications").update({ read_at: now.toISOString() }).eq("recipient_id", user.id).neq("kind", "assessment_assigned").gte("created_at", cutoff).lte("created_at", now.toISOString()).is("read_at", null);
     if (updateError) setError(updateError.message);
     else {
       invalidateNotificationsCache(user.id);

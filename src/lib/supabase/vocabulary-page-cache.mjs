@@ -7,6 +7,7 @@ function pageKey(authVersion, query) {
     query.pageSize,
     query.search.trim().toLocaleLowerCase(),
     query.category ?? "*",
+    query.status ?? "*",
   ].join(":");
 }
 

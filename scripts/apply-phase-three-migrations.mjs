@@ -29,6 +29,12 @@ const migrations = [
   ["20261026250000", "20261026250000_word_maze_leaderboard.sql"],
   ["20261026260000", "20261026260000_sentence_builder.sql"],
   ["20261026270000", "20261026270000_sentence_builder_login_required.sql"],
+  ["20261026300000", "20261026300000_assessments.sql"],
+  ["20261026310000", "20261026310000_assessment_vocabulary_permissions.sql"],
+  ["20261027300000", "20261027300000_vocabulary_status_filter.sql"],
+  ["20261027310000", "20261027310000_review_history_learning_mastered.sql"],
+  ["20261027320000", "20261027320000_daily_vocabulary_review_history.sql"],
+  ["20261027330000", "20261027330000_assessment_source_permissions.sql"],
 ];
 
 function parseEnv(contents) {
