@@ -59,6 +59,7 @@ export function GamesLeaderboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -96,7 +97,15 @@ export function GamesLeaderboard() {
   return (
     <section className="games-leaderboard" aria-labelledby="game-leaderboard-title">
       <Card className="overflow-hidden p-0">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6">
+        <div className="games-leaderboard-compact-head">
+          <button type="button" aria-expanded={expanded} aria-controls="games-leaderboard-content" onClick={() => setExpanded((value) => !value)}>
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-yellow-100 text-amber-500"><Trophy size={20} /></span>
+            <span><strong>Game leaderboard</strong><small>See top players and your rank</small></span>
+            <ChevronDown size={19} className={expanded ? "is-expanded" : ""} />
+          </button>
+          <button type="button" onClick={refresh} disabled={loading} aria-label="Refresh leaderboard" className="games-leaderboard-compact-refresh"><RefreshCw size={16} className={refreshing ? "animate-spin" : ""} /></button>
+        </div>
+        <div className="games-leaderboard-desktop-head flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-yellow-100 text-amber-500"><Trophy size={21} /></span>
             <div>
@@ -109,7 +118,7 @@ export function GamesLeaderboard() {
           </button>
         </div>
 
-        <div className="space-y-4 p-5 sm:p-6">
+        <div id="games-leaderboard-content" className={`games-leaderboard-content space-y-4 p-5 sm:p-6 ${expanded ? "is-expanded" : ""}`}>
           <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Choose leaderboard game">
             <button type="button" role="tab" aria-selected={game === "quiz"} onClick={() => { if (game !== "quiz") { setLoading(true); setError(""); setGame("quiz"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "quiz" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Vocabulary Quiz</button>
             <button type="button" role="tab" aria-selected={game === "word-search"} onClick={() => { if (game !== "word-search") { setLoading(true); setError(""); setGame("word-search"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-search" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Search</button>
