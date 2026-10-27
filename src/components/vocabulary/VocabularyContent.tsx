@@ -26,31 +26,14 @@ import type {
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import {
   getCachedVocabularyPage,
   setCachedVocabularyPage,
 } from "@/lib/supabase/vocabulary-page-cache.mjs";
+import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
-
-function mapPageWord(row: VocabularyWordWithMeaningsRow): VocabularyWord {
-  return {
-    id: row.id,
-    word: row.word,
-    meaning: row.meaning,
-    category: row.category as VocabularyWord["category"],
-    status: row.status,
-    type: row.type ?? "word",
-    ipa: row.ipa ?? null,
-    imagePath: row.image_path ?? null,
-    detailedMeanings: (row.vocabulary_meanings ?? []).map((meaning) => ({
-      id: meaning.id,
-      partOfSpeech: meaning.part_of_speech,
-      meaning: meaning.meaning,
-    })),
-  };
-}
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const confirmDialog = useConfirmDialog();
@@ -219,7 +202,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       ? Promise.resolve(cachedPage)
       : getVocabularyWordPage(query).then((result) => {
           const mappedResult = {
-            rows: result.rows.map(mapPageWord),
+            rows: result.rows.map(mapVocabularyWordRow),
             total: result.total,
           };
           setCachedVocabularyPage(authVersion, query, mappedResult);
@@ -440,7 +423,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     setShowImportPreview(true);
     try {
       const allWords = await getVocabularyWords();
-      setLegacyCloudWords(allWords.map(mapPageWord));
+      setLegacyCloudWords(allWords.map(mapVocabularyWordRow));
     } catch {
       toast.error("Failed to prepare the legacy vocabulary preview.");
     }
@@ -545,7 +528,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         loadExportWords={async () => {
           if (selectedCategory === "All") return currentPageWords;
           const rows = await getVocabularyWordsForCategory(selectedCategory);
-          return rows.map(mapPageWord);
+          return rows.map(mapVocabularyWordRow);
         }}
         exportCategory={selectedCategory}
         categories={categories}

@@ -5,6 +5,7 @@ import { CalendarDays, ClipboardList, RefreshCw, Send, Users } from "lucide-reac
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { Select } from "@/components/ui/Select";
+import { toLocalDateInputValue } from "@/lib/formatDate";
 
 type UserRow = { id: string; email: string | undefined; nickname: string };
 type Recipient = { id: string; user_id: string; status: string };
@@ -21,7 +22,7 @@ export function AdminAssessments() {
   const [selected, setSelected] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState(false);
   const [dueAt, setDueAt] = useState("");
-  const [today, setToday] = useState("");
+  const today = toLocalDateInputValue(new Date());
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -39,8 +40,6 @@ export function AdminAssessments() {
     finally { setLoading(false); }
   }
   useEffect(() => {
-    const now = new Date();
-    setToday(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`);
     const timer = window.setTimeout(() => { void refresh(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);

@@ -10,6 +10,7 @@ import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { formatShortDate } from "@/lib/formatDate";
 
 type AdminUser = {
   id: string;
@@ -31,11 +32,6 @@ function downloadCsv(name: string, contents: string) {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function formattedDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(date);
 }
 
 export function AdminUsersManagement() {
@@ -257,8 +253,8 @@ export function AdminUsersManagement() {
         <div className="admin-users-list">
           {users.map((user) => <article key={user.id} className="admin-users-row">
             <div className="admin-users-identity"><span className="admin-users-avatar" aria-hidden="true">{(user.nickname || user.email || "?").trim().charAt(0).toUpperCase()}</span><span className="admin-users-identity-copy"><strong>{user.email ?? "No email"}</strong><small>{user.nickname || "No nickname"}</small></span></div>
-            <div className="admin-users-joined"><span className="admin-users-mobile-label">Joined</span><span>{formattedDate(user.created_at)}</span></div>
-            <div className={`admin-users-activity${user.last_sign_in_at ? " is-active" : " is-never"}`}><span className="admin-users-mobile-label">Last activity</span><span className="admin-users-activity-pill"><i aria-hidden="true" />{user.last_sign_in_at ? `Last active ${formattedDate(user.last_sign_in_at)}` : "Never signed in"}</span></div>
+            <div className="admin-users-joined"><span className="admin-users-mobile-label">Joined</span><span>{formatShortDate(user.created_at)}</span></div>
+            <div className={`admin-users-activity${user.last_sign_in_at ? " is-active" : " is-never"}`}><span className="admin-users-mobile-label">Last activity</span><span className="admin-users-activity-pill"><i aria-hidden="true" />{user.last_sign_in_at ? `Last active ${formatShortDate(user.last_sign_in_at)}` : "Never signed in"}</span></div>
             <div className="admin-users-row-actions"><ActionMenu label={user.email ?? user.nickname ?? "user"} disabled={busy === user.id} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => openEditUser(user) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void removeUser(user), destructive: true }]} /></div>
           </article>)}
         </div>

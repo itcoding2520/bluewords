@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
-import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
@@ -18,24 +18,10 @@ import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
 import { getCachedVocabularyQuizAnswers, getCachedVocabularyQuizHistory, getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
+import { buildMeaningQuestions, expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 
-type QuizMode = "type-word" | "choose-meaning";
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
-
-interface QuizQuestion {
-  word: VocabularyWord;
-  meaning: string;
-  partOfSpeech: string | null;
-  choices: string[];
-  choiceType: "meaning" | "word";
-  correctAnswer: string;
-}
-
-interface QuizAnswer {
-  value: string;
-  correct: boolean;
-}
 
 const QUESTION_COUNTS = [10, 20, 30] as const;
 const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
@@ -50,72 +36,6 @@ const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   pink: "bg-pink-500",
   slate: "bg-slate-500",
 };
-
-function shuffle<T>(items: T[]): T[] {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
-  }
-  return shuffled;
-}
-
-function meaningsFor(word: VocabularyWord): VocabularyMeaning[] {
-  const detailed = word.type === "expression" ? [] : word.detailedMeanings?.filter((item) => item.meaning.trim()) ?? [];
-  return detailed.length > 0 ? detailed : word.meaning.trim() ? [{ partOfSpeech: "noun", meaning: word.meaning.trim() }] : [];
-}
-
-function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
-  const answerPool = words.flatMap((word) => meaningsFor(word).map((meaning) => ({ meaning: meaning.meaning.trim() })));
-  const uniqueAnswers = [...new Map(answerPool.map((answer) => [answer.meaning.toLocaleLowerCase(), answer])).values()];
-  const uniqueWords = [...new Map(words.map((word) => [normalizeQuizAnswer(word.word), word.word.trim()] as const)).values()];
-
-  return shuffle(words.flatMap((word) => {
-    const wordMeanings = meaningsFor(word);
-    if (wordMeanings.length === 0) return [];
-    const meaning = shuffle(wordMeanings)[0];
-    const meaningDistractors = shuffle(uniqueAnswers
-      .filter((answer) => answer.meaning.toLocaleLowerCase() !== meaning.meaning.trim().toLocaleLowerCase())
-      .map((answer) => answer.meaning)).slice(0, 3);
-    const normalizedWord = normalizeQuizAnswer(word.word);
-    const wordDistractors = shuffle(uniqueWords.filter((answer) => normalizeQuizAnswer(answer) !== normalizedWord)).slice(0, 3);
-    const canChooseMeaning = meaningDistractors.length === 3;
-    const canChooseWord = wordDistractors.length === 3;
-    if (!canChooseMeaning && !canChooseWord) return [];
-    const choiceType: QuizQuestion["choiceType"] = canChooseMeaning && canChooseWord
-      ? Math.random() < 0.5 ? "meaning" : "word"
-      : canChooseMeaning ? "meaning" : "word";
-    const correctAnswer = choiceType === "meaning" ? meaning.meaning.trim() : word.word.trim();
-    const distractors = choiceType === "meaning" ? meaningDistractors : wordDistractors;
-    return [{
-      word,
-      meaning: meaning.meaning.trim(),
-      partOfSpeech: word.type !== "expression" && word.detailedMeanings?.some((item) => item.meaning.trim()) ? meaning.partOfSpeech : null,
-      choices: shuffle([correctAnswer, ...distractors]),
-      choiceType,
-      correctAnswer,
-    }];
-  }));
-}
-
-function expectedAnswer(question: QuizQuestion, mode: QuizMode) {
-  if (mode === "type-word" || question.choiceType === "word") return question.word.word;
-  // `correctAnswer` was added after quiz questions could already be in React state.
-  // Keep active sessions created by Fast Refresh (or older question objects) answerable.
-  return typeof question.correctAnswer === "string" ? question.correctAnswer : question.meaning;
-}
-
-function promptText(question: QuizQuestion, mode: QuizMode) {
-  if (mode === "type-word") return "Image → Type the word";
-  if (question.choiceType === "word") return "Meaning → Choose the word";
-  return question.word.imagePath ? "Image → Choose the meaning" : "Word → Choose the meaning";
-}
-
-function formatTime(seconds: number) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours ? `${hours}:` : ""}${String(minutes).padStart(hours ? 2 : 1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-}
 
 function QuizImage({ word, className = "" }: { word: VocabularyWord; className?: string }) {
   const imageUrl = useVocabularyImageUrl(word.imagePath);
