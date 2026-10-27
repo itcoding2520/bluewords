@@ -13,6 +13,7 @@ import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { formatShortDate } from "@/lib/formatDate";
 
 type CategoryTab = "default" | "published" | "pending";
 type CommunityCategory = {
@@ -41,13 +42,6 @@ const tabs: Array<{ id: CategoryTab; label: string; description: string; icon: t
   { id: "published", label: "Custom published", description: "Visible to signed-in users", icon: CheckCircle2 },
   { id: "pending", label: "Custom waiting publish", description: "Awaiting admin approval", icon: Clock3 },
 ];
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Date unavailable"
-    : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(date);
-}
 
 export function AdminCategoryManagement() {
   const confirmDialog = useConfirmDialog();
@@ -251,7 +245,7 @@ export function AdminCategoryManagement() {
               <button onClick={() => setSelectedId(category.id)} aria-current={active ? "true" : undefined} className={`admin-category-list-item flex w-full items-start gap-3 px-4 py-3 text-left transition ${active ? "is-selected bg-blue-50" : "hover:bg-slate-50"}`}>
                 <CategoryAvatar name={category.name} imagePath={shared?.image_path} fallbackWordImagePath={fallbackImage} colorClass={active ? "bg-blue-100" : "bg-slate-200"} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{category.name}</span>{owner && <span className="mt-1 block truncate text-xs text-slate-500">{owner}</span>}</span>
-                <span className="mt-1 text-xs text-slate-400">{activeTab === "default" ? defaultVocabularyWords.filter((word) => word.category === category.name).length : "owner_id" in category ? formatDate(category.created_at) : ""}</span>
+                <span className="mt-1 text-xs text-slate-400">{activeTab === "default" ? defaultVocabularyWords.filter((word) => word.category === category.name).length : "owner_id" in category ? formatShortDate(category.created_at, "Date unavailable") : ""}</span>
               </button>
             </li>;
           })}
@@ -262,7 +256,7 @@ export function AdminCategoryManagement() {
         {!selectedCategory ? <div className="grid min-h-64 place-items-center text-center text-sm text-slate-500">Choose a category to see its words.</div> : <>
           <div className="admin-category-detail-header flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
             <div className="flex min-w-0 items-center gap-3"><CategoryAvatar name={selectedCategory.name} imagePath={selectedSharedCategory?.image_path} fallbackWordImagePath={selectedFallbackImage} sizeClass="size-12" /><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{activeTab === "default" ? "Default category" : activeTab === "pending" ? "Waiting publish" : "Published custom category"}</p><h2 className="mt-1 break-words text-xl font-bold text-slate-950">{selectedCategory.name}</h2>{selectedSharedCategory && <p className="mt-1 break-all text-sm text-slate-500">Created by {emails[selectedSharedCategory.owner_id] ?? "Loading owner…"}</p>}</div></div>
-            {activeTab !== "default" && "created_at" in selectedCategory && <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Created {formatDate(selectedCategory.created_at)}</span>}
+            {activeTab !== "default" && "created_at" in selectedCategory && <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Created {formatShortDate(selectedCategory.created_at, "Date unavailable")}</span>}
             {(() => { const shared = activeTab === "default" ? communityCategories.find((item) => item.status === "published" && item.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase()) : "owner_id" in selectedCategory ? selectedCategory : null; return shared ? <ActionMenu label={shared.name} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => void editSharedCategory(shared) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void removeSharedCategory(shared), destructive: true }]} /> : null; })()}
           </div>
           <div className="mt-4">
