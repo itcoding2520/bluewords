@@ -35,3 +35,9 @@ export function getDashboardVocabularyOverview(
     return data as DashboardVocabularyOverview;
   });
 }
+
+export function getCachedDashboardVocabularyOverview(
+  userId: string
+): DashboardVocabularyOverview | undefined {
+  return overviewCache.peek(userId);
+}

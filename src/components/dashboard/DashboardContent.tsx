@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import {
+  getCachedDashboardVocabularyOverview,
   getDashboardVocabularyOverview,
   type DashboardVocabularyOverview,
 } from "@/lib/supabase/dashboard-vocabulary";
@@ -93,7 +94,12 @@ export function DashboardContent({
     | { userId: string; status: "loading" }
     | { userId: string; status: "error" }
     | { userId: string; status: "loaded"; data: DashboardVocabularyOverview }
-  >({ userId, status: "loading" });
+  >(() => {
+    const cachedOverview = getCachedDashboardVocabularyOverview(userId);
+    return cachedOverview
+      ? { userId, status: "loaded", data: cachedOverview }
+      : { userId, status: "loading" };
+  });
   const currentOverviewState = overviewState.userId === userId
     ? overviewState
     : null;
