@@ -7,6 +7,7 @@ import { Activity, BookOpenCheck, Flame, Target } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import {
+  getCachedLearningAnalytics,
   getLearningAnalytics,
   type LearningAnalytics as LearningAnalyticsData,
 } from "@/lib/supabase/learning-analytics";
@@ -21,7 +22,9 @@ function getWeekday(date: string): string {
 }
 
 export function LearningInsights({ userId }: { userId: string }) {
-  const [analytics, setAnalytics] = useState<LearningAnalyticsData | null>(null);
+  const [analytics, setAnalytics] = useState<LearningAnalyticsData | null>(
+    () => getCachedLearningAnalytics(userId) ?? null
+  );
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {

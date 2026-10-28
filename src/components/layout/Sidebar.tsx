@@ -327,7 +327,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
+                prefetch={item.href === "/" ? true : false}
                 onClick={closeSidebar}
                 aria-current={isActive ? "page" : undefined}
                 aria-label={item.href === "/notifications" && visibleUnreadCount > 0 ? `${item.label}, ${visibleUnreadCount} unread` : undefined}

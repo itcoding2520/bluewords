@@ -25,6 +25,12 @@ export async function getLearningAnalytics(
   return analyticsCache.get(userId, loadLearningAnalytics);
 }
 
+export function getCachedLearningAnalytics(
+  userId: string
+): LearningAnalytics | undefined {
+  return analyticsCache.peek(userId);
+}
+
 async function loadLearningAnalytics(): Promise<LearningAnalytics> {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("get_learning_analytics");

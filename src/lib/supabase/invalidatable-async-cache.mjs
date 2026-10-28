@@ -1,7 +1,7 @@
 /**
  * Creates a promise cache that ignores results from requests invalidated in flight.
  *
- * @returns {{ get: <T>(key: string, load: () => Promise<T>) => Promise<T>, invalidate: (key?: string) => void }}
+ * @returns {{ get: <T>(key: string, load: () => Promise<T>) => Promise<T>, peek: <T>(key: string) => T | undefined, invalidate: (key?: string) => void }}
  */
 export function createInvalidatableAsyncCache() {
   const values = new Map();
@@ -50,5 +50,9 @@ export function createInvalidatableAsyncCache() {
     requests.clear();
   }
 
-  return { get, invalidate };
+  function peek(key) {
+    return values.get(key);
+  }
+
+  return { get, peek, invalidate };
 }
