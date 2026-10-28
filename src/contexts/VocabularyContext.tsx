@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import {
-  getVocabularyCategories,
   getVocabularyCategoriesForUser,
   type VocabularyCategoryColor,
   type VocabularyCategoryRow,
@@ -127,7 +126,7 @@ function VocabularyStoreProvider({
         return;
       }
       const [rows, sharedResult] = await Promise.all([
-        getVocabularyCategories(),
+        getVocabularyCategoriesForUser(user.id),
         supabase
           .from("community_categories")
           .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
