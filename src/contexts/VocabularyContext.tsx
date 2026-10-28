@@ -194,6 +194,11 @@ function VocabularyStoreProvider({
 
       if (authError || !user) {
         ownerIdRef.current = null;
+        setWords(defaultVocabularyWords);
+        setCategories(defaultVocabularyCategories);
+        setIsAuthenticated(false);
+        setCategoriesLoaded(true);
+        setIsLoaded(true);
         try {
           const shared = await loadPublicSharedVocabulary();
           if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
@@ -201,13 +206,7 @@ function VocabularyStoreProvider({
           setCategories(mapPublicCategories(shared));
         } catch (error) {
           console.error("Could not load guest shared vocabulary:", error);
-          if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
-          setWords(defaultVocabularyWords);
-          setCategories(defaultVocabularyCategories);
         }
-        setIsAuthenticated(false);
-        setCategoriesLoaded(true);
-        setIsLoaded(true);
         return;
       }
 
@@ -221,9 +220,18 @@ function VocabularyStoreProvider({
         setIsLoaded(false);
       }
 
-      const [rows, categoryRows] = await Promise.all([
+      const [rows, categoryRows, communityCategoryResult, communityWordResult] = await Promise.all([
         getVocabularyWords(),
         getVocabularyCategoriesForUser(user.id),
+        supabase
+          .from("community_categories")
+          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
+          .eq("status", "published"),
+        supabase
+          .from("community_words")
+          .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
+          .eq("status", "published")
+          .eq("community_categories.status", "published"),
       ]);
 
       if (
@@ -235,15 +243,8 @@ function VocabularyStoreProvider({
 
       const personalWords = rows.map(mapVocabularyWordRow);
 
-      const { data: communityCategories, error: communityCategoriesError } = await supabase
-        .from("community_categories")
-          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-        .eq("status", "published");
-      const { data: communityWords, error: communityWordsError } = await supabase
-        .from("community_words")
-        .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
-        .eq("status", "published")
-        .eq("community_categories.status", "published");
+      const { data: communityCategories, error: communityCategoriesError } = communityCategoryResult;
+      const { data: communityWords, error: communityWordsError } = communityWordResult;
 
       if (communityCategoriesError || communityWordsError) {
         console.error("Could not load published community vocabulary:", communityCategoriesError ?? communityWordsError);

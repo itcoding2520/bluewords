@@ -32,5 +32,7 @@ export async function GET() {
     categoryId: item.category_id,
     category: categoryNames.get(item.category_id) ?? "",
   })).filter((item) => item.category);
-  return NextResponse.json({ categories, words }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ categories, words }, {
+    headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+  });
 }

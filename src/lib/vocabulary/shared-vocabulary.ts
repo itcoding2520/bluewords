@@ -56,7 +56,7 @@ export function sortCategories(categories: VocabularyCategoryRow[]): VocabularyC
 }
 
 export async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabulary> {
-  const response = await fetch("/api/public-vocabulary", { cache: "no-store" });
+  const response = await fetch("/api/public-vocabulary");
   if (!response.ok) throw new Error("Could not load approved shared vocabulary.");
   return await response.json() as PublicSharedVocabulary;
 }
