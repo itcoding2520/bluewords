@@ -29,8 +29,8 @@ function GuestWordRow({ word, color }: { word: VocabularyWord; color: Vocabulary
     const row = rowRef.current;
     if (!row || !word.imagePath) return;
     if (!("IntersectionObserver" in window)) {
-      const timeout = window.setTimeout(() => setNearViewport(true), 0);
-      return () => window.clearTimeout(timeout);
+      const timeout = globalThis.setTimeout(() => setNearViewport(true), 0);
+      return () => globalThis.clearTimeout(timeout);
     }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
