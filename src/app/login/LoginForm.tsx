@@ -7,6 +7,7 @@ import { login, signup } from "./actions";
 import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type AuthMode = "login" | "signup";
 
@@ -97,10 +98,9 @@ export default function LoginForm() {
                 Password
               </label>
 
-              <Input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 autoComplete={
                   mode === "login"
                     ? "current-password"
