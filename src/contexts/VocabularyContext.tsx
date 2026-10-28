@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import {
-  getVocabularyCategories,
   getVocabularyCategoriesForUser,
   type VocabularyCategoryColor,
   type VocabularyCategoryRow,
