@@ -517,6 +517,16 @@ select {
 @media (min-width: 640px) and (max-width: 1023px) { .word-search-game-grid { width: min(100%, calc(100dvh - 19rem)); } }
 @media (min-width: 1024px) { .word-search-game-grid { width: min(100%, calc(100dvh - 20rem)); } }
 
+/* Reserve touch gestures on the puzzle grid for drag-to-select on phones and tablets. */
+.word-search-playing { overscroll-behavior: none; }
+.word-search-game-grid,
+.word-search-game-grid > button {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .app-content > .guest-vocabulary-page > header.guest-vocabulary-hero {
   min-height: 0;
   margin-bottom: 1rem;

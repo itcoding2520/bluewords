@@ -11,6 +11,7 @@ import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-c
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { formatShortDate } from "@/lib/formatDate";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type AdminUser = {
   id: string;
@@ -219,7 +220,7 @@ export function AdminUsersManagement() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
         <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" aria-label="New user email" className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
         <input value={nickname} onChange={(event) => setNickname(event.target.value)} maxLength={60} placeholder="Nickname (optional)" aria-label="New user nickname" className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-        <input type="password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Temporary password (8+ chars)" aria-label="New user password" className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+        <PasswordInput required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Temporary password (8+ chars)" aria-label="New user password" className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
         <Button type="submit" disabled={busy === "create"}>Create user</Button>
       </div>
     </form>}
@@ -235,7 +236,7 @@ export function AdminUsersManagement() {
           <form onSubmit={(event) => void editUser(event)} className="mt-5 space-y-4">
             <label className="block text-sm font-medium text-slate-700">Email<input type="email" required value={editEmail} onChange={(event) => setEditEmail(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /></label>
             <label className="block text-sm font-medium text-slate-700">Nickname<input value={editNickname} maxLength={24} onChange={(event) => setEditNickname(event.target.value)} placeholder="Leave blank to clear nickname" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /><span className="mt-1 block text-xs font-normal text-slate-500">Use 2–24 characters, or leave blank.</span></label>
-            <label className="block text-sm font-medium text-slate-700">New password<input type="password" minLength={8} value={editPassword} onChange={(event) => setEditPassword(event.target.value)} placeholder="Leave blank to keep current password" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /><span className="mt-1 block text-xs font-normal text-slate-500">At least 8 characters when changing.</span></label>
+            <label className="block text-sm font-medium text-slate-700">New password<PasswordInput minLength={8} value={editPassword} onChange={(event) => setEditPassword(event.target.value)} placeholder="Leave blank to keep current password" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /><span className="mt-1 block text-xs font-normal text-slate-500">At least 8 characters when changing.</span></label>
             <div className="flex justify-end gap-2 pt-2"><Dialog.Close asChild><Button type="button" variant="secondary" disabled={busy !== null}>Cancel</Button></Dialog.Close><Button type="submit" disabled={busy === editingUser?.id}>{busy === editingUser?.id ? "Saving…" : "Save changes"}</Button></div>
           </form>
         </Dialog.Content>
