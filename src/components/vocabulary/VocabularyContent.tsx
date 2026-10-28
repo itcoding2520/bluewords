@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import {
   previewVocabularyImport,
@@ -11,13 +12,9 @@ import {
   type VocabularyWord,
 } from "@/data/vocabulary";
 
-import { WordFormModal } from "./WordFormModal";
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyToolbar } from "./VocabularyToolbar";
-import { DeleteConfirmModal } from "./DeleteConfirmModal";
-import { CategoryManagementPanel } from "./CategoryManagementPanel";
-import { VocabularyCsvTools } from "./VocabularyCsvTools";
 import { CommunityVocabulary } from "./CommunityVocabulary";
 import type {
   CategoryFilter,
@@ -34,6 +31,13 @@ import {
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
+
+// Keep the vocabulary browsing path lean. These tools are only needed after
+// an explicit admin action (or when the user opens a modal).
+const WordFormModal = dynamic(() => import("./WordFormModal").then((module) => module.WordFormModal));
+const DeleteConfirmModal = dynamic(() => import("./DeleteConfirmModal").then((module) => module.DeleteConfirmModal));
+const CategoryManagementPanel = dynamic(() => import("./CategoryManagementPanel").then((module) => module.CategoryManagementPanel));
+const VocabularyCsvTools = dynamic(() => import("./VocabularyCsvTools").then((module) => module.VocabularyCsvTools));
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const confirmDialog = useConfirmDialog();
@@ -659,12 +663,12 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         />
       )}
 
-      <DeleteConfirmModal
-        word={deletingWord}
-        isDeleting={isSubmitting}
-        onClose={() => setDeletingWord(null)}
-        onConfirm={handleConfirmDelete}
-      />
+      {deletingWord && <DeleteConfirmModal
+          word={deletingWord}
+          isDeleting={isSubmitting}
+          onClose={() => setDeletingWord(null)}
+          onConfirm={handleConfirmDelete}
+        />}
 
     </>
   );

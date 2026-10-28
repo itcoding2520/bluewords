@@ -13,6 +13,8 @@ const supabase = createClient();
 const SIGNED_URL_TTL_MS = 55 * 60 * 1000;
 const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
 const signedUrlRequests = new Map<string, Promise<string | null>>();
+const queuedSignedUrlRequests = new Map<string, (url: string | null) => void>();
+let signedUrlBatchScheduled = false;
 
 export function getCachedVocabularyImageUrl(path: string): string | null {
   const cached = signedUrlCache.get(path);
@@ -100,40 +102,49 @@ export async function createVocabularyImageUrl(path: string): Promise<string | n
   const pendingRequest = signedUrlRequests.get(path);
   if (pendingRequest) return pendingRequest;
 
-  const request = createSignedVocabularyImageUrl(path);
+  const request = new Promise<string | null>((resolve) => {
+    queuedSignedUrlRequests.set(path, resolve);
+  });
   signedUrlRequests.set(path, request);
 
-  try {
-    const url = await request;
-    if (url) {
-      signedUrlCache.set(path, {
-        url,
-        expiresAt: Date.now() + SIGNED_URL_TTL_MS,
-      });
-    }
-    return url;
-  } finally {
-    signedUrlRequests.delete(path);
+  if (!signedUrlBatchScheduled) {
+    signedUrlBatchScheduled = true;
+    window.setTimeout(() => void flushSignedUrlBatch(), 0);
   }
+
+  return request;
 }
 
-async function createSignedVocabularyImageUrl(path: string): Promise<string | null> {
+async function flushSignedUrlBatch() {
+  signedUrlBatchScheduled = false;
+  const batch = [...queuedSignedUrlRequests.entries()];
+  queuedSignedUrlRequests.clear();
+  if (batch.length === 0) return;
+
   try {
     const { data, error } = await supabase.storage
       .from(VOCABULARY_IMAGES_BUCKET)
-      .createSignedUrl(path, 60 * 60);
+      .createSignedUrls(batch.map(([path]) => path), 60 * 60);
 
     if (error) {
       console.warn("Could not create vocabulary image URL:", error.message);
-      return null;
     }
 
-    return data.signedUrl;
+    const urls = new Map((data ?? []).map((item) => [item.path, item.signedUrl]));
+    for (const [path, resolve] of batch) {
+      const url = urls.get(path) ?? null;
+      if (url) signedUrlCache.set(path, { url, expiresAt: Date.now() + SIGNED_URL_TTL_MS });
+      signedUrlRequests.delete(path);
+      resolve(url);
+    }
   } catch (error) {
     console.warn(
       "Could not create vocabulary image URL:",
       error instanceof Error ? error.message : "Storage request failed."
     );
-    return null;
+    for (const [path, resolve] of batch) {
+      signedUrlRequests.delete(path);
+      resolve(null);
+    }
   }
 }

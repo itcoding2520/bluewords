@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Sparkles, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
@@ -23,11 +23,29 @@ const categoryColors: Record<VocabularyCategoryColor, string> = {
 };
 
 function GuestWordRow({ word, color }: { word: VocabularyWord; color: VocabularyCategoryColor }) {
-  const starterImageUrl = useVocabularyImageUrl(word.imagePath);
+  const rowRef = useRef<HTMLLIElement>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row || !word.imagePath) return;
+    if (!("IntersectionObserver" in window)) {
+      const timeout = globalThis.setTimeout(() => setNearViewport(true), 0);
+      return () => globalThis.clearTimeout(timeout);
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setNearViewport(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "400px 0px" });
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, [word.imagePath]);
+  const starterImageUrl = useVocabularyImageUrl(word.imagePath, nearViewport);
   const imageUrl = word.imageUrl ?? starterImageUrl;
 
   return (
-    <li className="guest-vocabulary-row grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto] sm:px-6">
+    <li ref={rowRef} className="guest-vocabulary-row grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto] sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {imageUrl ? <Image src={imageUrl} alt={`Illustration for ${word.word}`} width={56} height={56} unoptimized className="size-12 shrink-0 rounded-xl border border-slate-100 bg-slate-50 object-cover sm:size-14" /> : <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-lg font-bold text-blue-400 sm:size-14" aria-hidden="true">{word.word.slice(0, 1).toUpperCase()}</span>}
         <div className="min-w-0">

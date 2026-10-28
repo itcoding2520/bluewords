@@ -6,7 +6,7 @@ import {
   getCachedVocabularyImageUrl,
 } from "@/lib/supabase/vocabulary-images";
 
-export function useVocabularyImageUrl(path?: string | null) {
+export function useVocabularyImageUrl(path?: string | null, enabled = true) {
   const [result, setResult] = useState<{
     path: string | null;
     url: string | null;
@@ -17,7 +17,7 @@ export function useVocabularyImageUrl(path?: string | null) {
 
   useEffect(() => {
     let cancelled = false;
-    if (path) {
+    if (path && enabled) {
       void createVocabularyImageUrl(path).then((signedUrl) => {
         if (!cancelled) setResult({ path, url: signedUrl });
       });
@@ -26,7 +26,7 @@ export function useVocabularyImageUrl(path?: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [path]);
+  }, [enabled, path]);
 
   return result.path === (path ?? null) ? result.url : null;
 }

@@ -249,7 +249,7 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-30 flex min-h-20 items-center justify-between border-b border-sky-100 bg-white/95 px-4 shadow-sm backdrop-blur lg:hidden">
         <Link href="/" className="flex items-center gap-2" aria-label="BlueWords home">
-          <Image src="/logo.webp" alt="BlueWords" width={420} height={148} sizes="160px" loading="eager" className="h-14 w-40 object-contain" />
+          <Image src="/logo.webp" alt="BlueWords" width={190} height={68} sizes="190px" loading="eager" className="h-14 w-40 object-contain" />
         </Link>
 
         <button
@@ -291,7 +291,7 @@ export function Sidebar() {
               aria-label="BlueWords home"
               className="flex min-w-0 items-center gap-2"
             >
-              <Image src="/logo.webp" alt="BlueWords" width={500} height={176} sizes="200px" loading="eager" className="h-[68px] w-[190px] object-contain" />
+              <Image src="/logo.webp" alt="BlueWords" width={190} height={68} sizes="190px" loading="eager" className="h-[68px] w-[190px] object-contain" />
             </Link>
 
           <button

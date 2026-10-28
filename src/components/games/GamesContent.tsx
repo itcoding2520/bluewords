@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight, Brain, CaseSensitive, Gamepad2, Grid3X3, Map, Search, Shuffle, Star, TextCursorInput } from "lucide-react";
 
 import { GamesLeaderboard } from "@/components/games/GamesLeaderboard";
+import { GamesVocabularyPreloader } from "@/components/games/GamesVocabularyPreloader";
 
 function WordSearchArtwork() {
   return (
@@ -79,6 +80,7 @@ const games = [
 export function GamesContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <div className="games-page">
+      <GamesVocabularyPreloader />
       <header className="games-hero">
         <div className="games-heading"><Star className="games-heading-star" aria-hidden="true" /><h1 className="page-title">Games</h1></div>
         <p className="page-intro-description">Choose a quick game to strengthen your vocabulary.</p>
