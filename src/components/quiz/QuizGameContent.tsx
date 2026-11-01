@@ -3,11 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, History, LoaderCircle, Play, RotateCcw, Sparkles, Star, Trophy, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Clock3, Gamepad2, History, LoaderCircle, Play, RotateCcw, Sparkles, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { QuizImage, QuizPreview } from "@/components/quiz/QuizPreview";
+import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -301,10 +302,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
-  const chosenModeLabel = (value: QuizMode) => value === "type-word" ? "Type the word" : "Choose the meaning";
-  const quizRating = (score: number, total: number) =>
-    total > 0 ? Math.round((score / total) * 5) : 0;
-
   return (
     <div className={`quiz-page ${showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}`}>
       {phase === "playing" ? (
@@ -329,98 +326,30 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       )}
 
       {tab === "history" && phase !== "playing" && (
-        <Card className="quiz-history-card mx-auto max-w-none p-5 sm:p-8">
-          {selectedHistory ? (
-            <>
-              <button type="button" onClick={() => setSelectedHistory(null)} className="quiz-history-back mb-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800"><ArrowLeft size={16} /> All quiz attempts</button>
-              <div className="quiz-history-detail-heading mb-5">
-                <h2 className="text-2xl font-extrabold text-slate-950">Quiz review</h2>
-                <p className="mt-1 text-sm text-slate-500">{new Date(selectedHistory.completed_at).toLocaleString()} · {chosenModeLabel(selectedHistory.mode)} · {formatTime(selectedHistory.duration_seconds)} · {selectedHistory.correct_count}/{selectedHistory.question_count} correct</p>
-              </div>
-              {reviewLoading ? <p className="py-8 text-center text-sm text-slate-500">Loading answers…</p> : (
-                <div className="quiz-history-review-list space-y-3">
-                  {historyAnswers.map((answer) => <HistoryAnswer key={answer.id} answer={answer} />)}
-                  {historyAnswers.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No saved answers were found.</p>}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="quiz-history-heading mb-5 flex flex-wrap items-center justify-between gap-3">
-                <div><h2 className="text-3xl font-extrabold text-slate-950">Your quiz journey <Star aria-hidden="true" className="inline size-5 fill-amber-400 text-amber-400" /></h2><p className="mt-1 text-sm text-slate-500">Review scores, time, and answers from every completed quiz.</p></div>
-                <Image src="/images/ui/illustrations/review-trophy.svg" alt="" width={240} height={150} className="quiz-history-art" />
-                <Button variant="secondary" onClick={() => void loadHistory(true)} disabled={historyLoading} className="quiz-history-refresh"><RotateCcw size={17} /> Refresh</Button>
-              </div>
-              {historyError && <AutoDismissMessage key={historyError} variant="error" className="mb-4">{historyError}</AutoDismissMessage>}
-              {historyLoading ? <p className="py-10 text-center text-sm text-slate-500">Loading quiz history…</p> : history.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed quizzes yet. Your attempts will appear here.</p>
-              ) : (
-                <div className="quiz-history-list space-y-3">
-                  {history.map((session) => <button key={session.id} type="button" aria-label={`Review quiz attempt: ${session.correct_count} of ${session.question_count} correct, ${chosenModeLabel(session.mode)}, ${formatTime(session.duration_seconds)}`} onClick={() => void openHistoryReview(session)} className="quiz-history-attempt">
-                    <span className="quiz-history-score"><span className="quiz-history-medal"><Trophy size={30} fill="currentColor" /></span><span><strong>{session.correct_count}/{session.question_count}</strong><small>correct</small></span></span>
-                    <span role="img" aria-label={`${quizRating(session.correct_count, session.question_count)} out of 5 stars`} className="quiz-history-stars">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={30} aria-hidden="true" fill={index < quizRating(session.correct_count, session.question_count) ? "currentColor" : "none"} />)}</span>
-                    <time className="quiz-history-date" dateTime={session.completed_at}>{new Date(session.completed_at).toLocaleString()}</time>
-                    <span className="quiz-history-mode"><BookOpen size={20} />{chosenModeLabel(session.mode)}</span>
-                    <span className="quiz-history-duration"><Clock3 size={22} />{formatTime(session.duration_seconds)}</span>
-                    <span className="quiz-history-open" aria-hidden="true"><ChevronRight size={24} /></span>
-                  </button>)}
-                </div>
-              )}
-              {!historyLoading && !historyError && historyTotal > 0 && (
-                <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                  <p aria-live="polite">
-                    Showing {(historyPage - 1) * historyPageSize + 1}–{Math.min(historyPage * historyPageSize, historyTotal)} of {historyTotal} attempts
-                  </p>
-                  <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-                    <label className="flex items-center gap-2 whitespace-nowrap">
-                      <span className="relative inline-flex">
-                        <select
-                          aria-label="Quiz history rows per page"
-                          value={historyPageSize}
-                          onChange={(event) => {
-                            const nextSize = Number(event.target.value);
-                            setHistoryPageSize(nextSize);
-                            setHistoryPage(1);
-                            void loadHistory(false, 1, nextSize);
-                          }}
-                          className="h-10 w-[76px] cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
-                        >
-                          {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
-                        </select>
-                        <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500"><ChevronDown size={15} /></span>
-                      </span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="whitespace-nowrap">Page {historyPage} of {Math.max(1, Math.ceil(historyTotal / historyPageSize))}</span>
-                      <Button
-                        variant="secondary"
-                        aria-label="Previous quiz history page"
-                        onClick={() => {
-                          const nextPage = Math.max(1, historyPage - 1);
-                          setHistoryPage(nextPage);
-                          void loadHistory(false, nextPage);
-                        }}
-                        disabled={historyPage <= 1}
-                        className="size-10 px-0"
-                      ><ChevronLeft size={17} /></Button>
-                      <Button
-                        variant="secondary"
-                        aria-label="Next quiz history page"
-                        onClick={() => {
-                          const nextPage = Math.min(Math.ceil(historyTotal / historyPageSize), historyPage + 1);
-                          setHistoryPage(nextPage);
-                          void loadHistory(false, nextPage);
-                        }}
-                        disabled={historyPage >= Math.ceil(historyTotal / historyPageSize)}
-                        className="size-10 px-0"
-                      ><ChevronRight size={17} /></Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </Card>
+        <QuizHistoryPanel
+          selected={selectedHistory}
+          answers={historyAnswers}
+          sessions={history}
+          loading={historyLoading}
+          reviewLoading={reviewLoading}
+          error={historyError}
+          total={historyTotal}
+          page={historyPage}
+          pageSize={historyPageSize}
+          formatTime={formatTime}
+          onBack={() => setSelectedHistory(null)}
+          onRefresh={() => void loadHistory(true)}
+          onOpenReview={(session) => void openHistoryReview(session)}
+          onPageSizeChange={(size) => {
+            setHistoryPageSize(size);
+            setHistoryPage(1);
+            void loadHistory(false, 1, size);
+          }}
+          onPageChange={(nextPage) => {
+            setHistoryPage(nextPage);
+            void loadHistory(false, nextPage);
+          }}
+        />
       )}
 
       {tab === "play" && phase === "setup" && (
@@ -522,11 +451,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       )}
     </div>
   );
-}
-
-function HistoryAnswer({ answer }: { answer: VocabularyQuizAnswerRow }) {
-  const userAnsweredCorrectly = answer.is_correct;
-  return <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 p-4"><div className="min-w-0"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Question {answer.question_position} · {answer.prompt_text}</p><p className="mt-1 font-semibold text-slate-900">{answer.word_text}</p>{answer.part_of_speech && <span className="mt-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs capitalize text-blue-700">{answer.part_of_speech}</span>}<p className="mt-2 text-sm text-slate-700">Correct answer: {answer.expected_answer}</p>{!userAnsweredCorrectly && <p className="mt-1 text-sm text-red-600">Your answer: {answer.selected_answer || "No answer"}</p>}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${userAnsweredCorrectly ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{userAnsweredCorrectly ? "Correct" : "Review"}</span></div>;
 }
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
