@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type AdminSection = "requests" | "categories" | "users" | "notifications" | "sentence-builder" | "assessments";
+type AdminSection = "requests" | "categories" | "users" | "notifications" | "sentence-builder" | "assessments" | "communication";
 
 const sections: Array<{ id: AdminSection; label: string; href: string }> = [
   { id: "requests", label: "Publish requests", href: "/admin" },
@@ -9,6 +9,7 @@ const sections: Array<{ id: AdminSection; label: string; href: string }> = [
   { id: "notifications", label: "Send notification", href: "/admin/notifications" },
   { id: "sentence-builder", label: "Sentence Builder", href: "/admin/sentence-builder" },
   { id: "assessments", label: "Assignments", href: "/admin/assessments" },
+  { id: "communication", label: "Situational English", href: "/admin/communication" },
 ];
 
 export function AdminNavigation({ active }: { active: AdminSection }) {
