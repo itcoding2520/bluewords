@@ -1,15 +1,16 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 
 type CommunityWord = { id: string; word: string; meaning: string; ipa: string | null; image_path: string | null; community_categories: { name: string; image_path: string | null; color: string } };
 
 export function CommunityVocabulary() {
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [words, setWords] = useState<CommunityWord[]>([]);
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");

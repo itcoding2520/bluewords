@@ -1,5 +1,7 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import {
   createContext,
   useCallback,
@@ -9,7 +11,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import {
@@ -92,7 +93,7 @@ function VocabularyStoreProvider({
 }: {
   children: ReactNode;
 }) {
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [categories, setCategories] = useState<
     VocabularyCategoryRow[]

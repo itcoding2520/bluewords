@@ -1,7 +1,8 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import {
   getCachedDashboardVocabularyOverview,
@@ -33,7 +34,7 @@ export function DashboardContent({
   userId,
   isAdmin,
 }: DashboardContentProps) {
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [email, setEmail] = useState<string | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
 

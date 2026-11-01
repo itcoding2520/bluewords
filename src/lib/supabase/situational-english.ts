@@ -80,7 +80,20 @@ const integer = (value: string, fallback: number, row: number, label: string) =>
   return parsed;
 };
 
-export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
+function validateAudioUrl(value: string, row: number, label: string) {
+  if (!value) return;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+  } catch {
+    throw new Error(`Row ${row}: ${label} must be a valid HTTP or HTTPS URL.`);
+  }
+}
+
+export type CommunicationCsvDuplicate = { row: number; recordType: CommunicationRecordType; recordKey: string };
+export type ParsedCommunicationCsv = { records: CommunicationCsvRecord[]; recordRows: number[]; duplicates: CommunicationCsvDuplicate[] };
+
+export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationCsv {
   const rows = parseCsvRows(csv);
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
   const missing = headers.filter((name) => !columnNames.includes(name));
@@ -100,6 +113,9 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       catch { throw new Error(`Row ${line}: response_options_json must contain a valid JSON array.`); }
     }
     if (!Array.isArray(responseOptions) || responseOptions.some((option) => typeof option !== "string")) throw new Error(`Row ${line}: response_options_json must be an array of strings.`);
+    const normalizedOptions = (responseOptions as string[]).map((option) => option.trim());
+    if (normalizedOptions.some((option) => !option)) throw new Error(`Row ${line}: response_options_json cannot contain empty choices.`);
+    if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) throw new Error(`Row ${line}: response_options_json cannot contain duplicate choices.`);
     const itemType = get("item_type");
     if (recordType === "item" && !["word", "phrase", "sentence_pattern"].includes(itemType)) throw new Error(`Row ${line}: item_type must be word, phrase, or sentence_pattern.`);
     const record: CommunicationCsvRecord = {
@@ -115,27 +131,52 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       dialogue_key: get("dialogue_key"), dialogue_title_en: get("dialogue_title_en"), dialogue_title_vi: get("dialogue_title_vi"),
       dialogue_prompt_vi: get("dialogue_prompt_vi"), speaker: get("speaker"), turn_order: get("turn_order") ? integer(get("turn_order"), 1, line, "turn_order") : null,
       turn_text_en: get("turn_text_en"), turn_meaning_vi: get("turn_meaning_vi"), turn_audio_url: get("turn_audio_url"),
-      response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: responseOptions as string[],
+      response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: normalizedOptions,
     };
     const commonRequired: Array<keyof CommunicationCsvRecord> = ["topic_slug", "topic_title_en", "topic_title_vi", "lesson_key", "lesson_title_en", "lesson_title_vi", "record_key"];
     const missingCommon = commonRequired.filter((key) => !String(record[key] ?? "").trim());
     if (missingCommon.length) throw new Error(`Row ${line}: required fields missing: ${missingCommon.join(", ")}.`);
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.topic_slug)) throw new Error(`Row ${line}: topic_slug must use lowercase letters, numbers, and hyphens.`);
-    if (record.record_type === "item" && (!record.content_en || !record.meaning_vi)) throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
-    if (record.record_type === "dialogue_turn" && (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en)) throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
-    if (record.expected_response && record.response_options.length && !record.response_options.includes(record.expected_response)) throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
+    if (record.lesson_key.length < 2 || record.lesson_key.length > 80) throw new Error(`Row ${line}: lesson_key must be between 2 and 80 characters.`);
+    if (record.record_key.length < 2 || record.record_key.length > (record.record_type === "item" ? 100 : 120)) throw new Error(`Row ${line}: record_key is outside the database length limit.`);
+    validateAudioUrl(record.audio_url, line, "audio_url");
+    validateAudioUrl(record.turn_audio_url, line, "turn_audio_url");
+    if (record.record_type === "item") {
+      if (!record.content_en || !record.meaning_vi) throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
+      if (Boolean(record.example_en) !== Boolean(record.example_vi)) throw new Error(`Row ${line}: provide both example_en and example_vi, or leave both blank.`);
+      if (record.item_type === "sentence_pattern" && (!record.example_en || !record.example_vi)) throw new Error(`Row ${line}: sentence_pattern rows need a complete English and Vietnamese example.`);
+    }
+    if (record.record_type === "dialogue_turn") {
+      if (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en) throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
+      if (record.dialogue_key.length < 2 || record.dialogue_key.length > 100) throw new Error(`Row ${line}: dialogue_key must be between 2 and 100 characters.`);
+      if (record.response_options.length > 0 && (record.response_options.length < 2 || !record.expected_response)) throw new Error(`Row ${line}: response choices need at least two options and an expected_response.`);
+      if (record.expected_response && !record.response_options.includes(record.expected_response)) throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
+    }
     return record;
   });
 
   const uniqueKeys = new Map<string, number>();
+  const turnOrders = new Map<string, number>();
+  const duplicates: CommunicationCsvDuplicate[] = [];
+  const uniqueLines: number[] = [];
+  const uniqueRecords = mapped.filter((item, index) => {
+    const line = index + 2;
+    const identity = `${item.record_type}:${item.record_key}`;
+    const turnOrderKey = item.record_type === "dialogue_turn" ? `${item.dialogue_key}:${item.turn_order}` : null;
+    if (uniqueKeys.has(identity) || (turnOrderKey && turnOrders.has(turnOrderKey))) {
+      duplicates.push({ row: line, recordType: item.record_type, recordKey: item.record_key });
+      return false;
+    }
+    uniqueKeys.set(identity, line);
+    if (turnOrderKey) turnOrders.set(turnOrderKey, line);
+    uniqueLines.push(line);
+    return true;
+  });
   const topicMetadata = new Map<string, string>();
   const lessonMetadata = new Map<string, string>();
   const dialogueMetadata = new Map<string, string>();
-  mapped.forEach((item, index) => {
-    const line = index + 2;
-    const recordIdentity = `${item.record_type}:${item.record_key}`;
-    if (uniqueKeys.has(recordIdentity)) throw new Error(`Rows ${uniqueKeys.get(recordIdentity)} and ${line}: duplicate ${item.record_type} key “${item.record_key}”.`);
-    uniqueKeys.set(recordIdentity, line);
+  uniqueRecords.forEach((item, index) => {
+    const line = uniqueLines[index];
     const topic = JSON.stringify([item.topic_title_en, item.topic_title_vi, item.topic_description_en, item.topic_description_vi, item.topic_order]);
     if (topicMetadata.has(item.topic_slug) && topicMetadata.get(item.topic_slug) !== topic) throw new Error(`Row ${line}: topic fields differ from earlier rows for ${item.topic_slug}.`);
     topicMetadata.set(item.topic_slug, topic);
@@ -148,7 +189,11 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       dialogueMetadata.set(item.dialogue_key, dialogue);
     }
   });
-  return mapped;
+  return { records: uniqueRecords, recordRows: uniqueLines, duplicates };
+}
+
+export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
+  return parseCommunicationCsvDetailed(csv).records;
 }
 
 function csvCell(value: string | number | null | undefined) {

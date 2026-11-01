@@ -1,8 +1,9 @@
 
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Library,
@@ -91,7 +92,7 @@ const navigationArtwork: Record<string, string> = {
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [email, setEmail] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);

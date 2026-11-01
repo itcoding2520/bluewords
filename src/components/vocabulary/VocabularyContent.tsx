@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ChevronDown, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
   previewVocabularyImport,
   importLegacyVocabulary,
@@ -14,6 +14,7 @@ import {
 
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
+import { VocabularyPagination } from "./VocabularyPagination";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { CommunityVocabulary } from "./CommunityVocabulary";
 import type {
@@ -587,66 +588,30 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         onDelete={handleDeleteWord}
       />
 
-      <div className="mt-4 flex flex-col gap-3 px-1 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <p aria-live="polite" className="shrink-0">
-          Showing {firstVisibleWord}–{lastVisibleWord} of {visibleTotalWords} words
-        </p>
-
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 sm:justify-end">
-          <label className="flex items-center gap-2 whitespace-nowrap">
-            <span className="relative inline-flex">
-              <select
-                aria-label="Rows per page"
-                value={pageSize}
-                onChange={(event) => {
-                  setPageSize(Number(event.target.value));
-                  setPage(1);
-                  setIsPageLoading(true);
-                  setPageWords([]);
-                }}
-                className="h-10 w-[76px] cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
-              >
-                {[10, 20, 50].map((size) => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
-              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500">
-                <ChevronDown size={15} />
-              </span>
-            </span>
-          </label>
-
-          <div className="flex items-center gap-2">
-            <span className="whitespace-nowrap">Page {currentPage} of {pageCount}</span>
-            <Button
-              variant="secondary"
-              aria-label="Previous page"
-              onClick={() => {
-                setIsPageLoading(true);
-                setPageWords([]);
-                setPage((current) => Math.max(1, current - 1));
-              }}
-              disabled={currentPage <= 1}
-              className="size-10 px-0"
-            >
-              <ChevronLeft size={17} />
-            </Button>
-            <Button
-              variant="secondary"
-              aria-label="Next page"
-              onClick={() => {
-                setIsPageLoading(true);
-                setPageWords([]);
-                setPage((current) => Math.min(pageCount, current + 1));
-              }}
-              disabled={currentPage >= pageCount}
-              className="size-10 px-0"
-            >
-              <ChevronRight size={17} />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <VocabularyPagination
+        first={firstVisibleWord}
+        last={lastVisibleWord}
+        total={visibleTotalWords}
+        page={currentPage}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+          setIsPageLoading(true);
+          setPageWords([]);
+        }}
+        onPrevious={() => {
+          setIsPageLoading(true);
+          setPageWords([]);
+          setPage((current) => Math.max(1, current - 1));
+        }}
+        onNext={() => {
+          setIsPageLoading(true);
+          setPageWords([]);
+          setPage((current) => Math.min(pageCount, current + 1));
+        }}
+      />
       </section>
 
       <CommunityVocabulary />

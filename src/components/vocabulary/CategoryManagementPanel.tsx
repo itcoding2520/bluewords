@@ -1,5 +1,7 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useState, type FormEvent } from "react";
 import { Check, ChevronLeft, ChevronRight, ImagePlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +11,6 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
@@ -31,7 +32,7 @@ const colors: Array<{ value: VocabularyCategoryColor; label: string; dot: string
 export function CategoryManagementPanel() {
   const confirmDialog = useConfirmDialog();
   const { categories, words, addCategory, updateCategory, deleteCategory, refreshCategories } = useVocabulary({ loadWords: false, loadCategories: false });
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [isAdmin, setIsAdmin] = useState(false);
   const [categoryAuthors, setCategoryAuthors] = useState<Record<string, string>>({});
   const [name, setName] = useState("");

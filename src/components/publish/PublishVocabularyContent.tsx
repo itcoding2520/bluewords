@@ -1,11 +1,12 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, FolderHeart, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { createClient } from "@/lib/supabase/client";
 import { getCachedPublishRequests, invalidatePublishRequestCache } from "@/lib/supabase/publish-request-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -20,7 +21,7 @@ function normalize(value: string) {
 
 export function PublishVocabularyContent() {
   const { words, categories, isAuthenticated, isLoaded } = useVocabulary();
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedWordIds, setSelectedWordIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);

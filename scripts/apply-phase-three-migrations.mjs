@@ -38,6 +38,11 @@ const migrations = [
   ["20261028000000", "20261028000000_phase_six_situational_english.sql"],
   ["20261101000000", "20261101000000_communication_learning_preferences.sql"],
   ["20261102000000", "20261102000000_phase_six_additional_situations.sql"],
+  ["20261103000000", "20261103000000_phase_six_restaurant_dialogue.sql"],
+  ["20261104000000", "20261104000000_phase_six_dialogue_answer_turns.sql"],
+  ["20261105000000", "20261105000000_phase_six_easy_vocabulary_words.sql"],
+  ["20261106000000", "20261106000000_phase_six_situational_word_banks.sql"],
+  ["20261107000000", "20261107000000_phase_six_correct_daily_routine_word.sql"],
 ];
 
 function parseEnv(contents) {

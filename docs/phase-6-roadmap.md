@@ -6,7 +6,7 @@ Help learners use vocabulary naturally in everyday conversations by connecting:
 
 **word → useful phrase → sentence pattern → short dialogue**
 
-Phase 6 is in progress. Completed items below have been implemented in the application; database migration and production data workflows still need the verification noted in the relevant sections.
+Phase 6 is in progress. Completed items below have been implemented in the application. The user confirmed the live Supabase CSV import/export round trip works on 2026-11-01.
 
 ## MVP backlog
 
@@ -15,9 +15,9 @@ Phase 6 is in progress. Completed items below have been implemented in the appli
 - [x] Add tables for situations, level-based lessons, vocabulary/phrase/sentence items, dialogues and turns, learner progress, review scheduling, and daily goals.
 - [x] Seed the 12 initial communication situations.
 - [x] Restrict draft lesson content to admins; keep learner progress and review data private to its owner.
-- [x] Build the admin editor and CSV import/export using the agreed row format below. Admin UI supports topic, lesson, and learning-item CRUD; dialogue turns are managed through CSV. The parser validates rows and repeated keys/metadata before it writes. Run a live import/export round trip before treating it as production-verified.
+- [x] Build the admin editor and CSV import/export using the agreed row format below. Admin UI supports topic, lesson, and learning-item CRUD; dialogue turns are managed through CSV. The parser validates rows and repeated keys/metadata before it writes. Admin item loading and export are paginated, and situation rows summarize distinct word counts by difficulty. The user confirmed the live Supabase CSV import/export round trip works on 2026-11-01.
 
-The CSV is long-form: one row represents either a lesson item or a dialogue turn. Repeat the topic and lesson fields on each row in that lesson. This keeps the sheet editable in standard spreadsheet tools while stable keys (`lesson_key`, `record_key`, and `dialogue_key`) make repeated imports update existing records.
+The CSV is long-form: one row represents either a lesson item or a dialogue turn. Repeat the topic and lesson fields on each row in that lesson. This keeps the sheet editable in standard spreadsheet tools. Stable keys (`lesson_key`, `record_key`, and `dialogue_key`) resolve existing hierarchy; import skips duplicate content rows without overwriting them, reports their CSV row numbers, and continues with new rows. Export is scoped to the selected situation and includes its lessons, items, dialogues, and turns; its collection reads are paginated. Large item duplicate checks are split into batches and paginated so the Supabase row cap does not make an existing row appear new.
 
 | Column | Required | Meaning |
 |---|---:|---|
@@ -43,21 +43,22 @@ item,food-restaurants,Food and restaurants,Đồ ăn và nhà hàng,restaurant-b
 dialogue_turn,food-restaurants,Food and restaurants,Đồ ăn và nhà hàng,restaurant-booking-easy,Booking a table,Đặt bàn,easy,1,draft,booking-turn-1,1,,,,,booking-a-table,Booking a table,Host,1,Good evening. Do you have a reservation?,Chào buổi tối. Quý khách đã đặt bàn chưa?,,,[]
 ```
 
-For a learner-facing dialogue exercise, a response turn should include `response_prompt_vi`, `expected_response`, and `response_options_json`; the expected response must be one of the listed options. CSV import must validate the complete file before writing any rows and report errors with row numbers.
+For a learner-facing dialogue exercise, a response turn should include `response_prompt_vi`, `expected_response`, and `response_options_json`; the expected response must be one of the listed options. CSV import validates row formats and relationships before writing; malformed rows produce row-numbered errors, while duplicate rows are skipped and reported.
 
 ### 1. Learning goal and learner path
 
 - [x] Offer a learning goal: **Learn through games** or **Speak everyday English**.
 - [x] Let learners change their goal from the communication learning page; the preference is saved privately to their account.
-- [ ] Organize lessons by practical situation and difficulty (Easy, Medium, Hard).
-- [ ] Show lesson progress and a clear suggested next lesson.
+- [x] Organize lessons by practical situation and difficulty (Easy, Medium, Hard).
+- [x] Show lesson progress and a clear suggested next lesson, adapting difficulty to reviewed accuracy when enough practice data exists.
 - [x] Let learners set a daily practice goal and show today's progress in the situation catalog.
 
 ### 2. Situation-based lesson content
 
 - [x] Support lessons containing vocabulary, useful phrases/collocations, sentence patterns, and short dialogues.
 - [x] Show English content with Vietnamese meaning and examples in context.
-- [ ] Target 25–30 learning items per situation, balancing single words with practical phrases.
+- [x] Provide 20 distinct vocabulary words for every one of the 20 situations at each difficulty level (Easy, Medium, Hard), preserving the existing phrase, sentence-pattern, and dialogue content.
+- [x] Bring each situation lesson to 25–30 learning items by combining the word bank with its existing phrases and sentence patterns.
 - [x] Seed the initial situation catalog:
   1. Greetings and introductions
   2. Family and friends
@@ -80,39 +81,39 @@ For a learner-facing dialogue exercise, a response turn should include `response
   18. Customer service
   19. Emergencies and safety
   20. Technology and devices
-- [ ] Include phrase-first examples, e.g. *reservation* → *I'd like to make a reservation* → a restaurant booking dialogue.
+- [x] Include a phrase-first example connecting *reservation* → *make a reservation* → a sentence pattern → a restaurant booking dialogue (`restaurant-booking-easy`). Each published situation and difficulty has 20 distinct words; existing phrases and sentence patterns remain in the lessons.
 
 ### 3. Practice and recall
 
 - [x] Add a meaning-check quiz for words, phrases, and sentence patterns; store graded right/wrong attempts.
-- [ ] Add sentence completion and word-order drills.
+- [x] Add sentence completion and word-order drills using lesson example sentences, with results included in item review scheduling.
 - [x] Add audio playback for lesson examples and dialogue turns (uploaded audio URL when supplied, browser speech playback as fallback).
-- [ ] Add listening practice that asks learners to identify or respond to what they hear.
-- [x] Add dialogue response practice with suggested choices and retry feedback. Speech recording/pronunciation feedback remains later work.
+- [x] Add listening comprehension that plays lesson example audio (or browser speech fallback), asks learners to choose its Vietnamese meaning, then reveals the transcript and schedules the result.
+- [x] Add dialogue response practice with suggested choices and retry feedback, plus optional local speech recording and pronunciation guidance when browser speech recognition is available.
 - [x] Schedule and show due Learning/Mastered reviews; selecting a due item opens its lesson at that item for active recall.
-- [x] Track quiz accuracy automatically. Wrong answers return in 15 minutes; correct answers are scheduled after 1, 3, then 7 days as correct attempts accumulate.
-- [ ] Adapt review intervals from longer-term accuracy and item difficulty. Manual Learning/Mastered ratings do not count as quiz answers.
+- [x] Track quiz accuracy automatically. Wrong answers return in 15 minutes; correct-answer intervals adapt to cumulative accuracy and lesson difficulty, with longer gaps for consistently accurate Easy lessons and shorter gaps for Hard or lower-accuracy items.
+- [x] Adapt review intervals from longer-term accuracy and item difficulty. Manual Learning/Mastered ratings do not count as quiz answers.
 - [x] Keep saved practice progress private to the signed-in learner through RLS.
 
 ### 4. Content administration
 
 - [x] Provide admin-only create, edit, archive/remove, and browse tools for situations, lessons, and lesson items. Dialogue content is currently edited through CSV.
-- [x] Support CSV import/export for bulk lesson content, with pre-write format/row validation and row-numbered errors. Live Supabase round-trip verification remains.
-- [ ] Validate links between a situation, its vocabulary, phrases, sentence patterns, dialogue turns, difficulty, translations, and audio.
+- [x] Support CSV import/export for bulk lesson content, with pre-write format/row validation and row-numbered errors. Live Supabase round-trip verified by the user on 2026-11-01.
+- [x] Validate situation/lesson/item relationships, difficulty, paired example translations, sentence-pattern examples, dialogue turn order/answer choices, and optional HTTP(S) audio links before CSV writes or manual saves. Live import/export round-trip verified by the user on 2026-11-01.
 - [x] Enforce administrator permissions on the admin page and database policies; learners can only read published lessons.
 
 ## Follow-up backlog
 
-- [ ] Add optional speech recording and pronunciation feedback after evaluating browser/device support.
-- [ ] Add adaptive lesson recommendations using completion, accuracy, and review history.
+- [x] Add optional local speech recording and playback to dialogue response practice, with transcript-based pronunciation guidance where browser speech recognition is available and self-review fallback where it is not.
+- [x] Recommend an easier lesson when recent accuracy is below 70%, or a harder lesson after accuracy reaches 90%; require at least three recorded answers before adjusting difficulty. Due reviews and in-progress lessons retain priority.
 - [ ] Add more languages or age-specific learning paths if product scope requires them.
 
 ## Acceptance criteria
 
 - A learner can choose or change a learning goal and see lessons suited to that goal.
-- A situation lesson teaches connected vocabulary, phrases, sentence patterns, and a usable dialogue rather than isolated words alone. Meaning-check questions track accuracy; sentence completion and word-order drills remain.
-- Learners can practise listening and speaking with sentence/dialogue audio and receive clear retry guidance.
-- Wrong meaning-check answers return after 15 minutes; correct answers are spaced by the learner's correct-answer count. Self-marked Learning items are available immediately, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice. Longer-term adaptive intervals remain future work.
+- A situation lesson teaches connected vocabulary, phrases, sentence patterns, and a usable dialogue rather than isolated words alone. Meaning checks, sentence completion, and word-order drills track accuracy.
+- Learners can practise listening and speaking with sentence/dialogue audio and receive clear retry guidance. Optional speech recording stays local to the browser; transcript-based feedback is available only when supported, with playback for self-review otherwise. Listening checks hide the transcript until the learner answers.
+- Wrong practice answers return after 15 minutes; correct answers are spaced using cumulative accuracy and lesson difficulty. Self-marked Learning items are available immediately, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice.
 - Admin-only content tools reject learner access on both the UI and server/database layers.
 - CSV import reports invalid rows without silently accepting incomplete or mismatched lesson data.
 - Mobile, tablet, and desktop lesson and practice flows are usable without horizontal overflow.
@@ -120,9 +121,9 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ## Suggested delivery order
 
 1. [x] Finalize lesson data model and CSV format.
-2. [x] Build the admin lesson editor/import/export and seed the first situations (build-checked; live CSV round trip remains).
+2. [x] Build the admin lesson editor/import/export and seed the first situations (build-checked; live CSV round trip verified by the user on 2026-11-01).
 3. [x] Build the situation catalog, lesson view, goal preferences, daily goal UI, due review queue, and basic progress tracking.
-4. [x] Add meaning-check practice and basic right/wrong review scheduling. Sentence completion and word-order practice remain.
-5. Add dialogue practice and audio playback/listening/speaking flows.
+4. [x] Add meaning-check, sentence-completion, and word-order practice with basic right/wrong review scheduling.
+5. [x] Add dialogue response practice, audio playback, listening comprehension, and optional browser-local speech recording/pronunciation guidance.
 6. Verify permissions, accessibility, responsive layouts, and end-to-end learner/admin flows.
 

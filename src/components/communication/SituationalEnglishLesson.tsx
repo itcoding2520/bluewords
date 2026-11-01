@@ -1,11 +1,13 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, RotateCcw, Volume2, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import { SpeechPractice } from "@/components/communication/SpeechPractice";
 
 type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; status: string };
 type Topic = { id: string; title_en: string; title_vi: string };
@@ -13,6 +15,7 @@ type Item = { id: string; item_key: string; item_type: "word" | "phrase" | "sent
 type Dialogue = { id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
 type Turn = { id: string; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[]; turn_order: number };
 type ItemReview = { status: "learning" | "mastered"; review_count: number; correct_count: number };
+type SentenceDrill = { id: string; item: Item; kind: "complete" | "order"; sentence: string; clue: string; answer: string; choices?: string[]; gapSentence?: string; tiles?: Array<{ id: number; text: string }> };
 
 function shuffled<T>(values: T[]) {
   const result = [...values];
@@ -21,6 +24,59 @@ function shuffled<T>(values: T[]) {
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
   }
   return result;
+}
+
+function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: Lesson["difficulty"]) {
+  if (correctCount <= 1) return 1;
+
+  const accuracy = correctCount / Math.max(reviewCount, 1);
+  const schedule = accuracy >= 0.9
+    ? [1, 3, 7, 14, 21, 30]
+    : accuracy >= 0.7
+      ? [1, 2, 4, 7, 10, 14]
+      : [1, 1, 2, 3, 5, 7];
+  const baseDays = schedule[Math.min(correctCount - 1, schedule.length - 1)];
+
+  if (difficulty === "easy") return Math.ceil(baseDays * 1.2);
+  if (difficulty === "hard") return Math.max(1, Math.floor(baseDays * 0.7));
+  return baseDays;
+}
+
+function normalizeSentence(value: string) {
+  return value.trim().replace(/\s+/g, " ").replace(/\s+([.,!?;:])/g, "$1").toLocaleLowerCase();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function createSentenceDrills(items: Item[]): SentenceDrill[] {
+  const commonWords = new Set(["this", "that", "with", "from", "your", "have", "will", "would", "could", "there", "their", "they", "them", "what", "when", "where", "which", "about", "after", "before", "into", "like", "want", "some", "very", "much", "than", "then", "also", "does", "the", "and", "for", "you", "are"]);
+  const vocabulary = [...new Set(items.flatMap((item) => `${item.content_en} ${item.example_en}`.match(/[\p{L}][\p{L}'’-]*/gu) ?? []).filter((word) => word.length >= 3 && !commonWords.has(word.toLocaleLowerCase())))];
+  return items.flatMap((item) => {
+    const sentence = item.example_en.trim();
+    if (!sentence) return [];
+    const clue = item.example_vi.trim() || item.meaning_vi;
+    const drills: SentenceDrill[] = [];
+    const sentenceWords = sentence.match(/[^\s]+/g) ?? [];
+    if (sentenceWords.length >= 4) {
+      const tiles = shuffled(sentenceWords.map((text, id) => ({ id, text })));
+      if (tiles.every((tile, index) => tile.id === index)) tiles.push(tiles.shift()!);
+      drills.push({ id: `${item.id}:order`, item, kind: "order", sentence, clue, answer: sentence, tiles });
+    }
+    const phrase = item.content_en.trim();
+    const exactPhrase = phrase.length > 0 && !phrase.includes("...") && new RegExp(escapeRegExp(phrase), "i").test(sentence);
+    const candidates = sentence.match(/[\p{L}][\p{L}'’-]*/gu) ?? [];
+    const fallback = [...candidates].reverse().find((word) => word.length >= 4 && !commonWords.has(word.toLocaleLowerCase()));
+    const answer = exactPhrase ? phrase : fallback ?? "";
+    if (answer) {
+      const pattern = exactPhrase ? new RegExp(escapeRegExp(answer), "i") : new RegExp(`\\b${escapeRegExp(answer)}\\b`, "i");
+      const gapSentence = sentence.replace(pattern, "________");
+      const choices = shuffled([...new Set([answer, ...shuffled(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
+      if (choices.length >= 2) drills.push({ id: `${item.id}:complete`, item, kind: "complete", sentence, clue, answer, gapSentence, choices });
+    }
+    return drills;
+  });
 }
 
 function speak(text: string) {
@@ -41,17 +97,25 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [mode, setMode] = useState<"study" | "practice">("study");
+  const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
   const [practiceOrder, setPracticeOrder] = useState<string[]>([]);
   const [practiceStep, setPracticeStep] = useState(0);
   const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
+  const [listeningOrder, setListeningOrder] = useState<string[]>([]);
+  const [drillStep, setDrillStep] = useState(0);
+  const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
+  const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useSupabaseClient();
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
   const practiceItem = items.find((item) => item.id === practiceOrder[practiceStep]);
+  const listeningItems = useMemo(() => items.filter((item) => item.example_en.trim() && item.example_vi.trim()), [items]);
+  const listeningItem = items.find((item) => item.id === listeningOrder[practiceStep]);
+  const sentenceDrills = useMemo(() => createSentenceDrills(items), [items]);
+  const currentDrill = sentenceDrills[drillStep];
   const practiceMeaningCount = new Set(items.map((item) => item.meaning_vi)).size;
 
   useEffect(() => {
@@ -84,7 +148,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           const turnsResult = await supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order");
           if (turnsResult.error) throw turnsResult.error;
           const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
-          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: turns.filter((turn) => turn.dialogue_id === dialogue.id) })));
+          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: turns.filter((turn) => turn.dialogue_id === dialogue.id).map((turn) => ({ ...turn, response_options: shuffled(turn.response_options ?? []) })) })));
         }
         const user = authResult.data.user;
         if (user) {
@@ -129,10 +193,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     setSaving(false);
   }
 
-  async function recordPracticeAnswer(item: Item, answer: string) {
-    if (practiceAnswer !== null) return;
-    setPracticeAnswer(answer);
-    const correct = answer === item.meaning_vi;
+  async function recordPracticeOutcome(item: Item, correct: boolean) {
     if (!userId) return;
     setSaving(true);
     const existingReview = reviews[item.id];
@@ -142,7 +203,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     const reviewedAt = new Date();
     const now = reviewedAt.toISOString();
     const nextDueAt = correct
-      ? new Date(reviewedAt.getTime() + (nextCorrectCount <= 1 ? 1 : nextCorrectCount === 2 ? 3 : 7) * 86400000).toISOString()
+      ? new Date(reviewedAt.getTime() + getCorrectReviewIntervalDays(nextReviewCount, nextCorrectCount, lesson?.difficulty ?? "medium") * 86400000).toISOString()
       : new Date(reviewedAt.getTime() + 15 * 60000).toISOString();
     const { error } = await supabase.from("communication_item_reviews").upsert({
       user_id: userId, item_id: item.id, status: nextStatus, review_count: nextReviewCount,
@@ -150,7 +211,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     }, { onConflict: "user_id,item_id" });
     if (error) {
       toast.error("Could not save this practice result.");
-      setPracticeAnswer(null);
     } else {
       const nextReviews = { ...reviews, [item.id]: { status: nextStatus, review_count: nextReviewCount, correct_count: nextCorrectCount } };
       setReviews(nextReviews);
@@ -166,6 +226,39 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     setSaving(false);
   }
 
+  async function recordPracticeAnswer(item: Item, answer: string) {
+    if (practiceAnswer !== null || saving) return;
+    setPracticeAnswer(answer);
+    await recordPracticeOutcome(item, answer === item.meaning_vi);
+  }
+
+  async function recordListeningAnswer(item: Item, answer: string) {
+    if (practiceAnswer !== null || saving) return;
+    setPracticeAnswer(answer);
+    await recordPracticeOutcome(item, answer === item.example_vi);
+  }
+
+  function playListeningItem(item: Item) {
+    if (item.audio_url) {
+      const audio = new Audio(item.audio_url);
+      void audio.play().catch(() => speak(item.example_en));
+    } else {
+      speak(item.example_en);
+    }
+  }
+
+  async function submitSentenceDrill(answer: string) {
+    if (!currentDrill || drillAnswer !== null || saving) return;
+    setDrillAnswer(answer);
+    await recordPracticeOutcome(currentDrill.item, normalizeSentence(answer) === normalizeSentence(currentDrill.answer));
+  }
+
+  function nextSentenceDrill() {
+    setDrillAnswer(null);
+    setOrderedTiles([]);
+    setDrillStep((step) => step + 1);
+  }
+
   function nextPracticeQuestion() {
     setPracticeAnswer(null);
     setPracticeStep((current) => current + 1);
@@ -174,6 +267,9 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const practiceChoices = useMemo(() => practiceItem
     ? shuffled([...new Set([practiceItem.meaning_vi, ...shuffled(items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi)).slice(0, 3)])])
     : [], [practiceItem, items]);
+  const listeningChoices = useMemo(() => listeningItem
+    ? shuffled([...new Set([listeningItem.example_vi, ...shuffled(listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi)).slice(0, 3)])])
+    : [], [listeningItem, listeningItems]);
 
   function answerDialogue(turn: Turn, answer: string) {
     setAnswers((current) => ({ ...current, [turn.id]: answer }));
@@ -189,9 +285,11 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7"><p className="text-sm font-bold text-blue-600">{topic.title_en} · {topic.title_vi}</p><h1 className="page-title mt-1 text-3xl sm:text-4xl">{lesson.title_en}</h1><p className="mt-1 text-slate-600">{lesson.title_vi} <span className="mx-1">·</span><span className="capitalize">{lesson.difficulty}</span></p><div className="mt-4 flex items-center gap-3"><div className="h-2.5 flex-1 overflow-hidden rounded-full bg-sky-100"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${items.length ? masteredCount / items.length * 100 : 0}%` }}/></div><span className="text-sm font-bold text-slate-700">{masteredCount}/{items.length} mastered</span></div></header>
     {!userId && <aside className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><LockKeyhole size={18}/> Sign in to record completed items and build your review schedule. <Link href="/login" className="font-bold underline">Log in</Link></aside>}
     {items.length === 0 ? <section className="rounded-3xl border border-dashed border-sky-200 bg-white p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={34}/><p className="mt-3 font-bold text-slate-900">This lesson is being prepared</p><p className="mt-1 text-sm text-slate-500">Learning items will appear here when they are added.</p></section> : <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
-      <div className="flex border-b border-sky-100 bg-sky-50/60 p-2">
+      <div className="flex flex-wrap border-b border-sky-100 bg-sky-50/60 p-2">
         <button type="button" onClick={() => setMode("study")} aria-pressed={mode === "study"} className={`min-h-10 rounded-xl px-4 text-sm font-bold ${mode === "study" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Study cards</button>
-        <button type="button" onClick={() => { setMode("practice"); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
+        <button type="button" onClick={() => { setMode("practice"); setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
+        <button type="button" onClick={() => { setMode("drills"); setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} aria-pressed={mode === "drills"} disabled={sentenceDrills.length === 0} className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "drills" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Sentence drills</button>
+        <button type="button" onClick={() => { setMode("listening"); setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "listening"} disabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "listening" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Headphones size={16}/> Listening</button>
       </div>
       {mode === "study" && <div className="p-4 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-blue-600">{currentItem.item_type.replace("_", " ")}</p><p className="mt-1 text-sm text-slate-500">Item {currentIndex + 1} of {items.length}</p></div><button type="button" onClick={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
@@ -207,7 +305,58 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
         </>}
       </div>}
+      {mode === "listening" && <div className="p-4 sm:p-7">
+        {!listeningItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Listening round complete</h2><p className="mt-1 text-sm text-slate-600">You listened to {listeningOrder.length} example sentences. Answers are added to item review scheduling when you are signed in.</p><button type="button" onClick={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Listen again</button></div> : <>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Listening comprehension</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {listeningOrder.length}</p></div><button type="button" onClick={() => playListeningItem(listeningItem)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Play audio</button></div>
+          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={28}/></span><p className="mt-4 text-sm font-semibold text-slate-500">Listen to the English sentence and choose what it means.</p><p className="mt-2 text-xs text-slate-400">The transcript appears after you answer. You can replay the audio.</p></article>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">{listeningChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordListeningAnswer(listeningItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
+          {practiceAnswer !== null && <div className={`mt-4 rounded-2xl p-4 ${practiceAnswer === listeningItem.example_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === listeningItem.example_vi ? "Correct! You understood the sentence." : `Not quite. The meaning is “${listeningItem.example_vi}”.`}</p><p className="mt-2 text-sm">“{listeningItem.example_en}”</p><button type="button" onClick={nextPracticeQuestion} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next sentence <ArrowRight size={16}/></button></div>}
+        </>}
+      </div>}
+      {mode === "drills" && <div className="p-4 sm:p-7">
+        {!currentDrill ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Sentence practice complete</h2><p className="mt-1 text-sm text-slate-600">You completed {sentenceDrills.length} sentence exercises. Results update the review schedule when signed in.</p><button type="button" onClick={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">{currentDrill.kind === "complete" ? "Complete the sentence" : "Put the words in order"}</p><p className="mt-1 text-sm text-slate-500">Exercise {drillStep + 1} of {sentenceDrills.length}</p></div><button type="button" onClick={() => currentDrill.item.audio_url ? new Audio(currentDrill.item.audio_url).play().catch(() => speak(currentDrill.sentence)) : speak(currentDrill.sentence)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
+          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 text-center sm:p-8"><p className="text-sm font-semibold text-slate-500">Use the Vietnamese clue to make the English sentence</p><p className="mt-2 text-lg font-bold text-blue-700">{currentDrill.clue}</p>{currentDrill.kind === "complete" ? <p className="mt-5 text-2xl font-extrabold leading-relaxed text-slate-900 sm:text-3xl">{currentDrill.gapSentence}</p> : <p className="mt-5 text-sm text-slate-600">Tap each word tile in the correct order.</p>}</article>
+          {currentDrill.kind === "complete" && <div className="mt-4 grid gap-3 sm:grid-cols-2">{currentDrill.choices?.map((choice) => <button key={choice} type="button" disabled={drillAnswer !== null || saving} onClick={() => void submitSentenceDrill((currentDrill.gapSentence ?? "").replace("________", choice))} className={`min-h-12 rounded-2xl border px-4 py-3 text-left text-sm font-bold ${drillAnswer !== null && normalizeSentence(choice) === normalizeSentence(currentDrill.answer) ? "border-emerald-400 bg-emerald-50 text-emerald-900" : drillAnswer !== null && normalizeSentence(drillAnswer) === normalizeSentence((currentDrill.gapSentence ?? "").replace("________", choice)) ? "border-rose-300 bg-rose-50 text-rose-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>}
+          {currentDrill.kind === "order" && <><div className="mt-4 flex min-h-14 flex-wrap items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 p-3">{orderedTiles.map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null} onClick={() => setOrderedTiles((selected) => selected.filter((candidate) => candidate.id !== tile.id))} className="rounded-xl border border-blue-200 bg-white px-3 py-2 font-bold text-blue-900">{tile.text}</button>)}{orderedTiles.length === 0 && <span className="text-sm text-slate-400">Your sentence will appear here</span>}</div><div className="mt-4 flex flex-wrap justify-center gap-2">{currentDrill.tiles?.filter((tile) => !orderedTiles.some((selected) => selected.id === tile.id)).map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null || saving} onClick={() => setOrderedTiles((selected) => [...selected, tile])} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}</div><div className="mt-4 flex justify-center gap-2"><button type="button" disabled={orderedTiles.length === 0 || drillAnswer !== null} onClick={() => setOrderedTiles([])} className="min-h-10 rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-600 disabled:opacity-40">Clear</button><button type="button" disabled={orderedTiles.length !== currentDrill.tiles?.length || drillAnswer !== null || saving} onClick={() => void submitSentenceDrill(orderedTiles.map((tile) => tile.text).join(" "))} className="min-h-10 rounded-full bg-blue-600 px-5 text-sm font-bold text-white disabled:opacity-40">Check sentence</button></div></>}
+          {drillAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "Correct! Great sentence." : <>The correct sentence is “{currentDrill.answer}”</>}</p><button type="button" onClick={nextSentenceDrill} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next exercise <ArrowRight size={16}/></button></div>}
+        </>}
+      </div>}
     </section>}
-    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6"><div className="mb-4 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span><div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to each line, then choose a natural response.</p></div></div><div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4"><h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p><div className="mt-3 space-y-3">{dialogue.turns.map((turn) => <div key={turn.id} className="rounded-2xl bg-white p-3"><div className="flex items-start gap-3"><button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{turn.speaker}</p><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}{turn.response_options.length > 0 && <div className="mt-3"><p className="mb-2 text-sm font-semibold text-violet-800">{turn.response_prompt_vi || "Choose your response"}</p><div className="flex flex-wrap gap-2">{turn.response_options.map((option) => <button key={option} type="button" onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium ${answers[turn.id] === option ? option === turn.expected_response ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700"}`}>{option}</button>)}</div></div>}</div></div></div>)}</div></article>)}</div></section>}
+    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span>
+        <div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to the conversation, then choose a natural response.</p></div>
+      </div>
+      <div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+        <h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p>
+        <div className="mt-3 space-y-3">{dialogue.turns.map((turn) => {
+          const interactive = turn.response_options.length > 0;
+          const selectedAnswer = answers[turn.id];
+          const isCorrect = selectedAnswer === turn.expected_response;
+          const showResponse = !interactive || isCorrect;
+          return <div key={turn.id} className="rounded-2xl bg-white p-3">
+            <div className="flex items-start gap-3">
+              {showResponse && <button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button>}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{interactive && !isCorrect ? "Your turn" : turn.speaker}</p>
+                {showResponse ? <><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}</> : <p className="font-semibold text-violet-800">Choose a natural response to the line above.</p>}
+                {interactive && <div className="mt-3">
+                  <div className="flex flex-wrap gap-2">{turn.response_options.map((option) => {
+                    const selected = selectedAnswer === option;
+                    const optionIsCorrect = option === turn.expected_response;
+                    const style = selected && optionIsCorrect ? "border-emerald-300 bg-emerald-50 text-emerald-800" : selected ? "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300";
+                    return <button key={option} type="button" disabled={isCorrect} onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium disabled:cursor-default ${style}`}>{option}</button>;
+                  })}</div>
+                  {selectedAnswer && !isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-rose-700">Not quite. Try another response.</p>}
+                  {isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">That’s a natural response!</p>}
+                  {isCorrect && <SpeechPractice expected={turn.expected_response}/>}
+                </div>}
+              </div>
+            </div>
+          </div>;
+        })}</div>
+      </article>)}</div>
+    </section>}
   </main>;
 }

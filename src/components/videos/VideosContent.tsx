@@ -1,5 +1,7 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Clapperboard, Pencil, Play, Plus, Trash2, X } from "lucide-react";
 import Image from "next/image";
@@ -7,7 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { createClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, invalidateVideosCache, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
@@ -51,7 +52,7 @@ function getYoutubeVideoId(value: string): string | null {
 
 export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
   const confirmDialog = useConfirmDialog();
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [videos, setVideos] = useState<VideoRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
