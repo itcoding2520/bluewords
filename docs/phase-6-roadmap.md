@@ -75,12 +75,14 @@ For a learner-facing dialogue exercise, a response turn should include `response
 
 ### 3. Practice and recall
 
-- [ ] Add focused practice for word-to-phrase, sentence completion/order, and dialogue response.
+- [x] Add a meaning-check quiz for words, phrases, and sentence patterns; store graded right/wrong attempts.
+- [ ] Add sentence completion and word-order drills.
 - [x] Add audio playback for lesson examples and dialogue turns (uploaded audio URL when supplied, browser speech playback as fallback).
 - [ ] Add listening practice that asks learners to identify or respond to what they hear.
 - [x] Add dialogue response practice with suggested choices and retry feedback. Speech recording/pronunciation feedback remains later work.
 - [x] Schedule and show due Learning/Mastered reviews; selecting a due item opens its lesson at that item for active recall.
-- [ ] Track incorrect answers automatically and adapt review intervals. Current progress is based on learner-marked Learning/Mastered state, not answer accuracy.
+- [x] Track quiz accuracy automatically. Wrong answers return in 15 minutes; correct answers are scheduled after 1, 3, then 7 days as correct attempts accumulate.
+- [ ] Adapt review intervals from longer-term accuracy and item difficulty. Manual Learning/Mastered ratings do not count as quiz answers.
 - [x] Keep saved practice progress private to the signed-in learner through RLS.
 
 ### 4. Content administration
@@ -99,9 +101,9 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ## Acceptance criteria
 
 - A learner can choose or change a learning goal and see lessons suited to that goal.
-- A situation lesson teaches connected vocabulary, phrases, sentence patterns, and a usable dialogue rather than isolated words alone.
+- A situation lesson teaches connected vocabulary, phrases, sentence patterns, and a usable dialogue rather than isolated words alone. Meaning-check questions track accuracy; sentence completion and word-order drills remain.
 - Learners can practise listening and speaking with sentence/dialogue audio and receive clear retry guidance.
-- Items marked Learning are available immediately for review, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice. Automatic wrong-answer tracking and adaptive intervals remain future work.
+- Wrong meaning-check answers return after 15 minutes; correct answers are spaced by the learner's correct-answer count. Self-marked Learning items are available immediately, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice. Longer-term adaptive intervals remain future work.
 - Admin-only content tools reject learner access on both the UI and server/database layers.
 - CSV import reports invalid rows without silently accepting incomplete or mismatched lesson data.
 - Mobile, tablet, and desktop lesson and practice flows are usable without horizontal overflow.
@@ -111,7 +113,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 1. [x] Finalize lesson data model and CSV format.
 2. [x] Build the admin lesson editor/import/export and seed the first situations (build-checked; live CSV round trip remains).
 3. [x] Build the situation catalog, lesson view, goal preferences, daily goal UI, due review queue, and basic progress tracking.
-4. Add vocabulary, phrase, and sentence practice with review scheduling.
+4. [x] Add meaning-check practice and basic right/wrong review scheduling. Sentence completion and word-order practice remain.
 5. Add dialogue practice and audio playback/listening/speaking flows.
 6. Verify permissions, accessibility, responsive layouts, and end-to-end learner/admin flows.
 
