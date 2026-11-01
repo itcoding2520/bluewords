@@ -146,7 +146,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           const turnsResult = await supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order");
           if (turnsResult.error) throw turnsResult.error;
           const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
-          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: turns.filter((turn) => turn.dialogue_id === dialogue.id) })));
+          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: shuffled(turns.filter((turn) => turn.dialogue_id === dialogue.id).map((turn) => ({ ...turn, response_options: shuffled(turn.response_options ?? []) }))) })));
         }
         const user = authResult.data.user;
         if (user) {
@@ -321,6 +321,39 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         </>}
       </div>}
     </section>}
-    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6"><div className="mb-4 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span><div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to each line, then choose a natural response.</p></div></div><div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4"><h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p><div className="mt-3 space-y-3">{dialogue.turns.map((turn) => <div key={turn.id} className="rounded-2xl bg-white p-3"><div className="flex items-start gap-3"><button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button><div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">{turn.speaker}</p><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}{turn.response_options.length > 0 && <div className="mt-3"><p className="mb-2 text-sm font-semibold text-violet-800">{turn.response_prompt_vi || "Choose your response"}</p><div className="flex flex-wrap gap-2">{turn.response_options.map((option) => <button key={option} type="button" onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium ${answers[turn.id] === option ? option === turn.expected_response ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700"}`}>{option}</button>)}</div></div>}</div></div></div>)}</div></article>)}</div></section>}
+    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span>
+        <div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to the conversation, then choose a natural response.</p></div>
+      </div>
+      <div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+        <h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p>
+        <div className="mt-3 space-y-3">{dialogue.turns.map((turn) => {
+          const interactive = turn.response_options.length > 0;
+          const selectedAnswer = answers[turn.id];
+          const isCorrect = selectedAnswer === turn.expected_response;
+          const showResponse = !interactive || isCorrect;
+          return <div key={turn.id} className="rounded-2xl bg-white p-3">
+            <div className="flex items-start gap-3">
+              {showResponse && <button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button>}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{interactive && !isCorrect ? "Your turn" : turn.speaker}</p>
+                {showResponse ? <><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}</> : <p className="font-semibold text-violet-800">Choose a natural response to the line above.</p>}
+                {interactive && <div className="mt-3">
+                  <div className="flex flex-wrap gap-2">{turn.response_options.map((option) => {
+                    const selected = selectedAnswer === option;
+                    const optionIsCorrect = option === turn.expected_response;
+                    const style = selected && optionIsCorrect ? "border-emerald-300 bg-emerald-50 text-emerald-800" : selected ? "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300";
+                    return <button key={option} type="button" disabled={isCorrect} onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium disabled:cursor-default ${style}`}>{option}</button>;
+                  })}</div>
+                  {selectedAnswer && !isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-rose-700">Not quite. Try another response.</p>}
+                  {isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">That’s a natural response!</p>}
+                </div>}
+              </div>
+            </div>
+          </div>;
+        })}</div>
+      </article>)}</div>
+    </section>}
   </main>;
 }

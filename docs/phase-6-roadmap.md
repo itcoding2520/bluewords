@@ -80,7 +80,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
   18. Customer service
   19. Emergencies and safety
   20. Technology and devices
-- [ ] Include phrase-first examples, e.g. *reservation* → *I'd like to make a reservation* → a restaurant booking dialogue.
+- [x] Include a phrase-first example connecting *reservation* → *make a reservation* → a sentence pattern → a restaurant booking dialogue (`restaurant-booking-easy`). The restaurant booking lesson now has 25 words, phrases, and sentence patterns; the broader 25–30-item target for every situation remains open.
 
 ### 3. Practice and recall
 
