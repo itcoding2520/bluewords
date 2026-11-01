@@ -90,7 +90,10 @@ function validateAudioUrl(value: string, row: number, label: string) {
   }
 }
 
-export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
+export type CommunicationCsvDuplicate = { row: number; recordType: CommunicationRecordType; recordKey: string };
+export type ParsedCommunicationCsv = { records: CommunicationCsvRecord[]; recordRows: number[]; duplicates: CommunicationCsvDuplicate[] };
+
+export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationCsv {
   const rows = parseCsvRows(csv);
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
   const missing = headers.filter((name) => !columnNames.includes(name));
@@ -153,15 +156,27 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
   });
 
   const uniqueKeys = new Map<string, number>();
+  const turnOrders = new Map<string, number>();
+  const duplicates: CommunicationCsvDuplicate[] = [];
+  const uniqueLines: number[] = [];
+  const uniqueRecords = mapped.filter((item, index) => {
+    const line = index + 2;
+    const identity = `${item.record_type}:${item.record_key}`;
+    const turnOrderKey = item.record_type === "dialogue_turn" ? `${item.dialogue_key}:${item.turn_order}` : null;
+    if (uniqueKeys.has(identity) || (turnOrderKey && turnOrders.has(turnOrderKey))) {
+      duplicates.push({ row: line, recordType: item.record_type, recordKey: item.record_key });
+      return false;
+    }
+    uniqueKeys.set(identity, line);
+    if (turnOrderKey) turnOrders.set(turnOrderKey, line);
+    uniqueLines.push(line);
+    return true;
+  });
   const topicMetadata = new Map<string, string>();
   const lessonMetadata = new Map<string, string>();
   const dialogueMetadata = new Map<string, string>();
-  const dialogueTurnOrders = new Map<string, number>();
-  mapped.forEach((item, index) => {
-    const line = index + 2;
-    const recordIdentity = `${item.record_type}:${item.record_key}`;
-    if (uniqueKeys.has(recordIdentity)) throw new Error(`Rows ${uniqueKeys.get(recordIdentity)} and ${line}: duplicate ${item.record_type} key “${item.record_key}”.`);
-    uniqueKeys.set(recordIdentity, line);
+  uniqueRecords.forEach((item, index) => {
+    const line = uniqueLines[index];
     const topic = JSON.stringify([item.topic_title_en, item.topic_title_vi, item.topic_description_en, item.topic_description_vi, item.topic_order]);
     if (topicMetadata.has(item.topic_slug) && topicMetadata.get(item.topic_slug) !== topic) throw new Error(`Row ${line}: topic fields differ from earlier rows for ${item.topic_slug}.`);
     topicMetadata.set(item.topic_slug, topic);
@@ -172,12 +187,13 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       const dialogue = JSON.stringify([item.lesson_key, item.dialogue_title_en, item.dialogue_title_vi, item.dialogue_prompt_vi]);
       if (dialogueMetadata.has(item.dialogue_key) && dialogueMetadata.get(item.dialogue_key) !== dialogue) throw new Error(`Row ${line}: dialogue fields differ from earlier rows for ${item.dialogue_key}.`);
       dialogueMetadata.set(item.dialogue_key, dialogue);
-      const orderKey = `${item.dialogue_key}:${item.turn_order}`;
-      if (dialogueTurnOrders.has(orderKey)) throw new Error(`Rows ${dialogueTurnOrders.get(orderKey)} and ${line}: duplicate turn_order ${item.turn_order} in dialogue ${item.dialogue_key}.`);
-      dialogueTurnOrders.set(orderKey, line);
     }
   });
-  return mapped;
+  return { records: uniqueRecords, recordRows: uniqueLines, duplicates };
+}
+
+export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
+  return parseCommunicationCsvDetailed(csv).records;
 }
 
 function csvCell(value: string | number | null | undefined) {

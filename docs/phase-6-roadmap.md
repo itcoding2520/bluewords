@@ -57,7 +57,8 @@ For a learner-facing dialogue exercise, a response turn should include `response
 
 - [x] Support lessons containing vocabulary, useful phrases/collocations, sentence patterns, and short dialogues.
 - [x] Show English content with Vietnamese meaning and examples in context.
-- [ ] Target 25–30 learning items per situation, balancing single words with practical phrases.
+- [x] Provide 20 distinct vocabulary words for every one of the 20 situations at each difficulty level (Easy, Medium, Hard), preserving the existing phrase, sentence-pattern, and dialogue content.
+- [x] Bring each situation lesson to 25–30 learning items by combining the word bank with its existing phrases and sentence patterns.
 - [x] Seed the initial situation catalog:
   1. Greetings and introductions
   2. Family and friends
