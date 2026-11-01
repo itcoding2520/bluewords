@@ -80,6 +80,16 @@ const integer = (value: string, fallback: number, row: number, label: string) =>
   return parsed;
 };
 
+function validateAudioUrl(value: string, row: number, label: string) {
+  if (!value) return;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+  } catch {
+    throw new Error(`Row ${row}: ${label} must be a valid HTTP or HTTPS URL.`);
+  }
+}
+
 export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
   const rows = parseCsvRows(csv);
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
@@ -100,6 +110,9 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       catch { throw new Error(`Row ${line}: response_options_json must contain a valid JSON array.`); }
     }
     if (!Array.isArray(responseOptions) || responseOptions.some((option) => typeof option !== "string")) throw new Error(`Row ${line}: response_options_json must be an array of strings.`);
+    const normalizedOptions = (responseOptions as string[]).map((option) => option.trim());
+    if (normalizedOptions.some((option) => !option)) throw new Error(`Row ${line}: response_options_json cannot contain empty choices.`);
+    if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) throw new Error(`Row ${line}: response_options_json cannot contain duplicate choices.`);
     const itemType = get("item_type");
     if (recordType === "item" && !["word", "phrase", "sentence_pattern"].includes(itemType)) throw new Error(`Row ${line}: item_type must be word, phrase, or sentence_pattern.`);
     const record: CommunicationCsvRecord = {
@@ -115,15 +128,27 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       dialogue_key: get("dialogue_key"), dialogue_title_en: get("dialogue_title_en"), dialogue_title_vi: get("dialogue_title_vi"),
       dialogue_prompt_vi: get("dialogue_prompt_vi"), speaker: get("speaker"), turn_order: get("turn_order") ? integer(get("turn_order"), 1, line, "turn_order") : null,
       turn_text_en: get("turn_text_en"), turn_meaning_vi: get("turn_meaning_vi"), turn_audio_url: get("turn_audio_url"),
-      response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: responseOptions as string[],
+      response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: normalizedOptions,
     };
     const commonRequired: Array<keyof CommunicationCsvRecord> = ["topic_slug", "topic_title_en", "topic_title_vi", "lesson_key", "lesson_title_en", "lesson_title_vi", "record_key"];
     const missingCommon = commonRequired.filter((key) => !String(record[key] ?? "").trim());
     if (missingCommon.length) throw new Error(`Row ${line}: required fields missing: ${missingCommon.join(", ")}.`);
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.topic_slug)) throw new Error(`Row ${line}: topic_slug must use lowercase letters, numbers, and hyphens.`);
-    if (record.record_type === "item" && (!record.content_en || !record.meaning_vi)) throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
-    if (record.record_type === "dialogue_turn" && (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en)) throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
-    if (record.expected_response && record.response_options.length && !record.response_options.includes(record.expected_response)) throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
+    if (record.lesson_key.length < 2 || record.lesson_key.length > 80) throw new Error(`Row ${line}: lesson_key must be between 2 and 80 characters.`);
+    if (record.record_key.length < 2 || record.record_key.length > (record.record_type === "item" ? 100 : 120)) throw new Error(`Row ${line}: record_key is outside the database length limit.`);
+    validateAudioUrl(record.audio_url, line, "audio_url");
+    validateAudioUrl(record.turn_audio_url, line, "turn_audio_url");
+    if (record.record_type === "item") {
+      if (!record.content_en || !record.meaning_vi) throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
+      if (Boolean(record.example_en) !== Boolean(record.example_vi)) throw new Error(`Row ${line}: provide both example_en and example_vi, or leave both blank.`);
+      if (record.item_type === "sentence_pattern" && (!record.example_en || !record.example_vi)) throw new Error(`Row ${line}: sentence_pattern rows need a complete English and Vietnamese example.`);
+    }
+    if (record.record_type === "dialogue_turn") {
+      if (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en) throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
+      if (record.dialogue_key.length < 2 || record.dialogue_key.length > 100) throw new Error(`Row ${line}: dialogue_key must be between 2 and 100 characters.`);
+      if (record.response_options.length > 0 && (record.response_options.length < 2 || !record.expected_response)) throw new Error(`Row ${line}: response choices need at least two options and an expected_response.`);
+      if (record.expected_response && !record.response_options.includes(record.expected_response)) throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
+    }
     return record;
   });
 
@@ -131,6 +156,7 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
   const topicMetadata = new Map<string, string>();
   const lessonMetadata = new Map<string, string>();
   const dialogueMetadata = new Map<string, string>();
+  const dialogueTurnOrders = new Map<string, number>();
   mapped.forEach((item, index) => {
     const line = index + 2;
     const recordIdentity = `${item.record_type}:${item.record_key}`;
@@ -146,6 +172,9 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
       const dialogue = JSON.stringify([item.lesson_key, item.dialogue_title_en, item.dialogue_title_vi, item.dialogue_prompt_vi]);
       if (dialogueMetadata.has(item.dialogue_key) && dialogueMetadata.get(item.dialogue_key) !== dialogue) throw new Error(`Row ${line}: dialogue fields differ from earlier rows for ${item.dialogue_key}.`);
       dialogueMetadata.set(item.dialogue_key, dialogue);
+      const orderKey = `${item.dialogue_key}:${item.turn_order}`;
+      if (dialogueTurnOrders.has(orderKey)) throw new Error(`Rows ${dialogueTurnOrders.get(orderKey)} and ${line}: duplicate turn_order ${item.turn_order} in dialogue ${item.dialogue_key}.`);
+      dialogueTurnOrders.set(orderKey, line);
     }
   });
   return mapped;

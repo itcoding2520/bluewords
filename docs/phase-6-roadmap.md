@@ -98,7 +98,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 
 - [x] Provide admin-only create, edit, archive/remove, and browse tools for situations, lessons, and lesson items. Dialogue content is currently edited through CSV.
 - [x] Support CSV import/export for bulk lesson content, with pre-write format/row validation and row-numbered errors. Live Supabase round-trip verification remains.
-- [ ] Validate links between a situation, its vocabulary, phrases, sentence patterns, dialogue turns, difficulty, translations, and audio.
+- [x] Validate situation/lesson/item relationships, difficulty, paired example translations, sentence-pattern examples, dialogue turn order/answer choices, and optional HTTP(S) audio links before CSV writes or manual saves. Live import/export round-trip verification remains.
 - [x] Enforce administrator permissions on the admin page and database policies; learners can only read published lessons.
 
 ## Follow-up backlog
