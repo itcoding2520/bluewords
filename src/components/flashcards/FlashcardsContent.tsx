@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, CalendarClock, Check, Circle, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
+import { useFlashcardReviewTime, useFlashcardShuffleSeed } from "@/hooks/useFlashcardSession";
 import type { VocabularyStatus } from "@/data/vocabulary";
 import { FlashcardAnswer, FlashcardWord } from "@/components/flashcards/FlashcardCard";
 import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
@@ -18,70 +19,10 @@ import {
 } from "@/lib/supabase/reviews";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 
-let currentReviewTime = 0;
-let reviewClockInterval: ReturnType<typeof setInterval> | null = null;
-const reviewClockListeners = new Set<() => void>();
-
-function subscribeToReviewClock(listener: () => void) {
-  reviewClockListeners.add(listener);
-
-  if (!reviewClockInterval) {
-    const updateTime = () => {
-      currentReviewTime = Date.now();
-      reviewClockListeners.forEach((notify) => notify());
-    };
-
-    queueMicrotask(updateTime);
-    reviewClockInterval = setInterval(updateTime, 60_000);
-  }
-
-  return () => {
-    reviewClockListeners.delete(listener);
-    if (reviewClockListeners.size === 0 && reviewClockInterval) {
-      clearInterval(reviewClockInterval);
-      reviewClockInterval = null;
-    }
-  };
-}
-
-function getReviewClockSnapshot() {
-  return currentReviewTime;
-}
-
-let currentShuffleSeed = 0;
-const shuffleSeedListeners = new Set<() => void>();
-
-function subscribeToShuffleSeed(listener: () => void) {
-  shuffleSeedListeners.add(listener);
-
-  if (shuffleSeedListeners.size === 1) {
-    queueMicrotask(() => {
-      currentShuffleSeed = Math.floor(Math.random() * 2 ** 32);
-      shuffleSeedListeners.forEach((notify) => notify());
-    });
-  }
-
-  return () => {
-    shuffleSeedListeners.delete(listener);
-  };
-}
-
-function getShuffleSeed() {
-  return currentShuffleSeed;
-}
-
 export function FlashcardsContent() {
   const { words, categories, isLoaded, isAuthenticated, toggleMastered } = useVocabulary();
-  const shuffleSeed = useSyncExternalStore(
-    subscribeToShuffleSeed,
-    getShuffleSeed,
-    () => 0
-  );
-  const now = useSyncExternalStore(
-    subscribeToReviewClock,
-    getReviewClockSnapshot,
-    () => 0
-  );
+  const shuffleSeed = useFlashcardShuffleSeed();
+  const now = useFlashcardReviewTime();
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState<VocabularyStatus>("learning");
   const [index, setIndex] = useState(0);
