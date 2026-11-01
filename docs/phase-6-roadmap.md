@@ -90,8 +90,8 @@ For a learner-facing dialogue exercise, a response turn should include `response
 - [x] Add listening comprehension that plays lesson example audio (or browser speech fallback), asks learners to choose its Vietnamese meaning, then reveals the transcript and schedules the result.
 - [x] Add dialogue response practice with suggested choices and retry feedback. Speech recording/pronunciation feedback remains later work.
 - [x] Schedule and show due Learning/Mastered reviews; selecting a due item opens its lesson at that item for active recall.
-- [x] Track quiz accuracy automatically. Wrong answers return in 15 minutes; correct answers are scheduled after 1, 3, then 7 days as correct attempts accumulate.
-- [ ] Adapt review intervals from longer-term accuracy and item difficulty. Manual Learning/Mastered ratings do not count as quiz answers.
+- [x] Track quiz accuracy automatically. Wrong answers return in 15 minutes; correct-answer intervals adapt to cumulative accuracy and lesson difficulty, with longer gaps for consistently accurate Easy lessons and shorter gaps for Hard or lower-accuracy items.
+- [x] Adapt review intervals from longer-term accuracy and item difficulty. Manual Learning/Mastered ratings do not count as quiz answers.
 - [x] Keep saved practice progress private to the signed-in learner through RLS.
 
 ### 4. Content administration
@@ -112,7 +112,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 - A learner can choose or change a learning goal and see lessons suited to that goal.
 - A situation lesson teaches connected vocabulary, phrases, sentence patterns, and a usable dialogue rather than isolated words alone. Meaning checks, sentence completion, and word-order drills track accuracy.
 - Learners can practise listening and speaking with sentence/dialogue audio and receive clear retry guidance. Listening checks hide the transcript until the learner answers.
-- Wrong meaning-check answers return after 15 minutes; correct answers are spaced by the learner's correct-answer count. Self-marked Learning items are available immediately, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice. Longer-term adaptive intervals remain future work.
+- Wrong practice answers return after 15 minutes; correct answers are spaced using cumulative accuracy and lesson difficulty. Self-marked Learning items are available immediately, and Mastered items are scheduled for a later review. Daily goal and lesson progress update after practice.
 - Admin-only content tools reject learner access on both the UI and server/database layers.
 - CSV import reports invalid rows without silently accepting incomplete or mismatched lesson data.
 - Mobile, tablet, and desktop lesson and practice flows are usable without horizontal overflow.

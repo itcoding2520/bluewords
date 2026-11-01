@@ -24,6 +24,22 @@ function shuffled<T>(values: T[]) {
   return result;
 }
 
+function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: Lesson["difficulty"]) {
+  if (correctCount <= 1) return 1;
+
+  const accuracy = correctCount / Math.max(reviewCount, 1);
+  const schedule = accuracy >= 0.9
+    ? [1, 3, 7, 14, 21, 30]
+    : accuracy >= 0.7
+      ? [1, 2, 4, 7, 10, 14]
+      : [1, 1, 2, 3, 5, 7];
+  const baseDays = schedule[Math.min(correctCount - 1, schedule.length - 1)];
+
+  if (difficulty === "easy") return Math.ceil(baseDays * 1.2);
+  if (difficulty === "hard") return Math.max(1, Math.floor(baseDays * 0.7));
+  return baseDays;
+}
+
 function normalizeSentence(value: string) {
   return value.trim().replace(/\s+/g, " ").replace(/\s+([.,!?;:])/g, "$1").toLocaleLowerCase();
 }
@@ -185,7 +201,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     const reviewedAt = new Date();
     const now = reviewedAt.toISOString();
     const nextDueAt = correct
-      ? new Date(reviewedAt.getTime() + (nextCorrectCount <= 1 ? 1 : nextCorrectCount === 2 ? 3 : 7) * 86400000).toISOString()
+      ? new Date(reviewedAt.getTime() + getCorrectReviewIntervalDays(nextReviewCount, nextCorrectCount, lesson?.difficulty ?? "medium") * 86400000).toISOString()
       : new Date(reviewedAt.getTime() + 15 * 60000).toISOString();
     const { error } = await supabase.from("communication_item_reviews").upsert({
       user_id: userId, item_id: item.id, status: nextStatus, review_count: nextReviewCount,
