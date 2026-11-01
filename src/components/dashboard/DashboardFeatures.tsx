@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ShieldCheck, type LucideIcon } from "lucide-react";
+import { ArrowRight, MessageCircle, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 const sharedFeatures = [
@@ -79,18 +79,18 @@ const communityFeature = {
   surface: "border-indigo-100 bg-[url('/images/ui/backgrounds/card-publish.svg')]",
 };
 
-const adminFeature = {
-  title: "Admin tools",
-  description: "Review requests and manage shared vocabulary.",
-  href: "/admin",
-  icon: ShieldCheck,
-  illustration: undefined,
-  color: "bg-orange-50 text-orange-700",
-  surface: "border-orange-100 bg-[url('/images/ui/backgrounds/card-publish.svg')]",
+const englishPracticeFeature = {
+  title: "English practice",
+  description: "Learn useful words, phrases, and conversations by situation.",
+  href: "/communication",
+  icon: MessageCircle,
+  illustration: "/images/ui/illustrations/vocabulary-books.svg",
+  color: "bg-cyan-50 text-cyan-700",
+  surface: "border-cyan-100 bg-[url('/images/ui/backgrounds/card-vocabulary.svg')]",
 };
 
 export function DashboardFeatures({ isAdmin }: { isAdmin: boolean }) {
-  const features = [...sharedFeatures, isAdmin ? adminFeature : communityFeature];
+  const features = [...sharedFeatures, englishPracticeFeature, ...(isAdmin ? [] : [communityFeature])];
 
   return (
     <section className="mt-8">

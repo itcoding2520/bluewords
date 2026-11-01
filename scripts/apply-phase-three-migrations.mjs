@@ -37,6 +37,7 @@ const migrations = [
   ["20261027330000", "20261027330000_assessment_source_permissions.sql"],
   ["20261028000000", "20261028000000_phase_six_situational_english.sql"],
   ["20261101000000", "20261101000000_communication_learning_preferences.sql"],
+  ["20261102000000", "20261102000000_phase_six_additional_situations.sql"],
 ];
 
 function parseEnv(contents) {

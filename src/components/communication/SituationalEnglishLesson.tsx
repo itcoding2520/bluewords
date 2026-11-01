@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, RotateCcw, Volume2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 
 type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; status: string };
 type Topic = { id: string; title_en: string; title_vi: string };
@@ -94,9 +95,11 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           if (reviewResult.error) throw reviewResult.error;
           if (active) setReviews(Object.fromEntries((reviewResult.data ?? []).map((row) => [row.item_id, { status: row.status, review_count: row.review_count, correct_count: row.correct_count }])));
           if (!progressResult.error && !progressResult.data) {
-            await supabase.from("communication_lesson_progress").upsert({ user_id: user.id, lesson_id: lessonId, status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "user_id,lesson_id" });
+            const { error } = await supabase.from("communication_lesson_progress").upsert({ user_id: user.id, lesson_id: lessonId, status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "user_id,lesson_id" });
+            if (!error) invalidateCommunicationCatalogCache(user.id);
           } else if (progressResult.data?.status === "not_started") {
-            await supabase.from("communication_lesson_progress").update({ status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("user_id", user.id).eq("lesson_id", lessonId);
+            const { error } = await supabase.from("communication_lesson_progress").update({ status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("user_id", user.id).eq("lesson_id", lessonId);
+            if (!error) invalidateCommunicationCatalogCache(user.id);
           }
         }
       } catch (error) { console.error("Failed to load situational English lesson", error); toast.error("Could not load this lesson."); }
@@ -122,7 +125,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     const completed = items.length > 0 && nextMastered === items.length;
     const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({ user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress", completed_items: nextMastered, completed_at: completed ? now : null, updated_at: now }, { onConflict: "user_id,lesson_id" });
     if (progressError) toast.error(progressError.message);
-    else toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice.");
+    else { invalidateCommunicationCatalogCache(userId); toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice."); }
     setSaving(false);
   }
 
@@ -158,7 +161,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         completed_items: nextMasteredCount, completed_at: completed ? now : null, updated_at: now,
       }, { onConflict: "user_id,lesson_id" });
       if (progressError) toast.error("Answer saved, but lesson progress could not be updated.");
-      else toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice.");
+      else { invalidateCommunicationCatalogCache(userId); toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice."); }
     }
     setSaving(false);
   }

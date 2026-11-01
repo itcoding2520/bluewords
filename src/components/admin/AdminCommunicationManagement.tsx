@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportCommunicationCsv, parseCommunicationCsv, type CommunicationCsvRecord, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
@@ -16,6 +17,10 @@ type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
+type CommunicationCollections = { topics: Topic[]; lessons: Lesson[]; items: Item[] };
+const COLLECTION_CACHE_TTL = 60_000;
+const collectionsCache = createInvalidatableAsyncCache();
+const collectionsCacheExpiry = new Map<string, number>();
 
 export function AdminCommunicationManagement() {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -40,16 +45,29 @@ export function AdminCommunicationManagement() {
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
 
-  async function loadCollections() {
-    const [topicResult, lessonResult, itemResult] = await Promise.all([
-      supabase.from("communication_topics").select("*").order("sort_order").order("title_en"),
-      supabase.from("communication_lessons").select("*").order("sort_order").order("title_en"),
-      supabase.from("communication_lesson_items").select("*").order("sort_order"),
-    ]);
-    if (topicResult.error) throw topicResult.error;
-    if (lessonResult.error) throw lessonResult.error;
-    if (itemResult.error) throw itemResult.error;
-    return { topics: (topicResult.data ?? []) as Topic[], lessons: (lessonResult.data ?? []) as Lesson[], items: (itemResult.data ?? []) as Item[] };
+  async function loadCollections(force = false): Promise<CommunicationCollections> {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const userId = session?.user.id;
+    if (!userId) throw new Error("Your session has expired. Sign in again to manage communication content.");
+
+    if (force || (collectionsCacheExpiry.get(userId) ?? 0) <= Date.now()) {
+      collectionsCache.invalidate(userId);
+      // Set expiry before starting the request so concurrent mounts share its promise
+      // instead of repeatedly invalidating it while the first load is still pending.
+      collectionsCacheExpiry.set(userId, Date.now() + COLLECTION_CACHE_TTL);
+    }
+    return collectionsCache.get(userId, async () => {
+      const [topicResult, lessonResult, itemResult] = await Promise.all([
+        supabase.from("communication_topics").select("*").order("sort_order").order("title_en"),
+        supabase.from("communication_lessons").select("*").order("sort_order").order("title_en"),
+        supabase.from("communication_lesson_items").select("*").order("sort_order"),
+      ]);
+      if (topicResult.error) throw topicResult.error;
+      if (lessonResult.error) throw lessonResult.error;
+      if (itemResult.error) throw itemResult.error;
+      return { topics: (topicResult.data ?? []) as Topic[], lessons: (lessonResult.data ?? []) as Lesson[], items: (itemResult.data ?? []) as Item[] };
+    });
   }
   function applyCollections(next: { topics: Topic[]; lessons: Lesson[]; items: Item[] }) {
     setTopics(next.topics); setLessons(next.lessons); setItems(next.items);
@@ -60,10 +78,8 @@ export function AdminCommunicationManagement() {
       : next.lessons.find((lesson) => lesson.topic_id === nextTopicId)?.id ?? "");
   }
   async function refresh() {
-    setLoading(true);
-    try { applyCollections(await loadCollections()); }
+    try { applyCollections(await loadCollections(true)); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Could not load communication content."); }
-    finally { setLoading(false); }
   }
   useEffect(() => {
     let active = true;
@@ -261,7 +277,7 @@ export function AdminCommunicationManagement() {
           <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">{topicEditing ? "Edit situation" : "Add a situation"}</h2>{topicEditing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setTopicEditing(null); setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" }); }}>Cancel</button>}</div>
           <div className="grid gap-3"><label className="text-xs font-bold text-slate-600">Slug<input className={inputClass} value={topicDraft.slug} onChange={(e) => setTopicDraft({ ...topicDraft, slug: e.target.value })} placeholder="food-restaurants" disabled={Boolean(topicEditing)}/></label><label className="text-xs font-bold text-slate-600">English title<input className={inputClass} value={topicDraft.title_en} onChange={(e) => setTopicDraft({ ...topicDraft, title_en: e.target.value })} placeholder="Food and restaurants"/></label><label className="text-xs font-bold text-slate-600">Vietnamese title<input className={inputClass} value={topicDraft.title_vi} onChange={(e) => setTopicDraft({ ...topicDraft, title_vi: e.target.value })} placeholder="Đồ ăn và nhà hàng"/></label><label className="text-xs font-bold text-slate-600">English description<input className={inputClass} value={topicDraft.description_en} onChange={(e) => setTopicDraft({ ...topicDraft, description_en: e.target.value })}/></label><label className="text-xs font-bold text-slate-600">Vietnamese description<input className={inputClass} value={topicDraft.description_vi} onChange={(e) => setTopicDraft({ ...topicDraft, description_vi: e.target.value })}/></label><div className="grid grid-cols-2 gap-3"><label className="text-xs font-bold text-slate-600">Order<input className={inputClass} type="number" min="0" value={topicDraft.sort_order} onChange={(e) => setTopicDraft({ ...topicDraft, sort_order: Number(e.target.value) })}/></label><label className="text-xs font-bold text-slate-600">Status<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={topicDraft.status} onChange={(e) => setTopicDraft({ ...topicDraft, status: e.target.value as ContentStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></Select></label></div><button disabled={busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white"><Plus size={17}/>{topicEditing ? "Save situation" : "Add situation"}</button></div>
         </form>
-        <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm"><div className="border-b border-slate-100 p-4"><h2 className="font-bold text-slate-900">Situations <span className="text-slate-500">({topics.length})</span></h2><input aria-label="Search situations" className={inputClass} value={topicSearch} onChange={(e) => setTopicSearch(e.target.value)} placeholder="Search situations…"/></div>{loading ? <p className="p-6 text-sm text-slate-500">Loading…</p> : <div className="max-h-[34rem] divide-y divide-slate-100 overflow-y-auto">{filteredTopics.map((topic) => <article key={topic.id} className={`flex items-center gap-2 p-3 ${selectedTopicId === topic.id ? "bg-blue-50" : ""}`}><button type="button" onClick={() => { const firstLessonId = lessons.find((lesson) => lesson.topic_id === topic.id)?.id ?? ""; setSelectedTopicId(topic.id); setSelectedLessonId(firstLessonId); setLessonEditing(null); setLessonDraft({ ...initialLesson, topic_id: topic.id }); setItemEditing(null); setItemDraft({ ...initialItem, lesson_id: firstLessonId }); }} className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-bold text-slate-900">{topic.title_en}</span><span className="block truncate text-xs text-slate-500">{topic.title_vi} · {topic.status}</span></button><button type="button" aria-label={`Edit ${topic.title_en}`} onClick={() => editTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-blue-100 text-blue-700"><Pencil size={15}/></button><button type="button" aria-label={`Remove ${topic.title_en}`} onClick={() => void removeTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-rose-100 text-rose-600"><Trash2 size={15}/></button></article>)}</div>}</section>
+        <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm"><div className="border-b border-slate-100 p-4"><h2 className="font-bold text-slate-900">Situations <span className="text-slate-500">({topics.length})</span></h2><input aria-label="Search situations" className={inputClass} value={topicSearch} onChange={(e) => setTopicSearch(e.target.value)} placeholder="Search situations…"/></div>{loading ? <p className="p-6 text-sm text-slate-500">Loading…</p> : <div className="max-h-[34rem] divide-y divide-slate-100 overflow-y-auto">{filteredTopics.map((topic) => { const lessonCount = lessons.filter((lesson) => lesson.topic_id === topic.id).length; return <article key={topic.id} className={`flex items-center gap-2 p-3 ${selectedTopicId === topic.id ? "bg-blue-50" : ""}`}><button type="button" onClick={() => { const firstLessonId = lessons.find((lesson) => lesson.topic_id === topic.id)?.id ?? ""; setSelectedTopicId(topic.id); setSelectedLessonId(firstLessonId); setLessonEditing(null); setLessonDraft({ ...initialLesson, topic_id: topic.id }); setItemEditing(null); setItemDraft({ ...initialItem, lesson_id: firstLessonId }); }} className="min-w-0 flex-1 text-left"><span className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900"><span className="truncate">{topic.title_en}</span><span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-blue-700">{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"}</span></span><span className="block truncate text-xs text-slate-500">{topic.title_vi} · {topic.status}</span></button><button type="button" aria-label={`Edit ${topic.title_en}`} onClick={() => editTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-blue-100 text-blue-700"><Pencil size={15}/></button><button type="button" aria-label={`Remove ${topic.title_en}`} onClick={() => void removeTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-rose-100 text-rose-600"><Trash2 size={15}/></button></article>; })}</div>}</section>
       </div>
 
       <div className="space-y-5">

@@ -58,7 +58,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 - [x] Support lessons containing vocabulary, useful phrases/collocations, sentence patterns, and short dialogues.
 - [x] Show English content with Vietnamese meaning and examples in context.
 - [ ] Target 25–30 learning items per situation, balancing single words with practical phrases.
-- [ ] Seed the initial situation catalog:
+- [x] Seed the initial situation catalog:
   1. Greetings and introductions
   2. Family and friends
   3. Daily routines
@@ -71,6 +71,15 @@ For a learner-facing dialogue exercise, a response turn should include `response
   10. Hobbies and free time
   11. Time and appointments
   12. Phone and online communication
+- [x] Extend the catalog with eight everyday topics and an Easy lesson with 10 practice items each:
+  13. Education and classes
+  14. Home and neighborhood
+  15. Weather and seasons
+  16. Money and banking
+  17. Plans and invitations
+  18. Customer service
+  19. Emergencies and safety
+  20. Technology and devices
 - [ ] Include phrase-first examples, e.g. *reservation* → *I'd like to make a reservation* → a restaurant booking dialogue.
 
 ### 3. Practice and recall
