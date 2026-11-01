@@ -104,7 +104,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ## Follow-up backlog
 
 - [ ] Add optional speech recording and pronunciation feedback after evaluating browser/device support.
-- [ ] Add adaptive lesson recommendations using completion, accuracy, and review history.
+- [ ] Extend next-step recommendations with accuracy-based difficulty selection. The catalog currently prioritizes due reviews, then in-progress lessons, then the next incomplete lesson.
 - [ ] Add more languages or age-specific learning paths if product scope requires them.
 
 ## Acceptance criteria
