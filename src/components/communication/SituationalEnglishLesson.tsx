@@ -13,6 +13,7 @@ type Item = { id: string; item_key: string; item_type: "word" | "phrase" | "sent
 type Dialogue = { id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
 type Turn = { id: string; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[]; turn_order: number };
 type ItemReview = { status: "learning" | "mastered"; review_count: number; correct_count: number };
+type SentenceDrill = { id: string; item: Item; kind: "complete" | "order"; sentence: string; clue: string; answer: string; choices?: string[]; gapSentence?: string; tiles?: Array<{ id: number; text: string }> };
 
 function shuffled<T>(values: T[]) {
   const result = [...values];
@@ -21,6 +22,43 @@ function shuffled<T>(values: T[]) {
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
   }
   return result;
+}
+
+function normalizeSentence(value: string) {
+  return value.trim().replace(/\s+/g, " ").replace(/\s+([.,!?;:])/g, "$1").toLocaleLowerCase();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function createSentenceDrills(items: Item[]): SentenceDrill[] {
+  const commonWords = new Set(["this", "that", "with", "from", "your", "have", "will", "would", "could", "there", "their", "they", "them", "what", "when", "where", "which", "about", "after", "before", "into", "like", "want", "some", "very", "much", "than", "then", "also", "does", "the", "and", "for", "you", "are"]);
+  const vocabulary = [...new Set(items.flatMap((item) => `${item.content_en} ${item.example_en}`.match(/[\p{L}][\p{L}'’-]*/gu) ?? []).filter((word) => word.length >= 3 && !commonWords.has(word.toLocaleLowerCase())))];
+  return items.flatMap((item) => {
+    const sentence = item.example_en.trim();
+    if (!sentence) return [];
+    const clue = item.example_vi.trim() || item.meaning_vi;
+    const drills: SentenceDrill[] = [];
+    const sentenceWords = sentence.match(/[^\s]+/g) ?? [];
+    if (sentenceWords.length >= 4) {
+      const tiles = shuffled(sentenceWords.map((text, id) => ({ id, text })));
+      if (tiles.every((tile, index) => tile.id === index)) tiles.push(tiles.shift()!);
+      drills.push({ id: `${item.id}:order`, item, kind: "order", sentence, clue, answer: sentence, tiles });
+    }
+    const phrase = item.content_en.trim();
+    const exactPhrase = phrase.length > 0 && !phrase.includes("...") && new RegExp(escapeRegExp(phrase), "i").test(sentence);
+    const candidates = sentence.match(/[\p{L}][\p{L}'’-]*/gu) ?? [];
+    const fallback = [...candidates].reverse().find((word) => word.length >= 4 && !commonWords.has(word.toLocaleLowerCase()));
+    const answer = exactPhrase ? phrase : fallback ?? "";
+    if (answer) {
+      const pattern = exactPhrase ? new RegExp(escapeRegExp(answer), "i") : new RegExp(`\\b${escapeRegExp(answer)}\\b`, "i");
+      const gapSentence = sentence.replace(pattern, "________");
+      const choices = shuffled([...new Set([answer, ...shuffled(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
+      if (choices.length >= 2) drills.push({ id: `${item.id}:complete`, item, kind: "complete", sentence, clue, answer, gapSentence, choices });
+    }
+    return drills;
+  });
 }
 
 function speak(text: string) {
@@ -41,10 +79,13 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [mode, setMode] = useState<"study" | "practice">("study");
+  const [mode, setMode] = useState<"study" | "practice" | "drills">("study");
   const [practiceOrder, setPracticeOrder] = useState<string[]>([]);
   const [practiceStep, setPracticeStep] = useState(0);
   const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
+  const [drillStep, setDrillStep] = useState(0);
+  const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
+  const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const supabase = useMemo(() => createClient(), []);
@@ -52,6 +93,8 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
   const practiceItem = items.find((item) => item.id === practiceOrder[practiceStep]);
+  const sentenceDrills = useMemo(() => createSentenceDrills(items), [items]);
+  const currentDrill = sentenceDrills[drillStep];
   const practiceMeaningCount = new Set(items.map((item) => item.meaning_vi)).size;
 
   useEffect(() => {
@@ -129,10 +172,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     setSaving(false);
   }
 
-  async function recordPracticeAnswer(item: Item, answer: string) {
-    if (practiceAnswer !== null) return;
-    setPracticeAnswer(answer);
-    const correct = answer === item.meaning_vi;
+  async function recordPracticeOutcome(item: Item, correct: boolean) {
     if (!userId) return;
     setSaving(true);
     const existingReview = reviews[item.id];
@@ -150,7 +190,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     }, { onConflict: "user_id,item_id" });
     if (error) {
       toast.error("Could not save this practice result.");
-      setPracticeAnswer(null);
     } else {
       const nextReviews = { ...reviews, [item.id]: { status: nextStatus, review_count: nextReviewCount, correct_count: nextCorrectCount } };
       setReviews(nextReviews);
@@ -164,6 +203,24 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
       else { invalidateCommunicationCatalogCache(userId); toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice."); }
     }
     setSaving(false);
+  }
+
+  async function recordPracticeAnswer(item: Item, answer: string) {
+    if (practiceAnswer !== null || saving) return;
+    setPracticeAnswer(answer);
+    await recordPracticeOutcome(item, answer === item.meaning_vi);
+  }
+
+  async function submitSentenceDrill(answer: string) {
+    if (!currentDrill || drillAnswer !== null || saving) return;
+    setDrillAnswer(answer);
+    await recordPracticeOutcome(currentDrill.item, normalizeSentence(answer) === normalizeSentence(currentDrill.answer));
+  }
+
+  function nextSentenceDrill() {
+    setDrillAnswer(null);
+    setOrderedTiles([]);
+    setDrillStep((step) => step + 1);
   }
 
   function nextPracticeQuestion() {
@@ -192,6 +249,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
       <div className="flex border-b border-sky-100 bg-sky-50/60 p-2">
         <button type="button" onClick={() => setMode("study")} aria-pressed={mode === "study"} className={`min-h-10 rounded-xl px-4 text-sm font-bold ${mode === "study" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Study cards</button>
         <button type="button" onClick={() => { setMode("practice"); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
+        <button type="button" onClick={() => { setMode("drills"); setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} aria-pressed={mode === "drills"} disabled={sentenceDrills.length === 0} className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "drills" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Sentence drills</button>
       </div>
       {mode === "study" && <div className="p-4 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-blue-600">{currentItem.item_type.replace("_", " ")}</p><p className="mt-1 text-sm text-slate-500">Item {currentIndex + 1} of {items.length}</p></div><button type="button" onClick={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
@@ -205,6 +263,15 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><p className="text-sm font-semibold text-slate-500">Choose the Vietnamese meaning</p><h2 className="mt-2 break-words text-3xl font-extrabold text-slate-900 sm:text-4xl">{practiceItem.content_en}</h2></article>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">{practiceChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordPracticeAnswer(practiceItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
           {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
+        </>}
+      </div>}
+      {mode === "drills" && <div className="p-4 sm:p-7">
+        {!currentDrill ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Sentence practice complete</h2><p className="mt-1 text-sm text-slate-600">You completed {sentenceDrills.length} sentence exercises. Results update the review schedule when signed in.</p><button type="button" onClick={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">{currentDrill.kind === "complete" ? "Complete the sentence" : "Put the words in order"}</p><p className="mt-1 text-sm text-slate-500">Exercise {drillStep + 1} of {sentenceDrills.length}</p></div><button type="button" onClick={() => currentDrill.item.audio_url ? new Audio(currentDrill.item.audio_url).play().catch(() => speak(currentDrill.sentence)) : speak(currentDrill.sentence)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
+          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 text-center sm:p-8"><p className="text-sm font-semibold text-slate-500">Use the Vietnamese clue to make the English sentence</p><p className="mt-2 text-lg font-bold text-blue-700">{currentDrill.clue}</p>{currentDrill.kind === "complete" ? <p className="mt-5 text-2xl font-extrabold leading-relaxed text-slate-900 sm:text-3xl">{currentDrill.gapSentence}</p> : <p className="mt-5 text-sm text-slate-600">Tap each word tile in the correct order.</p>}</article>
+          {currentDrill.kind === "complete" && <div className="mt-4 grid gap-3 sm:grid-cols-2">{currentDrill.choices?.map((choice) => <button key={choice} type="button" disabled={drillAnswer !== null || saving} onClick={() => void submitSentenceDrill((currentDrill.gapSentence ?? "").replace("________", choice))} className={`min-h-12 rounded-2xl border px-4 py-3 text-left text-sm font-bold ${drillAnswer !== null && normalizeSentence(choice) === normalizeSentence(currentDrill.answer) ? "border-emerald-400 bg-emerald-50 text-emerald-900" : drillAnswer !== null && normalizeSentence(drillAnswer) === normalizeSentence((currentDrill.gapSentence ?? "").replace("________", choice)) ? "border-rose-300 bg-rose-50 text-rose-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>}
+          {currentDrill.kind === "order" && <><div className="mt-4 flex min-h-14 flex-wrap items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 p-3">{orderedTiles.map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null} onClick={() => setOrderedTiles((selected) => selected.filter((candidate) => candidate.id !== tile.id))} className="rounded-xl border border-blue-200 bg-white px-3 py-2 font-bold text-blue-900">{tile.text}</button>)}{orderedTiles.length === 0 && <span className="text-sm text-slate-400">Your sentence will appear here</span>}</div><div className="mt-4 flex flex-wrap justify-center gap-2">{currentDrill.tiles?.filter((tile) => !orderedTiles.some((selected) => selected.id === tile.id)).map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null || saving} onClick={() => setOrderedTiles((selected) => [...selected, tile])} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}</div><div className="mt-4 flex justify-center gap-2"><button type="button" disabled={orderedTiles.length === 0 || drillAnswer !== null} onClick={() => setOrderedTiles([])} className="min-h-10 rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-600 disabled:opacity-40">Clear</button><button type="button" disabled={orderedTiles.length !== currentDrill.tiles?.length || drillAnswer !== null || saving} onClick={() => void submitSentenceDrill(orderedTiles.map((tile) => tile.text).join(" "))} className="min-h-10 rounded-full bg-blue-600 px-5 text-sm font-bold text-white disabled:opacity-40">Check sentence</button></div></>}
+          {drillAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "Correct! Great sentence." : <>The correct sentence is “{currentDrill.answer}”</>}</p><button type="button" onClick={nextSentenceDrill} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next exercise <ArrowRight size={16}/></button></div>}
         </>}
       </div>}
     </section>}
