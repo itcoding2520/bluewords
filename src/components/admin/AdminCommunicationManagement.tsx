@@ -356,43 +356,61 @@ export function AdminCommunicationManagement() {
   }
 
   async function exportCsv() {
+    if (!selectedTopicId) {
+      toast.error("Select a situation before exporting its CSV.");
+      return;
+    }
     setBusy(true);
     try {
-      const [topicResult, lessonResult, allItems, allDialogues, allTurns] = await Promise.all([
-        supabase.from("communication_topics").select("*"), supabase.from("communication_lessons").select("*"),
-        fetchAllPages<Item>(async (from, to) => {
+      const [topicResult, lessonResult] = await Promise.all([
+        supabase.from("communication_topics").select("*").eq("id", selectedTopicId).single(),
+        supabase.from("communication_lessons").select("*").eq("topic_id", selectedTopicId).order("sort_order").order("title_en"),
+      ]);
+      if (topicResult.error) throw topicResult.error;
+      if (lessonResult.error) throw lessonResult.error;
+
+      const topic = topicResult.data as Topic;
+      const lessons = (lessonResult.data ?? []) as Lesson[];
+      const lessonIds = lessons.map((lesson) => lesson.id);
+      let allItems: Item[] = [];
+      let allDialogues: ExportDialogue[] = [];
+      if (lessonIds.length) {
+        [allItems, allDialogues] = await Promise.all([
+          fetchAllPages<Item>(async (from, to) => {
           const { data, error } = await supabase
             .from("communication_lesson_items")
             .select("*")
+            .in("lesson_id", lessonIds)
             .order("sort_order")
             .order("item_key")
             .range(from, to);
           return { data: (data ?? []) as Item[], error };
-        }),
-        fetchAllPages<ExportDialogue>(async (from, to) => {
+          }),
+          fetchAllPages<ExportDialogue>(async (from, to) => {
           const { data, error } = await supabase
             .from("communication_dialogues")
             .select("*")
+            .in("lesson_id", lessonIds)
             .order("dialogue_key")
             .range(from, to);
           return { data: (data ?? []) as ExportDialogue[], error };
-        }),
-        fetchAllPages<ExportTurn>(async (from, to) => {
-          const { data, error } = await supabase
-            .from("communication_dialogue_turns")
-            .select("*")
-            .order("turn_key")
-            .range(from, to);
-          return { data: (data ?? []) as ExportTurn[], error };
-        }),
-      ]);
-      const error = topicResult.error ?? lessonResult.error;
-      if (error) throw error;
-      const topicMap = new Map((topicResult.data ?? []).map((row) => [row.id, row]));
-      const lessonMap = new Map((lessonResult.data ?? []).map((row) => [row.id, row]));
+          }),
+        ]);
+      }
+      const dialogueIds = allDialogues.map((dialogue) => dialogue.id);
+      const allTurns = dialogueIds.length ? await fetchAllPages<ExportTurn>(async (from, to) => {
+        const { data, error } = await supabase
+          .from("communication_dialogue_turns")
+          .select("*")
+          .in("dialogue_id", dialogueIds)
+          .order("turn_key")
+          .range(from, to);
+        return { data: (data ?? []) as ExportTurn[], error };
+      }) : [];
+      const lessonMap = new Map(lessons.map((row) => [row.id, row]));
       const common = (lessonId: string) => {
-        const lesson = lessonMap.get(lessonId); const topic = lesson ? topicMap.get(lesson.topic_id) : null;
-        if (!lesson || !topic) return null;
+        const lesson = lessonMap.get(lessonId);
+        if (!lesson) return null;
         return { topic_slug: topic.slug, topic_title_en: topic.title_en, topic_title_vi: topic.title_vi, topic_description_en: topic.description_en, topic_description_vi: topic.description_vi, topic_order: topic.sort_order, lesson_key: lesson.lesson_key, lesson_title_en: lesson.title_en, lesson_title_vi: lesson.title_vi, difficulty: lesson.difficulty, lesson_order: lesson.sort_order, lesson_status: lesson.status };
       };
       const records: CommunicationCsvRecord[] = [];
@@ -407,7 +425,7 @@ export function AdminCommunicationManagement() {
         records.push({ record_type: "dialogue_turn", ...details, record_key: turn.turn_key, record_order: dialogue.sort_order, item_type: "", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", dialogue_key: dialogue.dialogue_key, dialogue_title_en: dialogue.title_en, dialogue_title_vi: dialogue.title_vi, dialogue_prompt_vi: dialogue.prompt_vi, speaker: turn.speaker, turn_order: turn.turn_order, turn_text_en: turn.text_en, turn_meaning_vi: turn.meaning_vi, turn_audio_url: turn.audio_url, response_prompt_vi: turn.response_prompt_vi, expected_response: turn.expected_response, response_options: turn.response_options });
       }
       const blob = new Blob(["\uFEFF", exportCommunicationCsv(records)], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "BlueWords_Situational_English.csv"; link.click(); URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `BlueWords_Situational_English_${topic.slug}.csv`; link.click(); URL.revokeObjectURL(url);
       toast.success(`Exported ${records.length} content rows.`);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not export communication content."); }
     finally { setBusy(false); }
@@ -417,7 +435,7 @@ export function AdminCommunicationManagement() {
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7">
       <p className="text-sm font-bold text-blue-600">Administration</p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-4"><div><h1 className="page-title text-3xl">Situational English</h1><p className="page-intro-description mt-2">Build lessons that connect vocabulary, useful phrases, sentence patterns, and conversations.</p></div>
-        <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void refresh()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-sm font-semibold text-blue-700"><RefreshCw size={16}/> Refresh</button><button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-sm font-semibold text-blue-700"><FileUp size={16}/> Import CSV</button><input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => void importCsv(event.target.files?.[0])}/><button type="button" disabled={busy} onClick={() => void exportCsv()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white"><Download size={16}/> Export CSV</button></div>
+      <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void refresh()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-sm font-semibold text-blue-700"><RefreshCw size={16}/> Refresh</button><button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-sm font-semibold text-blue-700"><FileUp size={16}/> Import CSV</button><input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => void importCsv(event.target.files?.[0])}/><button type="button" title="Export the selected situation only" aria-label="Export selected situation CSV" disabled={busy || !selectedTopicId} onClick={() => void exportCsv()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Download size={16}/> Export situation</button></div>
       </div>
     </header>
 
