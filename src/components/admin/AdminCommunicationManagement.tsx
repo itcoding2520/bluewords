@@ -272,9 +272,18 @@ export function AdminCommunicationManagement() {
 
       const allItemRows = records.filter((row) => row.record_type === "item").map((row) => ({ item_key: row.record_key, lesson_id: lessonsByKey.get(row.lesson_key), item_type: row.item_type, content_en: row.content_en, meaning_vi: row.meaning_vi, example_en: row.example_en, example_vi: row.example_vi, image_keyword: row.image_keyword, audio_url: row.audio_url, sort_order: row.record_order }));
       const itemKeys = allItemRows.map((row) => row.item_key);
-      const existingItemsResult = itemKeys.length ? await supabase.from("communication_lesson_items").select("item_key").in("item_key", itemKeys) : { data: [], error: null };
-      if (existingItemsResult.error) throw existingItemsResult.error;
-      const existingItemKeys = new Set((existingItemsResult.data ?? []).map((row) => row.item_key));
+      const itemKeyBatches = Array.from({ length: Math.ceil(itemKeys.length / 100) }, (_, index) => itemKeys.slice(index * 100, (index + 1) * 100));
+      const existingItemsByBatch = await Promise.all(itemKeyBatches.map((itemKeyBatch) => fetchAllPages<{ item_key: string }>(async (from, to) => {
+        const { data, error } = await supabase
+          .from("communication_lesson_items")
+          .select("item_key")
+          .in("item_key", itemKeyBatch)
+          .order("item_key")
+          .range(from, to);
+        return { data: data ?? [], error };
+      })));
+      const existingItems = existingItemsByBatch.flat();
+      const existingItemKeys = new Set(existingItems.map((row) => row.item_key));
       const itemRows = allItemRows.filter((row) => !existingItemKeys.has(row.item_key));
       const skippedExistingContentRows = records.filter((row) => row.record_type === "item" && existingItemKeys.has(row.record_key)).length;
       if (itemRows.length) {
@@ -300,12 +309,19 @@ export function AdminCommunicationManagement() {
         if (dialogueLookup.error) throw dialogueLookup.error;
         for (const row of dialogueLookup.data ?? []) dialoguesByKey.set(row.dialogue_key, row.id);
         const allTurnRows = dialogueRecords.map((row) => ({ turn_key: row.record_key, dialogue_id: dialoguesByKey.get(row.dialogue_key), turn_order: row.turn_order, speaker: row.speaker, text_en: row.turn_text_en, meaning_vi: row.turn_meaning_vi, audio_url: row.turn_audio_url, response_prompt_vi: row.response_prompt_vi, expected_response: row.expected_response, response_options: row.response_options }));
-        const turnKeys = allTurnRows.map((row) => row.turn_key);
         const dialogueIds = [...new Set(dialogueRecords.map((row) => dialoguesByKey.get(row.dialogue_key)).filter((id): id is string => Boolean(id)))];
-        const existingTurnsResult = dialogueIds.length ? await supabase.from("communication_dialogue_turns").select("turn_key,dialogue_id,turn_order").in("dialogue_id", dialogueIds) : { data: [], error: null };
-        if (existingTurnsResult.error) throw existingTurnsResult.error;
-        const existingTurnKeys = new Set((existingTurnsResult.data ?? []).map((row) => row.turn_key));
-        const existingTurnOrders = new Set((existingTurnsResult.data ?? []).map((row) => `${row.dialogue_id}:${row.turn_order}`));
+        const existingTurns = dialogueIds.length ? await fetchAllPages<{ turn_key: string; dialogue_id: string; turn_order: number }>(async (from, to) => {
+          const { data, error } = await supabase
+            .from("communication_dialogue_turns")
+            .select("turn_key,dialogue_id,turn_order")
+            .in("dialogue_id", dialogueIds)
+            .order("dialogue_id")
+            .order("turn_order")
+            .range(from, to);
+          return { data: data ?? [], error };
+        }) : [];
+        const existingTurnKeys = new Set(existingTurns.map((row) => row.turn_key));
+        const existingTurnOrders = new Set(existingTurns.map((row) => `${row.dialogue_id}:${row.turn_order}`));
         for (const row of dialogueRecords) {
           const dialogueId = dialoguesByKey.get(row.dialogue_key);
           if (existingTurnKeys.has(row.record_key) || (dialogueId && existingTurnOrders.has(`${dialogueId}:${row.turn_order}`))) {

@@ -17,7 +17,7 @@ Phase 6 is in progress. Completed items below have been implemented in the appli
 - [x] Restrict draft lesson content to admins; keep learner progress and review data private to its owner.
 - [x] Build the admin editor and CSV import/export using the agreed row format below. Admin UI supports topic, lesson, and learning-item CRUD; dialogue turns are managed through CSV. The parser validates rows and repeated keys/metadata before it writes. Admin item loading and export are paginated, and situation rows summarize distinct word counts by difficulty. Run a live import/export round trip before treating it as production-verified.
 
-The CSV is long-form: one row represents either a lesson item or a dialogue turn. Repeat the topic and lesson fields on each row in that lesson. This keeps the sheet editable in standard spreadsheet tools. Stable keys (`lesson_key`, `record_key`, and `dialogue_key`) resolve existing hierarchy; import skips duplicate content rows without overwriting them, reports their CSV row numbers, and continues with new rows.
+The CSV is long-form: one row represents either a lesson item or a dialogue turn. Repeat the topic and lesson fields on each row in that lesson. This keeps the sheet editable in standard spreadsheet tools. Stable keys (`lesson_key`, `record_key`, and `dialogue_key`) resolve existing hierarchy; import skips duplicate content rows without overwriting them, reports their CSV row numbers, and continues with new rows. Existing item and dialogue export reads are paginated; large item duplicate checks are split into batches and paginated so the Supabase row cap does not make an existing row appear new.
 
 | Column | Required | Meaning |
 |---|---:|---|
