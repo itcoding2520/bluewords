@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Camera, Check, ImagePlus, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
+import { Camera, Check, ImagePlus, KeyRound, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { createClient } from "@/lib/supabase/client";
 import {
   deleteUserAvatar,
   getUserProfile,
@@ -21,6 +23,7 @@ interface UserProfileContentProps {
 }
 
 export function UserProfileContent({ userId, email }: UserProfileContentProps) {
+  const [supabase] = useState(() => createClient());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -30,6 +33,11 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -115,6 +123,34 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
           : "Could not save your profile. Please try again.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePasswordChange(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordNotice("");
+
+    if (newPassword.length < 8) {
+      setPasswordError("Use a password with at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The passwords do not match.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordNotice("Your password has been updated.");
+    } catch (updateError) {
+      setPasswordError(updateError instanceof Error ? updateError.message : "Could not update your password. Please try again.");
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -219,6 +255,33 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
           </Button>
         </div>
       </form>
+
+      <section className="profile-password-section mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="flex items-start gap-3">
+          <span className="profile-field-icon profile-email-icon"><KeyRound size={20} /></span>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900">Change password</h2>
+            <p className="mt-1 text-sm text-slate-500">Choose a new password with at least 8 characters.</p>
+          </div>
+        </div>
+        <form onSubmit={handlePasswordChange} className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-bold text-slate-700" htmlFor="profile-new-password">
+            New password
+            <PasswordInput id="profile-new-password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setPasswordError(""); setPasswordNotice(""); }} placeholder="Enter new password" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+          </label>
+          <label className="block text-sm font-bold text-slate-700" htmlFor="profile-confirm-password">
+            Confirm new password
+            <PasswordInput id="profile-confirm-password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordError(""); setPasswordNotice(""); }} placeholder="Enter it again" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+          </label>
+          <div className="sm:col-span-2">
+            {passwordError && <AutoDismissMessage key={passwordError} variant="error" className="mb-3">{passwordError}</AutoDismissMessage>}
+            {passwordNotice && <AutoDismissMessage key={passwordNotice} variant="success" className="mb-3 inline-flex items-center gap-2"><Check size={16} /> {passwordNotice}</AutoDismissMessage>}
+            <Button type="submit" disabled={passwordSaving || newPassword.length < 8 || confirmPassword.length < 8}>
+              <KeyRound size={16} /> {passwordSaving ? "Updating password…" : "Update password"}
+            </Button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
