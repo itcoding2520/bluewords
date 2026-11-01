@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gamepad2, Grid3X3, History, Info, Play, RotateCcw, Star, Tag, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { WordSearchResults } from "@/components/games/WordSearchResults";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -446,15 +447,24 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
       </header>
 
       {phase === "results" ? (
-        <Card className="max-w-3xl p-6 text-center sm:p-10">
-          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Check size={27} /></span>
-          <h2 className="mt-4 text-2xl font-bold text-slate-950">All words found!</h2>
-          <p className="mt-2 text-slate-500">You found {puzzle.words.length} words in {formatDuration(elapsedSeconds)}.</p>
-          {saveState === "saving" && <p role="status" className="mt-3 text-sm text-slate-500">Saving your game history…</p>}
-          {saveState === "saved" && <AutoDismissMessage variant="success" className="mx-auto mt-3 w-fit">Game saved to your history.</AutoDismissMessage>}
-          {saveState === "error" && <div className="mt-3"><AutoDismissMessage key={saveError} variant="error">{saveError}</AutoDismissMessage><Button variant="secondary" className="mt-2" onClick={() => { saveStartedRef.current = null; setSaveRetryCount((count) => count + 1); }}>Retry save</Button></div>}
-          <div className="mt-6 flex flex-wrap justify-center gap-3"><Button onClick={startGame}><RotateCcw size={16} /> Play again</Button>{saveState === "saved" && <Button variant="secondary" onClick={() => { setPhase("setup"); setTab("history"); setHistoryPage(1); setSelectedHistory(null); void loadHistory(true, 1); }}><History size={16} /> View history</Button>}</div>
-        </Card>
+        <WordSearchResults
+          wordCount={puzzle.words.length}
+          duration={formatDuration(elapsedSeconds)}
+          saveState={saveState}
+          saveError={saveError}
+          onRetrySave={() => {
+            saveStartedRef.current = null;
+            setSaveRetryCount((count) => count + 1);
+          }}
+          onPlayAgain={startGame}
+          onViewHistory={() => {
+            setPhase("setup");
+            setTab("history");
+            setHistoryPage(1);
+            setSelectedHistory(null);
+            void loadHistory(true, 1);
+          }}
+        />
       ) : (
         <div className="word-search-game-layout grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
           <Card className="word-search-board-card order-2 min-w-0 p-3 sm:p-5 lg:order-1">
