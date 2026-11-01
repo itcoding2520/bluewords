@@ -13,7 +13,8 @@ type Topic = { id: string; slug: string; title_en: string; title_vi: string; des
 type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; sort_order: number };
 type Progress = { lesson_id: string; status: "not_started" | "in_progress" | "completed"; completed_items: number };
 type ReviewItem = { item_id: string; due_at: string; content_en: string; meaning_vi: string; lesson_id: string; lesson_title_en: string; lesson_title_vi: string };
-type CatalogData = { topics: Topic[]; lessons: Lesson[]; progress: Progress[]; goal: Goal | null; dailyGoal: number; todayCompleted: number; dueItems: ReviewItem[]; authenticated: boolean };
+type LessonAccuracy = Record<string, { correct: number; attempts: number }>;
+type CatalogData = { topics: Topic[]; lessons: Lesson[]; progress: Progress[]; lessonAccuracy: LessonAccuracy; goal: Goal | null; dailyGoal: number; todayCompleted: number; dueItems: ReviewItem[]; authenticated: boolean };
 const difficultyLabel = { easy: "Easy · Dễ", medium: "Medium · Trung bình", hard: "Hard · Khó" };
 const topicIcons: Record<string, LucideIcon> = {
   "greetings-introductions": UsersRound, "family-friends": UsersRound, "daily-routines": CalendarDays,
@@ -45,6 +46,7 @@ export function SituationalEnglishCatalog() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progress, setProgress] = useState<Progress[]>([]);
+  const [lessonAccuracy, setLessonAccuracy] = useState<LessonAccuracy>({});
   const [goal, setGoal] = useState<Goal | null>(null);
   const [dailyGoal, setDailyGoal] = useState(1);
   const [todayCompleted, setTodayCompleted] = useState(0);
@@ -69,6 +71,7 @@ export function SituationalEnglishCatalog() {
           setTopics(snapshot.topics);
           setLessons(snapshot.lessons);
           setProgress(snapshot.progress);
+          setLessonAccuracy(snapshot.lessonAccuracy);
           setGoal(snapshot.goal);
           setDailyGoal(snapshot.dailyGoal);
           setTodayCompleted(snapshot.todayCompleted);
@@ -89,22 +92,33 @@ export function SituationalEnglishCatalog() {
           const data: CatalogData = {
             topics: (topicResult.data ?? []) as unknown as Topic[],
             lessons: (lessonResult.data ?? []) as unknown as Lesson[],
-            progress: [], goal: null, dailyGoal: 1, todayCompleted: 0, dueItems: [], authenticated: Boolean(user),
+            progress: [], lessonAccuracy: {}, goal: null, dailyGoal: 1, todayCompleted: 0, dueItems: [], authenticated: Boolean(user),
           };
           if (!user) return data;
 
-          const [progressResult, preferenceResult, dailyGoalResult, completedResult, dueResult] = await Promise.all([
+          const [progressResult, preferenceResult, dailyGoalResult, completedResult, dueResult, accuracyResult] = await Promise.all([
             supabase.from("communication_lesson_progress").select("lesson_id,status,completed_items").eq("user_id", user.id),
             supabase.from("communication_learning_preferences").select("learning_goal").eq("user_id", user.id).maybeSingle(),
             supabase.from("communication_daily_goals").select("lessons_per_day").eq("user_id", user.id).maybeSingle(),
             supabase.from("communication_lesson_progress").select("lesson_id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "completed").gte("completed_at", localDayStart()),
             supabase.from("communication_item_reviews").select("item_id,due_at").eq("user_id", user.id).lte("due_at", new Date().toISOString()).order("due_at").limit(50),
+            supabase.from("communication_item_reviews").select("review_count,correct_count,communication_lesson_items!inner(lesson_id)").eq("user_id", user.id).gt("review_count", 0).order("last_reviewed_at", { ascending: false }).limit(500),
           ]);
           if (!progressResult.error) data.progress = (progressResult.data ?? []) as Progress[];
           if (!preferenceResult.error) data.goal = (preferenceResult.data?.learning_goal as Goal | undefined) ?? null;
           if (!dailyGoalResult.error) data.dailyGoal = dailyGoalResult.data?.lessons_per_day ?? 1;
           if (!completedResult.error) data.todayCompleted = completedResult.count ?? 0;
           if (dueResult.error) console.error("Failed to load due communication reviews", dueResult.error);
+          if (accuracyResult.error) console.error("Failed to load communication review accuracy", accuracyResult.error);
+          type ReviewAccuracyRow = { review_count: number; correct_count: number; communication_lesson_items: { lesson_id: string } | { lesson_id: string }[] };
+          for (const row of (accuracyResult.data ?? []) as unknown as ReviewAccuracyRow[]) {
+            const item = Array.isArray(row.communication_lesson_items) ? row.communication_lesson_items[0] : row.communication_lesson_items;
+            if (!item) continue;
+            const stats = data.lessonAccuracy[item.lesson_id] ?? { correct: 0, attempts: 0 };
+            stats.correct += row.correct_count;
+            stats.attempts += row.review_count;
+            data.lessonAccuracy[item.lesson_id] = stats;
+          }
           if (!dueResult.data?.length) return data;
 
           const itemResult = await supabase.from("communication_lesson_items").select("id,lesson_id,content_en,meaning_vi").in("id", dueResult.data.map((review) => review.item_id));
@@ -155,17 +169,45 @@ export function SituationalEnglishCatalog() {
     return textMatches && lessons.some((lesson) => lesson.topic_id === topic.id && (difficulty === "all" || lesson.difficulty === difficulty));
   });
   const nextDueItem = dueItems[0];
-  const suggestedLesson = lessons.find((lesson) => progress.some((row) => row.lesson_id === lesson.id && row.status === "in_progress"))
-    ?? lessons.find((lesson) => !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+  const inProgressLesson = lessons.find((lesson) => progress.some((row) => row.lesson_id === lesson.id && row.status === "in_progress"));
+  const incompleteLesson = lessons.find((lesson) => !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+  const difficultyRank = { easy: 0, medium: 1, hard: 2 };
+  const reviewedLessons = lessons.flatMap((lesson) => {
+    const stats = lessonAccuracy[lesson.id];
+    return stats && stats.attempts >= 3 ? [{ lesson, accuracy: stats.correct / stats.attempts }] : [];
+  });
+  const weakestLesson = [...reviewedLessons].sort((a, b) => a.accuracy - b.accuracy)[0];
+  const strongestLesson = [...reviewedLessons].sort((a, b) => b.accuracy - a.accuracy)[0];
+  let adaptiveLesson: Lesson | undefined;
+  let adaptiveLabel = "";
+  let adaptiveReason = "";
+  if (weakestLesson && weakestLesson.accuracy < 0.7) {
+    adaptiveLesson = lessons.find((lesson) => lesson.topic_id === weakestLesson.lesson.topic_id
+      && difficultyRank[lesson.difficulty] < difficultyRank[weakestLesson.lesson.difficulty]
+      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+    adaptiveLesson ??= weakestLesson.lesson;
+    adaptiveLabel = adaptiveLesson.id === weakestLesson.lesson.id ? "Practice again" : "Try an easier lesson";
+    adaptiveReason = "Your recent answers show this topic could use a little more practice.";
+  } else if (strongestLesson && strongestLesson.accuracy >= 0.9) {
+    adaptiveLesson = lessons.find((lesson) => lesson.topic_id === strongestLesson.lesson.topic_id
+      && difficultyRank[lesson.difficulty] > difficultyRank[strongestLesson.lesson.difficulty]
+      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+    if (adaptiveLesson) {
+      adaptiveLabel = "Try a harder lesson";
+      adaptiveReason = "Your recent answers show you are ready for the next level.";
+    }
+  }
+  const suggestedLesson = inProgressLesson ?? adaptiveLesson ?? incompleteLesson;
   const nextStepHref = nextDueItem
     ? `/communication/${nextDueItem.lesson_id}?reviewItem=${encodeURIComponent(nextDueItem.item_id)}`
     : suggestedLesson ? `/communication/${suggestedLesson.id}` : null;
-  const nextStepLabel = nextDueItem ? "Review due word" : suggestedLesson && progress.some((row) => row.lesson_id === suggestedLesson.id && row.status === "in_progress") ? "Continue lesson" : "Start next lesson";
+  const nextStepLabel = nextDueItem ? "Review due word" : inProgressLesson ? "Continue lesson" : adaptiveLesson ? adaptiveLabel : "Start next lesson";
+  const nextStepReason = nextDueItem ? "An item is ready for review." : inProgressLesson ? "Pick up where you left off." : adaptiveLesson ? adaptiveReason : "Continue with the next lesson in your path.";
 
   return <main className="space-y-4 sm:space-y-5">
     <header className="relative overflow-hidden rounded-[1.75rem] border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 shadow-[0_14px_36px_rgb(37_99_235/0.08)] sm:p-7">
       <div className="relative z-10 max-w-4xl"><span className="text-sm font-bold text-blue-600">Everyday English · Tiếng Anh giao tiếp</span><h1 className="mt-1 text-3xl font-black tracking-tight text-[#102969] sm:text-4xl">Learn by situation</h1><p className="mt-1 text-sm text-slate-600 sm:text-base">Build useful words and practice real conversations for everyday life.</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2"><div className="flex flex-wrap items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm sm:gap-3 sm:px-4 sm:text-sm"><span className="inline-flex items-center gap-1.5"><BookOpen size={17} className="text-blue-600"/>Word</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><MessageCircle size={17} className="text-blue-600"/>Phrase</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><FileText size={17} className="text-blue-600"/>Sentence</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><UsersRound size={17} className="text-blue-600"/>Dialogue</span></div>{authenticated && nextStepHref && <Link href={nextStepHref} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-200 sm:min-h-11 sm:px-5">{nextStepLabel} <ArrowRight size={17}/></Link>}</div>
+        <div className="mt-3 flex flex-wrap items-center gap-2"><div className="flex flex-wrap items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-slate-800 shadow-sm sm:gap-3 sm:px-4 sm:text-sm"><span className="inline-flex items-center gap-1.5"><BookOpen size={17} className="text-blue-600"/>Word</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><MessageCircle size={17} className="text-blue-600"/>Phrase</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><FileText size={17} className="text-blue-600"/>Sentence</span><ArrowRight size={14} className="text-slate-400"/><span className="inline-flex items-center gap-1.5"><UsersRound size={17} className="text-blue-600"/>Dialogue</span></div>{authenticated && nextStepHref && <div className="flex flex-col items-start gap-1"><Link href={nextStepHref} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-200 sm:min-h-11 sm:px-5">{nextStepLabel} <ArrowRight size={17}/></Link><span className="pl-3 text-xs text-slate-600">{nextStepReason}</span></div>}</div>
       </div>
       <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 hidden size-56 place-items-center rounded-full bg-white/45 text-blue-300 sm:grid"><MessageCircle size={88}/><span className="absolute grid size-14 place-items-center rounded-full bg-white text-blue-500 shadow-sm"><span className="flex gap-1"><i className="size-2 rounded-full bg-blue-400"/><i className="size-2 rounded-full bg-blue-500"/><i className="size-2 rounded-full bg-blue-600"/></span></span><Sparkles className="absolute right-9 top-10 text-amber-400" size={24}/></div>
     </header>

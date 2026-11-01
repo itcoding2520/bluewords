@@ -49,8 +49,8 @@ For a learner-facing dialogue exercise, a response turn should include `response
 
 - [x] Offer a learning goal: **Learn through games** or **Speak everyday English**.
 - [x] Let learners change their goal from the communication learning page; the preference is saved privately to their account.
-- [ ] Organize lessons by practical situation and difficulty (Easy, Medium, Hard).
-- [ ] Show lesson progress and a clear suggested next lesson.
+- [x] Organize lessons by practical situation and difficulty (Easy, Medium, Hard).
+- [x] Show lesson progress and a clear suggested next lesson, adapting difficulty to reviewed accuracy when enough practice data exists.
 - [x] Let learners set a daily practice goal and show today's progress in the situation catalog.
 
 ### 2. Situation-based lesson content
@@ -104,7 +104,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ## Follow-up backlog
 
 - [ ] Add optional speech recording and pronunciation feedback after evaluating browser/device support.
-- [ ] Extend next-step recommendations with accuracy-based difficulty selection. The catalog currently prioritizes due reviews, then in-progress lessons, then the next incomplete lesson.
+- [x] Recommend an easier lesson when recent accuracy is below 70%, or a harder lesson after accuracy reaches 90%; require at least three recorded answers before adjusting difficulty. Due reviews and in-progress lessons retain priority.
 - [ ] Add more languages or age-specific learning paths if product scope requires them.
 
 ## Acceptance criteria
