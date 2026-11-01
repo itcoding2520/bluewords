@@ -79,10 +79,11 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [mode, setMode] = useState<"study" | "practice" | "drills">("study");
+  const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
   const [practiceOrder, setPracticeOrder] = useState<string[]>([]);
   const [practiceStep, setPracticeStep] = useState(0);
   const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
+  const [listeningOrder, setListeningOrder] = useState<string[]>([]);
   const [drillStep, setDrillStep] = useState(0);
   const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
   const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
@@ -93,6 +94,8 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
   const practiceItem = items.find((item) => item.id === practiceOrder[practiceStep]);
+  const listeningItems = useMemo(() => items.filter((item) => item.example_en.trim() && item.example_vi.trim()), [items]);
+  const listeningItem = items.find((item) => item.id === listeningOrder[practiceStep]);
   const sentenceDrills = useMemo(() => createSentenceDrills(items), [items]);
   const currentDrill = sentenceDrills[drillStep];
   const practiceMeaningCount = new Set(items.map((item) => item.meaning_vi)).size;
@@ -211,6 +214,21 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     await recordPracticeOutcome(item, answer === item.meaning_vi);
   }
 
+  async function recordListeningAnswer(item: Item, answer: string) {
+    if (practiceAnswer !== null || saving) return;
+    setPracticeAnswer(answer);
+    await recordPracticeOutcome(item, answer === item.example_vi);
+  }
+
+  function playListeningItem(item: Item) {
+    if (item.audio_url) {
+      const audio = new Audio(item.audio_url);
+      void audio.play().catch(() => speak(item.example_en));
+    } else {
+      speak(item.example_en);
+    }
+  }
+
   async function submitSentenceDrill(answer: string) {
     if (!currentDrill || drillAnswer !== null || saving) return;
     setDrillAnswer(answer);
@@ -231,6 +249,9 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const practiceChoices = useMemo(() => practiceItem
     ? shuffled([...new Set([practiceItem.meaning_vi, ...shuffled(items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi)).slice(0, 3)])])
     : [], [practiceItem, items]);
+  const listeningChoices = useMemo(() => listeningItem
+    ? shuffled([...new Set([listeningItem.example_vi, ...shuffled(listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi)).slice(0, 3)])])
+    : [], [listeningItem, listeningItems]);
 
   function answerDialogue(turn: Turn, answer: string) {
     setAnswers((current) => ({ ...current, [turn.id]: answer }));
@@ -246,10 +267,11 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7"><p className="text-sm font-bold text-blue-600">{topic.title_en} · {topic.title_vi}</p><h1 className="page-title mt-1 text-3xl sm:text-4xl">{lesson.title_en}</h1><p className="mt-1 text-slate-600">{lesson.title_vi} <span className="mx-1">·</span><span className="capitalize">{lesson.difficulty}</span></p><div className="mt-4 flex items-center gap-3"><div className="h-2.5 flex-1 overflow-hidden rounded-full bg-sky-100"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${items.length ? masteredCount / items.length * 100 : 0}%` }}/></div><span className="text-sm font-bold text-slate-700">{masteredCount}/{items.length} mastered</span></div></header>
     {!userId && <aside className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><LockKeyhole size={18}/> Sign in to record completed items and build your review schedule. <Link href="/login" className="font-bold underline">Log in</Link></aside>}
     {items.length === 0 ? <section className="rounded-3xl border border-dashed border-sky-200 bg-white p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={34}/><p className="mt-3 font-bold text-slate-900">This lesson is being prepared</p><p className="mt-1 text-sm text-slate-500">Learning items will appear here when they are added.</p></section> : <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
-      <div className="flex border-b border-sky-100 bg-sky-50/60 p-2">
+      <div className="flex flex-wrap border-b border-sky-100 bg-sky-50/60 p-2">
         <button type="button" onClick={() => setMode("study")} aria-pressed={mode === "study"} className={`min-h-10 rounded-xl px-4 text-sm font-bold ${mode === "study" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Study cards</button>
-        <button type="button" onClick={() => { setMode("practice"); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
+        <button type="button" onClick={() => { setMode("practice"); setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
         <button type="button" onClick={() => { setMode("drills"); setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} aria-pressed={mode === "drills"} disabled={sentenceDrills.length === 0} className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "drills" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Sentence drills</button>
+        <button type="button" onClick={() => { setMode("listening"); setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "listening"} disabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "listening" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Headphones size={16}/> Listening</button>
       </div>
       {mode === "study" && <div className="p-4 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-blue-600">{currentItem.item_type.replace("_", " ")}</p><p className="mt-1 text-sm text-slate-500">Item {currentIndex + 1} of {items.length}</p></div><button type="button" onClick={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
@@ -263,6 +285,14 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><p className="text-sm font-semibold text-slate-500">Choose the Vietnamese meaning</p><h2 className="mt-2 break-words text-3xl font-extrabold text-slate-900 sm:text-4xl">{practiceItem.content_en}</h2></article>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">{practiceChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordPracticeAnswer(practiceItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
           {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
+        </>}
+      </div>}
+      {mode === "listening" && <div className="p-4 sm:p-7">
+        {!listeningItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Listening round complete</h2><p className="mt-1 text-sm text-slate-600">You listened to {listeningOrder.length} example sentences. Answers are added to item review scheduling when you are signed in.</p><button type="button" onClick={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Listen again</button></div> : <>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Listening comprehension</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {listeningOrder.length}</p></div><button type="button" onClick={() => playListeningItem(listeningItem)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Play audio</button></div>
+          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={28}/></span><p className="mt-4 text-sm font-semibold text-slate-500">Listen to the English sentence and choose what it means.</p><p className="mt-2 text-xs text-slate-400">The transcript appears after you answer. You can replay the audio.</p></article>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">{listeningChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordListeningAnswer(listeningItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
+          {practiceAnswer !== null && <div className={`mt-4 rounded-2xl p-4 ${practiceAnswer === listeningItem.example_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === listeningItem.example_vi ? "Correct! You understood the sentence." : `Not quite. The meaning is “${listeningItem.example_vi}”.`}</p><p className="mt-2 text-sm">“{listeningItem.example_en}”</p><button type="button" onClick={nextPracticeQuestion} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next sentence <ArrowRight size={16}/></button></div>}
         </>}
       </div>}
       {mode === "drills" && <div className="p-4 sm:p-7">
