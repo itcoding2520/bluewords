@@ -5,6 +5,7 @@ import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
+import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportCommunicationCsv, parseCommunicationCsvDetailed, type CommunicationCsvRecord, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
@@ -19,6 +20,7 @@ const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "",
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
 type CommunicationCollections = { topics: Topic[]; lessons: Lesson[]; items: Item[] };
 const COLLECTION_CACHE_TTL = 60_000;
+const COLLECTION_CACHE_VERSION = "v2-paginated-items";
 const collectionsCache = createInvalidatableAsyncCache();
 const collectionsCacheExpiry = new Map<string, number>();
 
@@ -60,21 +62,28 @@ export function AdminCommunicationManagement() {
     if (!userId) throw new Error("Your session has expired. Sign in again to manage communication content.");
 
     if (force || (collectionsCacheExpiry.get(userId) ?? 0) <= Date.now()) {
-      collectionsCache.invalidate(userId);
+      collectionsCache.invalidate(`${COLLECTION_CACHE_VERSION}:${userId}`);
       // Set expiry before starting the request so concurrent mounts share its promise
       // instead of repeatedly invalidating it while the first load is still pending.
       collectionsCacheExpiry.set(userId, Date.now() + COLLECTION_CACHE_TTL);
     }
-    return collectionsCache.get(userId, async () => {
-      const [topicResult, lessonResult, itemResult] = await Promise.all([
+    return collectionsCache.get(`${COLLECTION_CACHE_VERSION}:${userId}`, async () => {
+      const [topicResult, lessonResult, allItems] = await Promise.all([
         supabase.from("communication_topics").select("*").order("sort_order").order("title_en"),
         supabase.from("communication_lessons").select("*").order("sort_order").order("title_en"),
-        supabase.from("communication_lesson_items").select("*").order("sort_order"),
+        fetchAllPages<Item>(async (from, to) => {
+          const { data, error } = await supabase
+            .from("communication_lesson_items")
+            .select("*")
+            .order("sort_order")
+            .order("item_key")
+            .range(from, to);
+          return { data: (data ?? []) as Item[], error };
+        }),
       ]);
       if (topicResult.error) throw topicResult.error;
       if (lessonResult.error) throw lessonResult.error;
-      if (itemResult.error) throw itemResult.error;
-      return { topics: (topicResult.data ?? []) as Topic[], lessons: (lessonResult.data ?? []) as Lesson[], items: (itemResult.data ?? []) as Item[] };
+      return { topics: (topicResult.data ?? []) as Topic[], lessons: (lessonResult.data ?? []) as Lesson[], items: allItems };
     });
   }
   function applyCollections(next: { topics: Topic[]; lessons: Lesson[]; items: Item[] }) {
@@ -308,12 +317,20 @@ export function AdminCommunicationManagement() {
   async function exportCsv() {
     setBusy(true);
     try {
-      const [topicResult, lessonResult, itemResult, dialogueResult, turnResult] = await Promise.all([
+      const [topicResult, lessonResult, allItems, dialogueResult, turnResult] = await Promise.all([
         supabase.from("communication_topics").select("*"), supabase.from("communication_lessons").select("*"),
-        supabase.from("communication_lesson_items").select("*"), supabase.from("communication_dialogues").select("*"),
+        fetchAllPages<Item>(async (from, to) => {
+          const { data, error } = await supabase
+            .from("communication_lesson_items")
+            .select("*")
+            .order("sort_order")
+            .order("item_key")
+            .range(from, to);
+          return { data: (data ?? []) as Item[], error };
+        }), supabase.from("communication_dialogues").select("*"),
         supabase.from("communication_dialogue_turns").select("*"),
       ]);
-      const error = topicResult.error ?? lessonResult.error ?? itemResult.error ?? dialogueResult.error ?? turnResult.error;
+      const error = topicResult.error ?? lessonResult.error ?? dialogueResult.error ?? turnResult.error;
       if (error) throw error;
       const topicMap = new Map((topicResult.data ?? []).map((row) => [row.id, row]));
       const lessonMap = new Map((lessonResult.data ?? []).map((row) => [row.id, row]));
@@ -323,7 +340,7 @@ export function AdminCommunicationManagement() {
         return { topic_slug: topic.slug, topic_title_en: topic.title_en, topic_title_vi: topic.title_vi, topic_description_en: topic.description_en, topic_description_vi: topic.description_vi, topic_order: topic.sort_order, lesson_key: lesson.lesson_key, lesson_title_en: lesson.title_en, lesson_title_vi: lesson.title_vi, difficulty: lesson.difficulty, lesson_order: lesson.sort_order, lesson_status: lesson.status };
       };
       const records: CommunicationCsvRecord[] = [];
-      for (const item of itemResult.data ?? []) {
+      for (const item of allItems) {
         const details = common(item.lesson_id); if (!details) continue;
         records.push({ record_type: "item", ...details, record_key: item.item_key, record_order: item.sort_order, item_type: item.item_type, content_en: item.content_en, meaning_vi: item.meaning_vi, example_en: item.example_en, example_vi: item.example_vi, image_keyword: item.image_keyword, audio_url: item.audio_url, dialogue_key: "", dialogue_title_en: "", dialogue_title_vi: "", dialogue_prompt_vi: "", speaker: "", turn_order: null, turn_text_en: "", turn_meaning_vi: "", turn_audio_url: "", response_prompt_vi: "", expected_response: "", response_options: [] });
       }
