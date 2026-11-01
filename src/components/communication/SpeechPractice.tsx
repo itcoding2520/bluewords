@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Play, RotateCcw, Square } from "lucide-react";
 import { toast } from "sonner";
+import { getSpeechSimilarity } from "@/lib/communication/speech-similarity";
 
 type RecognitionResult = { 0: { transcript: string }; isFinal: boolean };
 type RecognitionEvent = { resultIndex: number; results: ArrayLike<RecognitionResult> };
@@ -18,27 +19,6 @@ type RecognitionLike = {
 type RecognitionConstructor = new () => RecognitionLike;
 type SpeechWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
-function normalize(value: string) {
-  return value.toLocaleLowerCase().replace(/[^\p{L}\p{N}' ]/gu, " ").replace(/\s+/g, " ").trim();
-}
-
-function similarity(expected: string, actual: string) {
-  const left = normalize(expected).split(" ").filter(Boolean);
-  const right = normalize(actual).split(" ").filter(Boolean);
-  if (!left.length || !right.length) return 0;
-  const row = Array.from({ length: right.length + 1 }, (_, index) => index);
-  for (let i = 1; i <= left.length; i += 1) {
-    let diagonal = row[0];
-    row[0] = i;
-    for (let j = 1; j <= right.length; j += 1) {
-      const above = row[j];
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (left[i - 1] === right[j - 1] ? 0 : 1));
-      diagonal = above;
-    }
-  }
-  return Math.max(0, Math.round((1 - row[right.length] / Math.max(left.length, right.length)) * 100));
-}
-
 export function SpeechPractice({ expected }: { expected: string }) {
   const [recording, setRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -50,7 +30,9 @@ export function SpeechPractice({ expected }: { expected: string }) {
 
   useEffect(() => () => {
     recognitionRef.current?.stop();
-    recorderRef.current?.state !== "inactive" && recorderRef.current?.stop();
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+    }
     streamRef.current?.getTracks().forEach((track) => track.stop());
     if (audioUrl) URL.revokeObjectURL(audioUrl);
   }, [audioUrl]);
@@ -110,7 +92,7 @@ export function SpeechPractice({ expected }: { expected: string }) {
     setRecording(false);
   }
 
-  const score = transcript ? similarity(expected, transcript) : null;
+  const score = transcript ? getSpeechSimilarity(expected, transcript) : null;
 
   return <div className="mt-3 rounded-xl border border-violet-100 bg-violet-50/70 p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
