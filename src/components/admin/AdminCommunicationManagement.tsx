@@ -13,6 +13,8 @@ import { exportCommunicationCsv, parseCommunicationCsvDetailed, type Communicati
 type Topic = { id: string; slug: string; title_en: string; title_vi: string; description_en: string; description_vi: string; sort_order: number; status: ContentStatus };
 type Lesson = { id: string; topic_id: string; lesson_key: string; title_en: string; title_vi: string; difficulty: CommunicationDifficulty; sort_order: number; status: ContentStatus };
 type Item = { id: string; lesson_id: string; item_key: string; item_type: "word" | "phrase" | "sentence_pattern"; content_en: string; meaning_vi: string; example_en: string; example_vi: string; image_keyword: string; audio_url: string; sort_order: number };
+type ExportDialogue = { id: string; dialogue_key: string; lesson_id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
+type ExportTurn = { id: string; turn_key: string; dialogue_id: string; turn_order: number; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[] };
 type LessonDraft = Omit<Lesson, "id">;
 type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
@@ -340,7 +342,7 @@ export function AdminCommunicationManagement() {
   async function exportCsv() {
     setBusy(true);
     try {
-      const [topicResult, lessonResult, allItems, dialogueResult, turnResult] = await Promise.all([
+      const [topicResult, lessonResult, allItems, allDialogues, allTurns] = await Promise.all([
         supabase.from("communication_topics").select("*"), supabase.from("communication_lessons").select("*"),
         fetchAllPages<Item>(async (from, to) => {
           const { data, error } = await supabase
@@ -350,10 +352,25 @@ export function AdminCommunicationManagement() {
             .order("item_key")
             .range(from, to);
           return { data: (data ?? []) as Item[], error };
-        }), supabase.from("communication_dialogues").select("*"),
-        supabase.from("communication_dialogue_turns").select("*"),
+        }),
+        fetchAllPages<ExportDialogue>(async (from, to) => {
+          const { data, error } = await supabase
+            .from("communication_dialogues")
+            .select("*")
+            .order("dialogue_key")
+            .range(from, to);
+          return { data: (data ?? []) as ExportDialogue[], error };
+        }),
+        fetchAllPages<ExportTurn>(async (from, to) => {
+          const { data, error } = await supabase
+            .from("communication_dialogue_turns")
+            .select("*")
+            .order("turn_key")
+            .range(from, to);
+          return { data: (data ?? []) as ExportTurn[], error };
+        }),
       ]);
-      const error = topicResult.error ?? lessonResult.error ?? dialogueResult.error ?? turnResult.error;
+      const error = topicResult.error ?? lessonResult.error;
       if (error) throw error;
       const topicMap = new Map((topicResult.data ?? []).map((row) => [row.id, row]));
       const lessonMap = new Map((lessonResult.data ?? []).map((row) => [row.id, row]));
@@ -367,8 +384,8 @@ export function AdminCommunicationManagement() {
         const details = common(item.lesson_id); if (!details) continue;
         records.push({ record_type: "item", ...details, record_key: item.item_key, record_order: item.sort_order, item_type: item.item_type, content_en: item.content_en, meaning_vi: item.meaning_vi, example_en: item.example_en, example_vi: item.example_vi, image_keyword: item.image_keyword, audio_url: item.audio_url, dialogue_key: "", dialogue_title_en: "", dialogue_title_vi: "", dialogue_prompt_vi: "", speaker: "", turn_order: null, turn_text_en: "", turn_meaning_vi: "", turn_audio_url: "", response_prompt_vi: "", expected_response: "", response_options: [] });
       }
-      const dialogueMap = new Map((dialogueResult.data ?? []).map((dialogue) => [dialogue.id, dialogue]));
-      for (const turn of turnResult.data ?? []) {
+      const dialogueMap = new Map(allDialogues.map((dialogue) => [dialogue.id, dialogue]));
+      for (const turn of allTurns) {
         const dialogue = dialogueMap.get(turn.dialogue_id); const details = dialogue ? common(dialogue.lesson_id) : null;
         if (!dialogue || !details) continue;
         records.push({ record_type: "dialogue_turn", ...details, record_key: turn.turn_key, record_order: dialogue.sort_order, item_type: "", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", dialogue_key: dialogue.dialogue_key, dialogue_title_en: dialogue.title_en, dialogue_title_vi: dialogue.title_vi, dialogue_prompt_vi: dialogue.prompt_vi, speaker: turn.speaker, turn_order: turn.turn_order, turn_text_en: turn.text_en, turn_meaning_vi: turn.meaning_vi, turn_audio_url: turn.audio_url, response_prompt_vi: turn.response_prompt_vi, expected_response: turn.expected_response, response_options: turn.response_options });
