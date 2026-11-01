@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, Rotate
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import { SpeechPractice } from "@/components/communication/SpeechPractice";
 
 type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; status: string };
 type Topic = { id: string; title_en: string; title_vi: string };
@@ -348,6 +349,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
                   })}</div>
                   {selectedAnswer && !isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-rose-700">Not quite. Try another response.</p>}
                   {isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">That’s a natural response!</p>}
+                  {isCorrect && <SpeechPractice expected={turn.expected_response}/>}
                 </div>}
               </div>
             </div>
