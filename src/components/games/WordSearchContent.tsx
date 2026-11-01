@@ -16,10 +16,9 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, getWordSearchSelectionPath, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import { DIFFICULTIES, GRID_SIZES, PREVIEW_LETTERS, WORD_TARGETS, selectableWords, type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
-type GridSize = 10 | 15 | 20;
-type Difficulty = "easy" | "medium" | "hard";
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
 type CellPosition = { row: number; column: number };
@@ -33,13 +32,6 @@ function getCellPosition(element: Element | null): CellPosition | null {
   return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
 }
 
-const GRID_SIZES: GridSize[] = [10, 15, 20];
-const DIFFICULTIES: { value: Difficulty; label: string }[] = [
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
-];
-
 const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-500",
   violet: "bg-violet-500",
@@ -52,24 +44,6 @@ const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   pink: "bg-pink-500",
   slate: "bg-slate-500",
 };
-
-const WORD_TARGETS: Record<GridSize, Record<Difficulty, number>> = {
-  10: { easy: 5, medium: 7, hard: 9 },
-  15: { easy: 8, medium: 12, hard: 16 },
-  20: { easy: 12, medium: 17, hard: 22 },
-};
-
-const MIN_WORD_LENGTH: Record<Difficulty, number> = { easy: 2, medium: 4, hard: 6 };
-const PREVIEW_LETTERS = [
-  ["W", "S", "E", "A", "R", "C", "H", "O"],
-  ["L", "E", "A", "R", "N", "I", "N", "G"],
-  ["T", "I", "M", "E", "F", "U", "N", "D"],
-  ["P", "L", "A", "Y", "E", "R", "S", "X"],
-  ["Q", "M", "K", "T", "V", "O", "C", "A"],
-  ["B", "B", "L", "U", "E", "W", "O", "R"],
-  ["D", "S", "G", "A", "M", "E", "C", "H"],
-  ["I", "P", "S", "F", "O", "C", "U", "S"],
-];
 
 function CategoryChip({
   name,
@@ -139,16 +113,6 @@ function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-
-function selectableWords(words: VocabularyWord[], category: string, difficulty: Difficulty, size: GridSize) {
-  const seen = new Set<string>();
-  return words.flatMap((word) => {
-    const normalized = normalizeWordSearchWord(word.word);
-    if ((category !== "all" && word.category !== category) || normalized.length < MIN_WORD_LENGTH[difficulty] || normalized.length > size || seen.has(normalized)) return [];
-    seen.add(normalized);
-    return [{ id: word.id, word: word.word }];
-  });
-}
 
 export function WordSearchContent({ userId }: { userId: string | null }) {
   const { words, categories, isLoaded } = useVocabulary();

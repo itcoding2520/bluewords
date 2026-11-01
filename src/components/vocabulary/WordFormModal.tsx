@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import type {
@@ -20,7 +20,6 @@ import { Input } from "../ui/Input";
 import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
 import * as Dialog from "@radix-ui/react-dialog";
-import Image from "next/image";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import {
   deleteVocabularyImages,
@@ -28,6 +27,7 @@ import {
   validateVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
 import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
+import { VocabularyImageField } from "@/components/vocabulary/VocabularyImageField";
 
 interface WordFormModalProps {
   open: boolean;
@@ -334,55 +334,22 @@ export function WordFormModal({
               )}
             </div>
 
-            <div>
-              <label htmlFor="vocabulary-image" className="text-sm font-medium text-slate-700">
-                Illustration <span className="font-normal text-slate-400">(optional, max 5 MB)</span>
-              </label>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                {(selectedImageUrl || existingImageUrl) && (
-                  <Image
-                    src={selectedImageUrl ?? existingImageUrl ?? ""}
-                    alt="Vocabulary illustration preview"
-                    width={64}
-                    height={64}
-                    unoptimized
-                    className="size-16 rounded-xl border border-slate-200 object-cover"
-                  />
-                )}
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-                  <ImagePlus size={16} />
-                  {selectedImage || existingImageUrl ? "Change image" : "Choose image"}
-                  <input
-                    id="vocabulary-image"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="sr-only"
-                    disabled={isSubmitting}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] ?? null;
-                      setSelectedImage(file);
-                      setRemoveCurrentImage(false);
-                      setErrors((current) => ({ ...current, image: undefined }));
-                    }}
-                  />
-                </label>
-                {(selectedImage || editingWord?.imagePath) && (
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setRemoveCurrentImage(true);
-                    }}
-                    className="cursor-pointer text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
-                  >
-                    Remove image
-                  </button>
-                )}
-              </div>
-              {errors.image && <AutoDismissMessage key={errors.image} variant="error" className="mt-1.5 bg-transparent p-0 text-xs font-medium text-red-500">{errors.image}</AutoDismissMessage>}
-              <p className="mt-1.5 text-xs text-slate-400">JPEG, PNG, or WebP. Images are private to your account.</p>
-            </div>
+            <VocabularyImageField
+              previewUrl={selectedImageUrl ?? existingImageUrl}
+              hasSelectedImage={Boolean(selectedImage)}
+              hasExistingImage={Boolean(editingWord?.imagePath)}
+              error={errors.image}
+              disabled={isSubmitting}
+              onSelect={(file) => {
+                setSelectedImage(file);
+                setRemoveCurrentImage(false);
+                setErrors((current) => ({ ...current, image: undefined }));
+              }}
+              onRemove={() => {
+                setSelectedImage(null);
+                setRemoveCurrentImage(true);
+              }}
+            />
 
             <section aria-labelledby="detailed-meanings-heading">
               <div className="flex flex-wrap items-center justify-between gap-2">
