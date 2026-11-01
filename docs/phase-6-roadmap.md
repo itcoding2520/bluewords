@@ -6,7 +6,7 @@ Help learners use vocabulary naturally in everyday conversations by connecting:
 
 **word → useful phrase → sentence pattern → short dialogue**
 
-Phase 6 is in progress. Completed items below have been implemented in the application; database migration and production data workflows still need the verification noted in the relevant sections.
+Phase 6 is in progress. Completed items below have been implemented in the application. The user confirmed the live Supabase CSV import/export round trip works on 2026-11-01.
 
 ## MVP backlog
 
@@ -15,7 +15,7 @@ Phase 6 is in progress. Completed items below have been implemented in the appli
 - [x] Add tables for situations, level-based lessons, vocabulary/phrase/sentence items, dialogues and turns, learner progress, review scheduling, and daily goals.
 - [x] Seed the 12 initial communication situations.
 - [x] Restrict draft lesson content to admins; keep learner progress and review data private to its owner.
-- [x] Build the admin editor and CSV import/export using the agreed row format below. Admin UI supports topic, lesson, and learning-item CRUD; dialogue turns are managed through CSV. The parser validates rows and repeated keys/metadata before it writes. Admin item loading and export are paginated, and situation rows summarize distinct word counts by difficulty. Run a live import/export round trip before treating it as production-verified.
+- [x] Build the admin editor and CSV import/export using the agreed row format below. Admin UI supports topic, lesson, and learning-item CRUD; dialogue turns are managed through CSV. The parser validates rows and repeated keys/metadata before it writes. Admin item loading and export are paginated, and situation rows summarize distinct word counts by difficulty. The user confirmed the live Supabase CSV import/export round trip works on 2026-11-01.
 
 The CSV is long-form: one row represents either a lesson item or a dialogue turn. Repeat the topic and lesson fields on each row in that lesson. This keeps the sheet editable in standard spreadsheet tools. Stable keys (`lesson_key`, `record_key`, and `dialogue_key`) resolve existing hierarchy; import skips duplicate content rows without overwriting them, reports their CSV row numbers, and continues with new rows. Export is scoped to the selected situation and includes its lessons, items, dialogues, and turns; its collection reads are paginated. Large item duplicate checks are split into batches and paginated so the Supabase row cap does not make an existing row appear new.
 
@@ -98,8 +98,8 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ### 4. Content administration
 
 - [x] Provide admin-only create, edit, archive/remove, and browse tools for situations, lessons, and lesson items. Dialogue content is currently edited through CSV.
-- [x] Support CSV import/export for bulk lesson content, with pre-write format/row validation and row-numbered errors. Live Supabase round-trip verification remains.
-- [x] Validate situation/lesson/item relationships, difficulty, paired example translations, sentence-pattern examples, dialogue turn order/answer choices, and optional HTTP(S) audio links before CSV writes or manual saves. Live import/export round-trip verification remains.
+- [x] Support CSV import/export for bulk lesson content, with pre-write format/row validation and row-numbered errors. Live Supabase round-trip verified by the user on 2026-11-01.
+- [x] Validate situation/lesson/item relationships, difficulty, paired example translations, sentence-pattern examples, dialogue turn order/answer choices, and optional HTTP(S) audio links before CSV writes or manual saves. Live import/export round-trip verified by the user on 2026-11-01.
 - [x] Enforce administrator permissions on the admin page and database policies; learners can only read published lessons.
 
 ## Follow-up backlog
@@ -121,7 +121,7 @@ For a learner-facing dialogue exercise, a response turn should include `response
 ## Suggested delivery order
 
 1. [x] Finalize lesson data model and CSV format.
-2. [x] Build the admin lesson editor/import/export and seed the first situations (build-checked; live CSV round trip remains).
+2. [x] Build the admin lesson editor/import/export and seed the first situations (build-checked; live CSV round trip verified by the user on 2026-11-01).
 3. [x] Build the situation catalog, lesson view, goal preferences, daily goal UI, due review queue, and basic progress tracking.
 4. [x] Add meaning-check, sentence-completion, and word-order practice with basic right/wrong review scheduling.
 5. [x] Add dialogue response practice, audio playback, listening comprehension, and optional browser-local speech recording/pronunciation guidance.
