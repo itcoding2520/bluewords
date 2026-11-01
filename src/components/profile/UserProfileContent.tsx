@@ -1,5 +1,7 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useState } from "react";
 import { Camera, Check, ImagePlus, KeyRound, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 
@@ -7,7 +9,6 @@ import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { createClient } from "@/lib/supabase/client";
 import {
   deleteUserAvatar,
   getUserProfile,
@@ -23,7 +24,7 @@ interface UserProfileContentProps {
 }
 
 export function UserProfileContent({ userId, email }: UserProfileContentProps) {
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);

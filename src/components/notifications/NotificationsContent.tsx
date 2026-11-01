@@ -1,10 +1,11 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Bell, BookOpen, CheckCheck, Clock3, FolderOpen, RefreshCw } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { getCachedNotifications, invalidateNotificationsCache, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
@@ -23,7 +24,7 @@ function recentNotifications(rows: NotificationRow[], now = Date.now()) {
 
 export function NotificationsContent() {
   const router = useRouter();
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

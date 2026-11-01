@@ -1,10 +1,11 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Check, Clock3, FileText, Gamepad2, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Target, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { getCachedCommunicationCatalogSnapshot, getCommunicationCatalogCache, invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { Select } from "@/components/ui/Select";
 
@@ -56,7 +57,7 @@ export function SituationalEnglishCatalog() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [savingPreference, setSavingPreference] = useState(false);
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useSupabaseClient();
 
   useEffect(() => {
     let active = true;

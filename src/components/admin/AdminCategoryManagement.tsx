@@ -1,10 +1,11 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { BookOpen, CheckCircle2, Clock3, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { createClient } from "@/lib/supabase/client";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
@@ -45,7 +46,7 @@ const tabs: Array<{ id: CategoryTab; label: string; description: string; icon: t
 
 export function AdminCategoryManagement() {
   const confirmDialog = useConfirmDialog();
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [activeTab, setActiveTab] = useState<CategoryTab>("default");
   const [selectedId, setSelectedId] = useState("");
   const [categorySearch, setCategorySearch] = useState("");

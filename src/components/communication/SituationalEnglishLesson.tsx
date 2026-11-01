@@ -1,10 +1,11 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, RotateCcw, Volume2, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { SpeechPractice } from "@/components/communication/SpeechPractice";
 
@@ -106,7 +107,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useSupabaseClient();
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;

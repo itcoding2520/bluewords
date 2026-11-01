@@ -1,9 +1,10 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { Select } from "@/components/ui/Select";
@@ -52,7 +53,7 @@ export function AdminCommunicationManagement() {
   const [topicSearch, setTopicSearch] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const confirm = useConfirmDialog();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useSupabaseClient();
   const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
   const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);

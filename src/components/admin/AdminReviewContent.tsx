@@ -1,8 +1,9 @@
 "use client";
 
+import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Check, FolderOpen, LoaderCircle, Pencil, Plus, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
@@ -35,7 +36,7 @@ type AdminUser = { id: string; email: string | null };
 
 export function AdminReviewContent() {
   const confirmDialog = useConfirmDialog();
-  const [supabase] = useState(() => createClient());
+  const supabase = useSupabaseClient();
   const [categories, setCategories] = useState<Submission[]>([]);
   const [words, setWords] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
