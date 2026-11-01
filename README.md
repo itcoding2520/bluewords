@@ -75,7 +75,7 @@ These screenshots were captured from the current app on October 27, 2026. The av
 - **Phase 3:** community vocabulary publishing, notifications, and administration.
 - **Phase 4:** Word Match, Word Scramble, Word Maze Adventure, Sentence Builder, and game leaderboards.
 - **Phase 5:** randomized assessments, assignment delivery, learner attempts/history, and administrator result management.
-- **Phase 6 (planned):** situational English lessons organized around real-life communication topics, with vocabulary, useful phrases/collocations, and sentence patterns. This is not part of the current feature set.
+- **Phase 6 (in progress):** connect vocabulary to practical phrases, sentence patterns, dialogue, audio playback, and a guided daily learning path. The situation catalog, lesson practice, learner goals, daily goals, review scheduling, and admin content tools are available; see the [Phase 6 roadmap and TODO](docs/phase-6-roadmap.md) for remaining work.
 
 ## Technology
 

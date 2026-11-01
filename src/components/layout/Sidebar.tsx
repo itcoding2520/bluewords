@@ -9,6 +9,7 @@ import {
   BookOpenCheck,
   History,
   ClipboardCheck,
+  MessageCircle,
   Gamepad2,
   Clapperboard,
   Menu,
@@ -60,6 +61,7 @@ const navigation = [
     icon: Gamepad2,
   },
   { label: "Assignments", href: "/assignments", icon: ClipboardCheck },
+  { label: "English practice", href: "/communication", icon: MessageCircle },
   {
     label: "Videos",
     href: "/videos",

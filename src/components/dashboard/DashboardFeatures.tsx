@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ShieldCheck, type LucideIcon } from "lucide-react";
+import { ArrowRight, MessageCircle, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 const sharedFeatures = [
@@ -79,18 +79,18 @@ const communityFeature = {
   surface: "border-indigo-100 bg-[url('/images/ui/backgrounds/card-publish.svg')]",
 };
 
-const adminFeature = {
-  title: "Admin tools",
-  description: "Review requests and manage shared vocabulary.",
-  href: "/admin",
-  icon: ShieldCheck,
-  illustration: undefined,
-  color: "bg-orange-50 text-orange-700",
-  surface: "border-orange-100 bg-[url('/images/ui/backgrounds/card-publish.svg')]",
+const englishPracticeFeature = {
+  title: "English practice",
+  description: "Learn useful words, phrases, and conversations by situation.",
+  href: "/communication",
+  icon: MessageCircle,
+  illustration: "/images/ui/illustrations/vocabulary-books.svg",
+  color: "bg-cyan-50 text-cyan-700",
+  surface: "border-cyan-100 bg-[url('/images/ui/backgrounds/card-vocabulary.svg')]",
 };
 
 export function DashboardFeatures({ isAdmin }: { isAdmin: boolean }) {
-  const features = [...sharedFeatures, isAdmin ? adminFeature : communityFeature];
+  const features = [...sharedFeatures, englishPracticeFeature, ...(isAdmin ? [] : [communityFeature])];
 
   return (
     <section className="mt-8">
@@ -109,8 +109,9 @@ export function DashboardFeatures({ isAdmin }: { isAdmin: boolean }) {
               <span className={`relative z-10 grid size-10 place-items-center rounded-xl shadow-sm sm:size-11 ${color}`}>
                 <FeatureIcon icon={icon} />
               </span>
-              <div className="relative z-10 mt-auto flex min-h-24 max-w-[55%] flex-1 flex-col justify-end sm:min-h-28">
-                <h3 className="font-extrabold leading-tight text-slate-950">{title}</h3>
+              <h3 className="font-extrabold leading-tight text-slate-950 mt-3">{title}</h3>
+              <div className="relative z-10 mt-4 flex min-h-24 max-w-[55%] flex-col sm:min-h-28">
+
                 <p className="mt-1 text-xs leading-4 text-slate-600 sm:text-sm sm:leading-5">{description}</p>
                 <ArrowRight size={17} className="mt-2 text-slate-500 transition group-hover:translate-x-1 group-hover:text-blue-700" />
               </div>
