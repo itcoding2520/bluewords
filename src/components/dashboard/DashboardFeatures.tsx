@@ -109,8 +109,9 @@ export function DashboardFeatures({ isAdmin }: { isAdmin: boolean }) {
               <span className={`relative z-10 grid size-10 place-items-center rounded-xl shadow-sm sm:size-11 ${color}`}>
                 <FeatureIcon icon={icon} />
               </span>
-              <div className="relative z-10 mt-auto flex min-h-24 max-w-[55%] flex-1 flex-col justify-end sm:min-h-28">
-                <h3 className="font-extrabold leading-tight text-slate-950">{title}</h3>
+              <h3 className="font-extrabold leading-tight text-slate-950 mt-3">{title}</h3>
+              <div className="relative z-10 mt-4 flex min-h-24 max-w-[55%] flex-col sm:min-h-28">
+
                 <p className="mt-1 text-xs leading-4 text-slate-600 sm:text-sm sm:leading-5">{description}</p>
                 <ArrowRight size={17} className="mt-2 text-slate-500 transition group-hover:translate-x-1 group-hover:text-blue-700" />
               </div>

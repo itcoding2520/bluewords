@@ -1536,12 +1536,6 @@ select {
 .admin-users-row-actions .shared-action-menu-trigger { width: 2.25rem; min-height: 2.25rem; border: 1px solid transparent; border-radius: .6rem !important; padding: 0; color: #8092ab; box-shadow: none; }
 .admin-navigation { scrollbar-width: none; -ms-overflow-style: none; }
 .admin-navigation::-webkit-scrollbar { display: none; }
-.scroll-to-top-button { position: fixed; right: max(1rem,env(safe-area-inset-right)); bottom: max(1rem,env(safe-area-inset-bottom)); z-index: 40; display: grid; width: 3.15rem; height: 3.15rem; place-items: center; border: 1px solid rgb(255 255 255 / .85); border-radius: 50%; background: linear-gradient(145deg,#248bff,#075df2); color: #fff; cursor: pointer; box-shadow: 0 8px 22px rgb(20 93 205 / .3),inset 0 1px 0 rgb(255 255 255 / .35); transition: transform .18s ease,box-shadow .18s ease,opacity .18s ease; animation: scroll-to-top-enter .18s ease-out both; }
-.scroll-to-top-button:hover { transform: translateY(-3px); box-shadow: 0 11px 25px rgb(20 93 205 / .38),inset 0 1px 0 rgb(255 255 255 / .35); }
-.scroll-to-top-button:focus-visible { outline: 3px solid #8dc4ff; outline-offset: 3px; }
-@keyframes scroll-to-top-enter { from { opacity: 0; transform: translateY(.5rem) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@media (max-width: 639px) { .scroll-to-top-button { right: max(.85rem,env(safe-area-inset-right)); bottom: max(.85rem,env(safe-area-inset-bottom)); width: 2.9rem; height: 2.9rem; } }
-@media (prefers-reduced-motion: reduce) { .scroll-to-top-button { animation: none; transition: none; } }
 .confirm-dialog-overlay { position: fixed; inset: 0; z-index: 200; background: rgb(8 22 48 / .48); backdrop-filter: blur(4px); animation: confirm-overlay-in .16s ease-out both; }
 .confirm-dialog-content { position: fixed; top: 50%; left: 50%; z-index: 201; width: min(28rem,calc(100vw - 2rem)); transform: translate(-50%,-50%); border: 1px solid rgb(255 255 255 / .95); border-radius: 1.5rem; background: linear-gradient(145deg,#fff,#f7fbff); padding: 1.35rem; box-shadow: 0 24px 70px rgb(9 35 75 / .3); animation: confirm-dialog-in .18s ease-out both; }
 .confirm-dialog-heading { display: flex; align-items: flex-start; gap: .9rem; }

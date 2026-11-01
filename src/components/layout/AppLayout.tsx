@@ -4,7 +4,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
-import { ScrollToTopButton } from "./ScrollToTopButton";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -42,7 +41,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </section>
       </div>
-      <ScrollToTopButton />
     </main>
   );
 }
