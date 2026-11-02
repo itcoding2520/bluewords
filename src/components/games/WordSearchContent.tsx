@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -17,9 +17,10 @@ import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
+import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { WORD_TARGETS, selectableWords, type Difficulty, type GridSize } from "@/lib/word-search-config";
-import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
+import { saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -49,13 +50,19 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
   const [saveRetryCount, setSaveRetryCount] = useState(0);
-  const [history, setHistory] = useState<WordSearchSessionRow[]>([]);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState("");
   const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const saveStartedRef = useRef<number | null>(null);
+  const {
+    history,
+    historyPage,
+    setHistoryPage,
+    historyTotal,
+    historyLoading,
+    historyError,
+    loadHistory,
+    fastestSeconds: fastestHistorySeconds,
+    averageWordsPerRound,
+  } = useWordSearchHistory(userId);
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
@@ -74,8 +81,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     ];
   }, [categories, words]);
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
-  const fastestHistorySeconds = history.reduce<number | null>((best, item) => best === null || item.duration_seconds < best ? item.duration_seconds : best, null);
-  const averageWordsPerRound = history.length ? Math.round(history.reduce((total, item) => total + item.word_count, 0) / history.length) : 0;
   const showStickyStart = phase === "setup" && tab === "play";
 
   useEffect(() => {
@@ -86,30 +91,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
-
-  const loadHistory = useCallback(async (forceRefresh = false, page = historyPage) => {
-    if (!userId) return;
-    const cached = getCachedWordSearchSessions(userId, page, 10);
-    if (cached && !forceRefresh) {
-      setHistory(cached.rows);
-      setHistoryTotal(cached.total);
-      setHistoryError("");
-      setHistoryLoading(false);
-      return;
-    }
-
-    setHistoryLoading(!cached);
-    setHistoryError("");
-    try {
-      const result = await getWordSearchSessions({ page, pageSize: 10, forceRefresh });
-      setHistory(result.rows);
-      setHistoryTotal(result.total);
-    } catch {
-      setHistoryError("Could not load game history. Please try again.");
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [historyPage, userId]);
 
   useEffect(() => {
     if (!userId || phase !== "results" || startedAt === null || !puzzle || saveStartedRef.current === startedAt) return;
