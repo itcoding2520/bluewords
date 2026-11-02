@@ -14,25 +14,19 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix, getWordSearchSelectionPath, normalizeWordSearchWord } from "@/lib/word-search.mjs";
+import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { DIFFICULTIES, GRID_SIZES, PREVIEW_LETTERS, WORD_TARGETS, selectableWords, type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { getCachedWordSearchSessions, getWordSearchSessions, saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
-type CellPosition = { row: number; column: number };
-type ActiveDrag = { pointerId: number; start: CellPosition };
 
-function getCellPosition(element: Element | null): CellPosition | null {
-  const cell = element?.closest<HTMLElement>("[data-cell-row][data-cell-column]");
-  if (!cell) return null;
-  const row = Number(cell.dataset.cellRow);
-  const column = Number(cell.dataset.cellColumn);
-  return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
+function currentTimestamp() {
+  return Date.now();
 }
-
 const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-500",
   violet: "bg-violet-500",
@@ -126,7 +120,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
   const [foundWordPaths, setFoundWordPaths] = useState<Record<string, CellPosition[]>>({});
-  const [selectedCells, setSelectedCells] = useState<CellPosition[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
@@ -140,7 +133,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   const [historyError, setHistoryError] = useState("");
   const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const saveStartedRef = useRef<number | null>(null);
-  const activeDragRef = useRef<ActiveDrag | null>(null);
 
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
@@ -222,7 +214,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     });
   }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt, userId]);
 
-  function startGame() {
+  function handleStartGame() {
     const nextPuzzle = createWordSearchPuzzle(candidates, gridSize, targetCount);
     if (nextPuzzle.words.length === 0) {
       setGameError("We couldn't build a board from this selection. Try a different category or difficulty.");
@@ -231,10 +223,10 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     setPuzzle(nextPuzzle);
     setFoundIds(new Set());
     setFoundWordPaths({});
-    setSelectedCells([]);
+    clearSelection();
     setElapsedSeconds(0);
     saveStartedRef.current = null;
-    setStartedAt(Date.now());
+    setStartedAt(currentTimestamp());
     setGameError("");
     setSaveState("idle");
     setSaveError("");
@@ -242,20 +234,19 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   }
 
   function backToSetup() {
-    activeDragRef.current = null;
-    setSelectedCells([]);
+    clearSelection();
     setStartedAt(null);
     setPhase("setup");
   }
 
   function finishCellSelection(selection: CellPosition[]) {
     if (!puzzle || phase !== "playing" || selection.length < 2) {
-      setSelectedCells([]);
+      clearSelection();
       return;
     }
     const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
     if (!match?.complete) {
-      setSelectedCells([]);
+      clearSelection();
       return;
     }
 
@@ -263,46 +254,21 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     nextFoundIds.add(match.word.id);
     setFoundIds(nextFoundIds);
     setFoundWordPaths((paths) => ({ ...paths, [match.word.id]: selection }));
-    setSelectedCells([]);
+    clearSelection();
 
     if (nextFoundIds.size === puzzle.words.length) {
       setPhase("results");
     }
   }
 
-  function handleGridPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (phase !== "playing" || event.button !== 0) return;
-    const start = getCellPosition(event.target as Element);
-    if (!start) return;
-    event.preventDefault();
-    activeDragRef.current = { pointerId: event.pointerId, start };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setSelectedCells([start]);
-  }
-
-  function handleGridPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    const drag = activeDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    event.preventDefault();
-    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
-    if (!end) return;
-    setSelectedCells(getWordSearchSelectionPath(drag.start, end) ?? [drag.start]);
-  }
-
-  function handleGridPointerUp(event: React.PointerEvent<HTMLDivElement>) {
-    const drag = activeDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const end = getCellPosition(document.elementFromPoint(event.clientX, event.clientY));
-    const selection = end ? getWordSearchSelectionPath(drag.start, end) : null;
-    activeDragRef.current = null;
-    finishCellSelection(selection ?? []);
-  }
-
-  function handleGridPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
-    if (activeDragRef.current?.pointerId !== event.pointerId) return;
-    activeDragRef.current = null;
-    setSelectedCells([]);
-  }
+  const {
+    selectedCells,
+    clearSelection,
+    handlePointerDown: handleGridPointerDown,
+    handlePointerMove: handleGridPointerMove,
+    handlePointerUp: handleGridPointerUp,
+    handlePointerCancel: handleGridPointerCancel,
+  } = useWordSearchSelection({ enabled: phase === "playing", onSelectionComplete: finishCellSelection });
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
 
@@ -411,7 +377,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
 
               <div className="mt-auto flex flex-col gap-3 pt-7 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">Words can appear left-to-right, top-to-bottom, or diagonally downward.</p>
-                <Button onClick={startGame} disabled={targetCount === 0} className="word-search-start-button hidden min-h-14 w-full sm:inline-flex sm:w-auto" style={{ minWidth: 180 }}><Gamepad2 size={19} /> Start game</Button>
+                <Button onClick={handleStartGame} disabled={targetCount === 0} className="word-search-start-button hidden min-h-14 w-full sm:inline-flex sm:w-auto" style={{ minWidth: 180 }}><Gamepad2 size={19} /> Start game</Button>
           </div>
         </Card>
         <BoardPreview gridSize={gridSize} difficulty={difficulty} wordCount={targetCount} />
@@ -419,7 +385,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
         )}
         {showStickyStart && (
           <div className="word-search-sticky-start fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-            <Button onClick={startGame} disabled={targetCount === 0} className="min-h-12 w-full"><Gamepad2 size={17} /> Start game</Button>
+            <Button onClick={handleStartGame} disabled={targetCount === 0} className="min-h-12 w-full"><Gamepad2 size={17} /> Start game</Button>
           </div>
         )}
       </div>
@@ -456,7 +422,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
             saveStartedRef.current = null;
             setSaveRetryCount((count) => count + 1);
           }}
-          onPlayAgain={startGame}
+          onPlayAgain={handleStartGame}
           onViewHistory={() => {
             setPhase("setup");
             setTab("history");
@@ -468,7 +434,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
       ) : (
         <div className="word-search-game-layout grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
           <Card className="word-search-board-card order-2 min-w-0 p-3 sm:p-5 lg:order-1">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={() => setSelectedCells([])} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm text-slate-500"><span>{foundIds.size} / {puzzle.words.length} found</span><button type="button" onClick={clearSelection} disabled={selectedCells.length === 0} className="text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-40">Clear selection</button></div>
             <div className="min-w-0 overflow-hidden md:pb-2" aria-label={`${gridSize} by ${gridSize} letter grid`}>
               <div onPointerDown={handleGridPointerDown} onPointerMove={handleGridPointerMove} onPointerUp={handleGridPointerUp} onPointerCancel={handleGridPointerCancel} className={`word-search-grid word-search-game-grid word-search-grid--${gridSize} mx-auto grid ${gridSize === 10 ? "gap-[2px]" : "gap-px"} touch-none select-none`}>
                 {puzzle.letters.flatMap((row, rowIndex) => row.map((letter, columnIndex) => {
