@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -18,9 +18,9 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
+import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { WORD_TARGETS, selectableWords, type Difficulty, type GridSize } from "@/lib/word-search-config";
-import { saveWordSearchSession } from "@/lib/supabase/word-search-history";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -47,11 +47,17 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [saveError, setSaveError] = useState("");
-  const [saveRetryCount, setSaveRetryCount] = useState(0);
   const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
-  const saveStartedRef = useRef<number | null>(null);
+  const { saveState, saveError, reset: resetSave, retry: retrySave } = useWordSearchSessionSave({
+    userId,
+    phase,
+    startedAt,
+    puzzle,
+    gridSize,
+    difficulty,
+    category,
+    onSaved: setElapsedSeconds,
+  });
   const {
     history,
     historyPage,
@@ -92,32 +98,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     return () => window.clearInterval(interval);
   }, [phase, startedAt]);
 
-  useEffect(() => {
-    if (!userId || phase !== "results" || startedAt === null || !puzzle || saveStartedRef.current === startedAt) return;
-    saveStartedRef.current = startedAt;
-    const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
-
-    void saveWordSearchSession({
-      gridSize,
-      difficulty,
-      category,
-      words: puzzle.words.map(({ word }) => word),
-      durationSeconds,
-      startedAt: new Date(startedAt).toISOString(),
-      completedAt: new Date(completedAt).toISOString(),
-    }).then(() => {
-      setSaveState("saved");
-    }).catch((error: unknown) => {
-      saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this game attempt.");
-    });
-  }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt, userId]);
-
   function handleStartGame() {
     const nextPuzzle = createWordSearchPuzzle(candidates, gridSize, targetCount);
     if (nextPuzzle.words.length === 0) {
@@ -129,11 +109,9 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     setFoundWordPaths({});
     clearSelection();
     setElapsedSeconds(0);
-    saveStartedRef.current = null;
+    resetSave();
     setStartedAt(currentTimestamp());
     setGameError("");
-    setSaveState("idle");
-    setSaveError("");
     setPhase("playing");
   }
 
@@ -257,8 +235,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
           saveState={saveState}
           saveError={saveError}
           onRetrySave={() => {
-            saveStartedRef.current = null;
-            setSaveRetryCount((count) => count + 1);
+            retrySave();
           }}
           onPlayAgain={handleStartGame}
           onViewHistory={() => {
