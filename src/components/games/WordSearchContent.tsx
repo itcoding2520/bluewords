@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Clock3, Gamepad2, History, Star } from "lucide-react";
+import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { WordSearchResults } from "@/components/games/WordSearchResults";
@@ -12,6 +12,7 @@ import { WordSearchSetupForm, type WordSearchCategoryOption } from "@/components
 import { WordSearchHistoryDetail } from "@/components/games/WordSearchHistoryDetail";
 import { WordSearchBoardPreview } from "@/components/games/WordSearchBoardPreview";
 import { WordSearchBoard } from "@/components/games/WordSearchBoard";
+import { WordSearchGameHeader } from "@/components/games/WordSearchGameHeader";
 import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
@@ -266,20 +267,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
 
   return (
     <div className={phase === "playing" ? "word-search-playing" : "pb-8"}>
-      {phase === "playing" ? (
-        <div className="sticky top-25 z-20 -mx-2 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-2 py-2.5 backdrop-blur lg:top-0 lg:mx-0 lg:bg-slate-50/95">
-          <button type="button" onClick={backToSetup} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Setup</button>
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"><Clock3 size={16} />{formatDuration(elapsedSeconds)}</div>
-        </div>
-      ) : (
-        <Link href="/games" className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><ArrowLeft size={16} /> Back to Games</Link>
-      )}
-      <header className="word-search-game-heading mb-3 md:mb-5 flex flex-wrap items-end justify-between gap-3">
-
-          <p className="text-sm font-medium text-blue-600">Word Search · {difficulty}</p>
-          <h1 className="page-title mt-1">Find the words</h1>
-
-      </header>
+      <WordSearchGameHeader isPlaying={phase === "playing"} difficulty={difficulty} elapsedSeconds={elapsedSeconds} onBackToSetup={backToSetup} />
 
       {phase === "results" ? (
         <WordSearchResults
