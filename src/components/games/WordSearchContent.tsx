@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Award, BarChart3, BookOpen, CalendarDays, Check,
 
 import { Button } from "@/components/ui/Button";
 import { WordSearchResults } from "@/components/games/WordSearchResults";
+import { WordSearchWordList } from "@/components/games/WordSearchWordList";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -450,17 +451,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
           <Card className="word-search-words-card order-1 p-5 lg:order-2">
             <h2 className="font-semibold text-slate-950">Words to find</h2>
             <p className="mt-1 text-xs text-slate-500 hidden md:block">Find them in any order.</p>
-            <ul className="mt-2 md:mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
-              {puzzle.words.map((word) => {
-                const vocabularyWord = vocabularyById.get(word.id);
-                const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
-                const found = foundIds.has(word.id);
-                return <li key={word.id} className={`min-w-0 rounded-lg p-2 md:px-3 leading-4 ${found ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>
-                  <span className={`inline break-words text-sm font-semibold ${found ? "line-through" : ""}`}>{word.word}</span>
-                  <span className="inline pl-1 break-words text-xs leading-4 text-slate-500">({meaning})</span>
-                </li>;
-              })}
-            </ul>
+            <WordSearchWordList words={puzzle.words} vocabularyById={vocabularyById} foundIds={foundIds} />
           </Card>
         </div>
       )}
