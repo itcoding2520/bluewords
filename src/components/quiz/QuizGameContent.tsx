@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -10,12 +10,12 @@ import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import { expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, formatQuizTime as formatTime, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
+import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -50,10 +50,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [saveError, setSaveError] = useState("");
-  const saveStartedRef = useRef<number | null>(null);
-
   const {
     categoryWords,
     categoryOptions,
@@ -69,6 +65,19 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const currentAnswer = answers[questionIndex];
   const showStickyGameAction = tab === "play" && phase === "playing" && Boolean(currentQuestion) && (mode === "type-word" || Boolean(currentAnswer));
   const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
+  const { saveState, saveError, resetSaveState, allowRetry } = useQuizSessionSave({
+    userId,
+    phase,
+    startedAt,
+    mode,
+    questions,
+    answers,
+    correctCount,
+    historyPageSize,
+    setHistoryPage,
+    setElapsedSeconds,
+    loadHistory,
+  });
 
   useQuizProgression({
     phase,
@@ -81,50 +90,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setQuestionIndex,
     setInput,
   });
-
-  useEffect(() => {
-    if (!userId) return;
-    if (phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
-    saveStartedRef.current = startedAt;
-    const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
-
-    void saveVocabularyQuizSession({
-      mode,
-      question_count: questions.length,
-      correct_count: correctCount,
-      duration_seconds: durationSeconds,
-      started_at: new Date(startedAt).toISOString(),
-      completed_at: new Date(completedAt).toISOString(),
-      answers: questions.map((question, index) => {
-        const answer = answers[index];
-        const expected = expectedAnswer(question, mode);
-        return {
-          vocabulary_word_id: question.word.isCustom ? null : question.word.id,
-          question_position: index + 1,
-          word_text: question.word.word,
-          prompt_text: promptText(question, mode),
-          expected_answer: expected,
-          selected_answer: answer?.value ?? "",
-          is_correct: answer?.correct ?? false,
-          part_of_speech: question.partOfSpeech,
-          choices: question.choices,
-          image_path: question.word.imagePath ?? null,
-        };
-      }),
-    }).then(() => {
-      setSaveState("saved");
-      setHistoryPage(1);
-      void loadHistory(true, 1, historyPageSize);
-    }).catch((error: unknown) => {
-      saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
-    });
-  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, setHistoryPage, startedAt, userId]);
 
   function startQuiz() {
     if (maximumQuestions < selectedQuestionCount) return;
@@ -140,8 +105,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setInput("");
     setElapsedSeconds(0);
     setStartedAt(now);
-    setSaveState("idle");
-    setSaveError("");
+    resetSaveState();
     setPhase("playing");
     setTab("play");
   }
@@ -301,7 +265,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
           onSetup={backToSetup}
           onPlayAgain={startQuiz}
           onRetrySave={() => {
-            saveStartedRef.current = null;
+            allowRetry();
             setPhase("setup");
             setTimeout(() => setPhase("results"), 0);
           }}
