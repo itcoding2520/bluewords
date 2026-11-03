@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Clock3, Gamepad2, History, LoaderCircle, Play, RotateCcw, Sparkles, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -16,10 +16,10 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
-import { getCachedVocabularyQuizAnswers, getCachedVocabularyQuizHistory, getVocabularyQuizAnswers, getVocabularyQuizHistory, saveVocabularyQuizSession } from "@/lib/supabase/quiz";
+import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
 import { buildMeaningQuestions, expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -65,6 +65,22 @@ function QuizCategoryChip({
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const { words, categories, isLoaded } = useVocabulary();
+  const {
+    history,
+    historyPage,
+    setHistoryPage,
+    historyPageSize,
+    setHistoryPageSize,
+    historyTotal,
+    historyLoading,
+    historyError,
+    selectedHistory,
+    setSelectedHistory,
+    historyAnswers,
+    reviewLoading,
+    loadHistory,
+    openHistoryReview,
+  } = useVocabularyQuizHistory(userId);
   const [mode, setMode] = useState<QuizMode>("choose-meaning");
   const [category, setCategory] = useState("all");
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
@@ -77,15 +93,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [history, setHistory] = useState<VocabularyQuizSessionRow[]>([]);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [historyPageSize, setHistoryPageSize] = useState(10);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState("");
-  const [selectedHistory, setSelectedHistory] = useState<VocabularyQuizSessionRow | null>(null);
-  const [historyAnswers, setHistoryAnswers] = useState<VocabularyQuizAnswerRow[]>([]);
-  const [reviewLoading, setReviewLoading] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
   const saveStartedRef = useRef<number | null>(null);
@@ -160,34 +167,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     return () => window.clearTimeout(timeout);
   }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt, mode]);
 
-  const loadHistory = useCallback(async (
-    forceRefresh = false,
-    page = historyPage,
-    pageSize = historyPageSize
-  ) => {
-    if (!userId) return;
-    const cachedHistory = getCachedVocabularyQuizHistory(userId, page, pageSize);
-    if (cachedHistory && !forceRefresh) {
-      setHistory(cachedHistory.rows);
-      setHistoryTotal(cachedHistory.total);
-      setHistoryError("");
-      setHistoryLoading(false);
-      return;
-    }
-
-    setHistoryLoading(!cachedHistory);
-    setHistoryError("");
-    try {
-      const result = await getVocabularyQuizHistory({ page, pageSize, forceRefresh });
-      setHistory(result.rows);
-      setHistoryTotal(result.total);
-    } catch {
-      setHistoryError("Could not load quiz history. Please try again.");
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [historyPage, historyPageSize, userId]);
-
   useEffect(() => {
     if (!userId) return;
     if (phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
@@ -230,7 +209,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
     });
-  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, startedAt, userId]);
+  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, setHistoryPage, startedAt, userId]);
 
   function startQuiz() {
     if (maximumQuestions < selectedQuestionCount) return;
@@ -277,27 +256,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   function backToSetup() {
     setStartedAt(null);
     setPhase("setup");
-  }
-
-  async function openHistoryReview(session: VocabularyQuizSessionRow) {
-    if (!userId) return;
-    setSelectedHistory(session);
-    setHistoryError("");
-    const cachedAnswers = getCachedVocabularyQuizAnswers(userId, session.id);
-    if (cachedAnswers) {
-      setHistoryAnswers(cachedAnswers);
-      setReviewLoading(false);
-      return;
-    }
-    setReviewLoading(true);
-    try {
-      setHistoryAnswers(await getVocabularyQuizAnswers(session.id));
-    } catch {
-      setHistoryAnswers([]);
-      setHistoryError("Could not load this quiz review. Please try again.");
-    } finally {
-      setReviewLoading(false);
-    }
   }
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
