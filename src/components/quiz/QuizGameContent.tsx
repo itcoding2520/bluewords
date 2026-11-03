@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -10,12 +10,11 @@ import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
-import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
 import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import { buildMeaningQuestions, expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
+import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -54,44 +53,15 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const [saveError, setSaveError] = useState("");
   const saveStartedRef = useRef<number | null>(null);
 
-  const categoryWords = useMemo(
-    () => filterQuizWordsByCategory(words, category),
-    [category, words]
-  );
-  const categoryOptions = useMemo(() => {
-    const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
-    return [
-      { id: "all-categories", name: "All categories", value: "all", color: "blue" as VocabularyCategoryColor, imagePath: words.find((word) => word.imagePath)?.imagePath ?? null },
-      ...visibleCategories.map((item) => ({
-        id: item.id,
-        name: item.name,
-        value: item.name,
-        color: item.color,
-        imagePath: item.image_path ? `category:${item.image_path}` : words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
-      })),
-    ];
-  }, [categories, words]);
-  const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
-  const previewMeaningQuestion = useMemo(() => {
-    const previewBase = meaningQuestions.find((question) => question.word.word.toLocaleLowerCase() === "doctor" && question.word.imagePath)
-      ?? meaningQuestions.find((question) => question.choiceType === "meaning" && question.word.imagePath)
-      ?? meaningQuestions[0];
-    if (!previewBase) return undefined;
-
-    const distractors = shuffle([...new Set(meaningQuestions
-      .map((question) => question.meaning)
-      .filter((meaning) => meaning.toLocaleLowerCase() !== previewBase.meaning.toLocaleLowerCase()))]).slice(0, 3);
-    if (distractors.length < 3) return previewBase;
-    return {
-      ...previewBase,
-      choiceType: "meaning" as const,
-      correctAnswer: previewBase.meaning,
-      choices: shuffle([previewBase.meaning, ...distractors]),
-    };
-  }, [meaningQuestions]);
-  const typeWordCount = categoryWords.filter((word) => Boolean(word.imagePath)).length;
-  const eligibleWords = useMemo(() => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word), [categoryWords, mode, meaningQuestions]);
-  const maximumQuestions = eligibleWords.length;
+  const {
+    categoryWords,
+    categoryOptions,
+    meaningQuestions,
+    previewMeaningQuestion,
+    typeWordCount,
+    eligibleWords,
+    maximumQuestions,
+  } = useQuizSetupData({ words, categories, category, mode });
   const selectedQuestionCount = questionCount;
   const showStickyStart = tab === "play" && phase === "setup";
   const currentQuestion = questions[questionIndex];
