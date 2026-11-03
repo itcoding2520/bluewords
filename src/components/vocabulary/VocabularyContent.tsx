@@ -30,6 +30,7 @@ import {
   setCachedVocabularyPage,
 } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import { useVocabularySelection } from "@/hooks/useVocabularySelection";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -70,9 +71,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set()
-  );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [pageWords, setPageWords] = useState<VocabularyWord[]>(
@@ -93,7 +91,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const [isExportCountLoading, setIsExportCountLoading] = useState(false);
   const pageRequestId = useRef(0);
   const loadedAuthVersionRef = useRef<number | null>(null);
-  const selectPageRef = useRef<HTMLInputElement>(null);
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -174,13 +171,15 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
   const currentPage = Math.min(page, pageCount);
   const currentPageWords = loadedAuthVersion === authVersion ? pageWords : [];
-  const selectedOnPage = currentPageWords.filter((word) =>
-    selectedIds.has(word.id)
-  ).length;
-  const isPageSelected =
-    currentPageWords.length > 0 && selectedOnPage === currentPageWords.length;
-  const isPagePartiallySelected =
-    selectedOnPage > 0 && selectedOnPage < currentPageWords.length;
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectPageRef,
+    isPageSelected,
+    isPagePartiallySelected,
+    toggleSelected,
+    togglePageSelection,
+  } = useVocabularySelection(currentPageWords);
   const firstVisibleWord =
     visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const lastVisibleWord = Math.min(
@@ -237,7 +236,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       toast.error("Failed to load vocabulary.");
     });
     return () => { cancelled = true; };
-  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory, status]);
+  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory, setSelectedIds, status]);
 
   useEffect(() => {
     if (selectedCategory === "All") return;
@@ -260,12 +259,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     });
     return () => { cancelled = true; };
   }, [authVersion, categories, pageWords.length, selectedCategory]);
-
-  useEffect(() => {
-    if (selectPageRef.current) {
-      selectPageRef.current.indeterminate = isPagePartiallySelected;
-    }
-  }, [isPagePartiallySelected]);
 
   function handleOpenAdd() {
     setEditingWord(null);
@@ -309,27 +302,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     setPageWords([]);
     setPage(1);
     setSelectedIds(new Set());
-  }
-
-  function handleToggleSelected(id: string) {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function handleTogglePageSelection() {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (isPageSelected) {
-        currentPageWords.forEach((word) => next.delete(word.id));
-      } else {
-        currentPageWords.forEach((word) => next.add(word.id));
-      }
-      return next;
-    });
   }
 
   async function handleBulkDelete() {
@@ -581,8 +553,8 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         isPageSelected={isPageSelected}
         isPagePartiallySelected={isPagePartiallySelected}
         isBulkDeleting={isBulkDeleting}
-        onTogglePageSelection={handleTogglePageSelection}
-        onToggleSelected={handleToggleSelected}
+        onTogglePageSelection={togglePageSelection}
+        onToggleSelected={toggleSelected}
         onToggleMastered={handleToggleMastered}
         onEdit={handleEditWord}
         onDelete={handleDeleteWord}
