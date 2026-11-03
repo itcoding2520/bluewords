@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Clock3, Gamepad2, History, LoaderCircle, RotateCcw, Star, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Gamepad2, History, LoaderCircle, RotateCcw, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { QuizImage } from "@/components/quiz/QuizPreview";
+import { QuizGamePanel } from "@/components/quiz/QuizGamePanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
@@ -197,11 +196,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected) } }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    submitAnswer(input);
-  }
-
   function goToNextQuestion() {
     if (questionIndex + 1 >= questions.length) {
       setElapsedSeconds(startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000));
@@ -323,20 +317,19 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       )}
 
       {phase === "playing" && currentQuestion && (
-        <Card className="quiz-game-card mx-auto max-w-5xl p-5 sm:p-8">
-          <div className="quiz-game-topbar sticky top-25 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:mt-0 lg:rounded-none lg:px-0 lg:py-0 lg:pb-4"><button type="button" onClick={backToSetup} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"><ArrowLeft size={16} /> Exit quiz</button><div className="flex items-center gap-4 text-sm"><span className="text-slate-500">Question {questionIndex + 1} of {questions.length}</span><span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatTime(elapsedSeconds)}</span></div></div>
-          <div className="quiz-game-progress mt-5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>
-          <div className="quiz-game-prompt flex md:min-h-[360px] flex-col items-center justify-center pt-3 sm:pt-6 text-center">
-            {mode === "type-word" ? <><QuizImage word={currentQuestion.word} className="quiz-game-image" /><p className="mt-5 inline-flex items-center gap-1.5 text-sm text-slate-500">What is this word?<PronunciationButton word={currentQuestion.word.word} /></p><form id="quiz-type-word-answer" onSubmit={handleSubmit} className="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"><input autoFocus value={input} onChange={(event) => setInput(event.target.value)} disabled={Boolean(currentAnswer)} aria-label="Type the vocabulary word" placeholder="Type the word…" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-center text-base outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 disabled:bg-slate-50" />{!currentAnswer && <Button type="submit" disabled={!input.trim()} className="hidden sm:inline-flex">Check</Button>}</form></> : <>
-              {currentQuestion.choiceType === "word"
-                ? <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.meaning}</p>
-                : currentQuestion.word.imagePath ? <QuizImage word={currentQuestion.word} className="quiz-game-image" /> : <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{currentQuestion.word.word}</p>}
-              {currentQuestion.partOfSpeech && <span className="mt-4 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700">{currentQuestion.partOfSpeech}</span>}
-              <p className="mt-4 text-sm text-slate-500">{currentQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p><div className="quiz-game-answers mt-4 grid w-full max-w-3xl gap-3 grid-cols-2">{currentQuestion.choices.map((choice, index) => <button key={`${choice}-${index}`} type="button" disabled={Boolean(currentAnswer)} onClick={() => submitAnswer(choice)} className={`quiz-game-answer min-h-14 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${currentAnswer && choice === expectedAnswer(currentQuestion, mode) ? "is-correct border-emerald-300 bg-emerald-50 font-medium text-emerald-800" : currentAnswer?.value === choice && !currentAnswer.correct ? "is-wrong border-red-300 bg-red-50 font-medium text-red-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}><span className="quiz-answer-letter">{String.fromCharCode(65 + index)}</span>{choice}</button>)}</div>
-            </>}
-            {currentAnswer && <div className="quiz-game-feedback mt-5 flex w-full max-w-3xl flex-col items-center gap-3" role="status">{currentAnswer.correct ? <p className="quiz-correct-feedback"><Star size={24} fill="currentColor" /> Correct! <span>Great job! 🎉</span></p> : <AutoDismissMessage key={`${questionIndex}:${currentAnswer.value}`} variant="error" className="inline-flex items-center gap-2 bg-transparent p-0 font-semibold"><X size={17} />{`The answer is: ${expectedAnswer(currentQuestion, mode)}`}</AutoDismissMessage>}<Button onClick={goToNextQuestion} className="hidden sm:inline-flex">{questionIndex + 1 === questions.length ? "See results" : "Next question"}</Button></div>}
-          </div>
-        </Card>
+        <QuizGamePanel
+          question={currentQuestion}
+          mode={mode}
+          questionIndex={questionIndex}
+          questionCount={questions.length}
+          answer={currentAnswer}
+          input={input}
+          elapsedSeconds={elapsedSeconds}
+          onExit={backToSetup}
+          onInputChange={setInput}
+          onSubmitAnswer={submitAnswer}
+          onNext={goToNextQuestion}
+        />
       )}
 
       {tab === "play" && phase === "results" && (
