@@ -15,6 +15,7 @@ import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import { expectedAnswer, formatQuizTime as formatTime, promptText, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
+import { useQuizProgression } from "@/hooks/useQuizProgression";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -69,30 +70,17 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const showStickyGameAction = tab === "play" && phase === "playing" && Boolean(currentQuestion) && (mode === "type-word" || Boolean(currentAnswer));
   const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
 
-  useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-    const tick = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    tick();
-    const interval = window.setInterval(tick, 1000);
-    return () => window.clearInterval(interval);
-  }, [phase, startedAt]);
-
-  useEffect(() => {
-    if (phase !== "playing" || currentAnswer?.correct !== true) return;
-
-    const timeout = window.setTimeout(() => {
-      if (questionIndex + 1 >= questions.length) {
-        setElapsedSeconds(startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000));
-        setPhase("results");
-        return;
-      }
-
-      setQuestionIndex((index) => index + 1);
-      setInput("");
-    }, 800);
-
-    return () => window.clearTimeout(timeout);
-  }, [currentAnswer?.correct, phase, questionIndex, questions.length, startedAt, mode]);
+  useQuizProgression({
+    phase,
+    startedAt,
+    currentAnswerIsCorrect: currentAnswer?.correct === true,
+    questionIndex,
+    questionCount: questions.length,
+    setElapsedSeconds,
+    setPhase,
+    setQuestionIndex,
+    setInput,
+  });
 
   useEffect(() => {
     if (!userId) return;
