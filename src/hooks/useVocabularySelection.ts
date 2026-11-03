@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 import type { VocabularyWord } from "@/data/vocabulary";
 
-export function useVocabularySelection(pageWords: VocabularyWord[]) {
+export function useVocabularySelection(pageWords: VocabularyWord[], authVersion: number) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const selectPageRef = useRef<HTMLInputElement>(null);
+  const authVersionRef = useRef(authVersion);
 
   const selectedOnPage = pageWords.filter((word) => selectedIds.has(word.id)).length;
   const isPageSelected = pageWords.length > 0 && selectedOnPage === pageWords.length;
@@ -15,6 +16,12 @@ export function useVocabularySelection(pageWords: VocabularyWord[]) {
   useEffect(() => {
     if (selectPageRef.current) selectPageRef.current.indeterminate = isPagePartiallySelected;
   }, [isPagePartiallySelected]);
+
+  useEffect(() => {
+    if (authVersionRef.current === authVersion) return;
+    authVersionRef.current = authVersion;
+    setSelectedIds(new Set());
+  }, [authVersion]);
 
   function toggleSelected(id: string) {
     setSelectedIds((current) => {
