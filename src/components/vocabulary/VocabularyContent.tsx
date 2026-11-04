@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Trash2 } from "lucide-react";
 import {
@@ -25,11 +25,9 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
-import {
-  getCachedVocabularyPage,
-  setCachedVocabularyPage,
-} from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import { useVocabularySelection } from "@/hooks/useVocabularySelection";
+import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -54,13 +52,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     refreshWords,
     authVersion,
   } = useVocabulary({ loadWords: false });
-  const initialCachedPage = getCachedVocabularyPage(authVersion, {
-    page: 1,
-    pageSize: 10,
-    search: "",
-    category: null,
-    status: null,
-  }) as { rows: VocabularyWord[]; total: number } | null;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("All");
   const [status, setStatus] = useState<VocabularyStatusFilter>("all");
@@ -70,30 +61,13 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set()
-  );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [pageWords, setPageWords] = useState<VocabularyWord[]>(
-    () => initialCachedPage?.rows ?? []
-  );
-  const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(
-    () => initialCachedPage ? authVersion : null
-  );
-  const [totalWords, setTotalWords] = useState(
-    () => initialCachedPage?.total ?? 0
-  );
-  const [isPageLoading, setIsPageLoading] = useState(!initialCachedPage);
-  const [pageRequest, setPageRequest] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
   const [hasLegacyData, setHasLegacyData] = useState(false);
   const [categoryExportCount, setCategoryExportCount] = useState(0);
   const [isExportCountLoading, setIsExportCountLoading] = useState(false);
-  const pageRequestId = useRef(0);
-  const loadedAuthVersionRef = useRef<number | null>(null);
-  const selectPageRef = useRef<HTMLInputElement>(null);
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -124,6 +98,20 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       ? category
       : "All";
 
+  const { pageWords, setPageWords, loadedAuthVersion, totalWords, isPageLoading, setIsPageLoading, refreshPage } = useVocabularyPageData({
+    authVersion,
+    categories,
+    categoriesLoaded,
+    query: {
+      page,
+      pageSize,
+      search: debouncedSearch,
+      category: selectedCategory === "All" ? null : selectedCategory,
+      status: status === "all" ? null : status,
+    },
+    onPageOutOfRange: setPage,
+  });
+
   async function handleImportVocabulary() {
     if (isImporting || !importPreview || importPreview.ready.length === 0) {
       return;
@@ -145,7 +133,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
 
       // Đọc lại dữ liệu cloud để Dashboard và Vocabulary cập nhật.
       await refreshWords();
-      setPageRequest((value) => value + 1);
+      refreshPage();
 
       if (result.failed === 0) {
         setShowImportPreview(false);
@@ -174,70 +162,21 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
   const currentPage = Math.min(page, pageCount);
   const currentPageWords = loadedAuthVersion === authVersion ? pageWords : [];
-  const selectedOnPage = currentPageWords.filter((word) =>
-    selectedIds.has(word.id)
-  ).length;
-  const isPageSelected =
-    currentPageWords.length > 0 && selectedOnPage === currentPageWords.length;
-  const isPagePartiallySelected =
-    selectedOnPage > 0 && selectedOnPage < currentPageWords.length;
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectPageRef,
+    isPageSelected,
+    isPagePartiallySelected,
+    toggleSelected,
+    togglePageSelection,
+  } = useVocabularySelection(currentPageWords, authVersion);
   const firstVisibleWord =
     visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const lastVisibleWord = Math.min(
     currentPage * pageSize,
     visibleTotalWords
   );
-
-  useEffect(() => {
-    if (!categoriesLoaded) return;
-    const requestId = ++pageRequestId.current;
-    let cancelled = false;
-    const query = {
-      page: currentPage,
-      pageSize,
-      search: debouncedSearch,
-      category: selectedCategory === "All" ? null : selectedCategory,
-      status: status === "all" ? null : status,
-    };
-    const cachedPage = getCachedVocabularyPage(authVersion, query) as {
-      rows: VocabularyWord[];
-      total: number;
-    } | null;
-    const pageResult = cachedPage
-      ? Promise.resolve(cachedPage)
-      : getVocabularyWordPage(query).then((result) => {
-          const mappedResult = {
-            rows: result.rows.map(mapVocabularyWordRow),
-            total: result.total,
-          };
-          setCachedVocabularyPage(authVersion, query, mappedResult);
-          return mappedResult;
-        });
-    void pageResult.then((result) => {
-      if (cancelled || requestId !== pageRequestId.current) return;
-      setTotalWords(result.total);
-      const resultPageCount = Math.max(1, Math.ceil(result.total / pageSize));
-      if (currentPage > resultPageCount) {
-        setPage(resultPageCount);
-        return;
-      }
-      setPageWords(result.rows);
-      if (loadedAuthVersionRef.current !== authVersion) {
-        loadedAuthVersionRef.current = authVersion;
-        setSelectedIds(new Set());
-      }
-      setLoadedAuthVersion(authVersion);
-      setIsPageLoading(false);
-    }).catch((error) => {
-      if (cancelled || requestId !== pageRequestId.current) return;
-      console.error("Failed to load vocabulary page:", error);
-      setPageWords([]);
-      setTotalWords(0);
-      setIsPageLoading(false);
-      toast.error("Failed to load vocabulary.");
-    });
-    return () => { cancelled = true; };
-  }, [authVersion, categories, categoriesLoaded, currentPage, debouncedSearch, pageSize, pageRequest, selectedCategory, status]);
 
   useEffect(() => {
     if (selectedCategory === "All") return;
@@ -260,12 +199,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     });
     return () => { cancelled = true; };
   }, [authVersion, categories, pageWords.length, selectedCategory]);
-
-  useEffect(() => {
-    if (selectPageRef.current) {
-      selectPageRef.current.indeterminate = isPagePartiallySelected;
-    }
-  }, [isPagePartiallySelected]);
 
   function handleOpenAdd() {
     setEditingWord(null);
@@ -311,27 +244,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     setSelectedIds(new Set());
   }
 
-  function handleToggleSelected(id: string) {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function handleTogglePageSelection() {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (isPageSelected) {
-        currentPageWords.forEach((word) => next.delete(word.id));
-      } else {
-        currentPageWords.forEach((word) => next.add(word.id));
-      }
-      return next;
-    });
-  }
-
   async function handleBulkDelete() {
     if (selectedIds.size === 0 || isBulkDeleting) return;
 
@@ -349,7 +261,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       if (deletedCount > 0) {
         setSelectedIds(new Set());
         setIsPageLoading(true);
-        setPageRequest((value) => value + 1);
+        refreshPage();
         toast.success(
           `Deleted ${deletedCount} ${deletedCount === 1 ? "word" : "words"}.`
         );
@@ -371,7 +283,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       if (success) {
         setIsPageLoading(true);
         setPageWords([]);
-        setPageRequest((value) => value + 1);
+        refreshPage();
         setSelectedIds((current) => {
           const next = new Set(current);
           next.delete(deletingWord.id);
@@ -400,7 +312,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         setPage(1);
         setIsPageLoading(true);
         setPageWords([]);
-        setPageRequest((value) => value + 1);
+        refreshPage();
         handleCloseForm();
       }
       return success;
@@ -414,7 +326,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     if (success) {
       setIsPageLoading(true);
       setPageWords([]);
-      setPageRequest((value) => value + 1);
+      refreshPage();
     }
     return success;
   }
@@ -540,7 +452,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         onImportComplete={() => {
           setPage(1);
           setIsPageLoading(true);
-          setPageRequest((value) => value + 1);
+          refreshPage();
         }}
       />}
 
@@ -581,8 +493,8 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         isPageSelected={isPageSelected}
         isPagePartiallySelected={isPagePartiallySelected}
         isBulkDeleting={isBulkDeleting}
-        onTogglePageSelection={handleTogglePageSelection}
-        onToggleSelected={handleToggleSelected}
+        onTogglePageSelection={togglePageSelection}
+        onToggleSelected={toggleSelected}
         onToggleMastered={handleToggleMastered}
         onEdit={handleEditWord}
         onDelete={handleDeleteWord}
