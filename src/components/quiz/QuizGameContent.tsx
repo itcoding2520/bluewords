@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
 import { QuizGamePanel } from "@/components/quiz/QuizGamePanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
@@ -16,6 +15,7 @@ import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
+import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -204,38 +204,18 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
         />
       )}
 
-      {showStickyStart && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-          <Button
-            onClick={startQuiz}
-            disabled={maximumQuestions < selectedQuestionCount}
-            className="min-h-12 w-full"
-          >
-            <Gamepad2 size={17} /> Start quiz
-          </Button>
-        </div>
-      )}
-
-      {showStickyGameAction && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-          {mode === "type-word" && !currentAnswer ? (
-            <Button
-              type="submit"
-              form="quiz-type-word-answer"
-              disabled={!input.trim()}
-              className="min-h-12 w-full"
-            >
-              Check answer
-            </Button>
-          ) : (
-            <div className="w-full">
-              <Button onClick={goToNextQuestion} className="min-h-12 w-full">
-                {questionIndex + 1 === questions.length ? "See results" : "Next question"}
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+      <QuizStickyActions
+        showStart={showStickyStart}
+        showGameAction={showStickyGameAction}
+        canStart={maximumQuestions >= selectedQuestionCount}
+        mode={mode}
+        input={input}
+        answer={currentAnswer}
+        questionIndex={questionIndex}
+        questionCount={questions.length}
+        onStart={startQuiz}
+        onNext={goToNextQuestion}
+      />
 
       {phase === "playing" && currentQuestion && (
         <QuizGamePanel
