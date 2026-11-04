@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { QuizGamePanel } from "@/components/quiz/QuizGamePanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
@@ -16,6 +14,7 @@ import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
 import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
+import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -136,26 +135,24 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
 
   return (
     <div className={`quiz-page ${showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}`}>
-      {phase === "playing" ? (
-        <button type="button" onClick={backToSetup} className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <ArrowLeft size={16} /> Back to Setup
-        </button>
-      ) : (
-        <Link href="/games" className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <ArrowLeft size={16} /> Back to Games
-        </Link>
-      )}
-      <header className="quiz-hero mb-3 sm:mb-6">
-        <h1 className="page-title quiz-title mt-1"><span>Vocabulary</span> <span className="quiz-title-accent">Quiz</span> <Star aria-hidden="true" className="quiz-title-star inline size-6 fill-amber-400 text-amber-400" /></h1>
-        <p className="page-intro-description mt-2 hidden sm:block">Choose how many words to practice. We’ll track how long you take.</p>
-      </header>
-
-      {phase !== "playing" && (
-        <div className="quiz-tabs mb-5 flex gap-2 border-b border-slate-200">
-          <TabButton active={tab === "play"} onClick={() => { setTab("play"); setSelectedHistory(null); }}> <Gamepad2 size={16} /> Play quiz</TabButton>
-          {userId && <TabButton active={tab === "history"} onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }}> <History size={16} /> History</TabButton>}
-        </div>
-      )}
+      <QuizPageHeader
+        isPlaying={phase === "playing"}
+        activeTab={tab}
+        showHistory={userId !== null && phase !== "playing"}
+        onPlay={() => {
+          if (phase === "playing") {
+            backToSetup();
+            return;
+          }
+          setTab("play");
+          setSelectedHistory(null);
+        }}
+        onHistory={() => {
+          setTab("history");
+          setSelectedHistory(null);
+          void loadHistory();
+        }}
+      />
 
       {tab === "history" && phase !== "playing" && (
         <QuizHistoryPanel
@@ -253,8 +250,4 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       )}
     </div>
   );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium ${active ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{children}</button>;
 }
