@@ -7,8 +7,7 @@ import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import { expectedAnswer, formatQuizTime as formatTime, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { formatQuizTime as formatTime, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
@@ -16,6 +15,7 @@ import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
 import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
 import { useQuizNavigation } from "@/hooks/useQuizNavigation";
+import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
 
 type Phase = "setup" | "playing" | "results";
 
@@ -95,41 +95,27 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setInput,
   });
 
-  function startQuiz() {
-    if (maximumQuestions < selectedQuestionCount) return;
-    const pool = mode === "type-word"
-      ? shuffle(eligibleWords).map((word) => ({ word, meaning: "", partOfSpeech: null, choices: [], choiceType: "word" as const, correctAnswer: word.word }))
-      : shuffle(meaningQuestions);
-    const nextQuestions = pool.slice(0, selectedQuestionCount);
-    if (nextQuestions.length !== selectedQuestionCount) return;
-    const now = Date.now();
-    setQuestions(nextQuestions);
-    setQuestionIndex(0);
-    setAnswers({});
-    setInput("");
-    setElapsedSeconds(0);
-    setStartedAt(now);
-    resetSaveState();
-    setPhase("playing");
-    showPlayTab();
-  }
-
-  function submitAnswer(value: string) {
-    if (!currentQuestion || currentAnswer || !value.trim()) return;
-    const expected = expectedAnswer(currentQuestion, mode);
-    if (typeof expected !== "string" || !expected.trim()) return;
-    setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected) } }));
-  }
-
-  function goToNextQuestion() {
-    if (questionIndex + 1 >= questions.length) {
-      setElapsedSeconds(startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000));
-      setPhase("results");
-      return;
-    }
-    setQuestionIndex((index) => index + 1);
-    setInput("");
-  }
+  const { startQuiz, submitAnswer, goToNextQuestion } = useQuizRoundActions({
+    mode,
+    maximumQuestions,
+    selectedQuestionCount,
+    eligibleWords,
+    meaningQuestions,
+    questions,
+    questionIndex,
+    currentAnswer,
+    startedAt,
+    elapsedSeconds,
+    setPhase,
+    setQuestions,
+    setQuestionIndex,
+    setAnswers,
+    setInput,
+    setStartedAt,
+    setElapsedSeconds,
+    resetSaveState,
+    showPlayTab,
+  });
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
