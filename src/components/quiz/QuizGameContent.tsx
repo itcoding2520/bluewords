@@ -15,9 +15,9 @@ import { useQuizProgression } from "@/hooks/useQuizProgression";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
 import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
+import { useQuizNavigation } from "@/hooks/useQuizNavigation";
 
 type Phase = "setup" | "playing" | "results";
-type Tab = "play" | "history";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -42,13 +42,18 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [phase, setPhase] = useState<Phase>("setup");
-  const [tab, setTab] = useState<Tab>("play");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const { tab, showPlayTab, showHistoryTab, backToSetup } = useQuizNavigation({
+    setPhase,
+    setStartedAt,
+    setSelectedHistory,
+    loadHistory,
+  });
   const {
     categoryWords,
     categoryOptions,
@@ -106,7 +111,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setStartedAt(now);
     resetSaveState();
     setPhase("playing");
-    setTab("play");
+    showPlayTab();
   }
 
   function submitAnswer(value: string) {
@@ -126,11 +131,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setInput("");
   }
 
-  function backToSetup() {
-    setStartedAt(null);
-    setPhase("setup");
-  }
-
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
   return (
@@ -139,19 +139,8 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
         isPlaying={phase === "playing"}
         activeTab={tab}
         showHistory={userId !== null && phase !== "playing"}
-        onPlay={() => {
-          if (phase === "playing") {
-            backToSetup();
-            return;
-          }
-          setTab("play");
-          setSelectedHistory(null);
-        }}
-        onHistory={() => {
-          setTab("history");
-          setSelectedHistory(null);
-          void loadHistory();
-        }}
+        onPlay={phase === "playing" ? backToSetup : showPlayTab}
+        onHistory={showHistoryTab}
       />
 
       {tab === "history" && phase !== "playing" && (
