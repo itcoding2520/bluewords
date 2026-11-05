@@ -1,24 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
 import { QuizGamePanel } from "@/components/quiz/QuizGamePanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import { expectedAnswer, formatQuizTime as formatTime, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { formatQuizTime as formatTime, type QuizAnswer, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
+import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
+import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
+import { useQuizNavigation } from "@/hooks/useQuizNavigation";
+import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
+import { useQuizConfiguration } from "@/hooks/useQuizConfiguration";
 
 type Phase = "setup" | "playing" | "results";
-type Tab = "play" | "history";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -27,7 +27,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     historyPage,
     setHistoryPage,
     historyPageSize,
-    setHistoryPageSize,
     historyTotal,
     historyLoading,
     historyError,
@@ -36,20 +35,34 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     historyAnswers,
     reviewLoading,
     loadHistory,
+    refreshHistory,
+    changeHistoryPageSize,
+    changeHistoryPage,
     openHistoryReview,
   } = useVocabularyQuizHistory(userId);
-  const [mode, setMode] = useState<QuizMode>("choose-meaning");
-  const [category, setCategory] = useState("all");
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const {
+    mode,
+    setMode,
+    category,
+    setCategory,
+    categoriesExpanded,
+    setCategoriesExpanded,
+    questionCount,
+    setQuestionCount,
+  } = useQuizConfiguration();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [tab, setTab] = useState<Tab>("play");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
   const [input, setInput] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const { tab, showPlayTab, showHistoryTab, backToSetup } = useQuizNavigation({
+    setPhase,
+    setStartedAt,
+    setSelectedHistory,
+    loadHistory,
+  });
   const {
     categoryWords,
     categoryOptions,
@@ -91,71 +104,39 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     setInput,
   });
 
-  function startQuiz() {
-    if (maximumQuestions < selectedQuestionCount) return;
-    const pool = mode === "type-word"
-      ? shuffle(eligibleWords).map((word) => ({ word, meaning: "", partOfSpeech: null, choices: [], choiceType: "word" as const, correctAnswer: word.word }))
-      : shuffle(meaningQuestions);
-    const nextQuestions = pool.slice(0, selectedQuestionCount);
-    if (nextQuestions.length !== selectedQuestionCount) return;
-    const now = Date.now();
-    setQuestions(nextQuestions);
-    setQuestionIndex(0);
-    setAnswers({});
-    setInput("");
-    setElapsedSeconds(0);
-    setStartedAt(now);
-    resetSaveState();
-    setPhase("playing");
-    setTab("play");
-  }
-
-  function submitAnswer(value: string) {
-    if (!currentQuestion || currentAnswer || !value.trim()) return;
-    const expected = expectedAnswer(currentQuestion, mode);
-    if (typeof expected !== "string" || !expected.trim()) return;
-    setAnswers((previous) => ({ ...previous, [questionIndex]: { value: value.trim(), correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected) } }));
-  }
-
-  function goToNextQuestion() {
-    if (questionIndex + 1 >= questions.length) {
-      setElapsedSeconds(startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000));
-      setPhase("results");
-      return;
-    }
-    setQuestionIndex((index) => index + 1);
-    setInput("");
-  }
-
-  function backToSetup() {
-    setStartedAt(null);
-    setPhase("setup");
-  }
+  const { startQuiz, submitAnswer, goToNextQuestion } = useQuizRoundActions({
+    mode,
+    maximumQuestions,
+    selectedQuestionCount,
+    eligibleWords,
+    meaningQuestions,
+    questions,
+    questionIndex,
+    currentAnswer,
+    startedAt,
+    elapsedSeconds,
+    setPhase,
+    setQuestions,
+    setQuestionIndex,
+    setAnswers,
+    setInput,
+    setStartedAt,
+    setElapsedSeconds,
+    resetSaveState,
+    showPlayTab,
+  });
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
   return (
     <div className={`quiz-page ${showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}`}>
-      {phase === "playing" ? (
-        <button type="button" onClick={backToSetup} className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <ArrowLeft size={16} /> Back to Setup
-        </button>
-      ) : (
-        <Link href="/games" className="mb-2 sm:mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <ArrowLeft size={16} /> Back to Games
-        </Link>
-      )}
-      <header className="quiz-hero mb-3 sm:mb-6">
-        <h1 className="page-title quiz-title mt-1"><span>Vocabulary</span> <span className="quiz-title-accent">Quiz</span> <Star aria-hidden="true" className="quiz-title-star inline size-6 fill-amber-400 text-amber-400" /></h1>
-        <p className="page-intro-description mt-2 hidden sm:block">Choose how many words to practice. We’ll track how long you take.</p>
-      </header>
-
-      {phase !== "playing" && (
-        <div className="quiz-tabs mb-5 flex gap-2 border-b border-slate-200">
-          <TabButton active={tab === "play"} onClick={() => { setTab("play"); setSelectedHistory(null); }}> <Gamepad2 size={16} /> Play quiz</TabButton>
-          {userId && <TabButton active={tab === "history"} onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }}> <History size={16} /> History</TabButton>}
-        </div>
-      )}
+      <QuizPageHeader
+        isPlaying={phase === "playing"}
+        activeTab={tab}
+        showHistory={userId !== null && phase !== "playing"}
+        onPlay={phase === "playing" ? backToSetup : showPlayTab}
+        onHistory={showHistoryTab}
+      />
 
       {tab === "history" && phase !== "playing" && (
         <QuizHistoryPanel
@@ -170,17 +151,10 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
           pageSize={historyPageSize}
           formatTime={formatTime}
           onBack={() => setSelectedHistory(null)}
-          onRefresh={() => void loadHistory(true)}
+          onRefresh={() => void refreshHistory()}
           onOpenReview={(session) => void openHistoryReview(session)}
-          onPageSizeChange={(size) => {
-            setHistoryPageSize(size);
-            setHistoryPage(1);
-            void loadHistory(false, 1, size);
-          }}
-          onPageChange={(nextPage) => {
-            setHistoryPage(nextPage);
-            void loadHistory(false, nextPage);
-          }}
+          onPageSizeChange={changeHistoryPageSize}
+          onPageChange={changeHistoryPage}
         />
       )}
 
@@ -204,38 +178,18 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
         />
       )}
 
-      {showStickyStart && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-          <Button
-            onClick={startQuiz}
-            disabled={maximumQuestions < selectedQuestionCount}
-            className="min-h-12 w-full"
-          >
-            <Gamepad2 size={17} /> Start quiz
-          </Button>
-        </div>
-      )}
-
-      {showStickyGameAction && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
-          {mode === "type-word" && !currentAnswer ? (
-            <Button
-              type="submit"
-              form="quiz-type-word-answer"
-              disabled={!input.trim()}
-              className="min-h-12 w-full"
-            >
-              Check answer
-            </Button>
-          ) : (
-            <div className="w-full">
-              <Button onClick={goToNextQuestion} className="min-h-12 w-full">
-                {questionIndex + 1 === questions.length ? "See results" : "Next question"}
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+      <QuizStickyActions
+        showStart={showStickyStart}
+        showGameAction={showStickyGameAction}
+        canStart={maximumQuestions >= selectedQuestionCount}
+        mode={mode}
+        input={input}
+        answer={currentAnswer}
+        questionIndex={questionIndex}
+        questionCount={questions.length}
+        onStart={startQuiz}
+        onNext={goToNextQuestion}
+      />
 
       {phase === "playing" && currentQuestion && (
         <QuizGamePanel
@@ -273,8 +227,4 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
       )}
     </div>
   );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button type="button" onClick={onClick} className={`inline-flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium ${active ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}>{children}</button>;
 }

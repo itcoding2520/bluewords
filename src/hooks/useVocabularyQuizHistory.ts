@@ -70,6 +70,19 @@ export function useVocabularyQuizHistory(userId: string | null) {
     }
   }, [userId]);
 
+  const refreshHistory = useCallback(() => loadHistory(true), [loadHistory]);
+
+  const changeHistoryPageSize = useCallback((pageSize: number) => {
+    setHistoryPageSize(pageSize);
+    setHistoryPage(1);
+    void loadHistory(false, 1, pageSize);
+  }, [loadHistory]);
+
+  const changeHistoryPage = useCallback((page: number) => {
+    setHistoryPage(page);
+    void loadHistory(false, page);
+  }, [loadHistory]);
+
   return {
     history,
     historyPage,
@@ -84,6 +97,9 @@ export function useVocabularyQuizHistory(userId: string | null) {
     historyAnswers,
     reviewLoading,
     loadHistory,
+    refreshHistory,
+    changeHistoryPageSize,
+    changeHistoryPage,
     openHistoryReview,
   };
 }
