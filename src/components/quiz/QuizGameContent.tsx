@@ -7,7 +7,7 @@ import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { formatQuizTime as formatTime, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { formatQuizTime as formatTime, type QuizAnswer, type QuizQuestion } from "@/lib/quiz-model";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
@@ -16,6 +16,7 @@ import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
 import { useQuizNavigation } from "@/hooks/useQuizNavigation";
 import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
+import { useQuizConfiguration } from "@/hooks/useQuizConfiguration";
 
 type Phase = "setup" | "playing" | "results";
 
@@ -37,10 +38,16 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     loadHistory,
     openHistoryReview,
   } = useVocabularyQuizHistory(userId);
-  const [mode, setMode] = useState<QuizMode>("choose-meaning");
-  const [category, setCategory] = useState("all");
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const {
+    mode,
+    setMode,
+    category,
+    setCategory,
+    categoriesExpanded,
+    setCategoriesExpanded,
+    questionCount,
+    setQuestionCount,
+  } = useQuizConfiguration();
   const [phase, setPhase] = useState<Phase>("setup");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
