@@ -1,39 +1,16 @@
 "use client";
 
-import Image from "next/image";
-import { ArrowRight, Check, ChevronDown, ChevronUp, Gamepad2, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Gamepad2, Play, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { QuizPreview } from "@/components/quiz/QuizPreview";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { getCategoryImageUrl } from "@/lib/supabase/category-images";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import { QuizCategorySelector, type QuizCategoryOption } from "@/components/quiz/QuizCategorySelector";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 const QUESTION_COUNTS = [10, 20, 30] as const;
-const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
-  blue: "bg-blue-500",
-  violet: "bg-violet-500",
-  orange: "bg-orange-500",
-  green: "bg-emerald-500",
-  rose: "bg-rose-500",
-  indigo: "bg-indigo-500",
-  teal: "bg-teal-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  slate: "bg-slate-500",
-};
-
-export type QuizCategoryOption = {
-  id: string;
-  name: string;
-  value: string;
-  color: VocabularyCategoryColor;
-  imagePath: string | null;
-};
 
 export function QuizSetupPanel({
   mode,
@@ -82,17 +59,13 @@ export function QuizSetupPanel({
             <ModeCard active={mode === "type-word"} title="Type the word" description="Look at an image and type the vocabulary word." count={typeWordCount} onClick={() => onModeChange("type-word")} />
           </div>
         </fieldset>
-        <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Category</legend><p className="mb-3 text-xs text-slate-500">Choose a category for this quiz.</p>
-          <div id="quiz-categories" className={`grid grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-200 sm:grid-cols-5 ${categoriesExpanded ? "max-h-[1000px]" : "max-h-[11.5rem] sm:max-h-[5.5rem] lg:max-h-[11.5rem]"}`}>
-            {categoryOptions.map((item) => <QuizCategoryChip key={item.id} name={item.name} imagePath={item.imagePath} dotClassName={CATEGORY_DOT_STYLES[item.color]} selected={category === item.value} onClick={() => onCategoryChange(item.value)} />)}
-          </div>
-          {categoryOptions.length > 8 && <div className={`mt-2 flex justify-center ${categoryOptions.length <= 12 ? "hidden" : ""} ${categoryOptions.length <= 10 ? "sm:hidden" : "sm:flex"} ${categoryOptions.length <= 20 ? "lg:hidden" : "lg:flex"}`}>
-            <button type="button" aria-expanded={categoriesExpanded} aria-controls="quiz-categories" onClick={onToggleCategories} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-              {categoriesExpanded ? "Show less" : "More"}{categoriesExpanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
-            </button>
-          </div>}
-          <p className="mt-2 text-xs text-slate-500">Questions and answer choices will use words from this category.</p>
-        </fieldset>
+        <QuizCategorySelector
+          options={categoryOptions}
+          selectedCategory={category}
+          expanded={categoriesExpanded}
+          onCategoryChange={onCategoryChange}
+          onToggleExpanded={onToggleCategories}
+        />
         <fieldset className="mt-6"><legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend><div className="flex flex-wrap gap-2">
           {QUESTION_COUNTS.map((count) => <ChoiceButton key={count} active={questionCount === count} disabled={count > maximumQuestions} onClick={() => onQuestionCountChange(count)}>{count}</ChoiceButton>)}
         </div><p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p></fieldset>
@@ -102,16 +75,6 @@ export function QuizSetupPanel({
       <QuizPreview mode={mode} category={category} questionCount={questionCount} meaningQuestion={previewMeaningQuestion} typeWord={previewTypeWord} />
     </div>
   );
-}
-
-function QuizCategoryChip({ name, imagePath, dotClassName, selected, onClick }: { name: string; imagePath: string | null; dotClassName: string; selected: boolean; onClick: () => void }) {
-  const isCategoryImage = imagePath?.startsWith("category:") ?? false;
-  const wordImageUrl = useVocabularyImageUrl(isCategoryImage ? null : imagePath);
-  const imageUrl = isCategoryImage ? getCategoryImageUrl(imagePath?.slice("category:".length)) : wordImageUrl;
-  return <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`quiz-category-chip flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
-    {imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
-    <span className="min-w-0 truncate">{name}</span>
-  </button>;
 }
 
 function ModeCard({ active, title, description, count, onClick }: { active: boolean; title: string; description: string; count: number; onClick: () => void }) {
