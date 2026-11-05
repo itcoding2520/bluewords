@@ -27,7 +27,6 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     historyPage,
     setHistoryPage,
     historyPageSize,
-    setHistoryPageSize,
     historyTotal,
     historyLoading,
     historyError,
@@ -36,6 +35,9 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
     historyAnswers,
     reviewLoading,
     loadHistory,
+    refreshHistory,
+    changeHistoryPageSize,
+    changeHistoryPage,
     openHistoryReview,
   } = useVocabularyQuizHistory(userId);
   const {
@@ -149,17 +151,10 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
           pageSize={historyPageSize}
           formatTime={formatTime}
           onBack={() => setSelectedHistory(null)}
-          onRefresh={() => void loadHistory(true)}
+          onRefresh={() => void refreshHistory()}
           onOpenReview={(session) => void openHistoryReview(session)}
-          onPageSizeChange={(size) => {
-            setHistoryPageSize(size);
-            setHistoryPage(1);
-            void loadHistory(false, 1, size);
-          }}
-          onPageChange={(nextPage) => {
-            setHistoryPage(nextPage);
-            void loadHistory(false, nextPage);
-          }}
+          onPageSizeChange={changeHistoryPageSize}
+          onPageChange={changeHistoryPage}
         />
       )}
 
