@@ -1,18 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, Clock3, RotateCcw, Star, Trophy } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, RotateCcw, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { QuizHistoryDetail } from "@/components/quiz/QuizHistoryDetail";
-import { quizModeLabel } from "@/lib/quiz-history";
+import { QuizHistoryAttemptList } from "@/components/quiz/QuizHistoryAttemptList";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
-
-function rating(score: number, total: number) {
-  return total > 0 ? Math.round((score / total) * 5) : 0;
-}
-
 
 type QuizHistoryPanelProps = {
   selected: VocabularyQuizSessionRow | null;
@@ -66,16 +61,7 @@ export function QuizHistoryPanel({
           {loading ? <p className="py-10 text-center text-sm text-slate-500">Loading quiz history…</p> : sessions.length === 0 ? (
             <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed quizzes yet. Your attempts will appear here.</p>
           ) : (
-            <div className="quiz-history-list space-y-3">
-              {sessions.map((session) => <button key={session.id} type="button" aria-label={`Review quiz attempt: ${session.correct_count} of ${session.question_count} correct, ${quizModeLabel(session.mode)}, ${formatTime(session.duration_seconds)}`} onClick={() => onOpenReview(session)} className="quiz-history-attempt">
-                <span className="quiz-history-score"><span className="quiz-history-medal"><Trophy size={30} fill="currentColor" /></span><span><strong>{session.correct_count}/{session.question_count}</strong><small>correct</small></span></span>
-                <span role="img" aria-label={`${rating(session.correct_count, session.question_count)} out of 5 stars`} className="quiz-history-stars">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={30} aria-hidden="true" fill={index < rating(session.correct_count, session.question_count) ? "currentColor" : "none"} />)}</span>
-                <time className="quiz-history-date" dateTime={session.completed_at}>{new Date(session.completed_at).toLocaleString()}</time>
-                <span className="quiz-history-mode"><BookOpen size={20} />{quizModeLabel(session.mode)}</span>
-                <span className="quiz-history-duration"><Clock3 size={22} />{formatTime(session.duration_seconds)}</span>
-                <span className="quiz-history-open" aria-hidden="true"><ChevronRight size={24} /></span>
-              </button>)}
-            </div>
+            <QuizHistoryAttemptList sessions={sessions} formatTime={formatTime} onOpenReview={onOpenReview} />
           )}
           {!loading && !error && total > 0 && (
             <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
