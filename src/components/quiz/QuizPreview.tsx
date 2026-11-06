@@ -1,17 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { QuizPreviewQuestion } from "@/components/quiz/QuizPreviewQuestion";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { expectedAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
-
-export function QuizImage({ word, className = "" }: { word: VocabularyWord; className?: string }) {
-  const imageUrl = useVocabularyImageUrl(word.imagePath);
-  if (!imageUrl) return <div className={`grid size-48 place-items-center rounded-2xl bg-slate-100 text-center text-sm text-slate-400 ${className}`}>{word.imagePath ? "Loading image…" : "No image"}</div>;
-  return <Image src={imageUrl} alt="Vocabulary quiz prompt" width={200} height={200} unoptimized className={`size-30 rounded-2xl border border-slate-100 object-cover ${className}`} />;
-}
+import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizPreview({
   mode,
@@ -38,26 +31,7 @@ export function QuizPreview({
       <h2 className="quiz-preview-title mt-3 flex items-center gap-2 text-xl font-bold text-slate-900"><span>{mode === "choose-meaning" ? "Choose the meaning" : "Type the word"}</span><Star aria-hidden="true" size={20} className="fill-amber-400 text-amber-400" /></h2>
       <p className="mt-1 text-sm text-slate-500">This is how a question will look.</p>
 
-      <div className="mt-5 rounded-2xl border border-indigo-100 bg-white p-4">
-        {mode === "choose-meaning" ? meaningQuestion ? (
-          <>
-            {meaningQuestion.choiceType === "word"
-              ? <p className="py-5 text-center text-2xl font-bold text-slate-900">{meaningQuestion.meaning}</p>
-              : meaningQuestion.word.imagePath ? <QuizImage word={meaningQuestion.word} className="quiz-preview-image mx-auto" /> : <p className="py-5 text-center text-2xl font-bold text-slate-900">{meaningQuestion.word.word}</p>}
-            {meaningQuestion.partOfSpeech && <span className="mt-3 inline-block rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium capitalize text-blue-700">{meaningQuestion.partOfSpeech}</span>}
-            <p className="mt-3 text-xs text-slate-500">{meaningQuestion.choiceType === "word" ? "Choose the matching word" : "Choose the correct meaning"}</p>
-            <div className="mt-3 grid gap-2">
-              {meaningQuestion.choices.map((choice, index) => <div key={`${choice}-${index}`} className={`rounded-lg border px-3 py-2 text-xs ${choice === expectedAnswer(meaningQuestion, mode) ? "border-emerald-200 bg-emerald-50 font-medium text-emerald-800" : "border-slate-200 bg-white text-slate-600"}`}><span className="mr-2 text-[10px] font-semibold text-slate-400">{String.fromCharCode(65 + index)}.</span>{choice}</div>)}
-            </div>
-          </>
-        ) : <p className="py-8 text-center text-sm text-slate-500">Add more vocabulary with meanings to preview this question type.</p> : typeWord ? (
-          <>
-            <QuizImage word={typeWord} className="quiz-preview-image mx-auto" />
-            <p className="mt-4 text-center text-xs text-slate-500">What is this word?</p>
-            <div className="mt-3 rounded-xl border border-slate-200 px-3 py-2.5 text-center text-xs text-slate-400">Type the word…</div>
-          </>
-        ) : <p className="py-8 text-center text-sm text-slate-500">Add images to vocabulary words to preview this question type.</p>}
-      </div>
+      <QuizPreviewQuestion mode={mode} meaningQuestion={meaningQuestion} typeWord={typeWord} />
 
       <div className="mt-5 border-t border-indigo-200/70 pt-5">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Quiz settings</p>
