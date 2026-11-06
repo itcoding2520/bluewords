@@ -1,9 +1,8 @@
 "use client";
 
 import { Card } from "@/components/ui/Card";
-import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { QuizHistoryDetail } from "@/components/quiz/QuizHistoryDetail";
-import { QuizHistoryAttemptList } from "@/components/quiz/QuizHistoryAttemptList";
+import { QuizHistoryContent } from "@/components/quiz/QuizHistoryContent";
 import { QuizHistoryHeader } from "@/components/quiz/QuizHistoryHeader";
 import { QuizHistoryPagination } from "@/components/quiz/QuizHistoryPagination";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
@@ -50,12 +49,7 @@ export function QuizHistoryPanel({
       ) : (
         <>
           <QuizHistoryHeader loading={loading} onRefresh={onRefresh} />
-          {error && <AutoDismissMessage key={error} variant="error" className="mb-4">{error}</AutoDismissMessage>}
-          {loading ? <p className="py-10 text-center text-sm text-slate-500">Loading quiz history…</p> : sessions.length === 0 ? (
-            <p className="rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">No completed quizzes yet. Your attempts will appear here.</p>
-          ) : (
-            <QuizHistoryAttemptList sessions={sessions} formatTime={formatTime} onOpenReview={onOpenReview} />
-          )}
+          <QuizHistoryContent sessions={sessions} loading={loading} error={error} formatTime={formatTime} onOpenReview={onOpenReview} />
           {!loading && !error && total > 0 && (
             <QuizHistoryPagination total={total} page={page} pageSize={pageSize} onPageSizeChange={onPageSizeChange} onPageChange={onPageChange} />
           )}
