@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { expectedAnswer, promptText, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, promptText, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
 import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
 
-type QuizPhase = "setup" | "playing" | "results";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function useQuizSessionSave({
