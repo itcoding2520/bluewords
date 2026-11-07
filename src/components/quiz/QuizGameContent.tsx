@@ -1,226 +1,116 @@
 "use client";
 
-import { useState } from "react";
-
 import { QuizGamePanel } from "@/components/quiz/QuizGamePanel";
-import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
-import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizHistoryPanel } from "@/components/quiz/QuizHistoryPanel";
-import { useVocabulary } from "@/contexts/VocabularyContext";
-import { formatQuizTime as formatTime, type QuizAnswer, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
-import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
-import { useQuizSetupData } from "@/hooks/useQuizSetupData";
-import { useQuizProgression } from "@/hooks/useQuizProgression";
-import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
-import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { QuizPageHeader } from "@/components/quiz/QuizPageHeader";
-import { useQuizNavigation } from "@/hooks/useQuizNavigation";
-import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
-import { useQuizConfiguration } from "@/hooks/useQuizConfiguration";
+import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
+import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
+import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
+import { useQuizExperience } from "@/hooks/useQuizExperience";
+import { formatQuizTime } from "@/lib/quiz-model";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
-  const { words, categories, isLoaded } = useVocabulary();
-  const {
-    history,
-    historyPage,
-    setHistoryPage,
-    historyPageSize,
-    historyTotal,
-    historyLoading,
-    historyError,
-    selectedHistory,
-    setSelectedHistory,
-    historyAnswers,
-    reviewLoading,
-    loadHistory,
-    refreshHistory,
-    changeHistoryPageSize,
-    changeHistoryPage,
-    openHistoryReview,
-  } = useVocabularyQuizHistory(userId);
-  const {
-    mode,
-    setMode,
-    category,
-    setCategory,
-    categoriesExpanded,
-    setCategoriesExpanded,
-    questionCount,
-    setQuestionCount,
-  } = useQuizConfiguration();
-  const [phase, setPhase] = useState<QuizPhase>("setup");
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
-  const [input, setInput] = useState("");
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const { tab, showPlayTab, showHistoryTab, backToSetup } = useQuizNavigation({
-    setPhase,
-    setStartedAt,
-    setSelectedHistory,
-    loadHistory,
-  });
-  const {
-    categoryWords,
-    categoryOptions,
-    meaningQuestions,
-    previewMeaningQuestion,
-    typeWordCount,
-    eligibleWords,
-    maximumQuestions,
-  } = useQuizSetupData({ words, categories, category, mode });
-  const selectedQuestionCount = questionCount;
-  const showStickyStart = tab === "play" && phase === "setup";
-  const currentQuestion = questions[questionIndex];
-  const currentAnswer = answers[questionIndex];
-  const showStickyGameAction = tab === "play" && phase === "playing" && Boolean(currentQuestion) && (mode === "type-word" || Boolean(currentAnswer));
-  const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
-  const { saveState, saveError, resetSaveState, allowRetry } = useQuizSessionSave({
-    userId,
-    phase,
-    startedAt,
-    mode,
-    questions,
-    answers,
-    correctCount,
-    historyPageSize,
-    setHistoryPage,
-    setElapsedSeconds,
-    loadHistory,
-  });
+  const quiz = useQuizExperience(userId);
+  const { configuration, setup, history, navigation } = quiz;
+  const showStickyStart = quiz.tab === "play" && quiz.phase === "setup";
+  const showStickyGameAction = quiz.tab === "play"
+    && quiz.phase === "playing"
+    && Boolean(quiz.currentQuestion)
+    && (configuration.mode === "type-word" || Boolean(quiz.currentAnswer));
 
-  useQuizProgression({
-    phase,
-    startedAt,
-    currentAnswerIsCorrect: currentAnswer?.correct === true,
-    questionIndex,
-    questionCount: questions.length,
-    setElapsedSeconds,
-    setPhase,
-    setQuestionIndex,
-    setInput,
-  });
-
-  const { startQuiz, submitAnswer, goToNextQuestion } = useQuizRoundActions({
-    mode,
-    maximumQuestions,
-    selectedQuestionCount,
-    eligibleWords,
-    meaningQuestions,
-    questions,
-    questionIndex,
-    currentAnswer,
-    startedAt,
-    elapsedSeconds,
-    setPhase,
-    setQuestions,
-    setQuestionIndex,
-    setAnswers,
-    setInput,
-    setStartedAt,
-    setElapsedSeconds,
-    resetSaveState,
-    showPlayTab,
-  });
-
-  if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
+  if (!quiz.isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
   return (
     <div className={`quiz-page ${showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}`}>
       <QuizPageHeader
-        isPlaying={phase === "playing"}
-        activeTab={tab}
-        showHistory={userId !== null && phase !== "playing"}
-        onPlay={phase === "playing" ? backToSetup : showPlayTab}
-        onHistory={showHistoryTab}
+        isPlaying={quiz.phase === "playing"}
+        activeTab={quiz.tab}
+        showHistory={userId !== null && quiz.phase !== "playing"}
+        onPlay={quiz.phase === "playing" ? navigation.backToSetup : navigation.showPlayTab}
+        onHistory={navigation.showHistoryTab}
       />
 
-      {tab === "history" && phase !== "playing" && (
+      {quiz.tab === "history" && quiz.phase !== "playing" && (
         <QuizHistoryPanel
-          selected={selectedHistory}
-          answers={historyAnswers}
-          sessions={history}
-          loading={historyLoading}
-          reviewLoading={reviewLoading}
-          error={historyError}
-          total={historyTotal}
-          page={historyPage}
-          pageSize={historyPageSize}
-          formatTime={formatTime}
-          onBack={() => setSelectedHistory(null)}
-          onRefresh={() => void refreshHistory()}
-          onOpenReview={(session) => void openHistoryReview(session)}
-          onPageSizeChange={changeHistoryPageSize}
-          onPageChange={changeHistoryPage}
+          selected={history.selectedHistory}
+          answers={history.historyAnswers}
+          sessions={history.history}
+          loading={history.historyLoading}
+          reviewLoading={history.reviewLoading}
+          error={history.historyError}
+          total={history.historyTotal}
+          page={history.historyPage}
+          pageSize={history.historyPageSize}
+          formatTime={formatQuizTime}
+          onBack={() => history.setSelectedHistory(null)}
+          onRefresh={() => void history.refreshHistory()}
+          onOpenReview={(session) => void history.openHistoryReview(session)}
+          onPageSizeChange={history.changeHistoryPageSize}
+          onPageChange={history.changeHistoryPage}
         />
       )}
 
-      {tab === "play" && phase === "setup" && (
+      {quiz.tab === "play" && quiz.phase === "setup" && (
         <QuizSetupPanel
-          mode={mode}
-          onModeChange={setMode}
-          category={category}
-          onCategoryChange={setCategory}
-          categoriesExpanded={categoriesExpanded}
-          onToggleCategories={() => setCategoriesExpanded((expanded) => !expanded)}
-          questionCount={questionCount}
-          onQuestionCountChange={setQuestionCount}
-          maximumQuestions={maximumQuestions}
-          meaningQuestions={meaningQuestions}
-          typeWordCount={typeWordCount}
-          categoryOptions={categoryOptions}
-          previewMeaningQuestion={previewMeaningQuestion}
-          previewTypeWord={categoryWords.find((word) => Boolean(word.imagePath))}
-          onStart={startQuiz}
+          mode={configuration.mode}
+          onModeChange={configuration.setMode}
+          category={configuration.category}
+          onCategoryChange={configuration.setCategory}
+          categoriesExpanded={configuration.categoriesExpanded}
+          onToggleCategories={() => configuration.setCategoriesExpanded((expanded) => !expanded)}
+          questionCount={configuration.questionCount}
+          onQuestionCountChange={configuration.setQuestionCount}
+          maximumQuestions={setup.maximumQuestions}
+          meaningQuestions={setup.meaningQuestions}
+          typeWordCount={setup.typeWordCount}
+          categoryOptions={setup.categoryOptions}
+          previewMeaningQuestion={setup.previewMeaningQuestion}
+          previewTypeWord={setup.categoryWords.find((word) => Boolean(word.imagePath))}
+          onStart={quiz.round.startQuiz}
         />
       )}
 
       <QuizStickyActions
         showStart={showStickyStart}
         showGameAction={showStickyGameAction}
-        canStart={maximumQuestions >= selectedQuestionCount}
-        mode={mode}
-        input={input}
-        answer={currentAnswer}
-        questionIndex={questionIndex}
-        questionCount={questions.length}
-        onStart={startQuiz}
-        onNext={goToNextQuestion}
+        canStart={setup.maximumQuestions >= configuration.questionCount}
+        mode={configuration.mode}
+        input={quiz.input}
+        answer={quiz.currentAnswer}
+        questionIndex={quiz.questionIndex}
+        questionCount={quiz.questions.length}
+        onStart={quiz.round.startQuiz}
+        onNext={quiz.round.goToNextQuestion}
       />
 
-      {phase === "playing" && currentQuestion && (
+      {quiz.phase === "playing" && quiz.currentQuestion && (
         <QuizGamePanel
-          question={currentQuestion}
-          mode={mode}
-          questionIndex={questionIndex}
-          questionCount={questions.length}
-          answer={currentAnswer}
-          input={input}
-          elapsedSeconds={elapsedSeconds}
-          onExit={backToSetup}
-          onInputChange={setInput}
-          onSubmitAnswer={submitAnswer}
-          onNext={goToNextQuestion}
+          question={quiz.currentQuestion}
+          mode={configuration.mode}
+          questionIndex={quiz.questionIndex}
+          questionCount={quiz.questions.length}
+          answer={quiz.currentAnswer}
+          input={quiz.input}
+          elapsedSeconds={quiz.elapsedSeconds}
+          onExit={navigation.backToSetup}
+          onInputChange={quiz.setInput}
+          onSubmitAnswer={quiz.round.submitAnswer}
+          onNext={quiz.round.goToNextQuestion}
         />
       )}
 
-      {tab === "play" && phase === "results" && (
+      {quiz.tab === "play" && quiz.phase === "results" && (
         <QuizResultsPanel
-          questions={questions}
-          answers={answers}
-          mode={mode}
-          correctCount={correctCount}
-          elapsedSeconds={elapsedSeconds}
-          saveState={saveState}
-          saveError={saveError}
-          onSetup={backToSetup}
-          onPlayAgain={startQuiz}
-          onRetrySave={() => {
-            allowRetry();
-            setPhase("setup");
-            setTimeout(() => setPhase("results"), 0);
-          }}
+          questions={quiz.questions}
+          answers={quiz.answers}
+          mode={configuration.mode}
+          correctCount={quiz.correctCount}
+          elapsedSeconds={quiz.elapsedSeconds}
+          saveState={quiz.save.saveState}
+          saveError={quiz.save.saveError}
+          onSetup={navigation.backToSetup}
+          onPlayAgain={quiz.round.startQuiz}
+          onRetrySave={quiz.save.retrySave}
         />
       )}
     </div>

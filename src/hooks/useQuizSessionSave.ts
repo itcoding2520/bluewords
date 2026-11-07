@@ -30,6 +30,7 @@ export function useQuizSessionSave({
 }) {
   const [saveState, setSaveState] = useState<QuizSaveState>("idle");
   const [saveError, setSaveError] = useState("");
+  const [retryRevision, setRetryRevision] = useState(0);
   const saveStartedRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -73,16 +74,21 @@ export function useQuizSessionSave({
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
     });
-  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, setElapsedSeconds, setHistoryPage, startedAt, userId]);
+  }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, retryRevision, setElapsedSeconds, setHistoryPage, startedAt, userId]);
+
+  const retrySave = useCallback(() => {
+    if (saveState !== "error") return;
+    saveStartedRef.current = null;
+    setSaveState("idle");
+    setSaveError("");
+    setRetryRevision((revision) => revision + 1);
+  }, [saveState]);
 
   const resetSaveState = useCallback(() => {
+    saveStartedRef.current = null;
     setSaveState("idle");
     setSaveError("");
   }, []);
 
-  const allowRetry = useCallback(() => {
-    saveStartedRef.current = null;
-  }, []);
-
-  return { saveState, saveError, resetSaveState, allowRetry };
+  return { saveState, saveError, resetSaveState, retrySave };
 }
