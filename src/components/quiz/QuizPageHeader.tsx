@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
-
-type QuizTab = "play" | "history";
+import type { QuizTab } from "@/lib/quiz-model";
 
 export function QuizPageHeader({
   isPlaying,

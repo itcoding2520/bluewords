@@ -1,9 +1,7 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 
-import type { QuizPhase } from "@/lib/quiz-model";
+import type { QuizPhase, QuizTab } from "@/lib/quiz-model";
 import type { VocabularyQuizSessionRow } from "@/types/database";
-
-type QuizTab = "play" | "history";
 
 export function useQuizNavigation({
   setPhase,
