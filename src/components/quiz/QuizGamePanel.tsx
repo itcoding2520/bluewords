@@ -1,13 +1,12 @@
 "use client";
 
-import { ArrowLeft, Clock3, Star, X } from "lucide-react";
+import { ArrowLeft, Clock3 } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
+import { QuizAnswerFeedback } from "@/components/quiz/QuizAnswerFeedback";
 import { QuizChoiceQuestion } from "@/components/quiz/QuizChoiceQuestion";
 import { QuizTypeWordQuestion } from "@/components/quiz/QuizTypeWordQuestion";
-import { expectedAnswer, formatQuizTime, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { formatQuizTime, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizGamePanel({
   question,
@@ -44,7 +43,7 @@ export function QuizGamePanel({
         ) : (
           <QuizChoiceQuestion question={question} mode={mode} answer={answer} onSubmitAnswer={onSubmitAnswer} />
         )}
-        {answer && <div className="quiz-game-feedback mt-5 flex w-full max-w-3xl flex-col items-center gap-3" role="status">{answer.correct ? <p className="quiz-correct-feedback"><Star size={24} fill="currentColor" /> Correct! <span>Great job! 🎉</span></p> : <AutoDismissMessage key={`${questionIndex}:${answer.value}`} variant="error" className="inline-flex items-center gap-2 bg-transparent p-0 font-semibold"><X size={17} />{`The answer is: ${expectedAnswer(question, mode)}`}</AutoDismissMessage>}<Button onClick={onNext} className="hidden sm:inline-flex">{questionIndex + 1 === questionCount ? "See results" : "Next question"}</Button></div>}
+        {answer && <QuizAnswerFeedback answer={answer} question={question} mode={mode} questionIndex={questionIndex} questionCount={questionCount} onNext={onNext} />}
       </div>
     </Card>
   );
