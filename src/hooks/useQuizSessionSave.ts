@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { expectedAnswer, promptText, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, promptText, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion, type QuizSaveState } from "@/lib/quiz-model";
 import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
-
-type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function useQuizSessionSave({
   userId,
@@ -30,7 +28,7 @@ export function useQuizSessionSave({
   setElapsedSeconds: Dispatch<SetStateAction<number>>;
   loadHistory: (forceRefresh: boolean, page: number, pageSize: number) => Promise<void>;
 }) {
-  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveState, setSaveState] = useState<QuizSaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const saveStartedRef = useRef<number | null>(null);
 
