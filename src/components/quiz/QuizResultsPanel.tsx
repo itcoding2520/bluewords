@@ -1,11 +1,9 @@
 "use client";
 
-import { ArrowLeft, RotateCcw } from "lucide-react";
-
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 import { QuizResultsAnswerList } from "@/components/quiz/QuizResultsAnswerList";
+import { QuizResultsActions } from "@/components/quiz/QuizResultsActions";
 import { QuizResultsSummary, type QuizSaveState } from "@/components/quiz/QuizResultsSummary";
 
 export function QuizResultsPanel({
@@ -33,7 +31,7 @@ export function QuizResultsPanel({
 }) {
   return (
     <Card className="mx-auto max-w-3xl p-5 sm:p-8">
-      <div className="mb-5 flex flex-wrap justify-between gap-2"><Button variant="secondary" onClick={onSetup}><ArrowLeft size={16} /> Setup</Button><Button onClick={onPlayAgain}><RotateCcw size={16} /> Play again</Button></div>
+      <QuizResultsActions onSetup={onSetup} onPlayAgain={onPlayAgain} />
       <QuizResultsSummary
         correctCount={correctCount}
         questionCount={questions.length}
