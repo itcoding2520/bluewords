@@ -1,7 +1,7 @@
 "use client";
 
 import { QuizQuestionImage } from "@/components/quiz/QuizQuestionImage";
-import { expectedAnswer } from "@/lib/quiz-answer-model";
+import { expectedAnswer, getQuizChoicePromptKind } from "@/lib/quiz-answer-model";
 import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizChoiceQuestion({
@@ -15,11 +15,13 @@ export function QuizChoiceQuestion({
   answer: QuizAnswer | undefined;
   onSubmitAnswer: (answer: string) => void;
 }) {
+  const promptKind = getQuizChoicePromptKind(question);
+
   return (
     <>
-      {question.choiceType === "word" ? (
+      {promptKind === "meaning" ? (
         <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{question.meaning}</p>
-      ) : question.word.imagePath ? (
+      ) : promptKind === "image" ? (
         <QuizQuestionImage word={question.word} className="quiz-game-image" />
       ) : (
         <p className="text-3xl font-bold text-slate-950 sm:text-4xl">{question.word.word}</p>

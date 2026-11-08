@@ -7,10 +7,16 @@ export function expectedAnswer(question: QuizQuestion, mode: QuizMode): string {
   return typeof question.correctAnswer === "string" ? question.correctAnswer : question.meaning;
 }
 
+export function getQuizChoicePromptKind(question: QuizQuestion): "meaning" | "image" | "word" {
+  if (question.choiceType === "word") return "meaning";
+  return question.word.imagePath ? "image" : "word";
+}
+
 export function promptText(question: QuizQuestion, mode: QuizMode): string {
   if (mode === "type-word") return "Image → Type the word";
-  if (question.choiceType === "word") return "Meaning → Choose the word";
-  return question.word.imagePath ? "Image → Choose the meaning" : "Word → Choose the meaning";
+  const promptKind = getQuizChoicePromptKind(question);
+  if (promptKind === "meaning") return "Meaning → Choose the word";
+  return promptKind === "image" ? "Image → Choose the meaning" : "Word → Choose the meaning";
 }
 
 /** Build the submitted answer and correctness result, or null for unusable input. */
