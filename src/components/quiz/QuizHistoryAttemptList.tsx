@@ -1,4 +1,5 @@
 import { BookOpen, ChevronRight, Clock3, Star, Trophy } from "lucide-react";
+import { formatQuizDate } from "@/lib/quiz-format";
 import { quizModeLabel } from "@/lib/quiz-mode-model";
 import type { VocabularyQuizSessionRow } from "@/types/database";
 
@@ -34,7 +35,7 @@ export function QuizHistoryAttemptList({
               <Star key={index} size={30} aria-hidden="true" fill={index < rating(session.correct_count, session.question_count) ? "currentColor" : "none"} />
             ))}
           </span>
-          <time className="quiz-history-date" dateTime={session.completed_at}>{new Date(session.completed_at).toLocaleString()}</time>
+          <time className="quiz-history-date" dateTime={session.completed_at}>{formatQuizDate(session.completed_at)}</time>
           <span className="quiz-history-mode"><BookOpen size={20} />{quizModeLabel(session.mode)}</span>
           <span className="quiz-history-duration"><Clock3 size={22} />{formatTime(session.duration_seconds)}</span>
           <span className="quiz-history-open" aria-hidden="true"><ChevronRight size={24} /></span>
