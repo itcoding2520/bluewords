@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useReducer } from "react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useQuizConfiguration } from "@/hooks/useQuizConfiguration";
@@ -10,23 +10,19 @@ import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
-import type { QuizAnswer, QuizPhase, QuizQuestion } from "@/lib/quiz-model";
+import { initialQuizSessionState, quizSessionReducer } from "@/lib/quiz-session-state";
 
 /** Owns the quiz page state and coordinates setup, play, results, and history. */
 export function useQuizExperience(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
   const history = useVocabularyQuizHistory(userId);
   const configuration = useQuizConfiguration();
-  const [phase, setPhase] = useState<QuizPhase>("setup");
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, QuizAnswer>>({});
-  const [input, setInput] = useState("");
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [session, dispatch] = useReducer(quizSessionReducer, initialQuizSessionState);
+  const setInput = useCallback((value: string) => dispatch({ type: "input", value }), []);
+  const setElapsedSeconds = useCallback((elapsedSeconds: number) => dispatch({ type: "tick", elapsedSeconds }), []);
+  const exitQuiz = useCallback(() => dispatch({ type: "exit" }), []);
   const navigation = useQuizNavigation({
-    setPhase,
-    setStartedAt,
+    exitQuiz,
     setSelectedHistory: history.setSelectedHistory,
     loadHistory: history.loadHistory,
   });
@@ -36,16 +32,16 @@ export function useQuizExperience(userId: string | null) {
     category: configuration.category,
     mode: configuration.mode,
   });
-  const currentQuestion = questions[questionIndex];
-  const currentAnswer = answers[questionIndex];
-  const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
+  const currentQuestion = session.questions[session.questionIndex];
+  const currentAnswer = session.answers[session.questionIndex];
+  const correctCount = Object.values(session.answers).filter((answer) => answer.correct).length;
   const save = useQuizSessionSave({
     userId,
-    phase,
-    startedAt,
+    phase: session.phase,
+    startedAt: session.startedAt,
     mode: configuration.mode,
-    questions,
-    answers,
+    questions: session.questions,
+    answers: session.answers,
     correctCount,
     historyPageSize: history.historyPageSize,
     setHistoryPage: history.setHistoryPage,
@@ -53,15 +49,10 @@ export function useQuizExperience(userId: string | null) {
     loadHistory: history.loadHistory,
   });
   useQuizProgression({
-    phase,
-    startedAt,
+    phase: session.phase,
+    startedAt: session.startedAt,
     currentAnswerIsCorrect: currentAnswer?.correct === true,
-    questionIndex,
-    questionCount: questions.length,
-    setElapsedSeconds,
-    setPhase,
-    setQuestionIndex,
-    setInput,
+    dispatch,
   });
   const round = useQuizRoundActions({
     mode: configuration.mode,
@@ -69,25 +60,19 @@ export function useQuizExperience(userId: string | null) {
     selectedQuestionCount: configuration.questionCount,
     eligibleWords: setup.eligibleWords,
     meaningQuestions: setup.meaningQuestions,
-    questions,
-    questionIndex,
+    questions: session.questions,
+    questionIndex: session.questionIndex,
     currentAnswer,
-    startedAt,
-    elapsedSeconds,
-    setPhase,
-    setQuestions,
-    setQuestionIndex,
-    setAnswers,
-    setInput,
-    setStartedAt,
-    setElapsedSeconds,
+    startedAt: session.startedAt,
+    elapsedSeconds: session.elapsedSeconds,
+    dispatch,
     resetSaveState: save.resetSaveState,
     showPlayTab: navigation.showPlayTab,
   });
 
   return {
     isLoaded,
-    phase,
+    phase: session.phase,
     tab: navigation.tab,
     navigation,
     configuration,
@@ -96,13 +81,13 @@ export function useQuizExperience(userId: string | null) {
     round,
     currentQuestion,
     currentAnswer,
-    questions,
-    questionIndex,
-    answers,
+    questions: session.questions,
+    questionIndex: session.questionIndex,
+    answers: session.answers,
     correctCount,
-    input,
+    input: session.input,
     setInput,
-    elapsedSeconds,
+    elapsedSeconds: session.elapsedSeconds,
     save,
   };
 }

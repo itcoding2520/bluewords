@@ -25,7 +25,7 @@ export function useQuizSessionSave({
   correctCount: number;
   historyPageSize: number;
   setHistoryPage: Dispatch<SetStateAction<number>>;
-  setElapsedSeconds: Dispatch<SetStateAction<number>>;
+  setElapsedSeconds: (seconds: number) => void;
   loadHistory: (forceRefresh: boolean, page: number, pageSize: number) => Promise<void>;
 }) {
   const [saveState, setSaveState] = useState<QuizSaveState>("idle");

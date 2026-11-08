@@ -1,16 +1,14 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 
-import type { QuizPhase, QuizTab } from "@/lib/quiz-model";
+import type { QuizTab } from "@/lib/quiz-model";
 import type { VocabularyQuizSessionRow } from "@/types/database";
 
 export function useQuizNavigation({
-  setPhase,
-  setStartedAt,
+  exitQuiz,
   setSelectedHistory,
   loadHistory,
 }: {
-  setPhase: Dispatch<SetStateAction<QuizPhase>>;
-  setStartedAt: Dispatch<SetStateAction<number | null>>;
+  exitQuiz: () => void;
   setSelectedHistory: Dispatch<SetStateAction<VocabularyQuizSessionRow | null>>;
   loadHistory: (forceRefresh?: boolean) => Promise<void>;
 }) {
@@ -28,9 +26,8 @@ export function useQuizNavigation({
   }, [loadHistory, setSelectedHistory]);
 
   const backToSetup = useCallback(() => {
-    setStartedAt(null);
-    setPhase("setup");
-  }, [setPhase, setStartedAt]);
+    exitQuiz();
+  }, [exitQuiz]);
 
   return { tab, showPlayTab, showHistoryTab, backToSetup };
 }
