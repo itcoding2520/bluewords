@@ -6,14 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
-
-export type QuizCategoryOption = {
-  id: string;
-  name: string;
-  value: string;
-  color: VocabularyCategoryColor;
-  imagePath: string | null;
-};
+import type { QuizCategoryOption } from "@/lib/quiz-setup-model";
 
 const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-500",

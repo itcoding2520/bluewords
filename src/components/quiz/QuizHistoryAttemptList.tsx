@@ -1,5 +1,5 @@
 import { BookOpen, ChevronRight, Clock3, Star, Trophy } from "lucide-react";
-import { quizModeLabel } from "@/lib/quiz-history";
+import { quizModeLabel } from "@/lib/quiz-mode-model";
 import type { VocabularyQuizSessionRow } from "@/types/database";
 
 function rating(score: number, total: number) {

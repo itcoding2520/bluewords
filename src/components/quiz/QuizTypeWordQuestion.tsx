@@ -1,13 +1,13 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { memo, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { QuizQuestionImage } from "@/components/quiz/QuizQuestionImage";
 import type { QuizAnswer } from "@/lib/quiz-model";
 import type { VocabularyWord } from "@/data/vocabulary";
 
-export function QuizTypeWordQuestion({
+export const QuizTypeWordQuestion = memo(function QuizTypeWordQuestion({
   word,
   answer,
   input,
@@ -45,4 +45,4 @@ export function QuizTypeWordQuestion({
       </form>
     </>
   );
-}
+});

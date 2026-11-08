@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { QuizPreviewQuestion } from "@/components/quiz/QuizPreviewQuestion";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
+import { QUIZ_MODE_OPTIONS } from "@/lib/quiz-mode-model";
 
 export function QuizPreview({
   mode,
@@ -19,8 +20,9 @@ export function QuizPreview({
   meaningQuestion?: QuizQuestion;
   typeWord?: VocabularyWord;
 }) {
+  const modeOption = QUIZ_MODE_OPTIONS[mode];
   const settings = [
-    mode === "choose-meaning" ? "Choose meaning" : "Type the word",
+    modeOption.compactLabel,
     category === "all" ? "All categories" : category,
     `${questionCount} questions`,
   ];
@@ -28,7 +30,7 @@ export function QuizPreview({
   return (
     <Card className="quiz-preview-card border-indigo-100 bg-indigo-50/70 p-5 sm:p-8">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-500">Your quiz preview</p>
-      <h2 className="quiz-preview-title mt-3 flex items-center gap-2 text-xl font-bold text-slate-900"><span>{mode === "choose-meaning" ? "Choose the meaning" : "Type the word"}</span><Star aria-hidden="true" size={20} className="fill-amber-400 text-amber-400" /></h2>
+      <h2 className="quiz-preview-title mt-3 flex items-center gap-2 text-xl font-bold text-slate-900"><span>{modeOption.label}</span><Star aria-hidden="true" size={20} className="fill-amber-400 text-amber-400" /></h2>
       <p className="mt-1 text-sm text-slate-500">This is how a question will look.</p>
 
       <QuizPreviewQuestion mode={mode} meaningQuestion={meaningQuestion} typeWord={typeWord} />

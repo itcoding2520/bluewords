@@ -1,4 +1,4 @@
-import type { Dispatch } from "react";
+import { useCallback, type Dispatch } from "react";
 
 import { type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { buildQuizAnswer } from "@/lib/quiz-answer-model";
@@ -36,7 +36,7 @@ export function useQuizRoundActions({
   resetSaveState: () => void;
   showPlayTab: () => void;
 }) {
-  function startQuiz() {
+  const startQuiz = useCallback(() => {
     if (maximumQuestions < selectedQuestionCount) return;
     const nextQuestions = buildQuizRoundQuestions({
       mode,
@@ -50,9 +50,9 @@ export function useQuizRoundActions({
     dispatch({ type: "start", questions: nextQuestions, startedAt: now });
     resetSaveState();
     showPlayTab();
-  }
+  }, [dispatch, eligibleWords, maximumQuestions, meaningQuestions, mode, resetSaveState, selectedQuestionCount, showPlayTab]);
 
-  function submitAnswer(value: string) {
+  const submitAnswer = useCallback((value: string) => {
     const currentQuestion = questions[questionIndex];
     if (!currentQuestion || currentAnswer) return;
     const answer = buildQuizAnswer(currentQuestion, mode, value);
@@ -63,11 +63,11 @@ export function useQuizRoundActions({
       questionIndex,
       answer,
     });
-  }
+  }, [currentAnswer, dispatch, mode, questionIndex, questions]);
 
-  function goToNextQuestion() {
+  const goToNextQuestion = useCallback(() => {
     dispatch({ type: "advance", elapsedSeconds: getQuizElapsedSeconds(startedAt, elapsedSeconds) });
-  }
+  }, [dispatch, elapsedSeconds, startedAt]);
 
   return { startQuiz, submitAnswer, goToNextQuestion };
 }

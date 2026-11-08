@@ -1,4 +1,4 @@
-import type { QuizAnswer, QuizPhase, QuizQuestion } from "@/lib/quiz-model";
+import { isQuizLastQuestion, type QuizAnswer, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
 
 export interface QuizSessionState {
   phase: QuizPhase;
@@ -54,7 +54,7 @@ export function quizSessionReducer(state: QuizSessionState, action: QuizSessionA
         : state;
     case "advance":
       if (state.phase !== "playing" || !state.answers[state.questionIndex]) return state;
-      if (state.questionIndex + 1 >= state.questions.length) return { ...state, phase: "results", elapsedSeconds: action.elapsedSeconds };
+      if (isQuizLastQuestion(state.questionIndex, state.questions.length)) return { ...state, phase: "results", elapsedSeconds: action.elapsedSeconds };
       return {
         ...state,
         questionIndex: state.questionIndex + 1,

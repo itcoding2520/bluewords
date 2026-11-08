@@ -4,9 +4,7 @@ import { ArrowRight, Play } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import type { QuizMode } from "@/lib/quiz-model";
-
-const QUESTION_COUNTS = [10, 20, 30] as const;
+import { MIN_QUIZ_QUESTION_COUNT, QUIZ_QUESTION_COUNTS, type QuizMode } from "@/lib/quiz-model";
 
 export function QuizQuestionCountSelector({
   mode,
@@ -26,7 +24,7 @@ export function QuizQuestionCountSelector({
       <fieldset className="mt-6">
         <legend className="mb-3 text-sm font-semibold text-slate-700">Number of words</legend>
         <div className="flex flex-wrap gap-2">
-          {QUESTION_COUNTS.map((count) => (
+          {QUIZ_QUESTION_COUNTS.map((count) => (
             <ChoiceButton
               key={count}
               active={questionCount === count}
@@ -37,10 +35,10 @@ export function QuizQuestionCountSelector({
             </ChoiceButton>
           ))}
         </div>
-        <p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of 10, 20, or 30 can be started.</p>
+        <p className="mt-2 text-xs text-slate-500">{maximumQuestions} eligible questions available. Only complete sets of {QUIZ_QUESTION_COUNTS.join(", ")} can be started.</p>
       </fieldset>
-      {maximumQuestions < 10 && <AutoDismissMessage variant="warning" className="mt-5">
-        {mode === "type-word" ? "Add images to at least 10 vocabulary words to play this question type." : "Add at least 10 eligible vocabulary words with enough distinct words or meanings to create answer choices."}
+      {maximumQuestions < MIN_QUIZ_QUESTION_COUNT && <AutoDismissMessage variant="warning" className="mt-5">
+        {mode === "type-word" ? `Add images to at least ${MIN_QUIZ_QUESTION_COUNT} vocabulary words to play this question type.` : `Add at least ${MIN_QUIZ_QUESTION_COUNT} eligible vocabulary words with enough distinct words or meanings to create answer choices.`}
       </AutoDismissMessage>}
       <div className="quiz-start-row mt-7 hidden justify-end sm:flex">
         <Button onClick={onStart} disabled={maximumQuestions < questionCount}>

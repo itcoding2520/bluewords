@@ -3,13 +3,13 @@ import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supab
 import type { QuizQuestion } from "@/lib/quiz-model";
 import { sampleRandom, shuffle } from "@/lib/quiz-random";
 
-export interface QuizCategoryOption {
+export type QuizCategoryOption = {
   id: string;
   name: string;
   value: string;
   color: VocabularyCategoryColor;
   imagePath: string | null;
-}
+};
 
 export function buildQuizCategoryOptions(
   categories: VocabularyCategoryRow[],
