@@ -43,6 +43,9 @@ const migrations = [
   ["20261105000000", "20261105000000_phase_six_easy_vocabulary_words.sql"],
   ["20261106000000", "20261106000000_phase_six_situational_word_banks.sql"],
   ["20261107000000", "20261107000000_phase_six_correct_daily_routine_word.sql"],
+  ["20261108000000", "20261108000000_allow_deleting_assessment_authors.sql"],
+  ["20261108100000", "20261108100000_allow_vocabulary_category_owner_cascade.sql"],
+  ["20261108110000", "20261108110000_allow_service_role_delete_vocabulary_words.sql"],
 ];
 
 function parseEnv(contents) {

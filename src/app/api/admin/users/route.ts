@@ -135,8 +135,24 @@ export async function POST(request: NextRequest) {
   if (typeof input.userId !== "string") return NextResponse.json({ error: "A userId is required." }, { status: 400 });
   if (input.action === "delete") {
     if (input.userId === auth.user.id) return NextResponse.json({ error: "You cannot delete your own admin account." }, { status: 400 });
+
+    // vocabulary_categories are deleted with their owner, while vocabulary_words
+    // reference those categories with ON DELETE RESTRICT. Remove the owner's
+    // words first so the auth user's category cascade can complete.
+    const { error: vocabularyError } = await auth.adminClient
+      .from("vocabulary_words")
+      .delete()
+      .eq("user_id", input.userId);
+    if (vocabularyError) {
+      console.error("Could not remove vocabulary before deleting admin user:", vocabularyError.message);
+      return NextResponse.json({ error: "Could not remove the user's vocabulary. The account was not deleted." }, { status: 500 });
+    }
+
     const { error } = await auth.adminClient.auth.admin.deleteUser(input.userId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      console.error("Could not delete admin-managed user:", error.message);
+      return NextResponse.json({ error: "Could not delete this account. Please refresh and try again." }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   }
   if (input.action === "update") {
