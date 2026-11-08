@@ -1,6 +1,7 @@
 import type { Dispatch } from "react";
 
-import { expectedAnswer, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { shuffle } from "@/lib/quiz-random";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizSessionAction } from "@/lib/quiz-session-state";

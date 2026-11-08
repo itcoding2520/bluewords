@@ -4,7 +4,8 @@ import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
-import { buildMeaningQuestions, sampleRandom, shuffle } from "@/lib/quiz-model";
+import { buildMeaningQuestions } from "@/lib/quiz-question-generator";
+import { sampleRandom, shuffle } from "@/lib/quiz-random";
 import type { QuizMode } from "@/lib/quiz-model";
 
 export function useQuizSetupData({
