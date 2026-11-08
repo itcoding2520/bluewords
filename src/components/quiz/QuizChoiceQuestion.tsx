@@ -1,10 +1,11 @@
 "use client";
 
+import { memo } from "react";
 import { QuizQuestionImage } from "@/components/quiz/QuizQuestionImage";
 import { expectedAnswer, getQuizChoicePromptKind } from "@/lib/quiz-answer-model";
 import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
-export function QuizChoiceQuestion({
+export const QuizChoiceQuestion = memo(function QuizChoiceQuestion({
   question,
   mode,
   answer,
@@ -43,4 +44,4 @@ export function QuizChoiceQuestion({
       </div>
     </>
   );
-}
+});
