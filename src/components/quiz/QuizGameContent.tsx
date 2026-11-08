@@ -7,7 +7,7 @@ import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { useQuizExperience } from "@/hooks/useQuizExperience";
-import { formatQuizTime } from "@/lib/quiz-model";
+import { formatQuizTime } from "@/lib/quiz-format";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const quiz = useQuizExperience(userId);
