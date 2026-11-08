@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { quizModeLabel } from "@/lib/quiz-history";
+import { quizModeLabel } from "@/lib/quiz-mode-model";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
 
 type QuizHistoryDetailProps = {
