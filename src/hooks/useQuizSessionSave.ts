@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { expectedAnswer, promptText, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion, type QuizSaveState } from "@/lib/quiz-model";
+import type { QuizAnswer, QuizMode, QuizPhase, QuizQuestion, QuizSaveState } from "@/lib/quiz-model";
 import { saveVocabularyQuizSession } from "@/lib/supabase/quiz";
+import { buildQuizSessionPayload } from "@/lib/quiz-session-payload";
 
 export function useQuizSessionSave({
   userId,
@@ -40,34 +41,12 @@ export function useQuizSessionSave({
     const requestId = ++saveRequestId.current;
     saveStartedRef.current = startedAt;
     const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
+    const payload = buildQuizSessionPayload({ mode, questions, answers, correctCount, startedAt, completedAt });
+    setElapsedSeconds(payload.duration_seconds);
     setSaveState("saving");
     setSaveError("");
 
-    void saveVocabularyQuizSession({
-      mode,
-      question_count: questions.length,
-      correct_count: correctCount,
-      duration_seconds: durationSeconds,
-      started_at: new Date(startedAt).toISOString(),
-      completed_at: new Date(completedAt).toISOString(),
-      answers: questions.map((question, index) => {
-        const answer = answers[index];
-        return {
-          vocabulary_word_id: question.word.isCustom ? null : question.word.id,
-          question_position: index + 1,
-          word_text: question.word.word,
-          prompt_text: promptText(question, mode),
-          expected_answer: expectedAnswer(question, mode),
-          selected_answer: answer?.value ?? "",
-          is_correct: answer?.correct ?? false,
-          part_of_speech: question.partOfSpeech,
-          choices: question.choices,
-          image_path: question.word.imagePath ?? null,
-        };
-      }),
-    }).then(() => {
+    void saveVocabularyQuizSession(payload).then(() => {
       if (requestId !== saveRequestId.current) return;
       setSaveState("saved");
       setHistoryPage(1);
