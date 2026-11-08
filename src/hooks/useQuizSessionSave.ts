@@ -32,10 +32,12 @@ export function useQuizSessionSave({
   const [saveError, setSaveError] = useState("");
   const [retryRevision, setRetryRevision] = useState(0);
   const saveStartedRef = useRef<number | null>(null);
+  const saveRequestId = useRef(0);
 
   useEffect(() => {
     if (!userId || phase !== "results" || startedAt === null || questions.length === 0 || saveStartedRef.current === startedAt) return;
 
+    const requestId = ++saveRequestId.current;
     saveStartedRef.current = startedAt;
     const completedAt = Date.now();
     const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
@@ -66,10 +68,12 @@ export function useQuizSessionSave({
         };
       }),
     }).then(() => {
+      if (requestId !== saveRequestId.current) return;
       setSaveState("saved");
       setHistoryPage(1);
       void loadHistory(true, 1, historyPageSize);
     }).catch((error: unknown) => {
+      if (requestId !== saveRequestId.current) return;
       saveStartedRef.current = null;
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
@@ -78,6 +82,7 @@ export function useQuizSessionSave({
 
   const retrySave = useCallback(() => {
     if (saveState !== "error") return;
+    saveRequestId.current += 1;
     saveStartedRef.current = null;
     setSaveState("idle");
     setSaveError("");
@@ -85,6 +90,7 @@ export function useQuizSessionSave({
   }, [saveState]);
 
   const resetSaveState = useCallback(() => {
+    saveRequestId.current += 1;
     saveStartedRef.current = null;
     setSaveState("idle");
     setSaveError("");
