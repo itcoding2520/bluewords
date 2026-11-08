@@ -4,11 +4,12 @@ import { Gamepad2, Sparkles } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { QuizPreview } from "@/components/quiz/QuizPreview";
-import { QuizCategorySelector, type QuizCategoryOption } from "@/components/quiz/QuizCategorySelector";
+import { QuizCategorySelector } from "@/components/quiz/QuizCategorySelector";
 import { QuizModeSelector } from "@/components/quiz/QuizModeSelector";
 import { QuizQuestionCountSelector } from "@/components/quiz/QuizQuestionCountSelector";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
+import type { QuizCategoryOption } from "@/lib/quiz-setup-model";
 
 export function QuizSetupPanel({
   mode,
