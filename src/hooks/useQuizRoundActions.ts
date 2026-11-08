@@ -1,8 +1,9 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch } from "react";
 
-import { expectedAnswer, shuffle, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
+import type { QuizSessionAction } from "@/lib/quiz-session-state";
 
 export function useQuizRoundActions({
   mode,
@@ -15,13 +16,7 @@ export function useQuizRoundActions({
   currentAnswer,
   startedAt,
   elapsedSeconds,
-  setPhase,
-  setQuestions,
-  setQuestionIndex,
-  setAnswers,
-  setInput,
-  setStartedAt,
-  setElapsedSeconds,
+  dispatch,
   resetSaveState,
   showPlayTab,
 }: {
@@ -35,13 +30,7 @@ export function useQuizRoundActions({
   currentAnswer?: QuizAnswer;
   startedAt: number | null;
   elapsedSeconds: number;
-  setPhase: Dispatch<SetStateAction<QuizPhase>>;
-  setQuestions: Dispatch<SetStateAction<QuizQuestion[]>>;
-  setQuestionIndex: Dispatch<SetStateAction<number>>;
-  setAnswers: Dispatch<SetStateAction<Record<number, QuizAnswer>>>;
-  setInput: Dispatch<SetStateAction<string>>;
-  setStartedAt: Dispatch<SetStateAction<number | null>>;
-  setElapsedSeconds: Dispatch<SetStateAction<number>>;
+  dispatch: Dispatch<QuizSessionAction>;
   resetSaveState: () => void;
   showPlayTab: () => void;
 }) {
@@ -54,14 +43,8 @@ export function useQuizRoundActions({
     if (nextQuestions.length !== selectedQuestionCount) return;
 
     const now = Date.now();
-    setQuestions(nextQuestions);
-    setQuestionIndex(0);
-    setAnswers({});
-    setInput("");
-    setElapsedSeconds(0);
-    setStartedAt(now);
+    dispatch({ type: "start", questions: nextQuestions, startedAt: now });
     resetSaveState();
-    setPhase("playing");
     showPlayTab();
   }
 
@@ -71,24 +54,23 @@ export function useQuizRoundActions({
     const expected = expectedAnswer(currentQuestion, mode);
     if (typeof expected !== "string" || !expected.trim()) return;
 
-    setAnswers((previous) => ({
-      ...previous,
-      [questionIndex]: {
+    dispatch({
+      type: "answer",
+      questionIndex,
+      answer: {
         value: value.trim(),
         correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected),
       },
-    }));
+    });
   }
 
   function goToNextQuestion() {
-    if (questionIndex + 1 >= questions.length) {
-      setElapsedSeconds(startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000));
-      setPhase("results");
-      return;
-    }
-    setQuestionIndex((index) => index + 1);
-    setInput("");
+    dispatch({ type: "advance", elapsedSeconds: getElapsedSeconds(startedAt, elapsedSeconds) });
   }
 
   return { startQuiz, submitAnswer, goToNextQuestion };
+}
+
+function getElapsedSeconds(startedAt: number | null, elapsedSeconds: number): number {
+  return startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000);
 }

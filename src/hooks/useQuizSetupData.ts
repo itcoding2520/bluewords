@@ -4,7 +4,7 @@ import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { filterQuizWordsByCategory } from "@/lib/quiz-category-filter.mjs";
-import { buildMeaningQuestions, shuffle } from "@/lib/quiz-model";
+import { buildMeaningQuestions, sampleRandom, shuffle } from "@/lib/quiz-model";
 import type { QuizMode } from "@/lib/quiz-model";
 
 export function useQuizSetupData({
@@ -42,9 +42,9 @@ export function useQuizSetupData({
       ?? meaningQuestions[0];
     if (!previewBase) return undefined;
 
-    const distractors = shuffle([...new Set(meaningQuestions
+    const distractors = sampleRandom([...new Set(meaningQuestions
       .map((question) => question.meaning)
-      .filter((meaning) => meaning.toLocaleLowerCase() !== previewBase.meaning.toLocaleLowerCase()))]).slice(0, 3);
+      .filter((meaning) => meaning.toLocaleLowerCase() !== previewBase.meaning.toLocaleLowerCase()))], 3);
     if (distractors.length < 3) return previewBase;
     return {
       ...previewBase,
