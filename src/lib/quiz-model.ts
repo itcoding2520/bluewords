@@ -15,8 +15,12 @@ export function getQuizQuestionProgress(questionIndex: number, questionCount: nu
   };
 }
 
+export function isQuizLastQuestion(questionIndex: number, questionCount: number): boolean {
+  return questionCount > 0 && questionIndex >= questionCount - 1;
+}
+
 export function getQuizAdvanceLabel(questionIndex: number, questionCount: number): string {
-  return getQuizQuestionProgress(questionIndex, questionCount).currentQuestion === questionCount
+  return isQuizLastQuestion(questionIndex, questionCount)
     ? "See results"
     : "Next question";
 }
