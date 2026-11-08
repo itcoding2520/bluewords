@@ -1,21 +1,37 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowLeft, Clock3 } from "lucide-react";
 import { formatQuizTime } from "@/lib/quiz-format";
 import { getQuizQuestionProgress } from "@/lib/quiz-model";
+import { getQuizElapsedSeconds } from "@/lib/quiz-timing";
 
 export function QuizGameStatusBar({
   questionIndex,
   questionCount,
+  startedAt,
   elapsedSeconds,
   onExit,
 }: {
   questionIndex: number;
   questionCount: number;
+  startedAt: number | null;
   elapsedSeconds: number;
   onExit: () => void;
 }) {
   const { currentQuestion, percentage } = getQuizQuestionProgress(questionIndex, questionCount);
+  const [displayElapsedSeconds, setDisplayElapsedSeconds] = useState(() =>
+    startedAt === null ? elapsedSeconds : getQuizElapsedSeconds(startedAt, elapsedSeconds)
+  );
+
+  useEffect(() => {
+    if (startedAt === null) return;
+
+    const updateElapsed = () => setDisplayElapsedSeconds(getQuizElapsedSeconds(startedAt, elapsedSeconds));
+    updateElapsed();
+    const interval = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(interval);
+  }, [elapsedSeconds, startedAt]);
 
   return (
     <>
@@ -25,7 +41,7 @@ export function QuizGameStatusBar({
         </button>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-slate-500">Question {currentQuestion} of {questionCount}</span>
-          <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatQuizTime(elapsedSeconds)}</span>
+          <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatQuizTime(displayElapsedSeconds)}</span>
         </div>
       </div>
       <div className="quiz-game-progress mt-5 h-2 overflow-hidden rounded-full bg-slate-100">

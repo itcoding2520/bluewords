@@ -12,6 +12,7 @@ export function QuizGamePanel({
   mode,
   questionIndex,
   questionCount,
+  startedAt,
   answer,
   input,
   elapsedSeconds,
@@ -24,6 +25,7 @@ export function QuizGamePanel({
   mode: QuizMode;
   questionIndex: number;
   questionCount: number;
+  startedAt: number | null;
   answer: QuizAnswer | undefined;
   input: string;
   elapsedSeconds: number;
@@ -34,7 +36,7 @@ export function QuizGamePanel({
 }) {
   return (
     <Card className="quiz-game-card mx-auto max-w-5xl p-5 sm:p-8">
-      <QuizGameStatusBar questionIndex={questionIndex} questionCount={questionCount} elapsedSeconds={elapsedSeconds} onExit={onExit} />
+      <QuizGameStatusBar questionIndex={questionIndex} questionCount={questionCount} startedAt={startedAt} elapsedSeconds={elapsedSeconds} onExit={onExit} />
       <div className="quiz-game-prompt flex md:min-h-[360px] flex-col items-center justify-center pt-3 text-center sm:pt-6">
         {mode === "type-word" ? (
           <QuizTypeWordQuestion word={question.word} answer={answer} input={input} onInputChange={onInputChange} onSubmitAnswer={onSubmitAnswer} />

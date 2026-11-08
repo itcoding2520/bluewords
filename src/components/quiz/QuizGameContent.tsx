@@ -89,6 +89,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
           mode={configuration.mode}
           questionIndex={quiz.questionIndex}
           questionCount={quiz.questions.length}
+          startedAt={quiz.startedAt}
           answer={quiz.currentAnswer}
           input={quiz.input}
           elapsedSeconds={quiz.elapsedSeconds}
