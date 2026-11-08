@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
+import type { VocabularyQuizSessionRow } from "@/types/database";
+import { useVocabularyQuizReview } from "@/hooks/useVocabularyQuizReview";
 import {
-  getCachedVocabularyQuizAnswers,
   getCachedVocabularyQuizHistory,
-  getVocabularyQuizAnswers,
   getVocabularyQuizHistory,
 } from "@/lib/supabase/quiz";
 
@@ -17,17 +16,13 @@ export function useVocabularyQuizHistory(userId: string | null) {
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
-  const [selectedHistory, setSelectedHistory] = useState<VocabularyQuizSessionRow | null>(null);
-  const [historyAnswers, setHistoryAnswers] = useState<VocabularyQuizAnswerRow[]>([]);
-  const [reviewLoading, setReviewLoading] = useState(false);
   const [historyOwnerId, setHistoryOwnerId] = useState<string | null>(null);
-  const [reviewOwnerId, setReviewOwnerId] = useState<string | null>(null);
+  const review = useVocabularyQuizReview(userId);
+  const { openHistoryReview: loadHistoryReview } = review;
   const historyRequestId = useRef(0);
-  const reviewRequestId = useRef(0);
 
   useEffect(() => {
     historyRequestId.current += 1;
-    reviewRequestId.current += 1;
   }, [userId]);
 
   const loadHistory = useCallback(async (
@@ -71,37 +66,6 @@ export function useVocabularyQuizHistory(userId: string | null) {
     }
   }, [historyOwnerId, historyPage, historyPageSize, userId]);
 
-  const openHistoryReview = useCallback(async (session: VocabularyQuizSessionRow) => {
-    const requestId = ++reviewRequestId.current;
-    if (!userId) return;
-    if (reviewOwnerId !== userId || selectedHistory?.id !== session.id) setHistoryAnswers([]);
-    setSelectedHistory(session);
-    setReviewOwnerId(userId);
-    setHistoryError("");
-    const cachedAnswers = getCachedVocabularyQuizAnswers(userId, session.id);
-    if (cachedAnswers) {
-      setReviewOwnerId(userId);
-      setHistoryAnswers(cachedAnswers);
-      setReviewLoading(false);
-      return;
-    }
-    setReviewLoading(true);
-    try {
-      const answers = await getVocabularyQuizAnswers(session.id);
-      if (requestId === reviewRequestId.current) {
-        setReviewOwnerId(userId);
-        setHistoryAnswers(answers);
-      }
-    } catch {
-      if (requestId === reviewRequestId.current) {
-        setHistoryAnswers([]);
-        setHistoryError("Could not load this quiz review. Please try again.");
-      }
-    } finally {
-      if (requestId === reviewRequestId.current) setReviewLoading(false);
-    }
-  }, [reviewOwnerId, selectedHistory?.id, userId]);
-
   const refreshHistory = useCallback(() => loadHistory(true), [loadHistory]);
 
   const changeHistoryPageSize = useCallback((pageSize: number) => {
@@ -115,9 +79,12 @@ export function useVocabularyQuizHistory(userId: string | null) {
     void loadHistory(false, page);
   }, [loadHistory]);
 
-  const ownsHistory = userId !== null && historyOwnerId === userId;
-  const ownsReview = userId !== null && reviewOwnerId === userId;
+  const openHistoryReview = useCallback((session: VocabularyQuizSessionRow) => {
+    setHistoryError("");
+    void loadHistoryReview(session);
+  }, [loadHistoryReview]);
 
+  const ownsHistory = userId !== null && historyOwnerId === userId;
   return {
     history: ownsHistory ? history : [],
     historyPage,
@@ -126,11 +93,11 @@ export function useVocabularyQuizHistory(userId: string | null) {
     setHistoryPageSize,
     historyTotal: ownsHistory ? historyTotal : 0,
     historyLoading: ownsHistory ? historyLoading : false,
-    historyError: ownsHistory ? historyError : "",
-    selectedHistory: ownsReview ? selectedHistory : null,
-    setSelectedHistory,
-    historyAnswers: ownsReview ? historyAnswers : [],
-    reviewLoading: ownsReview ? reviewLoading : false,
+    historyError: ownsHistory ? historyError || review.reviewError : "",
+    selectedHistory: review.selectedHistory,
+    setSelectedHistory: review.setSelectedHistory,
+    historyAnswers: review.historyAnswers,
+    reviewLoading: review.reviewLoading,
     loadHistory,
     refreshHistory,
     changeHistoryPageSize,
