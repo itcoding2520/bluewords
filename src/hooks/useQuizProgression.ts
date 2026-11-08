@@ -15,15 +15,6 @@ export function useQuizProgression({
   dispatch: Dispatch<QuizSessionAction>;
 }) {
   useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-
-    const tick = () => dispatch({ type: "tick", elapsedSeconds: getQuizElapsedSeconds(startedAt, 0) });
-    tick();
-    const interval = window.setInterval(tick, 1000);
-    return () => window.clearInterval(interval);
-  }, [dispatch, phase, startedAt]);
-
-  useEffect(() => {
     if (phase !== "playing" || !currentAnswerIsCorrect) return;
 
     const timeout = window.setTimeout(() => {

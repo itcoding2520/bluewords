@@ -131,7 +131,7 @@ export function AdminUsersManagement() {
       });
       const payload = await response.json() as UserActionResponse;
       if (!response.ok) throw new Error(payload.error ?? "Could not complete this user action.");
-      showMutationResult(payload, "User saved.");
+      showMutationResult(payload, action === "delete" ? "User removed." : action === "create" ? "User created." : "User saved.");
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not complete this user action.");

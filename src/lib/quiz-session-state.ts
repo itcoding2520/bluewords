@@ -14,7 +14,7 @@ export type QuizSessionAction =
   | { type: "start"; questions: QuizQuestion[]; startedAt: number }
   | { type: "answer"; questionIndex: number; answer: QuizAnswer }
   | { type: "input"; value: string }
-  | { type: "tick"; elapsedSeconds: number }
+  | { type: "elapsed"; elapsedSeconds: number }
   | { type: "advance"; elapsedSeconds: number }
   | { type: "exit" };
 
@@ -48,10 +48,8 @@ export function quizSessionReducer(state: QuizSessionState, action: QuizSessionA
       };
     case "input":
       return state.phase === "playing" ? { ...state, input: action.value } : state;
-    case "tick":
-      return state.phase === "playing" || state.phase === "results"
-        ? { ...state, elapsedSeconds: action.elapsedSeconds }
-        : state;
+    case "elapsed":
+      return state.phase === "results" ? { ...state, elapsedSeconds: action.elapsedSeconds } : state;
     case "advance":
       if (state.phase !== "playing" || !state.answers[state.questionIndex]) return state;
       if (isQuizLastQuestion(state.questionIndex, state.questions.length)) return { ...state, phase: "results", elapsedSeconds: action.elapsedSeconds };
@@ -61,6 +59,6 @@ export function quizSessionReducer(state: QuizSessionState, action: QuizSessionA
         input: "",
       };
     case "exit":
-      return { ...state, phase: "setup", startedAt: null };
+      return initialQuizSessionState;
   }
 }

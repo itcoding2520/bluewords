@@ -15,18 +15,18 @@ export function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
   const entries = words.map((word) => ({ word, meanings: meaningsFor(word) }));
   const uniqueAnswers = [...new Map(entries
     .flatMap(({ meanings }) => meanings.map((meaning) => meaning.meaning.trim()))
-    .map((meaning) => [meaning.toLocaleLowerCase(), meaning] as const)).values()];
+    .map((meaning) => [normalizeQuizAnswer(meaning), meaning] as const)).values()];
   const uniqueWords = [...new Map(words.map((word) => [normalizeQuizAnswer(word.word), word.word.trim()] as const))]
     .map(([normalized, word]) => ({ normalized, word }));
 
   return shuffle(entries.flatMap(({ word, meanings: wordMeanings }) => {
     if (wordMeanings.length === 0) return [];
     const meaning = wordMeanings[Math.floor(Math.random() * wordMeanings.length)];
-    const normalizedMeaning = meaning.meaning.trim().toLocaleLowerCase();
+    const normalizedMeaning = normalizeQuizAnswer(meaning.meaning);
     const meaningDistractors = shuffle(sampleRandomMatching(
       uniqueAnswers,
       3,
-      (answer) => answer.toLocaleLowerCase() !== normalizedMeaning
+      (answer) => normalizeQuizAnswer(answer) !== normalizedMeaning
     ));
     const normalizedWord = normalizeQuizAnswer(word.word);
     const wordDistractors = shuffle(sampleRandomMatching(

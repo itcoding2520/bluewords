@@ -2,18 +2,19 @@
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportCommunicationCsv, parseCommunicationCsvDetailed, type CommunicationCsvRecord, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
+import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
+import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
-type Topic = { id: string; slug: string; title_en: string; title_vi: string; description_en: string; description_vi: string; sort_order: number; status: ContentStatus };
-type Lesson = { id: string; topic_id: string; lesson_key: string; title_en: string; title_vi: string; difficulty: CommunicationDifficulty; sort_order: number; status: ContentStatus };
-type Item = { id: string; lesson_id: string; item_key: string; item_type: "word" | "phrase" | "sentence_pattern"; content_en: string; meaning_vi: string; example_en: string; example_vi: string; image_keyword: string; audio_url: string; sort_order: number };
+type Topic = CommunicationTopic;
+type Lesson = CommunicationLesson;
+type Item = CommunicationLessonItem;
 type ExportDialogue = { id: string; dialogue_key: string; lesson_id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
 type ExportTurn = { id: string; turn_key: string; dialogue_id: string; turn_order: number; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[] };
 type LessonDraft = Omit<Lesson, "id">;
@@ -21,12 +22,7 @@ type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
-type CommunicationCollections = { topics: Topic[]; lessons: Lesson[]; items: Item[] };
 type TopicWordCounts = { easy: number; medium: number; hard: number };
-const COLLECTION_CACHE_TTL = 60_000;
-const COLLECTION_CACHE_VERSION = "v2-paginated-items";
-const collectionsCache = createInvalidatableAsyncCache();
-const collectionsCacheExpiry = new Map<string, number>();
 
 function isOptionalHttpUrl(value: string) {
   if (!value.trim()) return true;
@@ -37,23 +33,28 @@ function isOptionalHttpUrl(value: string) {
 }
 
 export function AdminCommunicationManagement() {
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [selectedTopicId, setSelectedTopicId] = useState("");
-  const [selectedLessonId, setSelectedLessonId] = useState("");
+  const supabase = useSupabaseClient();
+  const {
+    topics,
+    lessons,
+    items,
+    selectedTopicId,
+    setSelectedTopicId,
+    selectedLessonId,
+    setSelectedLessonId,
+    loading,
+    refresh,
+  } = useAdminCommunicationCollections(supabase);
   const [topicDraft, setTopicDraft] = useState({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: 1, status: "draft" as ContentStatus });
   const [topicEditing, setTopicEditing] = useState<string | null>(null);
   const [lessonDraft, setLessonDraft] = useState<LessonDraft>(initialLesson);
   const [lessonEditing, setLessonEditing] = useState<string | null>(null);
   const [itemDraft, setItemDraft] = useState<ItemDraft>(initialItem);
   const [itemEditing, setItemEditing] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const confirm = useConfirmDialog();
-  const supabase = useSupabaseClient();
   const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
   const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
@@ -80,59 +81,6 @@ export function AdminCommunicationManagement() {
       hard: levels.hard.size,
     }]));
   }, [items, lessons]);
-
-  async function loadCollections(force = false): Promise<CommunicationCollections> {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-    const userId = session?.user.id;
-    if (!userId) throw new Error("Your session has expired. Sign in again to manage communication content.");
-
-    if (force || (collectionsCacheExpiry.get(userId) ?? 0) <= Date.now()) {
-      collectionsCache.invalidate(`${COLLECTION_CACHE_VERSION}:${userId}`);
-      // Set expiry before starting the request so concurrent mounts share its promise
-      // instead of repeatedly invalidating it while the first load is still pending.
-      collectionsCacheExpiry.set(userId, Date.now() + COLLECTION_CACHE_TTL);
-    }
-    return collectionsCache.get(`${COLLECTION_CACHE_VERSION}:${userId}`, async () => {
-      const [topicResult, lessonResult, allItems] = await Promise.all([
-        supabase.from("communication_topics").select("*").order("sort_order").order("title_en"),
-        supabase.from("communication_lessons").select("*").order("sort_order").order("title_en"),
-        fetchAllPages<Item>(async (from, to) => {
-          const { data, error } = await supabase
-            .from("communication_lesson_items")
-            .select("*")
-            .order("sort_order")
-            .order("item_key")
-            .range(from, to);
-          return { data: (data ?? []) as Item[], error };
-        }),
-      ]);
-      if (topicResult.error) throw topicResult.error;
-      if (lessonResult.error) throw lessonResult.error;
-      return { topics: (topicResult.data ?? []) as Topic[], lessons: (lessonResult.data ?? []) as Lesson[], items: allItems };
-    });
-  }
-  function applyCollections(next: { topics: Topic[]; lessons: Lesson[]; items: Item[] }) {
-    setTopics(next.topics); setLessons(next.lessons); setItems(next.items);
-    const nextTopicId = next.topics.some((topic) => topic.id === selectedTopicId) ? selectedTopicId : next.topics[0]?.id ?? "";
-    setSelectedTopicId(nextTopicId);
-    setSelectedLessonId((old) => next.lessons.some((lesson) => lesson.id === old && lesson.topic_id === nextTopicId)
-      ? old
-      : next.lessons.find((lesson) => lesson.topic_id === nextTopicId)?.id ?? "");
-  }
-  async function refresh() {
-    try { applyCollections(await loadCollections(true)); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "Could not load communication content."); }
-  }
-  useEffect(() => {
-    let active = true;
-    void loadCollections().then((result) => { if (active) applyCollections(result); })
-      .catch((error: unknown) => { if (active) toast.error(error instanceof Error ? error.message : "Could not load communication content."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  // Initial load only; explicit refresh uses the same query helper.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function saveTopic(event: FormEvent) {
     event.preventDefault();

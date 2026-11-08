@@ -77,6 +77,7 @@ export function useQuizExperience(userId: string | null) {
     questions: session.questions,
     questionIndex: session.questionIndex,
     answers: session.answers,
+    startedAt: session.startedAt,
     correctCount,
     input: session.input,
     setInput,

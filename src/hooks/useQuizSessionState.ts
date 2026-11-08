@@ -6,7 +6,7 @@ import { initialQuizSessionState, quizSessionReducer } from "@/lib/quiz-session-
 export function useQuizSessionState() {
   const [session, dispatch] = useReducer(quizSessionReducer, initialQuizSessionState);
   const setInput = useCallback((value: string) => dispatch({ type: "input", value }), []);
-  const setElapsedSeconds = useCallback((elapsedSeconds: number) => dispatch({ type: "tick", elapsedSeconds }), []);
+  const setElapsedSeconds = useCallback((elapsedSeconds: number) => dispatch({ type: "elapsed", elapsedSeconds }), []);
   const exitQuiz = useCallback(() => dispatch({ type: "exit" }), []);
   const currentQuestion = session.questions[session.questionIndex];
   const currentAnswer = session.answers[session.questionIndex];

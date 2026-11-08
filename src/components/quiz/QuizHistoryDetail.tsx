@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { quizModeLabel } from "@/lib/quiz-mode-model";
+import { formatQuizDate } from "@/lib/quiz-format";
 import type { VocabularyQuizAnswerRow, VocabularyQuizSessionRow } from "@/types/database";
 
 type QuizHistoryDetailProps = {
@@ -48,7 +49,7 @@ export function QuizHistoryDetail({ selected, answers, reviewLoading, formatTime
       <div className="quiz-history-detail-heading mb-5">
         <h2 className="text-2xl font-extrabold text-slate-950">Quiz review</h2>
         <p className="mt-1 text-sm text-slate-500">
-          {new Date(selected.completed_at).toLocaleString()} · {quizModeLabel(selected.mode)} · {formatTime(selected.duration_seconds)} · {selected.correct_count}/{selected.question_count} correct
+          {formatQuizDate(selected.completed_at)} · {quizModeLabel(selected.mode)} · {formatTime(selected.duration_seconds)} · {selected.correct_count}/{selected.question_count} correct
         </p>
       </div>
       {reviewLoading ? (
