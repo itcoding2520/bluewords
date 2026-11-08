@@ -2,7 +2,8 @@
 
 import { QuizQuestionImage } from "@/components/quiz/QuizQuestionImage";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { expectedAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer } from "@/lib/quiz-answer-model";
+import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizPreviewQuestion({ mode, meaningQuestion, typeWord }: {
   mode: QuizMode;

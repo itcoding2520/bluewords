@@ -1,4 +1,5 @@
-import { expectedAnswer, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer } from "@/lib/quiz-answer-model";
+import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizResultsAnswerList({
   questions,

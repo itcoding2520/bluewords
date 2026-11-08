@@ -3,6 +3,7 @@ import type { Dispatch } from "react";
 import { type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 import { buildQuizAnswer } from "@/lib/quiz-answer-model";
 import { buildQuizRoundQuestions } from "@/lib/quiz-round-model";
+import { getQuizElapsedSeconds } from "@/lib/quiz-timing";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizSessionAction } from "@/lib/quiz-session-state";
 
@@ -65,12 +66,8 @@ export function useQuizRoundActions({
   }
 
   function goToNextQuestion() {
-    dispatch({ type: "advance", elapsedSeconds: getElapsedSeconds(startedAt, elapsedSeconds) });
+    dispatch({ type: "advance", elapsedSeconds: getQuizElapsedSeconds(startedAt, elapsedSeconds) });
   }
 
   return { startQuiz, submitAnswer, goToNextQuestion };
-}
-
-function getElapsedSeconds(startedAt: number | null, elapsedSeconds: number): number {
-  return startedAt === null ? elapsedSeconds : Math.floor((Date.now() - startedAt) / 1000);
 }

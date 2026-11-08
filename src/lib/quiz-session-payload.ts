@@ -1,5 +1,5 @@
 import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
-import { expectedAnswer, promptText } from "@/lib/quiz-model";
+import { expectedAnswer, promptText } from "@/lib/quiz-answer-model";
 import type { SaveVocabularyQuizSession } from "@/lib/supabase/quiz";
 
 export function buildQuizSessionPayload({

@@ -1,6 +1,7 @@
 import { useEffect, type Dispatch } from "react";
 import type { QuizPhase } from "@/lib/quiz-model";
 import type { QuizSessionAction } from "@/lib/quiz-session-state";
+import { getQuizElapsedSeconds } from "@/lib/quiz-timing";
 
 export function useQuizProgression({
   phase,
@@ -16,7 +17,7 @@ export function useQuizProgression({
   useEffect(() => {
     if (phase !== "playing" || startedAt === null) return;
 
-    const tick = () => dispatch({ type: "tick", elapsedSeconds: Math.floor((Date.now() - startedAt) / 1000) });
+    const tick = () => dispatch({ type: "tick", elapsedSeconds: getQuizElapsedSeconds(startedAt, 0) });
     tick();
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
@@ -28,7 +29,7 @@ export function useQuizProgression({
     const timeout = window.setTimeout(() => {
       dispatch({
         type: "advance",
-        elapsedSeconds: startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000),
+        elapsedSeconds: getQuizElapsedSeconds(startedAt, 0),
       });
     }, 800);
 

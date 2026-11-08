@@ -3,7 +3,8 @@
 import { Star, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { expectedAnswer, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer } from "@/lib/quiz-answer-model";
+import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizAnswerFeedback({
   answer,

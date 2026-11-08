@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Clock3 } from "lucide-react";
-import { formatQuizTime } from "@/lib/quiz-model";
+import { formatQuizTime } from "@/lib/quiz-format";
 
 export function QuizGameStatusBar({
   questionIndex,
