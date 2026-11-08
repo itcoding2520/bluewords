@@ -59,6 +59,6 @@ export function quizSessionReducer(state: QuizSessionState, action: QuizSessionA
         input: "",
       };
     case "exit":
-      return { ...state, phase: "setup", startedAt: null };
+      return initialQuizSessionState;
   }
 }
