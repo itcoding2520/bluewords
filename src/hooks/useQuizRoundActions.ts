@@ -1,10 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 
-import { expectedAnswer, shuffle, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { expectedAnswer, shuffle, type QuizAnswer, type QuizMode, type QuizPhase, type QuizQuestion } from "@/lib/quiz-model";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
-
-type QuizPhase = "setup" | "playing" | "results";
 
 export function useQuizRoundActions({
   mode,

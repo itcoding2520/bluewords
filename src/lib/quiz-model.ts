@@ -2,6 +2,9 @@ import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 
 export type QuizMode = "type-word" | "choose-meaning";
+export type QuizPhase = "setup" | "playing" | "results";
+export type QuizTab = "play" | "history";
+export type QuizSaveState = "idle" | "saving" | "saved" | "error";
 
 export interface QuizQuestion {
   word: VocabularyWord;

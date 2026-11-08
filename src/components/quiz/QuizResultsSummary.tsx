@@ -2,9 +2,7 @@
 
 import { LoaderCircle } from "lucide-react";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { formatQuizTime } from "@/lib/quiz-model";
-
-export type QuizSaveState = "idle" | "saving" | "saved" | "error";
+import { formatQuizTime, type QuizSaveState } from "@/lib/quiz-model";
 
 export function QuizResultsSummary({
   correctCount,

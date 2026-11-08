@@ -1,6 +1,5 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
-
-type QuizPhase = "setup" | "playing" | "results";
+import type { QuizPhase } from "@/lib/quiz-model";
 
 export function useQuizProgression({
   phase,

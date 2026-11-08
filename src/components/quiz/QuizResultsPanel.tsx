@@ -1,10 +1,10 @@
 "use client";
 
 import { Card } from "@/components/ui/Card";
-import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
+import type { QuizAnswer, QuizMode, QuizQuestion, QuizSaveState } from "@/lib/quiz-model";
 import { QuizResultsAnswerList } from "@/components/quiz/QuizResultsAnswerList";
 import { QuizResultsActions } from "@/components/quiz/QuizResultsActions";
-import { QuizResultsSummary, type QuizSaveState } from "@/components/quiz/QuizResultsSummary";
+import { QuizResultsSummary } from "@/components/quiz/QuizResultsSummary";
 
 export function QuizResultsPanel({
   questions,
