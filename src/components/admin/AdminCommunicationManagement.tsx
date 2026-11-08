@@ -5,19 +5,17 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { exportCommunicationCsv, type CommunicationCsvRecord, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
+import { exportCommunicationCsv, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
+import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 type Topic = CommunicationTopic;
 type Lesson = CommunicationLesson;
 type Item = CommunicationLessonItem;
-type ExportDialogue = { id: string; dialogue_key: string; lesson_id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
-type ExportTurn = { id: string; turn_key: string; dialogue_id: string; turn_order: number; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[] };
 type LessonDraft = Omit<Lesson, "id">;
 type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
@@ -213,73 +211,20 @@ export function AdminCommunicationManagement() {
     }
     setBusy(true);
     try {
-      const [topicResult, lessonResult] = await Promise.all([
-        supabase.from("communication_topics").select("*").eq("id", selectedTopicId).single(),
-        supabase.from("communication_lessons").select("*").eq("topic_id", selectedTopicId).order("sort_order").order("title_en"),
-      ]);
-      if (topicResult.error) throw topicResult.error;
-      if (lessonResult.error) throw lessonResult.error;
-
-      const topic = topicResult.data as Topic;
-      const lessons = (lessonResult.data ?? []) as Lesson[];
-      const lessonIds = lessons.map((lesson) => lesson.id);
-      let allItems: Item[] = [];
-      let allDialogues: ExportDialogue[] = [];
-      if (lessonIds.length) {
-        [allItems, allDialogues] = await Promise.all([
-          fetchAllPages<Item>(async (from, to) => {
-          const { data, error } = await supabase
-            .from("communication_lesson_items")
-            .select("*")
-            .in("lesson_id", lessonIds)
-            .order("sort_order")
-            .order("item_key")
-            .range(from, to);
-          return { data: (data ?? []) as Item[], error };
-          }),
-          fetchAllPages<ExportDialogue>(async (from, to) => {
-          const { data, error } = await supabase
-            .from("communication_dialogues")
-            .select("*")
-            .in("lesson_id", lessonIds)
-            .order("dialogue_key")
-            .range(from, to);
-          return { data: (data ?? []) as ExportDialogue[], error };
-          }),
-        ]);
-      }
-      const dialogueIds = allDialogues.map((dialogue) => dialogue.id);
-      const allTurns = dialogueIds.length ? await fetchAllPages<ExportTurn>(async (from, to) => {
-        const { data, error } = await supabase
-          .from("communication_dialogue_turns")
-          .select("*")
-          .in("dialogue_id", dialogueIds)
-          .order("turn_key")
-          .range(from, to);
-        return { data: (data ?? []) as ExportTurn[], error };
-      }) : [];
-      const lessonMap = new Map(lessons.map((row) => [row.id, row]));
-      const common = (lessonId: string) => {
-        const lesson = lessonMap.get(lessonId);
-        if (!lesson) return null;
-        return { topic_slug: topic.slug, topic_title_en: topic.title_en, topic_title_vi: topic.title_vi, topic_description_en: topic.description_en, topic_description_vi: topic.description_vi, topic_order: topic.sort_order, lesson_key: lesson.lesson_key, lesson_title_en: lesson.title_en, lesson_title_vi: lesson.title_vi, difficulty: lesson.difficulty, lesson_order: lesson.sort_order, lesson_status: lesson.status };
-      };
-      const records: CommunicationCsvRecord[] = [];
-      for (const item of allItems) {
-        const details = common(item.lesson_id); if (!details) continue;
-        records.push({ record_type: "item", ...details, record_key: item.item_key, record_order: item.sort_order, item_type: item.item_type, content_en: item.content_en, meaning_vi: item.meaning_vi, example_en: item.example_en, example_vi: item.example_vi, image_keyword: item.image_keyword, audio_url: item.audio_url, dialogue_key: "", dialogue_title_en: "", dialogue_title_vi: "", dialogue_prompt_vi: "", speaker: "", turn_order: null, turn_text_en: "", turn_meaning_vi: "", turn_audio_url: "", response_prompt_vi: "", expected_response: "", response_options: [] });
-      }
-      const dialogueMap = new Map(allDialogues.map((dialogue) => [dialogue.id, dialogue]));
-      for (const turn of allTurns) {
-        const dialogue = dialogueMap.get(turn.dialogue_id); const details = dialogue ? common(dialogue.lesson_id) : null;
-        if (!dialogue || !details) continue;
-        records.push({ record_type: "dialogue_turn", ...details, record_key: turn.turn_key, record_order: dialogue.sort_order, item_type: "", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", dialogue_key: dialogue.dialogue_key, dialogue_title_en: dialogue.title_en, dialogue_title_vi: dialogue.title_vi, dialogue_prompt_vi: dialogue.prompt_vi, speaker: turn.speaker, turn_order: turn.turn_order, turn_text_en: turn.text_en, turn_meaning_vi: turn.meaning_vi, turn_audio_url: turn.audio_url, response_prompt_vi: turn.response_prompt_vi, expected_response: turn.expected_response, response_options: turn.response_options });
-      }
+      const { topicSlug, records } = await loadCommunicationSituationExport(supabase, selectedTopicId);
       const blob = new Blob(["\uFEFF", exportCommunicationCsv(records)], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `BlueWords_Situational_English_${topic.slug}.csv`; link.click(); URL.revokeObjectURL(url);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `BlueWords_Situational_English_${topicSlug}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
       toast.success(`Exported ${records.length} content rows.`);
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not export communication content."); }
-    finally { setBusy(false); }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not export communication content.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return <main className="space-y-5">
