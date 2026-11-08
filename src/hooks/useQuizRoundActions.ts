@@ -1,8 +1,8 @@
 import type { Dispatch } from "react";
 
-import { expectedAnswer, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
+import { buildQuizAnswer } from "@/lib/quiz-answer-model";
 import { buildQuizRoundQuestions } from "@/lib/quiz-round-model";
-import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizSessionAction } from "@/lib/quiz-session-state";
 
@@ -53,17 +53,14 @@ export function useQuizRoundActions({
 
   function submitAnswer(value: string) {
     const currentQuestion = questions[questionIndex];
-    if (!currentQuestion || currentAnswer || !value.trim()) return;
-    const expected = expectedAnswer(currentQuestion, mode);
-    if (typeof expected !== "string" || !expected.trim()) return;
+    if (!currentQuestion || currentAnswer) return;
+    const answer = buildQuizAnswer(currentQuestion, mode, value);
+    if (!answer) return;
 
     dispatch({
       type: "answer",
       questionIndex,
-      answer: {
-        value: value.trim(),
-        correct: normalizeQuizAnswer(value) === normalizeQuizAnswer(expected),
-      },
+      answer,
     });
   }
 
