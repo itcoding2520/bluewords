@@ -1,26 +1,22 @@
 "use client";
 
-import { useCallback, useReducer } from "react";
-
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useQuizConfiguration } from "@/hooks/useQuizConfiguration";
 import { useQuizNavigation } from "@/hooks/useQuizNavigation";
 import { useQuizProgression } from "@/hooks/useQuizProgression";
 import { useQuizRoundActions } from "@/hooks/useQuizRoundActions";
 import { useQuizSessionSave } from "@/hooks/useQuizSessionSave";
+import { useQuizSessionState } from "@/hooks/useQuizSessionState";
 import { useQuizSetupData } from "@/hooks/useQuizSetupData";
 import { useVocabularyQuizHistory } from "@/hooks/useVocabularyQuizHistory";
-import { initialQuizSessionState, quizSessionReducer } from "@/lib/quiz-session-state";
 
 /** Owns the quiz page state and coordinates setup, play, results, and history. */
 export function useQuizExperience(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
   const history = useVocabularyQuizHistory(userId);
   const configuration = useQuizConfiguration();
-  const [session, dispatch] = useReducer(quizSessionReducer, initialQuizSessionState);
-  const setInput = useCallback((value: string) => dispatch({ type: "input", value }), []);
-  const setElapsedSeconds = useCallback((elapsedSeconds: number) => dispatch({ type: "tick", elapsedSeconds }), []);
-  const exitQuiz = useCallback(() => dispatch({ type: "exit" }), []);
+  const sessionState = useQuizSessionState();
+  const { session, dispatch, setInput, setElapsedSeconds, exitQuiz, currentQuestion, currentAnswer, correctCount } = sessionState;
   const navigation = useQuizNavigation({
     exitQuiz,
     setSelectedHistory: history.setSelectedHistory,
@@ -32,9 +28,6 @@ export function useQuizExperience(userId: string | null) {
     category: configuration.category,
     mode: configuration.mode,
   });
-  const currentQuestion = session.questions[session.questionIndex];
-  const currentAnswer = session.answers[session.questionIndex];
-  const correctCount = Object.values(session.answers).filter((answer) => answer.correct).length;
   const save = useQuizSessionSave({
     userId,
     phase: session.phase,
