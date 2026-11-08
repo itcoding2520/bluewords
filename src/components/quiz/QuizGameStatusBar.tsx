@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Clock3 } from "lucide-react";
 import { formatQuizTime } from "@/lib/quiz-format";
+import { getQuizQuestionProgress } from "@/lib/quiz-model";
 
 export function QuizGameStatusBar({
   questionIndex,
@@ -14,7 +15,7 @@ export function QuizGameStatusBar({
   elapsedSeconds: number;
   onExit: () => void;
 }) {
-  const progress = questionCount > 0 ? ((questionIndex + 1) / questionCount) * 100 : 0;
+  const { currentQuestion, percentage } = getQuizQuestionProgress(questionIndex, questionCount);
 
   return (
     <>
@@ -23,12 +24,12 @@ export function QuizGameStatusBar({
           <ArrowLeft size={16} /> Exit quiz
         </button>
         <div className="flex items-center gap-4 text-sm">
-          <span className="text-slate-500">Question {questionIndex + 1} of {questionCount}</span>
+          <span className="text-slate-500">Question {currentQuestion} of {questionCount}</span>
           <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatQuizTime(elapsedSeconds)}</span>
         </div>
       </div>
       <div className="quiz-game-progress mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${percentage}%` }} />
       </div>
     </>
   );
