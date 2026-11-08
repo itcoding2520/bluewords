@@ -4,7 +4,7 @@ import { Star, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { expectedAnswer } from "@/lib/quiz-answer-model";
-import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
+import { getQuizAdvanceLabel, type QuizAnswer, type QuizMode, type QuizQuestion } from "@/lib/quiz-model";
 
 export function QuizAnswerFeedback({
   answer,
@@ -31,7 +31,7 @@ export function QuizAnswerFeedback({
         </AutoDismissMessage>
       )}
       <Button onClick={onNext} className="hidden sm:inline-flex">
-        {questionIndex + 1 === questionCount ? "See results" : "Next question"}
+        {getQuizAdvanceLabel(questionIndex, questionCount)}
       </Button>
     </div>
   );

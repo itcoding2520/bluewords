@@ -3,7 +3,7 @@
 import { Gamepad2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import type { QuizMode, QuizAnswer } from "@/lib/quiz-model";
+import { getQuizAdvanceLabel, type QuizMode, type QuizAnswer } from "@/lib/quiz-model";
 
 export function QuizStickyActions({
   showStart,
@@ -42,7 +42,7 @@ export function QuizStickyActions({
         </Button>
       ) : (
         <Button onClick={onNext} className="min-h-12 w-full">
-          {questionIndex + 1 === questionCount ? "See results" : "Next question"}
+          {getQuizAdvanceLabel(questionIndex, questionCount)}
         </Button>
       )}
     </div>
