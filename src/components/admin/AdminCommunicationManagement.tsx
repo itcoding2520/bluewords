@@ -3,9 +3,8 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { Download, FileUp, Plus, RefreshCw } from "lucide-react";
+import { Download, FileUp, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportCommunicationCsv } from "@/lib/supabase/situational-english";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
@@ -17,14 +16,14 @@ import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicat
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
 import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
 import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
+import { AdminCommunicationItemForm, type CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 type Topic = CommunicationTopic;
 type Lesson = CommunicationLesson;
 type Item = CommunicationLessonItem;
 type LessonDraft = CommunicationLessonDraft;
-type ItemDraft = Omit<Item, "id">;
-const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+type ItemDraft = CommunicationItemDraft;
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
 function isOptionalHttpUrl(value: string) {
@@ -290,7 +289,18 @@ export function AdminCommunicationManagement() {
           onDeleteAll={() => void removeAllLessons()}
         />
 
-        <form onSubmit={(event) => void saveItem(event)} className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{itemEditing ? "Edit learning item" : "Add a learning item"}</h2><p className="mt-1 text-sm text-slate-500">Items connect words, useful phrases, and sentence patterns.</p></div>{itemEditing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setItemEditing(null); setItemDraft({ ...initialItem, lesson_id: selectedLessonId }); }}>Cancel</button>}</div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600">Item key<input className={inputClass} value={itemDraft.item_key} onChange={(e) => setItemDraft({ ...itemDraft, item_key: e.target.value })} placeholder="reservation-phrase" disabled={Boolean(itemEditing)}/></label><label className="text-xs font-bold text-slate-600">Type<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={itemDraft.item_type} onChange={(e) => setItemDraft({ ...itemDraft, item_type: e.target.value as ItemDraft["item_type"] })}><option value="word">Word</option><option value="phrase">Useful phrase</option><option value="sentence_pattern">Sentence pattern</option></Select></label><label className="text-xs font-bold text-slate-600">English content<input className={inputClass} value={itemDraft.content_en} onChange={(e) => setItemDraft({ ...itemDraft, content_en: e.target.value })} placeholder="make a reservation"/></label><label className="text-xs font-bold text-slate-600">Vietnamese meaning<input className={inputClass} value={itemDraft.meaning_vi} onChange={(e) => setItemDraft({ ...itemDraft, meaning_vi: e.target.value })} placeholder="đặt chỗ"/></label><label className="text-xs font-bold text-slate-600">Example in English<input className={inputClass} value={itemDraft.example_en} onChange={(e) => setItemDraft({ ...itemDraft, example_en: e.target.value })} placeholder="I'd like to make a reservation."/></label><label className="text-xs font-bold text-slate-600">Example in Vietnamese<input className={inputClass} value={itemDraft.example_vi} onChange={(e) => setItemDraft({ ...itemDraft, example_vi: e.target.value })} placeholder="Tôi muốn đặt bàn."/></label><label className="text-xs font-bold text-slate-600">Image keyword<input className={inputClass} value={itemDraft.image_keyword} onChange={(e) => setItemDraft({ ...itemDraft, image_keyword: e.target.value })} placeholder="restaurant table"/></label><label className="text-xs font-bold text-slate-600">Audio URL<input className={inputClass} type="url" value={itemDraft.audio_url} onChange={(e) => setItemDraft({ ...itemDraft, audio_url: e.target.value })} placeholder="https://…"/></label><label className="text-xs font-bold text-slate-600">Order<input className={inputClass} type="number" min="0" value={itemDraft.sort_order} onChange={(e) => setItemDraft({ ...itemDraft, sort_order: Number(e.target.value) })}/></label><button disabled={busy || !selectedLessonId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white"><Plus size={17}/>{itemEditing ? "Save item" : "Add item"}</button></div><p className="mt-3 text-xs text-slate-500">Dialogue scenarios and turns are included in the CSV import/export format.</p></form>
+        <AdminCommunicationItemForm
+          draft={itemDraft}
+          editing={Boolean(itemEditing)}
+          busy={busy}
+          enabled={Boolean(selectedLessonId)}
+          onDraftChange={setItemDraft}
+          onSubmit={(event) => void saveItem(event)}
+          onCancel={() => {
+            setItemEditing(null);
+            setItemDraft({ ...initialItem, lesson_id: selectedLessonId });
+          }}
+        />
         <AdminCommunicationLessonContentList
           items={currentItems}
           lessonTitle={lessons.find((lesson) => lesson.id === selectedLessonId)?.title_en ?? null}
