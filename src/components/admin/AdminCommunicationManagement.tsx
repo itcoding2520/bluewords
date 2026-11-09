@@ -7,7 +7,7 @@ import { Download, FileUp, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { exportCommunicationCsv, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
+import { exportCommunicationCsv } from "@/lib/supabase/situational-english";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
@@ -16,12 +16,13 @@ import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicati
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
 import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
+import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 type Topic = CommunicationTopic;
 type Lesson = CommunicationLesson;
 type Item = CommunicationLessonItem;
-type LessonDraft = Omit<Lesson, "id">;
+type LessonDraft = CommunicationLessonDraft;
 type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
@@ -262,10 +263,19 @@ export function AdminCommunicationManagement() {
       </div>
 
       <div className="space-y-5">
-        <form onSubmit={(event) => void saveLesson(event)} className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{lessonEditing ? "Edit lesson" : "Add a lesson"}</h2><p className="mt-1 text-sm text-slate-500">{currentTopic?.title_en ?? "Select a situation first."}</p></div>{lessonEditing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setLessonEditing(null); setLessonDraft({ ...initialLesson, topic_id: selectedTopicId }); }}>Cancel</button>}</div>
-          <div className="grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600">Lesson key<input className={inputClass} value={lessonDraft.lesson_key} onChange={(e) => setLessonDraft({ ...lessonDraft, lesson_key: e.target.value })} placeholder="restaurant-booking-easy" disabled={Boolean(lessonEditing)}/></label><label className="text-xs font-bold text-slate-600">Difficulty<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={lessonDraft.difficulty} onChange={(e) => setLessonDraft({ ...lessonDraft, difficulty: e.target.value as CommunicationDifficulty })}><option value="easy">Easy · Dễ</option><option value="medium">Medium · Trung bình</option><option value="hard">Hard · Khó</option></Select></label><label className="text-xs font-bold text-slate-600">English title<input className={inputClass} value={lessonDraft.title_en} onChange={(e) => setLessonDraft({ ...lessonDraft, title_en: e.target.value })} placeholder="Booking a table"/></label><label className="text-xs font-bold text-slate-600">Vietnamese title<input className={inputClass} value={lessonDraft.title_vi} onChange={(e) => setLessonDraft({ ...lessonDraft, title_vi: e.target.value })} placeholder="Đặt bàn"/></label><label className="text-xs font-bold text-slate-600">Order<input className={inputClass} type="number" min="0" value={lessonDraft.sort_order} onChange={(e) => setLessonDraft({ ...lessonDraft, sort_order: Number(e.target.value) })}/></label><label className="text-xs font-bold text-slate-600">Status<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={lessonDraft.status} onChange={(e) => setLessonDraft({ ...lessonDraft, status: e.target.value as ContentStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></Select></label><button disabled={busy || !selectedTopicId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white sm:col-span-2"><Plus size={17}/>{lessonEditing ? "Save lesson" : "Add lesson"}</button></div>
-        </form>
+        <AdminCommunicationLessonForm
+          draft={lessonDraft}
+          editing={Boolean(lessonEditing)}
+          busy={busy}
+          enabled={Boolean(selectedTopicId)}
+          topicTitle={currentTopic?.title_en ?? null}
+          onDraftChange={setLessonDraft}
+          onSubmit={(event) => void saveLesson(event)}
+          onCancel={() => {
+            setLessonEditing(null);
+            setLessonDraft({ ...initialLesson, topic_id: selectedTopicId });
+          }}
+        />
         <AdminCommunicationLessonList
           topics={topics}
           lessons={currentLessons}
