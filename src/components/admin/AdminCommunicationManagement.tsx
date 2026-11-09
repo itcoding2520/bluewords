@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
+import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunicationTopicActions";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -14,9 +15,8 @@ import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/com
 import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
 import { AdminCommunicationItemForm, type CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
 import { AdminCommunicationCsvActions } from "@/components/admin/AdminCommunicationCsvActions";
-import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
+import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
 
-type Topic = CommunicationTopic;
 type Lesson = CommunicationLesson;
 type Item = CommunicationLessonItem;
 type LessonDraft = CommunicationLessonDraft;
@@ -53,6 +53,16 @@ export function AdminCommunicationManagement() {
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
   const confirm = useConfirmDialog();
+  const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
+    supabase,
+    topics,
+    draft: topicDraft,
+    editingId: topicEditing,
+    setDraft: setTopicDraft,
+    setEditingId: setTopicEditing,
+    setBusy,
+    refresh,
+  });
   const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
   const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
@@ -73,25 +83,6 @@ export function AdminCommunicationManagement() {
     setSelectedLessonId(lesson.id);
     setItemDraft({ ...initialItem, lesson_id: lesson.id });
     setItemEditing(null);
-  }
-
-  async function saveTopic(event: FormEvent) {
-    event.preventDefault();
-    const payload = { ...topicDraft, slug: topicDraft.slug.trim().toLowerCase().replaceAll(" ", "-"), title_en: topicDraft.title_en.trim(), title_vi: topicDraft.title_vi.trim() };
-    if (!payload.slug || !payload.title_en || !payload.title_vi) return toast.error("Add a stable slug and both topic titles.");
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug)) return toast.error("Use lowercase letters, numbers, and single hyphens in the situation slug.");
-    setBusy(true);
-    const query = topicEditing ? supabase.from("communication_topics").update(payload).eq("id", topicEditing) : supabase.from("communication_topics").insert(payload);
-    const { error } = await query;
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(topicEditing ? "Topic updated." : "Topic added."); setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" }); setTopicEditing(null); await refresh();
-  }
-  function editTopic(topic: Topic) { setTopicEditing(topic.id); setTopicDraft({ slug: topic.slug, title_en: topic.title_en, title_vi: topic.title_vi, description_en: topic.description_en, description_vi: topic.description_vi, sort_order: topic.sort_order, status: topic.status }); }
-  async function removeTopic(topic: Topic) {
-    if (!await confirm({ title: "Remove situation?", description: `Remove “${topic.title_en}” and all its lessons and content?`, confirmLabel: "Remove" })) return;
-    const { error } = await supabase.from("communication_topics").delete().eq("id", topic.id);
-    if (error) toast.error(error.message); else { toast.success("Situation removed."); await refresh(); }
   }
 
   async function saveLesson(event: FormEvent) {
