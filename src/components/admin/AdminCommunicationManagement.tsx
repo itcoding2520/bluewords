@@ -15,6 +15,7 @@ import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationC
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
+import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 type Topic = CommunicationTopic;
@@ -46,7 +47,7 @@ export function AdminCommunicationManagement() {
     loading,
     refresh,
   } = useAdminCommunicationCollections(supabase);
-  const [topicDraft, setTopicDraft] = useState({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: 1, status: "draft" as ContentStatus });
+  const [topicDraft, setTopicDraft] = useState<CommunicationTopicDraft>({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: 1, status: "draft" });
   const [topicEditing, setTopicEditing] = useState<string | null>(null);
   const [lessonDraft, setLessonDraft] = useState<LessonDraft>(initialLesson);
   const [lessonEditing, setLessonEditing] = useState<string | null>(null);
@@ -234,10 +235,17 @@ export function AdminCommunicationManagement() {
 
     <section className="grid gap-5 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.6fr)]">
       <div className="space-y-5">
-        <form onSubmit={(event) => void saveTopic(event)} className="rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">{topicEditing ? "Edit situation" : "Add a situation"}</h2>{topicEditing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setTopicEditing(null); setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" }); }}>Cancel</button>}</div>
-          <div className="grid gap-3"><label className="text-xs font-bold text-slate-600">Slug<input className={inputClass} value={topicDraft.slug} onChange={(e) => setTopicDraft({ ...topicDraft, slug: e.target.value })} placeholder="food-restaurants" disabled={Boolean(topicEditing)}/></label><label className="text-xs font-bold text-slate-600">English title<input className={inputClass} value={topicDraft.title_en} onChange={(e) => setTopicDraft({ ...topicDraft, title_en: e.target.value })} placeholder="Food and restaurants"/></label><label className="text-xs font-bold text-slate-600">Vietnamese title<input className={inputClass} value={topicDraft.title_vi} onChange={(e) => setTopicDraft({ ...topicDraft, title_vi: e.target.value })} placeholder="Đồ ăn và nhà hàng"/></label><label className="text-xs font-bold text-slate-600">English description<input className={inputClass} value={topicDraft.description_en} onChange={(e) => setTopicDraft({ ...topicDraft, description_en: e.target.value })}/></label><label className="text-xs font-bold text-slate-600">Vietnamese description<input className={inputClass} value={topicDraft.description_vi} onChange={(e) => setTopicDraft({ ...topicDraft, description_vi: e.target.value })}/></label><div className="grid grid-cols-2 gap-3"><label className="text-xs font-bold text-slate-600">Order<input className={inputClass} type="number" min="0" value={topicDraft.sort_order} onChange={(e) => setTopicDraft({ ...topicDraft, sort_order: Number(e.target.value) })}/></label><label className="text-xs font-bold text-slate-600">Status<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={topicDraft.status} onChange={(e) => setTopicDraft({ ...topicDraft, status: e.target.value as ContentStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></Select></label></div><button disabled={busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white"><Plus size={17}/>{topicEditing ? "Save situation" : "Add situation"}</button></div>
-        </form>
+        <AdminCommunicationTopicForm
+          draft={topicDraft}
+          editing={Boolean(topicEditing)}
+          busy={busy}
+          onDraftChange={setTopicDraft}
+          onSubmit={(event) => void saveTopic(event)}
+          onCancel={() => {
+            setTopicEditing(null);
+            setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" });
+          }}
+        />
         <AdminCommunicationTopicList
           topics={filteredTopics}
           totalCount={topics.length}
