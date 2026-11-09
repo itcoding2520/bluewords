@@ -12,6 +12,7 @@ import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv"
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
+import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 type Topic = CommunicationTopic;
@@ -58,6 +59,16 @@ export function AdminCommunicationManagement() {
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
   const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
+
+  function selectTopic(topicId: string) {
+    const firstLessonId = lessons.find((lesson) => lesson.topic_id === topicId)?.id ?? "";
+    setSelectedTopicId(topicId);
+    setSelectedLessonId(firstLessonId);
+    setLessonEditing(null);
+    setLessonDraft({ ...initialLesson, topic_id: topicId });
+    setItemEditing(null);
+    setItemDraft({ ...initialItem, lesson_id: firstLessonId });
+  }
 
   async function saveTopic(event: FormEvent) {
     event.preventDefault();
@@ -219,7 +230,19 @@ export function AdminCommunicationManagement() {
           <div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-bold text-slate-900">{topicEditing ? "Edit situation" : "Add a situation"}</h2>{topicEditing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setTopicEditing(null); setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" }); }}>Cancel</button>}</div>
           <div className="grid gap-3"><label className="text-xs font-bold text-slate-600">Slug<input className={inputClass} value={topicDraft.slug} onChange={(e) => setTopicDraft({ ...topicDraft, slug: e.target.value })} placeholder="food-restaurants" disabled={Boolean(topicEditing)}/></label><label className="text-xs font-bold text-slate-600">English title<input className={inputClass} value={topicDraft.title_en} onChange={(e) => setTopicDraft({ ...topicDraft, title_en: e.target.value })} placeholder="Food and restaurants"/></label><label className="text-xs font-bold text-slate-600">Vietnamese title<input className={inputClass} value={topicDraft.title_vi} onChange={(e) => setTopicDraft({ ...topicDraft, title_vi: e.target.value })} placeholder="Đồ ăn và nhà hàng"/></label><label className="text-xs font-bold text-slate-600">English description<input className={inputClass} value={topicDraft.description_en} onChange={(e) => setTopicDraft({ ...topicDraft, description_en: e.target.value })}/></label><label className="text-xs font-bold text-slate-600">Vietnamese description<input className={inputClass} value={topicDraft.description_vi} onChange={(e) => setTopicDraft({ ...topicDraft, description_vi: e.target.value })}/></label><div className="grid grid-cols-2 gap-3"><label className="text-xs font-bold text-slate-600">Order<input className={inputClass} type="number" min="0" value={topicDraft.sort_order} onChange={(e) => setTopicDraft({ ...topicDraft, sort_order: Number(e.target.value) })}/></label><label className="text-xs font-bold text-slate-600">Status<Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={topicDraft.status} onChange={(e) => setTopicDraft({ ...topicDraft, status: e.target.value as ContentStatus })}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></Select></label></div><button disabled={busy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white"><Plus size={17}/>{topicEditing ? "Save situation" : "Add situation"}</button></div>
         </form>
-        <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm"><div className="border-b border-slate-100 p-4"><h2 className="font-bold text-slate-900">Situations <span className="text-slate-500">({topics.length})</span></h2><input aria-label="Search situations" className={inputClass} value={topicSearch} onChange={(e) => setTopicSearch(e.target.value)} placeholder="Search situations…"/></div>{loading ? <p className="p-6 text-sm text-slate-500">Loading…</p> : <div className="max-h-[34rem] divide-y divide-slate-100 overflow-y-auto">{filteredTopics.map((topic) => { const lessonCount = lessons.filter((lesson) => lesson.topic_id === topic.id).length; const wordCounts = topicWordCounts.get(topic.id) ?? { easy: 0, medium: 0, hard: 0 }; return <article key={topic.id} className={`flex items-center gap-2 p-3 ${selectedTopicId === topic.id ? "bg-blue-50" : ""}`}><button type="button" onClick={() => { const firstLessonId = lessons.find((lesson) => lesson.topic_id === topic.id)?.id ?? ""; setSelectedTopicId(topic.id); setSelectedLessonId(firstLessonId); setLessonEditing(null); setLessonDraft({ ...initialLesson, topic_id: topic.id }); setItemEditing(null); setItemDraft({ ...initialItem, lesson_id: firstLessonId }); }} className="min-w-0 flex-1 text-left"><span className="flex min-w-0 items-center gap-2 text-sm font-bold text-slate-900"><span className="truncate">{topic.title_en}</span><span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-blue-700">{lessonCount} {lessonCount === 1 ? "lesson" : "lessons"}</span></span><span className="block truncate text-xs text-slate-500">{topic.title_vi} · {topic.status}</span><span className="mt-0.5 block text-[11px] font-semibold text-blue-700">Words · Easy {wordCounts.easy} / Medium {wordCounts.medium} / Hard {wordCounts.hard}</span></button><button type="button" aria-label={`Edit ${topic.title_en}`} onClick={() => editTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-blue-100 text-blue-700"><Pencil size={15}/></button><button type="button" aria-label={`Remove ${topic.title_en}`} onClick={() => void removeTopic(topic)} className="grid size-9 shrink-0 place-items-center rounded-lg border border-rose-100 text-rose-600"><Trash2 size={15}/></button></article>; })}</div>}</section>
+        <AdminCommunicationTopicList
+          topics={filteredTopics}
+          totalCount={topics.length}
+          lessons={lessons}
+          wordCounts={topicWordCounts}
+          selectedTopicId={selectedTopicId}
+          search={topicSearch}
+          loading={loading}
+          onSearchChange={setTopicSearch}
+          onSelect={selectTopic}
+          onEdit={editTopic}
+          onRemove={(topic) => void removeTopic(topic)}
+        />
       </div>
 
       <div className="space-y-5">
