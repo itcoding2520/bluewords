@@ -10,6 +10,7 @@ import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportCommunicationCsv, type CommunicationDifficulty, type ContentStatus } from "@/lib/supabase/situational-english";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
+import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
@@ -21,8 +22,6 @@ type ItemDraft = Omit<Item, "id">;
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
-type TopicWordCounts = { easy: number; medium: number; hard: number };
-
 function isOptionalHttpUrl(value: string) {
   if (!value.trim()) return true;
   try {
@@ -58,28 +57,7 @@ export function AdminCommunicationManagement() {
   const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
-  const topicWordCounts = useMemo(() => {
-    const wordsByLesson = new Map<string, Set<string>>();
-    for (const item of items) {
-      if (item.item_type !== "word") continue;
-      const words = wordsByLesson.get(item.lesson_id) ?? new Set<string>();
-      words.add(item.content_en.trim().toLocaleLowerCase());
-      wordsByLesson.set(item.lesson_id, words);
-    }
-    const wordsByTopic = new Map<string, Record<CommunicationDifficulty, Set<string>>>();
-    for (const lesson of lessons) {
-      const levels = wordsByTopic.get(lesson.topic_id) ?? {
-        easy: new Set<string>(), medium: new Set<string>(), hard: new Set<string>(),
-      };
-      for (const word of wordsByLesson.get(lesson.id) ?? []) levels[lesson.difficulty].add(word);
-      wordsByTopic.set(lesson.topic_id, levels);
-    }
-    return new Map<string, TopicWordCounts>([...wordsByTopic].map(([topicId, levels]) => [topicId, {
-      easy: levels.easy.size,
-      medium: levels.medium.size,
-      hard: levels.hard.size,
-    }]));
-  }, [items, lessons]);
+  const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
 
   async function saveTopic(event: FormEvent) {
     event.preventDefault();
