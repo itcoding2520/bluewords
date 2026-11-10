@@ -2,13 +2,14 @@
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
 import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunicationTopicActions";
 import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicationLessonActions";
+import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -16,21 +17,13 @@ import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/com
 import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
 import { AdminCommunicationItemForm, type CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
 import { AdminCommunicationCsvActions } from "@/components/admin/AdminCommunicationCsvActions";
-import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
+import type { CommunicationLesson } from "@/lib/supabase/communication-admin-types";
 
 type Lesson = CommunicationLesson;
-type Item = CommunicationLessonItem;
 type LessonDraft = CommunicationLessonDraft;
 type ItemDraft = CommunicationItemDraft;
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
 const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
-function isOptionalHttpUrl(value: string) {
-  if (!value.trim()) return true;
-  try {
-    const url = new URL(value.trim());
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch { return false; }
-}
 
 export function AdminCommunicationManagement() {
   const supabase = useSupabaseClient();
@@ -80,6 +73,18 @@ export function AdminCommunicationManagement() {
     refresh,
   });
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
+  const { saveItem, editItem, removeItem } = useAdminCommunicationItemActions({
+    supabase,
+    lessons,
+    selectedLessonId,
+    itemCount: currentItems.length,
+    draft: itemDraft,
+    editingId: itemEditing,
+    setDraft: setItemDraft,
+    setEditingId: setItemEditing,
+    setBusy,
+    refresh,
+  });
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
   const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
 
@@ -117,28 +122,6 @@ export function AdminCommunicationManagement() {
     setItemDraft(initialItem);
     toast.success(`Deleted all lessons in “${topicTitle}”.`);
     await refresh();
-  }
-
-  async function saveItem(event: FormEvent) {
-    event.preventDefault();
-    const payload = { ...itemDraft, lesson_id: selectedLessonId, item_key: itemDraft.item_key.trim(), content_en: itemDraft.content_en.trim(), meaning_vi: itemDraft.meaning_vi.trim() };
-    if (!lessons.some((lesson) => lesson.id === payload.lesson_id) || !payload.item_key || !payload.content_en || !payload.meaning_vi) return toast.error("Select an existing lesson and complete the item key, English content, and Vietnamese meaning.");
-    if (payload.item_key.length < 2 || payload.item_key.length > 100) return toast.error("The item key must be between 2 and 100 characters.");
-    if (Boolean(payload.example_en.trim()) !== Boolean(payload.example_vi.trim())) return toast.error("Provide both example translations, or leave both examples blank.");
-    if (payload.item_type === "sentence_pattern" && (!payload.example_en.trim() || !payload.example_vi.trim())) return toast.error("Sentence patterns need an English example and its Vietnamese translation.");
-    if (!isOptionalHttpUrl(payload.audio_url)) return toast.error("Audio URL must be a valid HTTP or HTTPS link.");
-    setBusy(true);
-    const query = itemEditing ? supabase.from("communication_lesson_items").update(payload).eq("id", itemEditing) : supabase.from("communication_lesson_items").insert(payload);
-    const { error } = await query;
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(itemEditing ? "Learning item updated." : "Learning item added."); setItemDraft({ ...initialItem, lesson_id: selectedLessonId, sort_order: currentItems.length + 1 }); setItemEditing(null); await refresh();
-  }
-  function editItem(item: Item) { setItemEditing(item.id); setItemDraft({ lesson_id: item.lesson_id, item_key: item.item_key, item_type: item.item_type, content_en: item.content_en, meaning_vi: item.meaning_vi, example_en: item.example_en, example_vi: item.example_vi, image_keyword: item.image_keyword, audio_url: item.audio_url, sort_order: item.sort_order }); }
-  async function removeItem(item: Item) {
-    if (!await confirm({ title: "Remove learning item?", description: `Remove “${item.content_en}” from this lesson?`, confirmLabel: "Remove" })) return;
-    const { error } = await supabase.from("communication_lesson_items").delete().eq("id", item.id);
-    if (error) toast.error(error.message); else { toast.success("Learning item removed."); await refresh(); }
   }
 
   async function removeAllItems() {
