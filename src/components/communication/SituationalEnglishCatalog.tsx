@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Check, Clock3, FileText, Gamepad2, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Target, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { Select } from "@/components/ui/Select";
-import { useSituationalEnglishCatalogData, type Lesson } from "@/hooks/useSituationalEnglishCatalogData";
+import { useSituationalEnglishCatalogData } from "@/hooks/useSituationalEnglishCatalogData";
+import { getCatalogRecommendation } from "@/lib/communication/catalog-recommendation";
 
 const difficultyLabel = { easy: "Easy · Dễ", medium: "Medium · Trung bình", hard: "Hard · Khó" };
 const topicIcons: Record<string, LucideIcon> = {
@@ -50,41 +51,12 @@ export function SituationalEnglishCatalog() {
     const textMatches = `${topic.title_en} ${topic.title_vi} ${topic.description_en}`.toLowerCase().includes(search.toLowerCase());
     return textMatches && lessons.some((lesson) => lesson.topic_id === topic.id && (difficulty === "all" || lesson.difficulty === difficulty));
   });
-  const nextDueItem = dueItems[0];
-  const inProgressLesson = lessons.find((lesson) => progress.some((row) => row.lesson_id === lesson.id && row.status === "in_progress"));
-  const incompleteLesson = lessons.find((lesson) => !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
-  const difficultyRank = { easy: 0, medium: 1, hard: 2 };
-  const reviewedLessons = lessons.flatMap((lesson) => {
-    const stats = lessonAccuracy[lesson.id];
-    return stats && stats.attempts >= 3 ? [{ lesson, accuracy: stats.correct / stats.attempts }] : [];
+  const { nextStepHref, nextStepLabel, nextStepReason } = getCatalogRecommendation({
+    lessons,
+    progress,
+    lessonAccuracy,
+    dueItems,
   });
-  const weakestLesson = [...reviewedLessons].sort((a, b) => a.accuracy - b.accuracy)[0];
-  const strongestLesson = [...reviewedLessons].sort((a, b) => b.accuracy - a.accuracy)[0];
-  let adaptiveLesson: Lesson | undefined;
-  let adaptiveLabel = "";
-  let adaptiveReason = "";
-  if (weakestLesson && weakestLesson.accuracy < 0.7) {
-    adaptiveLesson = lessons.find((lesson) => lesson.topic_id === weakestLesson.lesson.topic_id
-      && difficultyRank[lesson.difficulty] < difficultyRank[weakestLesson.lesson.difficulty]
-      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
-    adaptiveLesson ??= weakestLesson.lesson;
-    adaptiveLabel = adaptiveLesson.id === weakestLesson.lesson.id ? "Practice again" : "Try an easier lesson";
-    adaptiveReason = "Your recent answers show this topic could use a little more practice.";
-  } else if (strongestLesson && strongestLesson.accuracy >= 0.9) {
-    adaptiveLesson = lessons.find((lesson) => lesson.topic_id === strongestLesson.lesson.topic_id
-      && difficultyRank[lesson.difficulty] > difficultyRank[strongestLesson.lesson.difficulty]
-      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
-    if (adaptiveLesson) {
-      adaptiveLabel = "Try a harder lesson";
-      adaptiveReason = "Your recent answers show you are ready for the next level.";
-    }
-  }
-  const suggestedLesson = inProgressLesson ?? adaptiveLesson ?? incompleteLesson;
-  const nextStepHref = nextDueItem
-    ? `/communication/${nextDueItem.lesson_id}?reviewItem=${encodeURIComponent(nextDueItem.item_id)}`
-    : suggestedLesson ? `/communication/${suggestedLesson.id}` : null;
-  const nextStepLabel = nextDueItem ? "Review due word" : inProgressLesson ? "Continue lesson" : adaptiveLesson ? adaptiveLabel : "Start next lesson";
-  const nextStepReason = nextDueItem ? "An item is ready for review." : inProgressLesson ? "Pick up where you left off." : adaptiveLesson ? adaptiveReason : "Continue with the next lesson in your path.";
 
   return <main className="space-y-4 sm:space-y-5">
     <header className="relative overflow-hidden rounded-[1.75rem] border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 shadow-[0_14px_36px_rgb(37_99_235/0.08)] sm:p-7">
