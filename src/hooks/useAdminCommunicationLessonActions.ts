@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
+import { createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
@@ -62,7 +63,7 @@ export function useAdminCommunicationLessonActions({
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Lesson updated." : "Lesson added.");
-    setDraft({ ...emptyLessonDraft, topic_id: selectedTopicId, sort_order: lessonCount + 1 });
+    setDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId, sort_order: lessonCount + 1 }));
     setEditingId(null);
     await refresh();
   }
@@ -99,13 +100,3 @@ export function useAdminCommunicationLessonActions({
 
   return { saveLesson, editLesson, removeLesson };
 }
-
-const emptyLessonDraft: CommunicationLessonDraft = {
-  topic_id: "",
-  lesson_key: "",
-  title_en: "",
-  title_vi: "",
-  difficulty: "easy",
-  sort_order: 1,
-  status: "draft",
-};

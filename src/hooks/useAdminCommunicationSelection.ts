@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
 import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import { createCommunicationItemDraft, createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import type {
   CommunicationLesson,
   CommunicationLessonItem,
@@ -44,39 +45,16 @@ export function useAdminCommunicationSelection({
     setSelectedTopicId(topicId);
     setSelectedLessonId(firstLessonId);
     setLessonEditing(null);
-    setLessonDraft({ ...emptyLessonDraft, topic_id: topicId });
+    setLessonDraft(createCommunicationLessonDraft({ topic_id: topicId }));
     setItemEditing(null);
-    setItemDraft({ ...emptyItemDraft, lesson_id: firstLessonId });
+    setItemDraft(createCommunicationItemDraft({ lesson_id: firstLessonId }));
   }
 
   function selectLesson(lesson: CommunicationLesson) {
     setSelectedLessonId(lesson.id);
-    setItemDraft({ ...emptyItemDraft, lesson_id: lesson.id });
+    setItemDraft(createCommunicationItemDraft({ lesson_id: lesson.id }));
     setItemEditing(null);
   }
 
   return { currentTopic, currentLessons, currentItems, selectTopic, selectLesson };
 }
-
-const emptyLessonDraft: CommunicationLessonDraft = {
-  topic_id: "",
-  lesson_key: "",
-  title_en: "",
-  title_vi: "",
-  difficulty: "easy",
-  sort_order: 1,
-  status: "draft",
-};
-
-const emptyItemDraft: CommunicationItemDraft = {
-  lesson_id: "",
-  item_key: "",
-  item_type: "word",
-  content_en: "",
-  meaning_vi: "",
-  example_en: "",
-  example_vi: "",
-  image_keyword: "",
-  audio_url: "",
-  sort_order: 1,
-};

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import type { CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
+import { createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
@@ -55,7 +56,7 @@ export function useAdminCommunicationTopicActions({
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Topic updated." : "Topic added.");
-    setDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" });
+    setDraft(createCommunicationTopicDraft(topics.length + 1));
     setEditingId(null);
     await refresh();
   }

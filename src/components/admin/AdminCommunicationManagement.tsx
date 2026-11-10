@@ -10,6 +10,7 @@ import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicatio
 import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
 import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
 import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSelection";
+import { createCommunicationItemDraft, createCommunicationLessonDraft, createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -20,8 +21,6 @@ import { AdminCommunicationCsvActions } from "@/components/admin/AdminCommunicat
 
 type LessonDraft = CommunicationLessonDraft;
 type ItemDraft = CommunicationItemDraft;
-const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
-const initialItem: ItemDraft = { lesson_id: "", item_key: "", item_type: "word", content_en: "", meaning_vi: "", example_en: "", example_vi: "", image_keyword: "", audio_url: "", sort_order: 1 };
 
 export function AdminCommunicationManagement() {
   const supabase = useSupabaseClient();
@@ -36,11 +35,11 @@ export function AdminCommunicationManagement() {
     loading,
     refresh,
   } = useAdminCommunicationCollections(supabase);
-  const [topicDraft, setTopicDraft] = useState<CommunicationTopicDraft>({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: 1, status: "draft" });
+  const [topicDraft, setTopicDraft] = useState<CommunicationTopicDraft>(createCommunicationTopicDraft);
   const [topicEditing, setTopicEditing] = useState<string | null>(null);
-  const [lessonDraft, setLessonDraft] = useState<LessonDraft>(initialLesson);
+  const [lessonDraft, setLessonDraft] = useState<LessonDraft>(createCommunicationLessonDraft);
   const [lessonEditing, setLessonEditing] = useState<string | null>(null);
-  const [itemDraft, setItemDraft] = useState<ItemDraft>(initialItem);
+  const [itemDraft, setItemDraft] = useState<ItemDraft>(createCommunicationItemDraft);
   const [itemEditing, setItemEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
@@ -105,12 +104,12 @@ export function AdminCommunicationManagement() {
     onLessonsDeleted: () => {
       setLessonEditing(null);
       setItemEditing(null);
-      setLessonDraft({ ...initialLesson, topic_id: selectedTopicId });
-      setItemDraft(initialItem);
+      setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
+      setItemDraft(createCommunicationItemDraft());
     },
     onItemsDeleted: () => {
       setItemEditing(null);
-      setItemDraft({ ...initialItem, lesson_id: selectedLessonId });
+      setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
     },
     refresh,
   });
@@ -135,7 +134,7 @@ export function AdminCommunicationManagement() {
           onSubmit={(event) => void saveTopic(event)}
           onCancel={() => {
             setTopicEditing(null);
-            setTopicDraft({ slug: "", title_en: "", title_vi: "", description_en: "", description_vi: "", sort_order: topics.length + 1, status: "draft" });
+            setTopicDraft(createCommunicationTopicDraft(topics.length + 1));
           }}
         />
         <AdminCommunicationTopicList
@@ -164,7 +163,7 @@ export function AdminCommunicationManagement() {
           onSubmit={(event) => void saveLesson(event)}
           onCancel={() => {
             setLessonEditing(null);
-            setLessonDraft({ ...initialLesson, topic_id: selectedTopicId });
+            setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
           }}
         />
         <AdminCommunicationLessonList
@@ -190,7 +189,7 @@ export function AdminCommunicationManagement() {
           onSubmit={(event) => void saveItem(event)}
           onCancel={() => {
             setItemEditing(null);
-            setItemDraft({ ...initialItem, lesson_id: selectedLessonId });
+            setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
           }}
         />
         <AdminCommunicationLessonContentList

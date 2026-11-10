@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
 
@@ -70,7 +71,7 @@ export function useAdminCommunicationItemActions({
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Learning item updated." : "Learning item added.");
-    setDraft({ ...emptyItemDraft, lesson_id: selectedLessonId, sort_order: itemCount + 1 });
+    setDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId, sort_order: itemCount + 1 }));
     setEditingId(null);
     await refresh();
   }
@@ -119,16 +120,3 @@ function isOptionalHttpUrl(value: string) {
     return false;
   }
 }
-
-const emptyItemDraft: CommunicationItemDraft = {
-  lesson_id: "",
-  item_key: "",
-  item_type: "word",
-  content_en: "",
-  meaning_vi: "",
-  example_en: "",
-  example_vi: "",
-  image_keyword: "",
-  audio_url: "",
-  sort_order: 1,
-};
