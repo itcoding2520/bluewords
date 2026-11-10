@@ -1,126 +1,70 @@
 "use client";
 
-import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-
-import { useMemo, useState } from "react";
-import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
-import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
-import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunicationTopicActions";
-import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicationLessonActions";
-import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
-import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
-import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSelection";
-import { createCommunicationItemDraft, createCommunicationLessonDraft, createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
+import { useAdminCommunicationManagementController } from "@/hooks/useAdminCommunicationManagementController";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
-import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
-import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
-import { AdminCommunicationItemForm, type CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import { AdminCommunicationTopicForm } from "@/components/admin/AdminCommunicationTopicForm";
+import { AdminCommunicationLessonForm } from "@/components/admin/AdminCommunicationLessonForm";
+import { AdminCommunicationItemForm } from "@/components/admin/AdminCommunicationItemForm";
 import { AdminCommunicationCsvActions } from "@/components/admin/AdminCommunicationCsvActions";
 
-type LessonDraft = CommunicationLessonDraft;
-type ItemDraft = CommunicationItemDraft;
-
 export function AdminCommunicationManagement() {
-  const supabase = useSupabaseClient();
   const {
+    supabase,
     topics,
     lessons,
     items,
     selectedTopicId,
-    setSelectedTopicId,
     selectedLessonId,
-    setSelectedLessonId,
     loading,
     refresh,
-  } = useAdminCommunicationCollections(supabase);
-  const [topicDraft, setTopicDraft] = useState<CommunicationTopicDraft>(createCommunicationTopicDraft);
-  const [topicEditing, setTopicEditing] = useState<string | null>(null);
-  const [lessonDraft, setLessonDraft] = useState<LessonDraft>(createCommunicationLessonDraft);
-  const [lessonEditing, setLessonEditing] = useState<string | null>(null);
-  const [itemDraft, setItemDraft] = useState<ItemDraft>(createCommunicationItemDraft);
-  const [itemEditing, setItemEditing] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [topicSearch, setTopicSearch] = useState("");
-  const { currentTopic, currentLessons, currentItems, selectTopic, selectLesson } = useAdminCommunicationSelection({
-    topics,
-    lessons,
-    items,
-    selectedTopicId,
-    setSelectedTopicId,
-    selectedLessonId,
-    setSelectedLessonId,
+    busy,
+    setBusy,
+    topicDraft,
+    topicEditing,
+    lessonDraft,
+    lessonEditing,
+    itemDraft,
+    itemEditing,
+    topicSearch,
+    currentTopic,
+    currentLessons,
+    currentItems,
+    filteredTopics,
+    topicWordCounts,
+    selectedLessonTitle,
+    setTopicDraft,
     setLessonDraft,
-    setLessonEditing,
     setItemDraft,
-    setItemEditing,
-  });
-  const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
-    supabase,
-    topics,
-    draft: topicDraft,
-    editingId: topicEditing,
-    setDraft: setTopicDraft,
-    setEditingId: setTopicEditing,
-    setBusy,
-    refresh,
-  });
-  const { saveLesson, editLesson, removeLesson } = useAdminCommunicationLessonActions({
-    supabase,
-    topics,
-    selectedTopicId,
-    lessonCount: currentLessons.length,
-    draft: lessonDraft,
-    editingId: lessonEditing,
-    setSelectedLessonId,
-    setDraft: setLessonDraft,
-    setEditingId: setLessonEditing,
-    setBusy,
-    refresh,
-  });
-  const { saveItem, editItem, removeItem } = useAdminCommunicationItemActions({
-    supabase,
-    lessons,
-    selectedLessonId,
-    itemCount: currentItems.length,
-    draft: itemDraft,
-    editingId: itemEditing,
-    setDraft: setItemDraft,
-    setEditingId: setItemEditing,
-    setBusy,
-    refresh,
-  });
-  const currentLessonTitle = lessons.find((lesson) => lesson.id === selectedLessonId)?.title_en ?? null;
-  const { removeAllLessons, removeAllItems } = useAdminCommunicationBulkActions({
-    supabase,
-    selectedTopicId,
-    topicTitle: currentTopic?.title_en ?? null,
-    lessonCount: currentLessons.length,
-    selectedLessonId,
-    lessonTitle: currentLessonTitle,
-    itemCount: currentItems.length,
-    setBusy,
-    onLessonsDeleted: () => {
-      setLessonEditing(null);
-      setItemEditing(null);
-      setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
-      setItemDraft(createCommunicationItemDraft());
-    },
-    onItemsDeleted: () => {
-      setItemEditing(null);
-      setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
-    },
-    refresh,
-  });
-  const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
-  const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
+    setTopicSearch,
+    selectTopic,
+    selectLesson,
+    editTopic,
+    editLesson,
+    editItem,
+    removeLesson,
+    removeItem,
+    removeAllLessons,
+    removeAllItems,
+    cancelTopicEdit,
+    cancelLessonEdit,
+    cancelItemEdit,
+    submitTopic,
+    submitLesson,
+    submitItem,
+    removeTopicFromList,
+  } = useAdminCommunicationManagementController();
 
   return <main className="space-y-5">
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7">
       <p className="text-sm font-bold text-blue-600">Administration</p>
-      <div className="mt-1 flex flex-wrap items-end justify-between gap-4"><div><h1 className="page-title text-3xl">Situational English</h1><p className="page-intro-description mt-2">Build lessons that connect vocabulary, useful phrases, sentence patterns, and conversations.</p></div>
-      <AdminCommunicationCsvActions supabase={supabase} selectedTopicId={selectedTopicId} busy={busy} setBusy={setBusy} onRefresh={refresh} />
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="page-title text-3xl">Situational English</h1>
+          <p className="page-intro-description mt-2">Build lessons that connect vocabulary, useful phrases, sentence patterns, and conversations.</p>
+        </div>
+        <AdminCommunicationCsvActions supabase={supabase} selectedTopicId={selectedTopicId} busy={busy} setBusy={setBusy} onRefresh={refresh} />
       </div>
     </header>
 
@@ -131,11 +75,8 @@ export function AdminCommunicationManagement() {
           editing={Boolean(topicEditing)}
           busy={busy}
           onDraftChange={setTopicDraft}
-          onSubmit={(event) => void saveTopic(event)}
-          onCancel={() => {
-            setTopicEditing(null);
-            setTopicDraft(createCommunicationTopicDraft(topics.length + 1));
-          }}
+          onSubmit={submitTopic}
+          onCancel={cancelTopicEdit}
         />
         <AdminCommunicationTopicList
           topics={filteredTopics}
@@ -148,7 +89,7 @@ export function AdminCommunicationManagement() {
           onSearchChange={setTopicSearch}
           onSelect={selectTopic}
           onEdit={editTopic}
-          onRemove={(topic) => void removeTopic(topic)}
+          onRemove={removeTopicFromList}
         />
       </div>
 
@@ -160,11 +101,8 @@ export function AdminCommunicationManagement() {
           enabled={Boolean(selectedTopicId)}
           topicTitle={currentTopic?.title_en ?? null}
           onDraftChange={setLessonDraft}
-          onSubmit={(event) => void saveLesson(event)}
-          onCancel={() => {
-            setLessonEditing(null);
-            setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
-          }}
+          onSubmit={submitLesson}
+          onCancel={cancelLessonEdit}
         />
         <AdminCommunicationLessonList
           topics={topics}
@@ -186,15 +124,12 @@ export function AdminCommunicationManagement() {
           busy={busy}
           enabled={Boolean(selectedLessonId)}
           onDraftChange={setItemDraft}
-          onSubmit={(event) => void saveItem(event)}
-          onCancel={() => {
-            setItemEditing(null);
-            setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
-          }}
+          onSubmit={submitItem}
+          onCancel={cancelItemEdit}
         />
         <AdminCommunicationLessonContentList
           items={currentItems}
-          lessonTitle={lessons.find((lesson) => lesson.id === selectedLessonId)?.title_en ?? null}
+          lessonTitle={selectedLessonTitle}
           selectedLessonId={selectedLessonId}
           busy={busy}
           onDeleteAll={() => void removeAllItems()}
