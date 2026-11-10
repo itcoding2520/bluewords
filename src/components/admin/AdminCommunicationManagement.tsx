@@ -3,13 +3,12 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
 import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunicationTopicActions";
 import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicationLessonActions";
 import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
+import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -46,7 +45,6 @@ export function AdminCommunicationManagement() {
   const [itemEditing, setItemEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
-  const confirm = useConfirmDialog();
   const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
   const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
@@ -85,6 +83,28 @@ export function AdminCommunicationManagement() {
     setBusy,
     refresh,
   });
+  const currentLessonTitle = lessons.find((lesson) => lesson.id === selectedLessonId)?.title_en ?? null;
+  const { removeAllLessons, removeAllItems } = useAdminCommunicationBulkActions({
+    supabase,
+    selectedTopicId,
+    topicTitle: currentTopic?.title_en ?? null,
+    lessonCount: currentLessons.length,
+    selectedLessonId,
+    lessonTitle: currentLessonTitle,
+    itemCount: currentItems.length,
+    setBusy,
+    onLessonsDeleted: () => {
+      setLessonEditing(null);
+      setItemEditing(null);
+      setLessonDraft({ ...initialLesson, topic_id: selectedTopicId });
+      setItemDraft(initialItem);
+    },
+    onItemsDeleted: () => {
+      setItemEditing(null);
+      setItemDraft({ ...initialItem, lesson_id: selectedLessonId });
+    },
+    refresh,
+  });
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
   const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
 
@@ -102,44 +122,6 @@ export function AdminCommunicationManagement() {
     setSelectedLessonId(lesson.id);
     setItemDraft({ ...initialItem, lesson_id: lesson.id });
     setItemEditing(null);
-  }
-
-  async function removeAllLessons() {
-    if (!selectedTopicId || currentLessons.length === 0) return;
-    const topicTitle = currentTopic?.title_en ?? "this situation";
-    if (!await confirm({
-      title: "Delete all lessons in this situation?",
-      description: `Delete all ${currentLessons.length} lessons in “${topicTitle}”, including their items, dialogues, learner review history, and progress? This cannot be undone.`,
-      confirmLabel: "Delete all lessons",
-    })) return;
-    setBusy(true);
-    const { error } = await supabase.from("communication_lessons").delete().eq("topic_id", selectedTopicId);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setLessonEditing(null);
-    setItemEditing(null);
-    setLessonDraft({ ...initialLesson, topic_id: selectedTopicId });
-    setItemDraft(initialItem);
-    toast.success(`Deleted all lessons in “${topicTitle}”.`);
-    await refresh();
-  }
-
-  async function removeAllItems() {
-    if (!selectedLessonId || currentItems.length === 0) return;
-    const lessonTitle = lessons.find((lesson) => lesson.id === selectedLessonId)?.title_en ?? "this lesson";
-    if (!await confirm({
-      title: "Delete all items in this lesson?",
-      description: `Delete all ${currentItems.length} vocabulary items from “${lessonTitle}”? Learners’ review data for these items will also be deleted.`,
-      confirmLabel: "Delete all items",
-    })) return;
-    setBusy(true);
-    const { error } = await supabase.from("communication_lesson_items").delete().eq("lesson_id", selectedLessonId);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setItemEditing(null);
-    setItemDraft({ ...initialItem, lesson_id: selectedLessonId });
-    toast.success(`Deleted all items from “${lessonTitle}”.`);
-    await refresh();
   }
 
   return <main className="space-y-5">
