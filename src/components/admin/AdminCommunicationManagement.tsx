@@ -8,6 +8,7 @@ import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
 import { useAdminCommunicationCollections } from "@/hooks/useAdminCommunicationCollections";
 import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunicationTopicActions";
+import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicationLessonActions";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -53,6 +54,8 @@ export function AdminCommunicationManagement() {
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
   const confirm = useConfirmDialog();
+  const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
+  const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
   const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
     supabase,
     topics,
@@ -63,8 +66,19 @@ export function AdminCommunicationManagement() {
     setBusy,
     refresh,
   });
-  const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
-  const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
+  const { saveLesson, editLesson, removeLesson } = useAdminCommunicationLessonActions({
+    supabase,
+    topics,
+    selectedTopicId,
+    lessonCount: currentLessons.length,
+    draft: lessonDraft,
+    editingId: lessonEditing,
+    setSelectedLessonId,
+    setDraft: setLessonDraft,
+    setEditingId: setLessonEditing,
+    setBusy,
+    refresh,
+  });
   const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
   const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
@@ -83,25 +97,6 @@ export function AdminCommunicationManagement() {
     setSelectedLessonId(lesson.id);
     setItemDraft({ ...initialItem, lesson_id: lesson.id });
     setItemEditing(null);
-  }
-
-  async function saveLesson(event: FormEvent) {
-    event.preventDefault();
-    const payload = { ...lessonDraft, topic_id: selectedTopicId, lesson_key: lessonDraft.lesson_key.trim(), title_en: lessonDraft.title_en.trim(), title_vi: lessonDraft.title_vi.trim() };
-    if (!topics.some((topic) => topic.id === payload.topic_id) || !payload.lesson_key || !payload.title_en || !payload.title_vi) return toast.error("Select an existing situation and complete the lesson key and titles.");
-    if (payload.lesson_key.length < 2 || payload.lesson_key.length > 80) return toast.error("The lesson key must be between 2 and 80 characters.");
-    setBusy(true);
-    const query = lessonEditing ? supabase.from("communication_lessons").update(payload).eq("id", lessonEditing) : supabase.from("communication_lessons").insert(payload);
-    const { error } = await query;
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(lessonEditing ? "Lesson updated." : "Lesson added."); setLessonDraft({ ...initialLesson, topic_id: selectedTopicId, sort_order: currentLessons.length + 1 }); setLessonEditing(null); await refresh();
-  }
-  function editLesson(lesson: Lesson) { setSelectedLessonId(lesson.id); setLessonEditing(lesson.id); setLessonDraft({ topic_id: lesson.topic_id, lesson_key: lesson.lesson_key, title_en: lesson.title_en, title_vi: lesson.title_vi, difficulty: lesson.difficulty, sort_order: lesson.sort_order, status: lesson.status }); }
-  async function removeLesson(lesson: Lesson) {
-    if (!await confirm({ title: "Remove lesson?", description: `Remove “${lesson.title_en}” and its items and dialogues?`, confirmLabel: "Remove" })) return;
-    const { error } = await supabase.from("communication_lessons").delete().eq("id", lesson.id);
-    if (error) toast.error(error.message); else { toast.success("Lesson removed."); await refresh(); }
   }
 
   async function removeAllLessons() {
