@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, Rotate
 import { toast } from "sonner";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
 import { SpeechPractice } from "@/components/communication/SpeechPractice";
 function speak(text: string) {
@@ -52,11 +53,13 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
       due_at: status === "mastered" ? new Date(Date.now() + 7 * 86400000).toISOString() : now, updated_at: now,
     }, { onConflict: "user_id,item_id" });
     if (error) { toast.error(error.message); setSaving(false); return; }
-    const nextReviews = { ...reviews, [item.id]: { status, review_count: existingReview?.review_count ?? 0, correct_count: existingReview?.correct_count ?? 0 } };
+    const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
+      status,
+      review_count: existingReview?.review_count ?? 0,
+      correct_count: existingReview?.correct_count ?? 0,
+    });
     setReviews(nextReviews);
-    const nextMastered = items.filter((candidate) => nextReviews[candidate.id]?.status === "mastered").length;
-    const completed = items.length > 0 && nextMastered === items.length;
-    const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({ user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress", completed_items: nextMastered, completed_at: completed ? now : null, updated_at: now }, { onConflict: "user_id,lesson_id" });
+    const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({ user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress", completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now }, { onConflict: "user_id,lesson_id" });
     if (progressError) toast.error(progressError.message);
     else { invalidateCommunicationCatalogCache(userId); toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice."); }
     setSaving(false);
@@ -81,13 +84,15 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     if (error) {
       toast.error("Could not save this practice result.");
     } else {
-      const nextReviews = { ...reviews, [item.id]: { status: nextStatus, review_count: nextReviewCount, correct_count: nextCorrectCount } };
+      const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
+        status: nextStatus,
+        review_count: nextReviewCount,
+        correct_count: nextCorrectCount,
+      });
       setReviews(nextReviews);
-      const nextMasteredCount = items.filter((candidate) => nextReviews[candidate.id]?.status === "mastered").length;
-      const completed = items.length > 0 && nextMasteredCount === items.length;
       const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({
         user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress",
-        completed_items: nextMasteredCount, completed_at: completed ? now : null, updated_at: now,
+        completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now,
       }, { onConflict: "user_id,lesson_id" });
       if (progressError) toast.error("Answer saved, but lesson progress could not be updated.");
       else { invalidateCommunicationCatalogCache(userId); toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice."); }
