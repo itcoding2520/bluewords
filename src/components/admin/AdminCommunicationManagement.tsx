@@ -9,6 +9,7 @@ import { useAdminCommunicationTopicActions } from "@/hooks/useAdminCommunication
 import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicationLessonActions";
 import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
 import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
+import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSelection";
 import { AdminCommunicationTopicList } from "@/components/admin/AdminCommunicationTopicList";
 import { AdminCommunicationLessonList } from "@/components/admin/AdminCommunicationLessonList";
 import { AdminCommunicationLessonContentList } from "@/components/admin/AdminCommunicationLessonContentList";
@@ -16,9 +17,7 @@ import { AdminCommunicationTopicForm, type CommunicationTopicDraft } from "@/com
 import { AdminCommunicationLessonForm, type CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
 import { AdminCommunicationItemForm, type CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
 import { AdminCommunicationCsvActions } from "@/components/admin/AdminCommunicationCsvActions";
-import type { CommunicationLesson } from "@/lib/supabase/communication-admin-types";
 
-type Lesson = CommunicationLesson;
 type LessonDraft = CommunicationLessonDraft;
 type ItemDraft = CommunicationItemDraft;
 const initialLesson: LessonDraft = { topic_id: "", lesson_key: "", title_en: "", title_vi: "", difficulty: "easy", sort_order: 1, status: "draft" };
@@ -45,8 +44,19 @@ export function AdminCommunicationManagement() {
   const [itemEditing, setItemEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
-  const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
-  const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
+  const { currentTopic, currentLessons, currentItems, selectTopic, selectLesson } = useAdminCommunicationSelection({
+    topics,
+    lessons,
+    items,
+    selectedTopicId,
+    setSelectedTopicId,
+    selectedLessonId,
+    setSelectedLessonId,
+    setLessonDraft,
+    setLessonEditing,
+    setItemDraft,
+    setItemEditing,
+  });
   const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
     supabase,
     topics,
@@ -70,7 +80,6 @@ export function AdminCommunicationManagement() {
     setBusy,
     refresh,
   });
-  const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
   const { saveItem, editItem, removeItem } = useAdminCommunicationItemActions({
     supabase,
     lessons,
@@ -107,22 +116,6 @@ export function AdminCommunicationManagement() {
   });
   const filteredTopics = topics.filter((topic) => `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()));
   const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
-
-  function selectTopic(topicId: string) {
-    const firstLessonId = lessons.find((lesson) => lesson.topic_id === topicId)?.id ?? "";
-    setSelectedTopicId(topicId);
-    setSelectedLessonId(firstLessonId);
-    setLessonEditing(null);
-    setLessonDraft({ ...initialLesson, topic_id: topicId });
-    setItemEditing(null);
-    setItemDraft({ ...initialItem, lesson_id: firstLessonId });
-  }
-
-  function selectLesson(lesson: Lesson) {
-    setSelectedLessonId(lesson.id);
-    setItemDraft({ ...initialItem, lesson_id: lesson.id });
-    setItemEditing(null);
-  }
 
   return <main className="space-y-5">
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7">
