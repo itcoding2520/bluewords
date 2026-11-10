@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, RotateCcw, Volume2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
-import { createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { createAnswerChoices, createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
 import { SpeechPractice } from "@/components/communication/SpeechPractice";
@@ -139,10 +139,10 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   }
 
   const practiceChoices = useMemo(() => practiceItem
-    ? shuffled([...new Set([practiceItem.meaning_vi, ...shuffled(items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi)).slice(0, 3)])])
+    ? createAnswerChoices(practiceItem.meaning_vi, items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi))
     : [], [practiceItem, items]);
   const listeningChoices = useMemo(() => listeningItem
-    ? shuffled([...new Set([listeningItem.example_vi, ...shuffled(listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi)).slice(0, 3)])])
+    ? createAnswerChoices(listeningItem.example_vi, listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi))
     : [], [listeningItem, listeningItems]);
 
   function answerDialogue(turn: Turn, answer: string) {
