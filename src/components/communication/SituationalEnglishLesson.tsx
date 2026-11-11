@@ -4,7 +4,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, Headphones, LockKeyhole, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { createAnswerChoices, createSentenceDrills, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { useSituationalEnglishLessonData, type Item, type Turn } from "@/hooks/useSituationalEnglishLessonData";
@@ -15,6 +15,7 @@ import { SentenceDrillView } from "@/components/communication/SentenceDrillView"
 import { ListeningPracticeView } from "@/components/communication/ListeningPracticeView";
 import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 import { LessonProgressHeader } from "@/components/communication/LessonProgressHeader";
+import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -103,12 +104,18 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     <LessonProgressHeader lesson={lesson} topic={topic} masteredCount={masteredCount} itemCount={items.length}/>
     {!userId && <aside className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><LockKeyhole size={18}/> Sign in to record completed items and build your review schedule. <Link href="/login" className="font-bold underline">Log in</Link></aside>}
     {items.length === 0 ? <section className="rounded-3xl border border-dashed border-sky-200 bg-white p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={34}/><p className="mt-3 font-bold text-slate-900">This lesson is being prepared</p><p className="mt-1 text-sm text-slate-500">Learning items will appear here when they are added.</p></section> : <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
-      <div className="flex flex-wrap border-b border-sky-100 bg-sky-50/60 p-2">
-        <button type="button" onClick={() => setMode("study")} aria-pressed={mode === "study"} className={`min-h-10 rounded-xl px-4 text-sm font-bold ${mode === "study" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Study cards</button>
-        <button type="button" onClick={() => { setMode("practice"); setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "practice"} disabled={practiceMeaningCount < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "practice" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Zap size={16}/> Quick practice</button>
-        <button type="button" onClick={() => { setMode("drills"); setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} aria-pressed={mode === "drills"} disabled={sentenceDrills.length === 0} className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "drills" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Sentence drills</button>
-        <button type="button" onClick={() => { setMode("listening"); setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "listening"} disabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "listening" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Headphones size={16}/> Listening</button>
-      </div>
+      <LessonModeTabs
+        mode={mode}
+        practiceDisabled={practiceMeaningCount < 2}
+        drillsDisabled={sentenceDrills.length === 0}
+        listeningDisabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2}
+        onSelect={(selectedMode) => {
+          setMode(selectedMode);
+          if (selectedMode === "practice") { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
+          if (selectedMode === "drills") { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }
+          if (selectedMode === "listening") { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
+        }}
+      />
       {mode === "study" && <StudyCardView
         item={currentItem}
         index={currentIndex}
