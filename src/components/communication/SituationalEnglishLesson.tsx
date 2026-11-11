@@ -13,6 +13,7 @@ import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn 
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
 import { StudyCardView } from "@/components/communication/StudyCardView";
 import { AnswerChoiceList } from "@/components/communication/AnswerChoiceList";
+import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -194,15 +195,19 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           {practiceAnswer !== null && <div className={`mt-4 rounded-2xl p-4 ${practiceAnswer === listeningItem.example_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === listeningItem.example_vi ? "Correct! You understood the sentence." : `Not quite. The meaning is “${listeningItem.example_vi}”.`}</p><p className="mt-2 text-sm">“{listeningItem.example_en}”</p><button type="button" onClick={nextPracticeQuestion} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next sentence <ArrowRight size={16}/></button></div>}
         </>}
       </div>}
-      {mode === "drills" && <div className="p-4 sm:p-7">
-        {!currentDrill ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Sentence practice complete</h2><p className="mt-1 text-sm text-slate-600">You completed {sentenceDrills.length} sentence exercises. Results update the review schedule when signed in.</p><button type="button" onClick={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">{currentDrill.kind === "complete" ? "Complete the sentence" : "Put the words in order"}</p><p className="mt-1 text-sm text-slate-500">Exercise {drillStep + 1} of {sentenceDrills.length}</p></div><button type="button" onClick={() => currentDrill.item.audio_url ? new Audio(currentDrill.item.audio_url).play().catch(() => speak(currentDrill.sentence)) : speak(currentDrill.sentence)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 text-center sm:p-8"><p className="text-sm font-semibold text-slate-500">Use the Vietnamese clue to make the English sentence</p><p className="mt-2 text-lg font-bold text-blue-700">{currentDrill.clue}</p>{currentDrill.kind === "complete" ? <p className="mt-5 text-2xl font-extrabold leading-relaxed text-slate-900 sm:text-3xl">{currentDrill.gapSentence}</p> : <p className="mt-5 text-sm text-slate-600">Tap each word tile in the correct order.</p>}</article>
-          {currentDrill.kind === "complete" && <div className="mt-4 grid gap-3 sm:grid-cols-2">{currentDrill.choices?.map((choice) => <button key={choice} type="button" disabled={drillAnswer !== null || saving} onClick={() => void submitSentenceDrill((currentDrill.gapSentence ?? "").replace("________", choice))} className={`min-h-12 rounded-2xl border px-4 py-3 text-left text-sm font-bold ${drillAnswer !== null && normalizeSentence(choice) === normalizeSentence(currentDrill.answer) ? "border-emerald-400 bg-emerald-50 text-emerald-900" : drillAnswer !== null && normalizeSentence(drillAnswer) === normalizeSentence((currentDrill.gapSentence ?? "").replace("________", choice)) ? "border-rose-300 bg-rose-50 text-rose-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>}
-          {currentDrill.kind === "order" && <><div className="mt-4 flex min-h-14 flex-wrap items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 p-3">{orderedTiles.map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null} onClick={() => setOrderedTiles((selected) => selected.filter((candidate) => candidate.id !== tile.id))} className="rounded-xl border border-blue-200 bg-white px-3 py-2 font-bold text-blue-900">{tile.text}</button>)}{orderedTiles.length === 0 && <span className="text-sm text-slate-400">Your sentence will appear here</span>}</div><div className="mt-4 flex flex-wrap justify-center gap-2">{currentDrill.tiles?.filter((tile) => !orderedTiles.some((selected) => selected.id === tile.id)).map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null || saving} onClick={() => setOrderedTiles((selected) => [...selected, tile])} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}</div><div className="mt-4 flex justify-center gap-2"><button type="button" disabled={orderedTiles.length === 0 || drillAnswer !== null} onClick={() => setOrderedTiles([])} className="min-h-10 rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-600 disabled:opacity-40">Clear</button><button type="button" disabled={orderedTiles.length !== currentDrill.tiles?.length || drillAnswer !== null || saving} onClick={() => void submitSentenceDrill(orderedTiles.map((tile) => tile.text).join(" "))} className="min-h-10 rounded-full bg-blue-600 px-5 text-sm font-bold text-white disabled:opacity-40">Check sentence</button></div></>}
-          {drillAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "Correct! Great sentence." : <>The correct sentence is “{currentDrill.answer}”</>}</p><button type="button" onClick={nextSentenceDrill} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next exercise <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
+      {mode === "drills" && <div className="p-4 sm:p-7"><SentenceDrillView
+        drill={currentDrill}
+        step={drillStep}
+        drillCount={sentenceDrills.length}
+        answer={drillAnswer}
+        orderedTiles={orderedTiles}
+        saving={saving}
+        onListen={(text, item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(text)) : speak(text)}
+        onSubmit={(answer) => void submitSentenceDrill(answer)}
+        onNext={nextSentenceDrill}
+        onPracticeAgain={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }}
+        onOrderedTilesChange={setOrderedTiles}
+      /></div>}
     </section>}
     <ConversationPractice dialogues={dialogues} onPlayTurn={playDialogueTurn}/>
   </main>;
