@@ -14,6 +14,7 @@ import { ConversationPractice } from "@/components/communication/ConversationPra
 import { StudyCardView } from "@/components/communication/StudyCardView";
 import { AnswerChoiceList } from "@/components/communication/AnswerChoiceList";
 import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
+import { ListeningPracticeView } from "@/components/communication/ListeningPracticeView";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -187,14 +188,18 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
         </>}
       </div>}
-      {mode === "listening" && <div className="p-4 sm:p-7">
-        {!listeningItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Listening round complete</h2><p className="mt-1 text-sm text-slate-600">You listened to {listeningOrder.length} example sentences. Answers are added to item review scheduling when you are signed in.</p><button type="button" onClick={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Listen again</button></div> : <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Listening comprehension</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {listeningOrder.length}</p></div><button type="button" onClick={() => playListeningItem(listeningItem)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Play audio</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={28}/></span><p className="mt-4 text-sm font-semibold text-slate-500">Listen to the English sentence and choose what it means.</p><p className="mt-2 text-xs text-slate-400">The transcript appears after you answer. You can replay the audio.</p></article>
-          <AnswerChoiceList choices={listeningChoices} selectedAnswer={practiceAnswer} correctAnswer={listeningItem.example_vi} disabled={practiceAnswer !== null || saving} onSelect={(choice) => void recordListeningAnswer(listeningItem, choice)}/>
-          {practiceAnswer !== null && <div className={`mt-4 rounded-2xl p-4 ${practiceAnswer === listeningItem.example_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === listeningItem.example_vi ? "Correct! You understood the sentence." : `Not quite. The meaning is “${listeningItem.example_vi}”.`}</p><p className="mt-2 text-sm">“{listeningItem.example_en}”</p><button type="button" onClick={nextPracticeQuestion} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next sentence <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
+      {mode === "listening" && <div className="p-4 sm:p-7"><ListeningPracticeView
+        item={listeningItem}
+        question={practiceStep}
+        questionCount={listeningOrder.length}
+        choices={listeningChoices}
+        answer={practiceAnswer}
+        saving={saving}
+        onListen={playListeningItem}
+        onSelect={(answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); }}
+        onNext={nextPracticeQuestion}
+        onListenAgain={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
+      /></div>}
       {mode === "drills" && <div className="p-4 sm:p-7"><SentenceDrillView
         drill={currentDrill}
         step={drillStep}
