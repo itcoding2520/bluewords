@@ -29,6 +29,10 @@ export function shuffled<T>(values: T[]) {
   return result;
 }
 
+export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
+  return shuffled([...new Set([correctAnswer, ...shuffled(distractors).slice(0, 3)])]);
+}
+
 export function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: LessonDifficulty) {
   if (correctCount <= 1) return 1;
 

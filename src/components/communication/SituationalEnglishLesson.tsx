@@ -4,13 +4,17 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, RotateCcw, Volume2, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, Headphones, LockKeyhole, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
-import { createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { createAnswerChoices, createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
-import { SpeechPractice } from "@/components/communication/SpeechPractice";
+import { ConversationPractice } from "@/components/communication/ConversationPractice";
+import { StudyCardView } from "@/components/communication/StudyCardView";
+import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
+import { ListeningPracticeView } from "@/components/communication/ListeningPracticeView";
+import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -23,7 +27,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const supabase = useSupabaseClient();
   const { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder } = useSituationalEnglishLessonData(supabase, lessonId, reviewItem);
   const [revealed, setRevealed] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
   const [practiceStep, setPracticeStep] = useState(0);
   const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
@@ -139,16 +142,15 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   }
 
   const practiceChoices = useMemo(() => practiceItem
-    ? shuffled([...new Set([practiceItem.meaning_vi, ...shuffled(items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi)).slice(0, 3)])])
+    ? createAnswerChoices(practiceItem.meaning_vi, items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi))
     : [], [practiceItem, items]);
   const listeningChoices = useMemo(() => listeningItem
-    ? shuffled([...new Set([listeningItem.example_vi, ...shuffled(listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi)).slice(0, 3)])])
+    ? createAnswerChoices(listeningItem.example_vi, listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi))
     : [], [listeningItem, listeningItems]);
 
-  function answerDialogue(turn: Turn, answer: string) {
-    setAnswers((current) => ({ ...current, [turn.id]: answer }));
-    if (answer === turn.expected_response) toast.success("That's a natural response!");
-    else toast("Try another response and listen to the line again.");
+  function playDialogueTurn(turn: Turn) {
+    if (turn.audio_url) new Audio(turn.audio_url).play().catch(() => speak(turn.text_en));
+    else speak(turn.text_en);
   }
 
   if (loading) return <main className="rounded-3xl border border-sky-100 bg-white p-8 text-center text-slate-500">Loading lesson…</main>;
@@ -165,72 +167,57 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         <button type="button" onClick={() => { setMode("drills"); setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} aria-pressed={mode === "drills"} disabled={sentenceDrills.length === 0} className={`min-h-10 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "drills" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}>Sentence drills</button>
         <button type="button" onClick={() => { setMode("listening"); setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} aria-pressed={mode === "listening"} disabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${mode === "listening" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600"}`}><Headphones size={16}/> Listening</button>
       </div>
-      {mode === "study" && <div className="p-4 sm:p-7">
-        <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-blue-600">{currentItem.item_type.replace("_", " ")}</p><p className="mt-1 text-sm text-slate-500">Item {currentIndex + 1} of {items.length}</p></div><button type="button" onClick={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
-        <article className="rounded-3xl bg-gradient-to-br from-sky-50 to-white p-6 text-center sm:p-10"><h2 className="break-words text-3xl font-extrabold text-slate-900 sm:text-4xl">{currentItem.content_en}</h2>{revealed ? <div className="mt-5 space-y-2"><p className="text-xl font-bold text-blue-700">{currentItem.meaning_vi}</p>{currentItem.example_en && <p className="mx-auto max-w-2xl text-lg text-slate-700">{currentItem.example_en}</p>}{currentItem.example_vi && <p className="text-sm text-slate-500">{currentItem.example_vi}</p>}</div> : <button type="button" onClick={() => setRevealed(true)} className="mt-6 min-h-11 rounded-full border border-blue-300 bg-white px-6 text-sm font-bold text-blue-700 shadow-sm">Show meaning</button>}</article>
-        {revealed && <div className="mt-4 flex flex-wrap justify-center gap-3"><button type="button" disabled={saving} onClick={() => void setItemStatus(currentItem, "learning")} className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-sm font-bold ${currentStatus === "learning" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200 bg-white text-slate-600"}`}><RotateCcw size={16}/> Learning</button><button type="button" disabled={saving} onClick={() => void setItemStatus(currentItem, "mastered")} className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 text-sm font-bold ${currentStatus === "mastered" ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600"}`}><Check size={16}/> Mastered</button></div>}
-        <div className="mt-5 flex items-center justify-center gap-3"><button type="button" disabled={currentIndex === 0} onClick={() => { setCurrentIndex((index) => index - 1); setRevealed(false); }} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-sky-200 px-5 text-sm font-bold text-blue-700 disabled:opacity-40"><ArrowLeft size={16}/> Previous</button><button type="button" disabled={currentIndex >= items.length - 1} onClick={() => { setCurrentIndex((index) => index + 1); setRevealed(false); }} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-bold text-white disabled:opacity-40">Next item <ArrowRight size={16}/></button></div>
-      </div>}
-      {mode === "practice" && <div className="p-4 sm:p-7">
-        {!practiceItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Practice round complete</h2><p className="mt-1 text-sm text-slate-600">You reviewed {practiceOrder.length} items. Correct and incorrect answers are saved to your review schedule when signed in.</p><button type="button" onClick={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
-          <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Meaning check</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {practiceOrder.length}</p></div><button type="button" onClick={() => practiceItem.audio_url ? new Audio(practiceItem.audio_url).play().catch(() => speak(practiceItem.content_en)) : speak(practiceItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><p className="text-sm font-semibold text-slate-500">Choose the Vietnamese meaning</p><h2 className="mt-2 break-words text-3xl font-extrabold text-slate-900 sm:text-4xl">{practiceItem.content_en}</h2></article>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">{practiceChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordPracticeAnswer(practiceItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === practiceItem.meaning_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
-          {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
-      {mode === "listening" && <div className="p-4 sm:p-7">
-        {!listeningItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Listening round complete</h2><p className="mt-1 text-sm text-slate-600">You listened to {listeningOrder.length} example sentences. Answers are added to item review scheduling when you are signed in.</p><button type="button" onClick={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Listen again</button></div> : <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Listening comprehension</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {listeningOrder.length}</p></div><button type="button" onClick={() => playListeningItem(listeningItem)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Play audio</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={28}/></span><p className="mt-4 text-sm font-semibold text-slate-500">Listen to the English sentence and choose what it means.</p><p className="mt-2 text-xs text-slate-400">The transcript appears after you answer. You can replay the audio.</p></article>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">{listeningChoices.map((choice) => <button key={choice} type="button" disabled={practiceAnswer !== null || saving} onClick={() => void recordListeningAnswer(listeningItem, choice)} className={`min-h-14 rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${practiceAnswer === choice ? choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-rose-300 bg-rose-50 text-rose-900" : practiceAnswer !== null && choice === listeningItem.example_vi ? "border-emerald-400 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>
-          {practiceAnswer !== null && <div className={`mt-4 rounded-2xl p-4 ${practiceAnswer === listeningItem.example_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === listeningItem.example_vi ? "Correct! You understood the sentence." : `Not quite. The meaning is “${listeningItem.example_vi}”.`}</p><p className="mt-2 text-sm">“{listeningItem.example_en}”</p><button type="button" onClick={nextPracticeQuestion} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next sentence <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
-      {mode === "drills" && <div className="p-4 sm:p-7">
-        {!currentDrill ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Sentence practice complete</h2><p className="mt-1 text-sm text-slate-600">You completed {sentenceDrills.length} sentence exercises. Results update the review schedule when signed in.</p><button type="button" onClick={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">{currentDrill.kind === "complete" ? "Complete the sentence" : "Put the words in order"}</p><p className="mt-1 text-sm text-slate-500">Exercise {drillStep + 1} of {sentenceDrills.length}</p></div><button type="button" onClick={() => currentDrill.item.audio_url ? new Audio(currentDrill.item.audio_url).play().catch(() => speak(currentDrill.sentence)) : speak(currentDrill.sentence)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 text-center sm:p-8"><p className="text-sm font-semibold text-slate-500">Use the Vietnamese clue to make the English sentence</p><p className="mt-2 text-lg font-bold text-blue-700">{currentDrill.clue}</p>{currentDrill.kind === "complete" ? <p className="mt-5 text-2xl font-extrabold leading-relaxed text-slate-900 sm:text-3xl">{currentDrill.gapSentence}</p> : <p className="mt-5 text-sm text-slate-600">Tap each word tile in the correct order.</p>}</article>
-          {currentDrill.kind === "complete" && <div className="mt-4 grid gap-3 sm:grid-cols-2">{currentDrill.choices?.map((choice) => <button key={choice} type="button" disabled={drillAnswer !== null || saving} onClick={() => void submitSentenceDrill((currentDrill.gapSentence ?? "").replace("________", choice))} className={`min-h-12 rounded-2xl border px-4 py-3 text-left text-sm font-bold ${drillAnswer !== null && normalizeSentence(choice) === normalizeSentence(currentDrill.answer) ? "border-emerald-400 bg-emerald-50 text-emerald-900" : drillAnswer !== null && normalizeSentence(drillAnswer) === normalizeSentence((currentDrill.gapSentence ?? "").replace("________", choice)) ? "border-rose-300 bg-rose-50 text-rose-900" : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"}`}>{choice}</button>)}</div>}
-          {currentDrill.kind === "order" && <><div className="mt-4 flex min-h-14 flex-wrap items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 p-3">{orderedTiles.map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null} onClick={() => setOrderedTiles((selected) => selected.filter((candidate) => candidate.id !== tile.id))} className="rounded-xl border border-blue-200 bg-white px-3 py-2 font-bold text-blue-900">{tile.text}</button>)}{orderedTiles.length === 0 && <span className="text-sm text-slate-400">Your sentence will appear here</span>}</div><div className="mt-4 flex flex-wrap justify-center gap-2">{currentDrill.tiles?.filter((tile) => !orderedTiles.some((selected) => selected.id === tile.id)).map((tile) => <button key={tile.id} type="button" disabled={drillAnswer !== null || saving} onClick={() => setOrderedTiles((selected) => [...selected, tile])} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}</div><div className="mt-4 flex justify-center gap-2"><button type="button" disabled={orderedTiles.length === 0 || drillAnswer !== null} onClick={() => setOrderedTiles([])} className="min-h-10 rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-600 disabled:opacity-40">Clear</button><button type="button" disabled={orderedTiles.length !== currentDrill.tiles?.length || drillAnswer !== null || saving} onClick={() => void submitSentenceDrill(orderedTiles.map((tile) => tile.text).join(" "))} className="min-h-10 rounded-full bg-blue-600 px-5 text-sm font-bold text-white disabled:opacity-40">Check sentence</button></div></>}
-          {drillAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{normalizeSentence(drillAnswer) === normalizeSentence(currentDrill.answer) ? "Correct! Great sentence." : <>The correct sentence is “{currentDrill.answer}”</>}</p><button type="button" onClick={nextSentenceDrill} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next exercise <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
+      {mode === "study" && <StudyCardView
+        item={currentItem}
+        index={currentIndex}
+        itemCount={items.length}
+        revealed={revealed}
+        status={currentStatus}
+        saving={saving}
+        onReveal={() => setRevealed(true)}
+        onStatusChange={(status) => void setItemStatus(currentItem, status)}
+        onPrevious={() => { setCurrentIndex((index) => index - 1); setRevealed(false); }}
+        onNext={() => { setCurrentIndex((index) => index + 1); setRevealed(false); }}
+        onListen={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)}
+      />}
+      {mode === "practice" && <div className="p-4 sm:p-7"><QuickPracticeView
+        item={practiceItem}
+        question={practiceStep}
+        questionCount={practiceOrder.length}
+        choices={practiceChoices}
+        answer={practiceAnswer}
+        saving={saving}
+        onListen={(item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(item.content_en)) : speak(item.content_en)}
+        onSelect={(answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); }}
+        onNext={nextPracticeQuestion}
+        onPracticeAgain={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
+      /></div>}
+      {mode === "listening" && <div className="p-4 sm:p-7"><ListeningPracticeView
+        item={listeningItem}
+        question={practiceStep}
+        questionCount={listeningOrder.length}
+        choices={listeningChoices}
+        answer={practiceAnswer}
+        saving={saving}
+        onListen={playListeningItem}
+        onSelect={(answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); }}
+        onNext={nextPracticeQuestion}
+        onListenAgain={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
+      /></div>}
+      {mode === "drills" && <div className="p-4 sm:p-7"><SentenceDrillView
+        drill={currentDrill}
+        step={drillStep}
+        drillCount={sentenceDrills.length}
+        answer={drillAnswer}
+        orderedTiles={orderedTiles}
+        saving={saving}
+        onListen={(text, item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(text)) : speak(text)}
+        onSubmit={(answer) => void submitSentenceDrill(answer)}
+        onNext={nextSentenceDrill}
+        onPracticeAgain={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }}
+        onOrderedTilesChange={setOrderedTiles}
+      /></div>}
     </section>}
-    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span>
-        <div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to the conversation, then choose a natural response.</p></div>
-      </div>
-      <div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-        <h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p>
-        <div className="mt-3 space-y-3">{dialogue.turns.map((turn) => {
-          const interactive = turn.response_options.length > 0;
-          const selectedAnswer = answers[turn.id];
-          const isCorrect = selectedAnswer === turn.expected_response;
-          const showResponse = !interactive || isCorrect;
-          return <div key={turn.id} className="rounded-2xl bg-white p-3">
-            <div className="flex items-start gap-3">
-              {showResponse && <button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button>}
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{interactive && !isCorrect ? "Your turn" : turn.speaker}</p>
-                {showResponse ? <><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}</> : <p className="font-semibold text-violet-800">Choose a natural response to the line above.</p>}
-                {interactive && <div className="mt-3">
-                  <div className="flex flex-wrap gap-2">{turn.response_options.map((option) => {
-                    const selected = selectedAnswer === option;
-                    const optionIsCorrect = option === turn.expected_response;
-                    const style = selected && optionIsCorrect ? "border-emerald-300 bg-emerald-50 text-emerald-800" : selected ? "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300";
-                    return <button key={option} type="button" disabled={isCorrect} onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium disabled:cursor-default ${style}`}>{option}</button>;
-                  })}</div>
-                  {selectedAnswer && !isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-rose-700">Not quite. Try another response.</p>}
-                  {isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">That’s a natural response!</p>}
-                  {isCorrect && <SpeechPractice expected={turn.expected_response}/>}
-                </div>}
-              </div>
-            </div>
-          </div>;
-        })}</div>
-      </article>)}</div>
-    </section>}
+    <ConversationPractice dialogues={dialogues} onPlayTurn={playDialogueTurn}/>
   </main>;
 }
