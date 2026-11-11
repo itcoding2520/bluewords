@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Check, Clock3, FileText, Gamepad2, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Target, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import { useSituationalEnglishCatalogData } from "@/hooks/useSituationalEnglishCatalogData";
+import { useSituationalEnglishCatalogView } from "@/hooks/useSituationalEnglishCatalogView";
 import { getCatalogRecommendation } from "@/lib/communication/catalog-recommendation";
 
 const difficultyLabel = { easy: "Easy · Dễ", medium: "Medium · Trung bình", hard: "Hard · Khó" };
@@ -47,34 +48,13 @@ export function SituationalEnglishCatalog() {
   const [difficulty, setDifficulty] = useState(savedDifficulty);
   const [search, setSearch] = useState(savedSearch);
 
-  const lessonsByTopic = useMemo(() => {
-    const grouped = new Map<string, typeof lessons>();
-    for (const lesson of lessons) {
-      const group = grouped.get(lesson.topic_id) ?? [];
-      group.push(lesson);
-      grouped.set(lesson.topic_id, group);
-    }
-    return grouped;
-  }, [lessons]);
-  const progressByLesson = useMemo(() => new Map(progress.map((row) => [row.lesson_id, row])), [progress]);
-  const completedLevelsByTopic = useMemo(() => {
-    const completed = new Map<string, Set<(typeof lessons)[number]["difficulty"]>>();
-    for (const lesson of lessons) {
-      if (progressByLesson.get(lesson.id)?.status !== "completed") continue;
-      const levels = completed.get(lesson.topic_id) ?? new Set<(typeof lesson)["difficulty"]>();
-      levels.add(lesson.difficulty);
-      completed.set(lesson.topic_id, levels);
-    }
-    return completed;
-  }, [lessons, progressByLesson]);
-  const visibleTopics = useMemo(() => {
-    const normalizedSearch = search.toLowerCase();
-    return topics.filter((topic) => {
-      const textMatches = `${topic.title_en} ${topic.title_vi} ${topic.description_en}`.toLowerCase().includes(normalizedSearch);
-      const topicLessons = lessonsByTopic.get(topic.id) ?? [];
-      return textMatches && topicLessons.some((lesson) => difficulty === "all" || lesson.difficulty === difficulty);
-    });
-  }, [topics, lessonsByTopic, difficulty, search]);
+  const { visibleTopics, visibleLessonsByTopic, progressByLesson, completedLevelsByTopic } = useSituationalEnglishCatalogView({
+    topics,
+    lessons,
+    progress,
+    difficulty,
+    search,
+  });
   const { nextStepHref, nextStepLabel, nextStepReason } = getCatalogRecommendation({
     lessons,
     progress,
@@ -106,8 +86,7 @@ export function SituationalEnglishCatalog() {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-xl font-extrabold text-slate-900">Choose a situation</h2><p className="mt-0.5 text-sm text-slate-500">Start with a practical topic and choose the level that suits you.</p></div><span className="text-sm font-medium text-slate-500">{visibleTopics.length} situations</span></div>
       <div className="mb-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_13rem]"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17}/><input aria-label="Search situations" value={search} onChange={(e) => { savedSearch = e.target.value; setSearch(e.target.value); }} className="h-10 w-full rounded-xl border border-sky-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Search situations…"/></label><Select aria-label="Filter lessons by difficulty" className="!h-10 !rounded-xl" value={difficulty} onChange={(e) => { savedDifficulty = e.target.value; setDifficulty(e.target.value); }}><option value="all">All levels</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></Select></div>
       {loading ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/></div> : visibleTopics.length === 0 ? <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={32}/><p className="mt-3 font-bold text-slate-800">No published lessons yet</p><p className="mt-1 text-sm text-slate-500">New lessons will appear here after an admin publishes them.</p></div> : <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">{visibleTopics.map((topic, index) => {
-        const allTopicLessons = lessonsByTopic.get(topic.id) ?? [];
-        const topicLessons = allTopicLessons.filter((lesson) => difficulty === "all" || lesson.difficulty === difficulty);
+        const topicLessons = visibleLessonsByTopic.get(topic.id) ?? [];
         const completedLevels = completedLevelsByTopic.get(topic.id) ?? new Set();
         const requiredLevels = ["easy", "medium", "hard"] as const;
         const allLevelsCompleted = requiredLevels.every((level) => completedLevels.has(level));
