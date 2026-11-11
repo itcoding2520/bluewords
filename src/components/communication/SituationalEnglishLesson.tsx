@@ -4,7 +4,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, Volume2, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, Headphones, LockKeyhole, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { createAnswerChoices, createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
@@ -12,9 +12,9 @@ import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
 import { StudyCardView } from "@/components/communication/StudyCardView";
-import { AnswerChoiceList } from "@/components/communication/AnswerChoiceList";
 import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
 import { ListeningPracticeView } from "@/components/communication/ListeningPracticeView";
+import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -180,14 +180,18 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         onNext={() => { setCurrentIndex((index) => index + 1); setRevealed(false); }}
         onListen={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)}
       />}
-      {mode === "practice" && <div className="p-4 sm:p-7">
-        {!practiceItem ? <div className="rounded-3xl bg-emerald-50 p-8 text-center"><Check className="mx-auto text-emerald-600" size={34}/><h2 className="mt-3 text-xl font-extrabold text-slate-900">Practice round complete</h2><p className="mt-1 text-sm text-slate-600">You reviewed {practiceOrder.length} items. Correct and incorrect answers are saved to your review schedule when signed in.</p><button type="button" onClick={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }} className="mt-5 min-h-11 rounded-full bg-blue-600 px-5 text-sm font-bold text-white">Practice again</button></div> : <>
-          <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Meaning check</p><p className="mt-1 text-sm text-slate-500">Question {practiceStep + 1} of {practiceOrder.length}</p></div><button type="button" onClick={() => practiceItem.audio_url ? new Audio(practiceItem.audio_url).play().catch(() => speak(practiceItem.content_en)) : speak(practiceItem.content_en)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-sky-200 px-4 text-sm font-semibold text-blue-700"><Volume2 size={17}/> Listen</button></div>
-          <article className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 text-center sm:p-9"><p className="text-sm font-semibold text-slate-500">Choose the Vietnamese meaning</p><h2 className="mt-2 break-words text-3xl font-extrabold text-slate-900 sm:text-4xl">{practiceItem.content_en}</h2></article>
-          <AnswerChoiceList choices={practiceChoices} selectedAnswer={practiceAnswer} correctAnswer={practiceItem.meaning_vi} disabled={practiceAnswer !== null || saving} onSelect={(choice) => void recordPracticeAnswer(practiceItem, choice)}/>
-          {practiceAnswer !== null && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ${practiceAnswer === practiceItem.meaning_vi ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><p className="font-bold">{practiceAnswer === practiceItem.meaning_vi ? "Correct! Nice recall." : `Not quite. The answer is “${practiceItem.meaning_vi}”.`}</p><button type="button" onClick={nextPracticeQuestion} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white">Next question <ArrowRight size={16}/></button></div>}
-        </>}
-      </div>}
+      {mode === "practice" && <div className="p-4 sm:p-7"><QuickPracticeView
+        item={practiceItem}
+        question={practiceStep}
+        questionCount={practiceOrder.length}
+        choices={practiceChoices}
+        answer={practiceAnswer}
+        saving={saving}
+        onListen={(item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(item.content_en)) : speak(item.content_en)}
+        onSelect={(answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); }}
+        onNext={nextPracticeQuestion}
+        onPracticeAgain={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
+      /></div>}
       {mode === "listening" && <div className="p-4 sm:p-7"><ListeningPracticeView
         item={listeningItem}
         question={practiceStep}
