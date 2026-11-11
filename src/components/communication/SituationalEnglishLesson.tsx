@@ -6,10 +6,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeft, BookOpen, Headphones, LockKeyhole, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
-import { createAnswerChoices, createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
-import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
-import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
+import { createAnswerChoices, createSentenceDrills, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { useSituationalEnglishLessonData, type Item, type Turn } from "@/hooks/useSituationalEnglishLessonData";
+import { useCommunicationLessonReviewActions } from "@/hooks/useCommunicationLessonReviewActions";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
 import { StudyCardView } from "@/components/communication/StudyCardView";
 import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
@@ -26,6 +25,7 @@ function speak(text: string) {
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
   const { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder } = useSituationalEnglishLessonData(supabase, lessonId, reviewItem);
+  const { saving, setItemStatus, recordPracticeOutcome } = useCommunicationLessonReviewActions({ supabase, lessonId, lesson, items, reviews, setReviews, userId });
   const [revealed, setRevealed] = useState(false);
   const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
   const [practiceStep, setPracticeStep] = useState(0);
@@ -34,7 +34,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const [drillStep, setDrillStep] = useState(0);
   const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
   const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
-  const [saving, setSaving] = useState(false);
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
@@ -44,64 +43,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const sentenceDrills = useMemo(() => createSentenceDrills(items), [items]);
   const currentDrill = sentenceDrills[drillStep];
   const practiceMeaningCount = new Set(items.map((item) => item.meaning_vi)).size;
-
-  async function setItemStatus(item: Item, status: "learning" | "mastered") {
-    if (!userId) { toast.error("Sign in to save your learning progress."); return; }
-    setSaving(true);
-    const existingReview = reviews[item.id];
-    const now = new Date().toISOString();
-    const { error } = await supabase.from("communication_item_reviews").upsert({
-      user_id: userId, item_id: item.id, status, review_count: existingReview?.review_count ?? 0,
-      correct_count: existingReview?.correct_count ?? 0, last_reviewed_at: now,
-      due_at: status === "mastered" ? new Date(Date.now() + 7 * 86400000).toISOString() : now, updated_at: now,
-    }, { onConflict: "user_id,item_id" });
-    if (error) { toast.error(error.message); setSaving(false); return; }
-    const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
-      status,
-      review_count: existingReview?.review_count ?? 0,
-      correct_count: existingReview?.correct_count ?? 0,
-    });
-    setReviews(nextReviews);
-    const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({ user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress", completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now }, { onConflict: "user_id,lesson_id" });
-    if (progressError) toast.error(progressError.message);
-    else { invalidateCommunicationCatalogCache(userId); toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice."); }
-    setSaving(false);
-  }
-
-  async function recordPracticeOutcome(item: Item, correct: boolean) {
-    if (!userId) return;
-    setSaving(true);
-    const existingReview = reviews[item.id];
-    const nextReviewCount = (existingReview?.review_count ?? 0) + 1;
-    const nextCorrectCount = (existingReview?.correct_count ?? 0) + (correct ? 1 : 0);
-    const nextStatus: ItemReview["status"] = correct && nextCorrectCount >= 2 ? "mastered" : existingReview?.status === "mastered" && correct ? "mastered" : "learning";
-    const reviewedAt = new Date();
-    const now = reviewedAt.toISOString();
-    const nextDueAt = correct
-      ? new Date(reviewedAt.getTime() + getCorrectReviewIntervalDays(nextReviewCount, nextCorrectCount, lesson?.difficulty ?? "medium") * 86400000).toISOString()
-      : new Date(reviewedAt.getTime() + 15 * 60000).toISOString();
-    const { error } = await supabase.from("communication_item_reviews").upsert({
-      user_id: userId, item_id: item.id, status: nextStatus, review_count: nextReviewCount,
-      correct_count: nextCorrectCount, last_reviewed_at: now, due_at: nextDueAt, updated_at: now,
-    }, { onConflict: "user_id,item_id" });
-    if (error) {
-      toast.error("Could not save this practice result.");
-    } else {
-      const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
-        status: nextStatus,
-        review_count: nextReviewCount,
-        correct_count: nextCorrectCount,
-      });
-      setReviews(nextReviews);
-      const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({
-        user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress",
-        completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now,
-      }, { onConflict: "user_id,lesson_id" });
-      if (progressError) toast.error("Answer saved, but lesson progress could not be updated.");
-      else { invalidateCommunicationCatalogCache(userId); toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice."); }
-    }
-    setSaving(false);
-  }
 
   async function recordPracticeAnswer(item: Item, answer: string) {
     if (practiceAnswer !== null || saving) return;
