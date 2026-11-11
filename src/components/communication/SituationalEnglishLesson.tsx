@@ -10,7 +10,7 @@ import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communicatio
 import { createAnswerChoices, createSentenceDrills, getCorrectReviewIntervalDays, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import { useSituationalEnglishLessonData, type Item, type ItemReview, type Turn } from "@/hooks/useSituationalEnglishLessonData";
-import { SpeechPractice } from "@/components/communication/SpeechPractice";
+import { ConversationPractice } from "@/components/communication/ConversationPractice";
 function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
   window.speechSynthesis.cancel();
@@ -23,7 +23,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const supabase = useSupabaseClient();
   const { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder } = useSituationalEnglishLessonData(supabase, lessonId, reviewItem);
   const [revealed, setRevealed] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
   const [practiceStep, setPracticeStep] = useState(0);
   const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
@@ -145,10 +144,9 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     ? createAnswerChoices(listeningItem.example_vi, listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi))
     : [], [listeningItem, listeningItems]);
 
-  function answerDialogue(turn: Turn, answer: string) {
-    setAnswers((current) => ({ ...current, [turn.id]: answer }));
-    if (answer === turn.expected_response) toast.success("That's a natural response!");
-    else toast("Try another response and listen to the line again.");
+  function playDialogueTurn(turn: Turn) {
+    if (turn.audio_url) new Audio(turn.audio_url).play().catch(() => speak(turn.text_en));
+    else speak(turn.text_en);
   }
 
   if (loading) return <main className="rounded-3xl border border-sky-100 bg-white p-8 text-center text-slate-500">Loading lesson…</main>;
@@ -197,40 +195,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         </>}
       </div>}
     </section>}
-    {dialogues.length > 0 && <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-sm sm:p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid size-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Headphones size={22}/></span>
-        <div><h2 className="text-xl font-extrabold text-slate-900">Conversation practice</h2><p className="text-sm text-slate-500">Listen to the conversation, then choose a natural response.</p></div>
-      </div>
-      <div className="space-y-5">{dialogues.map((dialogue) => <article key={dialogue.id} className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
-        <h3 className="font-bold text-slate-900">{dialogue.title_en}</h3><p className="text-sm text-slate-500">{dialogue.prompt_vi || dialogue.title_vi}</p>
-        <div className="mt-3 space-y-3">{dialogue.turns.map((turn) => {
-          const interactive = turn.response_options.length > 0;
-          const selectedAnswer = answers[turn.id];
-          const isCorrect = selectedAnswer === turn.expected_response;
-          const showResponse = !interactive || isCorrect;
-          return <div key={turn.id} className="rounded-2xl bg-white p-3">
-            <div className="flex items-start gap-3">
-              {showResponse && <button type="button" aria-label={`Play ${turn.speaker}'s line`} onClick={() => turn.audio_url ? new Audio(turn.audio_url).play().catch(() => speak(turn.text_en)) : speak(turn.text_en)} className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-700"><Volume2 size={17}/></button>}
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{interactive && !isCorrect ? "Your turn" : turn.speaker}</p>
-                {showResponse ? <><p className="font-semibold text-slate-900">{turn.text_en}</p>{turn.meaning_vi && <p className="text-sm text-slate-500">{turn.meaning_vi}</p>}</> : <p className="font-semibold text-violet-800">Choose a natural response to the line above.</p>}
-                {interactive && <div className="mt-3">
-                  <div className="flex flex-wrap gap-2">{turn.response_options.map((option) => {
-                    const selected = selectedAnswer === option;
-                    const optionIsCorrect = option === turn.expected_response;
-                    const style = selected && optionIsCorrect ? "border-emerald-300 bg-emerald-50 text-emerald-800" : selected ? "border-rose-300 bg-rose-50 text-rose-800" : "border-slate-200 bg-white text-slate-700 hover:border-blue-300";
-                    return <button key={option} type="button" disabled={isCorrect} onClick={() => answerDialogue(turn, option)} className={`rounded-xl border px-3 py-2 text-sm font-medium disabled:cursor-default ${style}`}>{option}</button>;
-                  })}</div>
-                  {selectedAnswer && !isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-rose-700">Not quite. Try another response.</p>}
-                  {isCorrect && <p role="status" className="mt-2 text-sm font-semibold text-emerald-700">That’s a natural response!</p>}
-                  {isCorrect && <SpeechPractice expected={turn.expected_response}/>}
-                </div>}
-              </div>
-            </div>
-          </div>;
-        })}</div>
-      </article>)}</div>
-    </section>}
+    <ConversationPractice dialogues={dialogues} onPlayTurn={playDialogueTurn}/>
   </main>;
 }
