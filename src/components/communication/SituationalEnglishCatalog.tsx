@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Check, Clock3, FileText, Gamepad2, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Target, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Clock3, FileText, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import { LearningGoalPanel } from "@/components/communication/LearningGoalPanel";
 import { SituationCard } from "@/components/communication/SituationCard";
 import { useSituationalEnglishCatalogData } from "@/hooks/useSituationalEnglishCatalogData";
 import { useSituationalEnglishCatalogView } from "@/hooks/useSituationalEnglishCatalogView";
@@ -72,13 +73,14 @@ export function SituationalEnglishCatalog() {
 
     {!authenticated && <aside className="rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">You can explore published lessons. Sign in to choose a goal, save daily progress, and review items. <Link className="ml-1 font-bold underline" href="/login">Log in</Link></aside>}
 
-    {authenticated && <section className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.8fr)]">
-      <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-white to-violet-50 p-4 shadow-sm sm:p-5">
-        <div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-violet-100 text-violet-700"><Target size={22}/></span><div><h2 className="text-lg font-extrabold text-slate-900">Your learning goal</h2><p className="text-sm text-slate-600">Choose a path. You can change it anytime.</p></div></div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2"><button type="button" disabled={savingPreference} onClick={() => void saveGoal("games")} aria-pressed={goal === "games"} className={`rounded-2xl border p-3 text-left transition ${goal === "games" ? "border-blue-400 bg-blue-50 shadow-sm ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-200"}`}><span className="flex items-center gap-2 text-sm font-bold text-slate-900"><Gamepad2 size={20} className="text-blue-600"/> Learn through games</span><span className="mt-1 block pl-7 text-sm leading-snug text-slate-600">Build vocabulary through quick play and recall.</span></button><button type="button" disabled={savingPreference} onClick={() => void saveGoal("conversation")} aria-pressed={goal === "conversation"} className={`rounded-2xl border p-3 text-left transition ${goal === "conversation" ? "border-violet-400 bg-violet-50 shadow-sm ring-2 ring-violet-100" : "border-slate-200 bg-white hover:border-violet-200"}`}><span className="flex items-center gap-2 text-sm font-bold text-slate-900"><Headphones size={20} className="text-violet-700"/> Speak everyday English</span><span className="mt-1 block pl-7 text-sm leading-snug text-slate-600">Learn practical phrases and short conversations.</span></button></div>
-      </div>
-      <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50 p-4 shadow-sm sm:p-5"><div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600"><Check size={22}/></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-x-2"><h2 className="font-extrabold text-slate-900">Today&apos;s practice</h2><span className="text-xs text-slate-500">{todayCompleted} of {dailyGoal} lessons completed</span></div><div className="mt-2 h-3 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, todayCompleted / dailyGoal * 100)}%` }}/></div></div></div><label className="mt-3 block text-xs font-bold text-slate-600">Daily lesson goal<Select aria-label="Daily lesson goal" className="!mt-1 !h-10 !rounded-xl !border-emerald-200" value={dailyGoal} onChange={(event) => void saveDailyGoal(Number(event.target.value))}>{[1, 2, 3, 5, 10].map((value) => <option key={value} value={value}>{value} {value === 1 ? "lesson" : "lessons"} per day</option>)}</Select></label></div>
-    </section>}
+    {authenticated && <LearningGoalPanel
+      goal={goal}
+      dailyGoal={dailyGoal}
+      todayCompleted={todayCompleted}
+      savingPreference={savingPreference}
+      onSaveGoal={(nextGoal) => void saveGoal(nextGoal)}
+      onSaveDailyGoal={(nextGoal) => void saveDailyGoal(nextGoal)}
+    />}
 
     {authenticated && dueItems.length > 0 && <section className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-amber-100 text-amber-700"><Clock3 size={22}/></span><div><h2 className="text-lg font-extrabold text-slate-900">Ready to review</h2><p className="text-sm text-slate-600">{dueItems.length} {dueItems.length === 1 ? "item is" : "items are"} due for practice.</p></div></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{dueItems.slice(0, 9).map((item) => <Link key={item.item_id} href={`/communication/${item.lesson_id}?reviewItem=${encodeURIComponent(item.item_id)}`} className="flex min-w-0 items-center gap-3 rounded-2xl border border-amber-100 bg-white p-3 hover:border-amber-300"><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-900">{item.content_en}</span><span className="block truncate text-xs text-slate-500">{item.meaning_vi} · {item.lesson_title_en}</span></span><ArrowRight size={16} className="shrink-0 text-amber-600"/></Link>)}</div></section>}
 
