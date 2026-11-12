@@ -3,11 +3,12 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, BookOpen, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
-import { createAnswerChoices, createSentenceDrills, normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { useSituationalEnglishLessonData, type Item, type Turn } from "@/hooks/useSituationalEnglishLessonData";
+import { useSituationalEnglishLessonPracticeData } from "@/hooks/useSituationalEnglishLessonPracticeData";
 import { useCommunicationLessonReviewActions } from "@/hooks/useCommunicationLessonReviewActions";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
 import { StudyCardView } from "@/components/communication/StudyCardView";
@@ -39,12 +40,17 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
-  const practiceItem = items.find((item) => item.id === practiceOrder[practiceStep]);
-  const listeningItems = useMemo(() => items.filter((item) => item.example_en.trim() && item.example_vi.trim()), [items]);
-  const listeningItem = items.find((item) => item.id === listeningOrder[practiceStep]);
-  const sentenceDrills = useMemo(() => createSentenceDrills(items), [items]);
-  const currentDrill = sentenceDrills[drillStep];
-  const practiceMeaningCount = new Set(items.map((item) => item.meaning_vi)).size;
+  const {
+    practiceItem,
+    practiceChoices,
+    practiceMeaningCount,
+    listeningItem,
+    listeningItems,
+    listeningChoices,
+    listeningMeaningCount,
+    sentenceDrills,
+    currentDrill,
+  } = useSituationalEnglishLessonPracticeData({ items, practiceOrder, practiceStep, listeningOrder, drillStep });
 
   async function recordPracticeAnswer(item: Item, answer: string) {
     if (practiceAnswer !== null || saving) return;
@@ -84,13 +90,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     setPracticeStep((current) => current + 1);
   }
 
-  const practiceChoices = useMemo(() => practiceItem
-    ? createAnswerChoices(practiceItem.meaning_vi, items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi))
-    : [], [practiceItem, items]);
-  const listeningChoices = useMemo(() => listeningItem
-    ? createAnswerChoices(listeningItem.example_vi, listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi))
-    : [], [listeningItem, listeningItems]);
-
   function playDialogueTurn(turn: Turn) {
     if (turn.audio_url) new Audio(turn.audio_url).play().catch(() => speak(turn.text_en));
     else speak(turn.text_en);
@@ -108,7 +107,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         mode={mode}
         practiceDisabled={practiceMeaningCount < 2}
         drillsDisabled={sentenceDrills.length === 0}
-        listeningDisabled={new Set(listeningItems.map((item) => item.example_vi)).size < 2}
+        listeningDisabled={listeningMeaningCount < 2}
         onSelect={(selectedMode) => {
           setMode(selectedMode);
           if (selectedMode === "practice") { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
