@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, Clock3, FileText, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, FileText, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import { DueReviewPanel } from "@/components/communication/DueReviewPanel";
 import { LearningGoalPanel } from "@/components/communication/LearningGoalPanel";
 import { SituationCard } from "@/components/communication/SituationCard";
 import { useSituationalEnglishCatalogData } from "@/hooks/useSituationalEnglishCatalogData";
@@ -82,7 +83,7 @@ export function SituationalEnglishCatalog() {
       onSaveDailyGoal={(nextGoal) => void saveDailyGoal(nextGoal)}
     />}
 
-    {authenticated && dueItems.length > 0 && <section className="rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-amber-100 text-amber-700"><Clock3 size={22}/></span><div><h2 className="text-lg font-extrabold text-slate-900">Ready to review</h2><p className="text-sm text-slate-600">{dueItems.length} {dueItems.length === 1 ? "item is" : "items are"} due for practice.</p></div></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{dueItems.slice(0, 9).map((item) => <Link key={item.item_id} href={`/communication/${item.lesson_id}?reviewItem=${encodeURIComponent(item.item_id)}`} className="flex min-w-0 items-center gap-3 rounded-2xl border border-amber-100 bg-white p-3 hover:border-amber-300"><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-900">{item.content_en}</span><span className="block truncate text-xs text-slate-500">{item.meaning_vi} · {item.lesson_title_en}</span></span><ArrowRight size={16} className="shrink-0 text-amber-600"/></Link>)}</div></section>}
+    {authenticated && <DueReviewPanel items={dueItems} />}
 
     <section className="rounded-3xl border border-sky-100 bg-white/90 p-4 shadow-sm sm:p-5">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-xl font-extrabold text-slate-900">Choose a situation</h2><p className="mt-0.5 text-sm text-slate-500">Start with a practical topic and choose the level that suits you.</p></div><span className="text-sm font-medium text-slate-500">{visibleTopics.length} situations</span></div>
