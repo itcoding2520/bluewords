@@ -11,10 +11,7 @@ import { useSituationalEnglishLessonData, type Item } from "@/hooks/useSituation
 import { useSituationalEnglishLessonPracticeData } from "@/hooks/useSituationalEnglishLessonPracticeData";
 import { useCommunicationLessonReviewActions } from "@/hooks/useCommunicationLessonReviewActions";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
-import { StudyCardView } from "@/components/communication/StudyCardView";
-import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
-import { ListeningPracticeView } from "@/components/communication/ListeningPracticeView";
-import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
+import { LessonModeContent } from "@/components/communication/LessonModeContent";
 import { LessonProgressHeader } from "@/components/communication/LessonProgressHeader";
 import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
 import { LessonAvailabilityState } from "@/components/communication/LessonAvailabilityState";
@@ -95,56 +92,59 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           if (selectedMode === "listening") { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
         }}
       />
-      {mode === "study" && <StudyCardView
-        item={currentItem}
-        index={currentIndex}
-        itemCount={items.length}
-        revealed={revealed}
-        status={currentStatus}
-        saving={saving}
-        onReveal={() => setRevealed(true)}
-        onStatusChange={(status) => void setItemStatus(currentItem, status)}
-        onPrevious={() => { setCurrentIndex((index) => index - 1); setRevealed(false); }}
-        onNext={() => { setCurrentIndex((index) => index + 1); setRevealed(false); }}
-        onListen={() => playCommunicationAudio(currentItem.audio_url, currentItem.example_en || currentItem.content_en)}
-      />}
-      {mode === "practice" && <div className="p-4 sm:p-7"><QuickPracticeView
-        item={practiceItem}
-        question={practiceStep}
-        questionCount={practiceOrder.length}
-        choices={practiceChoices}
-        answer={practiceAnswer}
-        saving={saving}
-        onListen={(item) => playCommunicationAudio(item.audio_url, item.content_en)}
-        onSelect={(answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); }}
-        onNext={nextPracticeQuestion}
-        onPracticeAgain={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
-      /></div>}
-      {mode === "listening" && <div className="p-4 sm:p-7"><ListeningPracticeView
-        item={listeningItem}
-        question={practiceStep}
-        questionCount={listeningOrder.length}
-        choices={listeningChoices}
-        answer={practiceAnswer}
-        saving={saving}
-        onListen={(item) => playCommunicationAudio(item.audio_url, item.example_en)}
-        onSelect={(answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); }}
-        onNext={nextPracticeQuestion}
-        onListenAgain={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
-      /></div>}
-      {mode === "drills" && <div className="p-4 sm:p-7"><SentenceDrillView
-        drill={currentDrill}
-        step={drillStep}
-        drillCount={sentenceDrills.length}
-        answer={drillAnswer}
-        orderedTiles={orderedTiles}
-        saving={saving}
-        onListen={(text, item) => playCommunicationAudio(item.audio_url, text)}
-        onSubmit={(answer) => void submitSentenceDrill(answer)}
-        onNext={nextSentenceDrill}
-        onPracticeAgain={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }}
-        onOrderedTilesChange={setOrderedTiles}
-      /></div>}
+      <LessonModeContent
+        mode={mode}
+        study={{
+          item: currentItem,
+          index: currentIndex,
+          itemCount: items.length,
+          revealed,
+          status: currentStatus,
+          saving,
+          onReveal: () => setRevealed(true),
+          onStatusChange: (status) => void setItemStatus(currentItem, status),
+          onPrevious: () => { setCurrentIndex((index) => index - 1); setRevealed(false); },
+          onNext: () => { setCurrentIndex((index) => index + 1); setRevealed(false); },
+          onListen: () => playCommunicationAudio(currentItem.audio_url, currentItem.example_en || currentItem.content_en),
+        }}
+        practice={{
+          item: practiceItem,
+          question: practiceStep,
+          questionCount: practiceOrder.length,
+          choices: practiceChoices,
+          answer: practiceAnswer,
+          saving,
+          onListen: (item) => playCommunicationAudio(item.audio_url, item.content_en),
+          onSelect: (answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); },
+          onNext: nextPracticeQuestion,
+          onPracticeAgain: () => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); },
+        }}
+        listening={{
+          item: listeningItem,
+          question: practiceStep,
+          questionCount: listeningOrder.length,
+          choices: listeningChoices,
+          answer: practiceAnswer,
+          saving,
+          onListen: (item) => playCommunicationAudio(item.audio_url, item.example_en),
+          onSelect: (answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); },
+          onNext: nextPracticeQuestion,
+          onListenAgain: () => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); },
+        }}
+        drills={{
+          drill: currentDrill,
+          step: drillStep,
+          drillCount: sentenceDrills.length,
+          answer: drillAnswer,
+          orderedTiles,
+          saving,
+          onListen: (text, item) => playCommunicationAudio(item.audio_url, text),
+          onSubmit: (answer) => void submitSentenceDrill(answer),
+          onNext: nextSentenceDrill,
+          onPracticeAgain: () => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); },
+          onOrderedTilesChange: setOrderedTiles,
+        }}
+      />
     </section>}
     <ConversationPractice dialogues={dialogues} onPlayTurn={(turn) => playCommunicationAudio(turn.audio_url, turn.text_en)}/>
   </main>;
