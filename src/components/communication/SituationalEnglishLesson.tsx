@@ -15,6 +15,7 @@ import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
 import { LessonAvailabilityState } from "@/components/communication/LessonAvailabilityState";
 import { useSituationalEnglishLessonSession } from "@/hooks/useSituationalEnglishLessonSession";
 import { useSituationalEnglishLessonAnswerActions } from "@/hooks/useSituationalEnglishLessonAnswerActions";
+import { useSituationalEnglishLessonProgressData } from "@/hooks/useSituationalEnglishLessonProgressData";
 
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
@@ -41,9 +42,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     restartListening,
     restartDrills,
   } = session;
-  const currentItem = items[currentIndex];
-  const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
-  const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
+  const { currentItem, currentStatus, masteredCount } = useSituationalEnglishLessonProgressData({ items, reviews, currentIndex });
   const {
     practiceItem,
     practiceChoices,
