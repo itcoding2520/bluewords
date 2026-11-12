@@ -5,9 +5,9 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, BookOpen, LockKeyhole } from "lucide-react";
-import { toast } from "sonner";
 import { normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
-import { useSituationalEnglishLessonData, type Item, type Turn } from "@/hooks/useSituationalEnglishLessonData";
+import { playCommunicationAudio } from "@/lib/communication/audio";
+import { useSituationalEnglishLessonData, type Item } from "@/hooks/useSituationalEnglishLessonData";
 import { useSituationalEnglishLessonPracticeData } from "@/hooks/useSituationalEnglishLessonPracticeData";
 import { useCommunicationLessonReviewActions } from "@/hooks/useCommunicationLessonReviewActions";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
@@ -17,13 +17,6 @@ import { ListeningPracticeView } from "@/components/communication/ListeningPract
 import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 import { LessonProgressHeader } from "@/components/communication/LessonProgressHeader";
 import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
-function speak(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return toast.error("Audio playback is not supported in this browser.");
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  window.speechSynthesis.speak(utterance);
-}
 
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
@@ -64,15 +57,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     await recordPracticeOutcome(item, answer === item.example_vi);
   }
 
-  function playListeningItem(item: Item) {
-    if (item.audio_url) {
-      const audio = new Audio(item.audio_url);
-      void audio.play().catch(() => speak(item.example_en));
-    } else {
-      speak(item.example_en);
-    }
-  }
-
   async function submitSentenceDrill(answer: string) {
     if (!currentDrill || drillAnswer !== null || saving) return;
     setDrillAnswer(answer);
@@ -88,11 +72,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
   function nextPracticeQuestion() {
     setPracticeAnswer(null);
     setPracticeStep((current) => current + 1);
-  }
-
-  function playDialogueTurn(turn: Turn) {
-    if (turn.audio_url) new Audio(turn.audio_url).play().catch(() => speak(turn.text_en));
-    else speak(turn.text_en);
   }
 
   if (loading) return <main className="rounded-3xl border border-sky-100 bg-white p-8 text-center text-slate-500">Loading lesson…</main>;
@@ -126,7 +105,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         onStatusChange={(status) => void setItemStatus(currentItem, status)}
         onPrevious={() => { setCurrentIndex((index) => index - 1); setRevealed(false); }}
         onNext={() => { setCurrentIndex((index) => index + 1); setRevealed(false); }}
-        onListen={() => currentItem.audio_url ? new Audio(currentItem.audio_url).play().catch(() => speak(currentItem.content_en)) : speak(currentItem.example_en || currentItem.content_en)}
+        onListen={() => playCommunicationAudio(currentItem.audio_url, currentItem.example_en || currentItem.content_en)}
       />}
       {mode === "practice" && <div className="p-4 sm:p-7"><QuickPracticeView
         item={practiceItem}
@@ -135,7 +114,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         choices={practiceChoices}
         answer={practiceAnswer}
         saving={saving}
-        onListen={(item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(item.content_en)) : speak(item.content_en)}
+        onListen={(item) => playCommunicationAudio(item.audio_url, item.content_en)}
         onSelect={(answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); }}
         onNext={nextPracticeQuestion}
         onPracticeAgain={() => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
@@ -147,7 +126,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         choices={listeningChoices}
         answer={practiceAnswer}
         saving={saving}
-        onListen={playListeningItem}
+        onListen={(item) => playCommunicationAudio(item.audio_url, item.example_en)}
         onSelect={(answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); }}
         onNext={nextPracticeQuestion}
         onListenAgain={() => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }}
@@ -159,13 +138,13 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         answer={drillAnswer}
         orderedTiles={orderedTiles}
         saving={saving}
-        onListen={(text, item) => item.audio_url ? new Audio(item.audio_url).play().catch(() => speak(text)) : speak(text)}
+        onListen={(text, item) => playCommunicationAudio(item.audio_url, text)}
         onSubmit={(answer) => void submitSentenceDrill(answer)}
         onNext={nextSentenceDrill}
         onPracticeAgain={() => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }}
         onOrderedTilesChange={setOrderedTiles}
       /></div>}
     </section>}
-    <ConversationPractice dialogues={dialogues} onPlayTurn={playDialogueTurn}/>
+    <ConversationPractice dialogues={dialogues} onPlayTurn={(turn) => playCommunicationAudio(turn.audio_url, turn.text_en)}/>
   </main>;
 }
