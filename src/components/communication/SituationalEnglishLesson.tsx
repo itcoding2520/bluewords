@@ -4,7 +4,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, BookOpen, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
 import { playCommunicationAudio } from "@/lib/communication/audio";
 import { useSituationalEnglishLessonData, type Item } from "@/hooks/useSituationalEnglishLessonData";
@@ -17,6 +17,7 @@ import { ListeningPracticeView } from "@/components/communication/ListeningPract
 import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 import { LessonProgressHeader } from "@/components/communication/LessonProgressHeader";
 import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
+import { LessonAvailabilityState } from "@/components/communication/LessonAvailabilityState";
 
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
@@ -74,14 +75,14 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     setPracticeStep((current) => current + 1);
   }
 
-  if (loading) return <main className="rounded-3xl border border-sky-100 bg-white p-8 text-center text-slate-500">Loading lesson…</main>;
-  if (!lesson || !topic) return <main className="rounded-3xl border border-amber-200 bg-amber-50 p-6"><h1 className="text-xl font-bold text-slate-900">Lesson unavailable</h1><p className="mt-2 text-sm text-slate-600">This lesson may be unpublished or removed.</p><Link className="mt-4 inline-flex font-bold text-blue-700" href="/communication"><ArrowLeft size={17}/> Back to situations</Link></main>;
+  if (loading) return <LessonAvailabilityState state="loading" />;
+  if (!lesson || !topic) return <LessonAvailabilityState state="unavailable" />;
 
   return <main className="space-y-5">
     <Link href="/communication" className="inline-flex min-h-10 items-center gap-2 rounded-full bg-blue-600 px-4 text-sm font-bold text-white"><ArrowLeft size={17}/> All situations</Link>
     <LessonProgressHeader lesson={lesson} topic={topic} masteredCount={masteredCount} itemCount={items.length}/>
     {!userId && <aside className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><LockKeyhole size={18}/> Sign in to record completed items and build your review schedule. <Link href="/login" className="font-bold underline">Log in</Link></aside>}
-    {items.length === 0 ? <section className="rounded-3xl border border-dashed border-sky-200 bg-white p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={34}/><p className="mt-3 font-bold text-slate-900">This lesson is being prepared</p><p className="mt-1 text-sm text-slate-500">Learning items will appear here when they are added.</p></section> : <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
+    {items.length === 0 ? <LessonAvailabilityState state="empty" /> : <section className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-sm">
       <LessonModeTabs
         mode={mode}
         practiceDisabled={practiceMeaningCount < 2}
