@@ -4,9 +4,8 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
-import { normalizeSentence } from "@/lib/communication/lesson-practice";
 import { playCommunicationAudio } from "@/lib/communication/audio";
-import { useSituationalEnglishLessonData, type Item } from "@/hooks/useSituationalEnglishLessonData";
+import { useSituationalEnglishLessonData } from "@/hooks/useSituationalEnglishLessonData";
 import { useSituationalEnglishLessonPracticeData } from "@/hooks/useSituationalEnglishLessonPracticeData";
 import { useCommunicationLessonReviewActions } from "@/hooks/useCommunicationLessonReviewActions";
 import { ConversationPractice } from "@/components/communication/ConversationPractice";
@@ -15,6 +14,7 @@ import { LessonProgressHeader } from "@/components/communication/LessonProgressH
 import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
 import { LessonAvailabilityState } from "@/components/communication/LessonAvailabilityState";
 import { useSituationalEnglishLessonSession } from "@/hooks/useSituationalEnglishLessonSession";
+import { useSituationalEnglishLessonAnswerActions } from "@/hooks/useSituationalEnglishLessonAnswerActions";
 
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
@@ -55,24 +55,15 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     sentenceDrills,
     currentDrill,
   } = useSituationalEnglishLessonPracticeData({ items, practiceOrder, practiceStep, listeningOrder, drillStep });
-
-  async function recordPracticeAnswer(item: Item, answer: string) {
-    if (practiceAnswer !== null || saving) return;
-    setPracticeAnswer(answer);
-    await recordPracticeOutcome(item, answer === item.meaning_vi);
-  }
-
-  async function recordListeningAnswer(item: Item, answer: string) {
-    if (practiceAnswer !== null || saving) return;
-    setPracticeAnswer(answer);
-    await recordPracticeOutcome(item, answer === item.example_vi);
-  }
-
-  async function submitSentenceDrill(answer: string) {
-    if (!currentDrill || drillAnswer !== null || saving) return;
-    setDrillAnswer(answer);
-    await recordPracticeOutcome(currentDrill.item, normalizeSentence(answer) === normalizeSentence(currentDrill.answer));
-  }
+  const { recordMeaningAnswer, recordListeningAnswer, submitSentenceDrill } = useSituationalEnglishLessonAnswerActions({
+    answer: practiceAnswer,
+    setAnswer: setPracticeAnswer,
+    drillAnswer,
+    setDrillAnswer,
+    currentDrill,
+    saving,
+    recordPracticeOutcome,
+  });
 
   if (loading) return <LessonAvailabilityState state="loading" />;
   if (!lesson || !topic) return <LessonAvailabilityState state="unavailable" />;
@@ -114,7 +105,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           answer: practiceAnswer,
           saving,
           onListen: (item) => playCommunicationAudio(item.audio_url, item.content_en),
-          onSelect: (answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); },
+          onSelect: (answer) => { if (practiceItem) void recordMeaningAnswer(practiceItem, answer); },
           onNext: nextPracticeQuestion,
           onPracticeAgain: restartPractice,
         }}
