@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, FileText, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, Search, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
-import { Select } from "@/components/ui/Select";
+import { ArrowRight, BookOpen, BriefcaseBusiness, BusFront, CalendarDays, FileText, GraduationCap, Headphones, HeartPulse, House, Luggage, MessageCircle, ShieldAlert, ShoppingBag, Smartphone, Sparkles, Utensils, UsersRound, Volleyball, CloudSun, Landmark, PartyPopper, type LucideIcon } from "lucide-react";
 import { DueReviewPanel } from "@/components/communication/DueReviewPanel";
 import { LearningGoalPanel } from "@/components/communication/LearningGoalPanel";
 import { SituationCard } from "@/components/communication/SituationCard";
+import { SituationFilters } from "@/components/communication/SituationFilters";
 import { useSituationalEnglishCatalogData } from "@/hooks/useSituationalEnglishCatalogData";
 import { useSituationalEnglishCatalogView } from "@/hooks/useSituationalEnglishCatalogView";
 import { getCatalogRecommendation } from "@/lib/communication/catalog-recommendation";
@@ -87,7 +87,12 @@ export function SituationalEnglishCatalog() {
 
     <section className="rounded-3xl border border-sky-100 bg-white/90 p-4 shadow-sm sm:p-5">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-xl font-extrabold text-slate-900">Choose a situation</h2><p className="mt-0.5 text-sm text-slate-500">Start with a practical topic and choose the level that suits you.</p></div><span className="text-sm font-medium text-slate-500">{visibleTopics.length} situations</span></div>
-      <div className="mb-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_13rem]"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17}/><input aria-label="Search situations" value={search} onChange={(e) => { savedSearch = e.target.value; setSearch(e.target.value); }} className="h-10 w-full rounded-xl border border-sky-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Search situations…"/></label><Select aria-label="Filter lessons by difficulty" className="!h-10 !rounded-xl" value={difficulty} onChange={(e) => { savedDifficulty = e.target.value; setDifficulty(e.target.value); }}><option value="all">All levels</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></Select></div>
+      <SituationFilters
+        search={search}
+        difficulty={difficulty}
+        onSearchChange={(value) => { savedSearch = value; setSearch(value); }}
+        onDifficultyChange={(value) => { savedDifficulty = value; setDifficulty(value); }}
+      />
       {loading ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/><div className="h-52 animate-pulse rounded-2xl bg-sky-50"/></div> : visibleTopics.length === 0 ? <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 p-10 text-center"><BookOpen className="mx-auto text-blue-400" size={32}/><p className="mt-3 font-bold text-slate-800">No published lessons yet</p><p className="mt-1 text-sm text-slate-500">New lessons will appear here after an admin publishes them.</p></div> : <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">{visibleTopics.map((topic, index) => <SituationCard
         key={topic.id}
         topic={topic}
