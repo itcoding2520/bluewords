@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
@@ -8,7 +8,7 @@ import { useAdminCommunicationLessonActions } from "@/hooks/useAdminCommunicatio
 import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationItemActions";
 import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
 import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSelection";
-import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
+import { useAdminCommunicationTopicView } from "@/hooks/useAdminCommunicationTopicView";
 import { createCommunicationItemDraft, createCommunicationLessonDraft, createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 import type { CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
@@ -116,10 +116,7 @@ export function useAdminCommunicationManagementController() {
     refresh,
   });
 
-  const filteredTopics = topics.filter((topic) =>
-    `${topic.title_en} ${topic.title_vi} ${topic.slug}`.toLowerCase().includes(topicSearch.toLowerCase()),
-  );
-  const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
+  const { filteredTopics, topicWordCounts } = useAdminCommunicationTopicView({ topics, lessons, items, search: topicSearch });
 
   function cancelTopicEdit() {
     setTopicEditing(null);
