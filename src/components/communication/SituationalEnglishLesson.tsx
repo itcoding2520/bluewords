@@ -3,9 +3,8 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 
 import Link from "next/link";
-import { useState } from "react";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
-import { normalizeSentence, shuffled } from "@/lib/communication/lesson-practice";
+import { normalizeSentence } from "@/lib/communication/lesson-practice";
 import { playCommunicationAudio } from "@/lib/communication/audio";
 import { useSituationalEnglishLessonData, type Item } from "@/hooks/useSituationalEnglishLessonData";
 import { useSituationalEnglishLessonPracticeData } from "@/hooks/useSituationalEnglishLessonPracticeData";
@@ -15,19 +14,33 @@ import { LessonModeContent } from "@/components/communication/LessonModeContent"
 import { LessonProgressHeader } from "@/components/communication/LessonProgressHeader";
 import { LessonModeTabs } from "@/components/communication/LessonModeTabs";
 import { LessonAvailabilityState } from "@/components/communication/LessonAvailabilityState";
+import { useSituationalEnglishLessonSession } from "@/hooks/useSituationalEnglishLessonSession";
 
 export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: string; reviewItem?: string }) {
   const supabase = useSupabaseClient();
   const { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder } = useSituationalEnglishLessonData(supabase, lessonId, reviewItem);
   const { saving, setItemStatus, recordPracticeOutcome } = useCommunicationLessonReviewActions({ supabase, lessonId, lesson, items, reviews, setReviews, userId });
-  const [revealed, setRevealed] = useState(false);
-  const [mode, setMode] = useState<"study" | "practice" | "drills" | "listening">("study");
-  const [practiceStep, setPracticeStep] = useState(0);
-  const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
-  const [listeningOrder, setListeningOrder] = useState<string[]>([]);
-  const [drillStep, setDrillStep] = useState(0);
-  const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
-  const [orderedTiles, setOrderedTiles] = useState<Array<{ id: number; text: string }>>([]);
+  const session = useSituationalEnglishLessonSession({ items, setPracticeOrder });
+  const {
+    revealed,
+    setRevealed,
+    mode,
+    practiceStep,
+    practiceAnswer,
+    setPracticeAnswer,
+    listeningOrder,
+    drillStep,
+    drillAnswer,
+    setDrillAnswer,
+    orderedTiles,
+    setOrderedTiles,
+    selectMode,
+    nextSentenceDrill,
+    nextPracticeQuestion,
+    restartPractice,
+    restartListening,
+    restartDrills,
+  } = session;
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = items.filter((item) => reviews[item.id]?.status === "mastered").length;
@@ -61,17 +74,6 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
     await recordPracticeOutcome(currentDrill.item, normalizeSentence(answer) === normalizeSentence(currentDrill.answer));
   }
 
-  function nextSentenceDrill() {
-    setDrillAnswer(null);
-    setOrderedTiles([]);
-    setDrillStep((step) => step + 1);
-  }
-
-  function nextPracticeQuestion() {
-    setPracticeAnswer(null);
-    setPracticeStep((current) => current + 1);
-  }
-
   if (loading) return <LessonAvailabilityState state="loading" />;
   if (!lesson || !topic) return <LessonAvailabilityState state="unavailable" />;
 
@@ -86,10 +88,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
         drillsDisabled={sentenceDrills.length === 0}
         listeningDisabled={listeningMeaningCount < 2}
         onSelect={(selectedMode) => {
-          setMode(selectedMode);
-          if (selectedMode === "practice") { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
-          if (selectedMode === "drills") { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); }
-          if (selectedMode === "listening") { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); }
+          selectMode(selectedMode, listeningItems.map((item) => item.id));
         }}
       />
       <LessonModeContent
@@ -117,7 +116,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           onListen: (item) => playCommunicationAudio(item.audio_url, item.content_en),
           onSelect: (answer) => { if (practiceItem) void recordPracticeAnswer(practiceItem, answer); },
           onNext: nextPracticeQuestion,
-          onPracticeAgain: () => { setPracticeOrder(shuffled(items.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); },
+          onPracticeAgain: restartPractice,
         }}
         listening={{
           item: listeningItem,
@@ -129,7 +128,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           onListen: (item) => playCommunicationAudio(item.audio_url, item.example_en),
           onSelect: (answer) => { if (listeningItem) void recordListeningAnswer(listeningItem, answer); },
           onNext: nextPracticeQuestion,
-          onListenAgain: () => { setListeningOrder(shuffled(listeningItems.map((item) => item.id))); setPracticeStep(0); setPracticeAnswer(null); },
+          onListenAgain: () => restartListening(listeningItems.map((item) => item.id)),
         }}
         drills={{
           drill: currentDrill,
@@ -141,7 +140,7 @@ export function SituationalEnglishLesson({ lessonId, reviewItem }: { lessonId: s
           onListen: (text, item) => playCommunicationAudio(item.audio_url, text),
           onSubmit: (answer) => void submitSentenceDrill(answer),
           onNext: nextSentenceDrill,
-          onPracticeAgain: () => { setDrillStep(0); setDrillAnswer(null); setOrderedTiles([]); },
+          onPracticeAgain: restartDrills,
           onOrderedTilesChange: setOrderedTiles,
         }}
       />
