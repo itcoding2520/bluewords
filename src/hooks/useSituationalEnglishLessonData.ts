@@ -63,19 +63,30 @@ export function useSituationalEnglishLessonData(
         }
 
         const foundDialogues = (dialogueResult.data ?? []) as Dialogue[];
-        if (foundDialogues.length) {
-          const turnsResult = await supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order");
-          if (turnsResult.error) throw turnsResult.error;
-          const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
-          setDialogues(attachDialogueTurns(foundDialogues, turns));
-        }
-
         const user = authResult.data.user;
-        if (user) {
-          const [reviewResult, progressResult] = await Promise.all([
+        const dialogueTurnsRequest = foundDialogues.length
+          ? supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order")
+          : null;
+        const learnerProgressRequest = user
+          ? Promise.all([
             supabase.from("communication_item_reviews").select("item_id,status,review_count,correct_count").eq("user_id", user.id).in("item_id", loadedItems.map((item) => item.id)),
             supabase.from("communication_lesson_progress").select("status").eq("user_id", user.id).eq("lesson_id", lessonId).maybeSingle(),
-          ]);
+          ])
+          : null;
+
+        const [turnsResult, learnerProgressResult] = await Promise.all([
+          dialogueTurnsRequest,
+          learnerProgressRequest,
+        ]);
+
+        if (turnsResult) {
+          if (turnsResult.error) throw turnsResult.error;
+          const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
+          if (active) setDialogues(attachDialogueTurns(foundDialogues, turns));
+        }
+
+        if (user && learnerProgressResult) {
+          const [reviewResult, progressResult] = learnerProgressResult;
           if (reviewResult.error) throw reviewResult.error;
           if (active) setReviews(Object.fromEntries((reviewResult.data ?? []).map((row) => [row.item_id, { status: row.status, review_count: row.review_count, correct_count: row.correct_count }])));
           if (!progressResult.error && !progressResult.data) {
