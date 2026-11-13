@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { shuffled } from "@/lib/communication/lesson-practice";
+import { attachDialogueTurns } from "@/lib/communication/dialogue-utils";
 
 export type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; status: string };
 export type Topic = { id: string; title_en: string; title_vi: string };
@@ -66,7 +67,7 @@ export function useSituationalEnglishLessonData(
           const turnsResult = await supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order");
           if (turnsResult.error) throw turnsResult.error;
           const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
-          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: turns.filter((turn) => turn.dialogue_id === dialogue.id).map((turn) => ({ ...turn, response_options: shuffled(turn.response_options ?? []) })) })));
+          setDialogues(attachDialogueTurns(foundDialogues, turns));
         }
 
         const user = authResult.data.user;
