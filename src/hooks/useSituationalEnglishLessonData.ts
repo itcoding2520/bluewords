@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 import type { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
-import { shuffled } from "@/lib/communication/lesson-practice";
 import { attachDialogueTurns } from "@/lib/communication/dialogue-utils";
+import { useSituationalEnglishLessonNavigation } from "@/hooks/useSituationalEnglishLessonNavigation";
 
 import type { Lesson, Topic, Item, Dialogue, Turn, ItemReview } from "@/lib/communication/lesson-types";
 
@@ -23,9 +23,14 @@ export function useSituationalEnglishLessonData(
   const [dialogues, setDialogues] = useState<Array<Dialogue & { turns: Turn[] }>>([]);
   const [reviews, setReviews] = useState<Record<string, ItemReview>>({});
   const [userId, setUserId] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [practiceOrder, setPracticeOrder] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const {
+    currentIndex,
+    setCurrentIndex,
+    practiceOrder,
+    setPracticeOrder,
+    initializeNavigation,
+  } = useSituationalEnglishLessonNavigation();
 
   useEffect(() => {
     let active = true;
@@ -51,11 +56,7 @@ export function useSituationalEnglishLessonData(
         setTopic(topicResult.data as Topic | null);
         setItems(loadedItems);
         setUserId(authResult.data.user?.id ?? null);
-        setPracticeOrder(shuffled(loadedItems.map((item) => item.id)));
-        if (reviewItem) {
-          const dueIndex = loadedItems.findIndex((item) => item.id === reviewItem);
-          if (dueIndex >= 0) setCurrentIndex(dueIndex);
-        }
+        initializeNavigation(loadedItems, reviewItem);
 
         const foundDialogues = (dialogueResult.data ?? []) as Dialogue[];
         const user = authResult.data.user;
@@ -100,7 +101,7 @@ export function useSituationalEnglishLessonData(
       }
     })();
     return () => { active = false; window.speechSynthesis?.cancel(); };
-  }, [lessonId, reviewItem, supabase]);
+  }, [initializeNavigation, lessonId, reviewItem, supabase]);
 
   return { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder };
 }
