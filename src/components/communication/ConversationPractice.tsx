@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Headphones } from "lucide-react";
 import { toast } from "sonner";
-import type { Dialogue, Turn } from "@/hooks/useSituationalEnglishLessonData";
+import type { Dialogue, Turn } from "@/lib/communication/lesson-types";
 import { DialogueTurnView } from "@/components/communication/DialogueTurnView";
 
 type DialogueWithTurns = Dialogue & { turns: Turn[] };

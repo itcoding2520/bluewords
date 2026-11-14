@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Item } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item } from "@/lib/communication/lesson-types";
 import { createAnswerChoices, createSentenceDrills } from "@/lib/communication/lesson-practice";
 
 export function useSituationalEnglishLessonPracticeData({

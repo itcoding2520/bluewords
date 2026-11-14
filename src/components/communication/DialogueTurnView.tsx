@@ -1,7 +1,7 @@
 "use client";
 
 import { Volume2 } from "lucide-react";
-import type { Turn } from "@/hooks/useSituationalEnglishLessonData";
+import type { Turn } from "@/lib/communication/lesson-types";
 import { SpeechPractice } from "@/components/communication/SpeechPractice";
 
 export function DialogueTurnView({ turn, selectedAnswer, onPlay, onSelect }: {

@@ -6,7 +6,7 @@ import type { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { getCorrectReviewIntervalDays } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
-import type { Item, ItemReview, Lesson } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item, ItemReview, Lesson } from "@/lib/communication/lesson-types";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 type Props = {
