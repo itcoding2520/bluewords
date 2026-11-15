@@ -3,9 +3,7 @@ import { toast } from "sonner";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { normalize } from "@/lib/vocabulary/publish-options";
-import {
-  saveCommunityCategoryRequest,
-} from "@/lib/supabase/publish-category-request";
+import { saveCommunityCategoryRequest } from "@/lib/vocabulary/publish-category-request-workflow";
 
 const REQUEST_SENT_MESSAGE = "Your selected vocabulary has been sent to the admin for review.";
 
