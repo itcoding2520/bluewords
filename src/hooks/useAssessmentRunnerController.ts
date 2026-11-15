@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
+import { useAssessmentRunnerAnswers } from "@/hooks/useAssessmentRunnerAnswers";
 import { fetchAssessmentAttempt, submitAssessmentAttempt } from "@/lib/assessments/api";
 
 type AssessmentAttempt = { id: string; attempt_number: number; started_at: string; title: string; difficulty: string; questions: AssessmentQuestionForLearner[]; completed_at: string | null; answers: string[] };
@@ -9,8 +10,8 @@ type AssessmentAttempt = { id: string; attempt_number: number; started_at: strin
 export function useAssessmentRunnerController(attemptId: string) {
   const router = useRouter();
   const [attempt, setAttempt] = useState<AssessmentAttempt | null>(null);
-  const [answers, setAnswers] = useState<string[]>(Array(10).fill(""));
-  const [sentenceTiles, setSentenceTiles] = useState<number[][]>(Array.from({ length: 10 }, () => []));
+  const { answers, setAnswers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence } =
+    useAssessmentRunnerAnswers(attempt?.questions ?? []);
   const [current, setCurrent] = useState(0);
   const timerStartedAt = attempt ? new Date(attempt.started_at).getTime() : null;
   const { elapsedSeconds: seconds, setElapsedSeconds: setSeconds } = useElapsedTimer(
@@ -32,35 +33,12 @@ export function useAssessmentRunnerController(attemptId: string) {
     } finally {
       setLoading(false);
     }
-  }, [attemptId, setSeconds]);
+  }, [attemptId, setAnswers, setSeconds]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
-
-  function setAnswer(index: number, value: string) {
-    setAnswers((previous) => previous.map((answer, position) => position === index ? value : answer));
-  }
-
-  function toggleSentenceTile(questionIndex: number, tileIndex: number) {
-    const question = attempt?.questions[questionIndex];
-    if (question?.type !== "sentence") return;
-    setSentenceTiles((previous) => {
-      const next = previous.map((entry) => [...entry]);
-      const currentSelection = next[questionIndex];
-      if (currentSelection.includes(tileIndex)) next[questionIndex] = currentSelection.filter((entry) => entry !== tileIndex);
-      else if (currentSelection.length < (question.tiles?.length ?? 0)) next[questionIndex] = [...currentSelection, tileIndex];
-      const result = next[questionIndex].map((entry) => question.tiles?.[entry] ?? "").join(" ").replace(/\s+([.,!?])/g, "$1");
-      setAnswers((old) => old.map((answer, position) => position === questionIndex ? result : answer));
-      return next;
-    });
-  }
-
-  function clearSentence(questionIndex: number) {
-    setSentenceTiles((all) => all.map((entry, index) => index === questionIndex ? [] : entry));
-    setAnswer(questionIndex, "");
-  }
 
   async function submit() {
     if (answers.some((answer) => !answer.trim())) {
