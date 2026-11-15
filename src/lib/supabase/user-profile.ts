@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 import {
   getCachedUserProfile as readCachedUserProfile,
   setCachedUserProfile,
@@ -6,7 +7,7 @@ import {
 
 export const USER_AVATARS_BUCKET = "user-avatars";
 export const USER_PROFILE_UPDATED_EVENT = "bluewords:user-profile-updated";
-export const MAX_USER_AVATAR_SIZE = 5 * 1024 * 1024;
+export const MAX_USER_AVATAR_SIZE = MAX_STANDARD_IMAGE_SIZE;
 
 export type UserProfile = {
   user_id: string;
@@ -36,11 +37,7 @@ export function getUserAvatarUrl(path: string | null | undefined): string | null
 }
 
 export function validateUserAvatar(file: File): string | null {
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    return "Choose a JPEG, PNG, or WebP image.";
-  }
-  if (file.size > MAX_USER_AVATAR_SIZE) return "Image must be 5 MB or smaller.";
-  return null;
+  return validateStandardImage(file);
 }
 
 export async function getUserProfile(userId: string, forceRefresh = false): Promise<UserProfile | null> {

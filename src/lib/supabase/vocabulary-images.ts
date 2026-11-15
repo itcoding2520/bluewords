@@ -1,13 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
+import { MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 
 export const VOCABULARY_IMAGES_BUCKET = "vocabulary-images";
-export const MAX_VOCABULARY_IMAGE_SIZE = 5 * 1024 * 1024;
-
-const supportedImageTypes = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+export const MAX_VOCABULARY_IMAGE_SIZE = MAX_STANDARD_IMAGE_SIZE;
 
 const supabase = createClient();
 const SIGNED_URL_TTL_MS = 55 * 60 * 1000;
@@ -29,15 +24,7 @@ export function getCachedVocabularyImageUrl(path: string): string | null {
 }
 
 export function validateVocabularyImage(file: File): string | null {
-  if (!supportedImageTypes.has(file.type)) {
-    return "Choose a JPEG, PNG, or WebP image.";
-  }
-
-  if (file.size > MAX_VOCABULARY_IMAGE_SIZE) {
-    return "Image must be 5 MB or smaller.";
-  }
-
-  return null;
+  return validateStandardImage(file);
 }
 
 export async function uploadVocabularyImage(

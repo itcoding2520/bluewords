@@ -1,14 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
+import { validateStandardImage } from "@/lib/image-validation";
 
 export const CATEGORY_IMAGES_BUCKET = "category-images";
 const supabase = createClient();
 
 export function validateCategoryImage(file: File): string | null {
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    return "Choose a JPEG, PNG, or WebP image.";
-  }
-  if (file.size > 5 * 1024 * 1024) return "Image must be 5 MB or smaller.";
-  return null;
+  return validateStandardImage(file);
 }
 
 export async function uploadCategoryImage(categoryId: string, file: File) {
