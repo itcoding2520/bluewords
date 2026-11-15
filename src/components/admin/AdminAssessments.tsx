@@ -10,7 +10,7 @@ export function AdminAssessments() {
   const {
     activeTab, setActiveTab, users, assignments, attempts, title, setTitle, difficulty, setDifficulty, selected, setSelected,
     allUsers, setAllUsers, dueAt, setDueAt, today, search, setSearch, loading, sending, error, notice,
-    visibleUsers, userById, refresh, assign,
+    visibleUsers, userById, assignmentByRecipientId, refresh, assign,
   } = useAdminAssessmentsController();
 
   return <div className="assessment-admin-page">
@@ -43,7 +43,7 @@ export function AdminAssessments() {
         </section>
       </>}
       {activeTab === "results" && <section className="assessment-admin-card assessment-results-full"><div className="assessment-card-heading"><span><Users size={19} /></span><div><h2>Assessment results</h2><p>Completed attempts are visible to administrators here.</p></div><button type="button" className="assessment-refresh" onClick={() => void refresh()} aria-label="Refresh results"><RefreshCw size={17} /></button></div>
-        {loading ? <p className="assessment-empty">Loading results…</p> : attempts.length ? <div className="assessment-admin-list">{attempts.map((attempt) => { const learner = userById.get(attempt.user_id); const assignment = assignments.find((item) => item.assessment_recipients.some((recipient) => recipient.id === attempt.recipient_id)); return <article key={attempt.id}><div><strong>{learner?.nickname || learner?.email || "Learner"}</strong><span>{assignment?.title ?? "Assessment"} · {attempt.correct_count}/10 correct · {attempt.score}/100</span><small>{attempt.result === "passed" ? "Passed" : "Not passed"} · {Math.floor(attempt.elapsed_seconds / 60)}m {attempt.elapsed_seconds % 60}s</small></div><time>{new Date(attempt.completed_at).toLocaleDateString()}</time></article>; })}</div> : <p className="assessment-empty">Completed tests will appear here.</p>}
+        {loading ? <p className="assessment-empty">Loading results…</p> : attempts.length ? <div className="assessment-admin-list">{attempts.map((attempt) => { const learner = userById.get(attempt.user_id); const assignment = assignmentByRecipientId.get(attempt.recipient_id); return <article key={attempt.id}><div><strong>{learner?.nickname || learner?.email || "Learner"}</strong><span>{assignment?.title ?? "Assessment"} · {attempt.correct_count}/10 correct · {attempt.score}/100</span><small>{attempt.result === "passed" ? "Passed" : "Not passed"} · {Math.floor(attempt.elapsed_seconds / 60)}m {attempt.elapsed_seconds % 60}s</small></div><time>{new Date(attempt.completed_at).toLocaleDateString()}</time></article>; })}</div> : <p className="assessment-empty">Completed tests will appear here.</p>}
       </section>}
     </div>
     <p className="assessment-admin-privacy">Learners can only access their own assignments and results. Test answers are checked on the server.</p>

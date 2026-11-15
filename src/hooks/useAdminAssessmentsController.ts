@@ -42,6 +42,15 @@ export function useAdminAssessmentsController() {
 
   const visibleUsers = useMemo(() => users.filter((item) => `${item.nickname} ${item.email ?? ""}`.toLowerCase().includes(search.toLowerCase())), [users, search]);
   const userById = useMemo(() => new Map(users.map((item) => [item.id, item])), [users]);
+  const assignmentByRecipientId = useMemo(() => {
+    const assignmentsByRecipient = new Map<string, AssessmentAssignment>();
+    for (const assignment of assignments) {
+      for (const recipient of assignment.assessment_recipients) {
+        if (!assignmentsByRecipient.has(recipient.id)) assignmentsByRecipient.set(recipient.id, assignment);
+      }
+    }
+    return assignmentsByRecipient;
+  }, [assignments]);
 
   async function assign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSending(true); setError(""); setNotice("");
@@ -65,6 +74,6 @@ export function useAdminAssessmentsController() {
   return {
     activeTab, setActiveTab, users, assignments, attempts, title, setTitle, difficulty, setDifficulty, selected, setSelected,
     allUsers, setAllUsers, dueAt, setDueAt, today, search, setSearch, loading, sending, error, notice,
-    visibleUsers, userById, refresh, assign,
+    visibleUsers, userById, assignmentByRecipientId, refresh, assign,
   };
 }
