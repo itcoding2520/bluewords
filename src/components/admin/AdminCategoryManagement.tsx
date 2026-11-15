@@ -1,17 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
-import { ActionMenu } from "@/components/ui/ActionMenu";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { formatShortDate } from "@/lib/formatDate";
 import { useAdminCategoryManagementController } from "@/hooks/useAdminCategoryManagementController";
 import { AdminCategoryTabs } from "@/components/admin/AdminCategoryTabs";
 import { AdminCategoryListPanel } from "@/components/admin/AdminCategoryListPanel";
+import { AdminCategoryDetailPanel } from "@/components/admin/AdminCategoryDetailPanel";
 
 export function AdminCategoryManagement() {
   const {
@@ -58,29 +54,21 @@ export function AdminCategoryManagement() {
         onSelect={setSelectedId}
       />
 
-      <section className="admin-category-detail min-h-72 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
-        {!selectedCategory ? <div className="grid min-h-64 place-items-center text-center text-sm text-slate-500">Choose a category to see its words.</div> : <>
-          <div className="admin-category-detail-header flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
-            <div className="flex min-w-0 items-center gap-3"><CategoryAvatar name={selectedCategory.name} imagePath={selectedSharedCategory?.image_path} fallbackWordImagePath={selectedFallbackImage} sizeClass="size-12" /><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{activeTab === "default" ? "Default category" : activeTab === "pending" ? "Waiting publish" : "Published custom category"}</p><h2 className="mt-1 break-words text-xl font-bold text-slate-950">{selectedCategory.name}</h2>{selectedSharedCategory && <p className="mt-1 break-all text-sm text-slate-500">Created by {emails[selectedSharedCategory.owner_id] ?? "Loading owner…"}</p>}</div></div>
-            {activeTab !== "default" && "created_at" in selectedCategory && <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Created {formatShortDate(selectedCategory.created_at, "Date unavailable")}</span>}
-            {(() => { const shared = activeTab === "default" ? communityCategories.find((item) => item.status === "published" && item.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase()) : "owner_id" in selectedCategory ? selectedCategory : null; return shared ? <ActionMenu label={shared.name} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => void editSharedCategory(shared) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void removeSharedCategory(shared), destructive: true }]} /> : null; })()}
-          </div>
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold text-slate-800">Words ({activeTab === "default" ? defaultWords.length : words.length})</h3>
-            {wordsLoading ? <p className="py-8 text-center text-sm text-slate-500">Loading words…</p> : (activeTab === "default" ? defaultWords.length + words.length : words.length) === 0 ? <div className="mt-3 rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">This category has no words yet.</div> : <ul className="mt-3 divide-y divide-slate-100">
-              {activeTab === "default" && defaultWords.map((word) => <li key={word.id} className="admin-category-word-row"><AdminWordThumbnail word={word.word} imagePath={word.imagePath} /><div className="min-w-0 flex-1"><p className="font-semibold text-slate-900">{word.word}</p><p className="mt-0.5 text-sm text-slate-500">{word.meaning}</p></div><span className="admin-category-word-status">Default</span></li>)}
-              {words.map((word) => <li key={word.id} className="admin-category-word-row"><AdminWordThumbnail word={word.word} imagePath={word.image_path} /><div className="min-w-0 flex-1"><p className="font-semibold text-slate-900">{word.word}</p><p className="mt-0.5 text-sm text-slate-500">{word.meaning || "No meaning provided"}</p><p className="mt-1 text-xs text-slate-500">Added by {wordEmails[word.owner_id] ?? "Loading author…"}</p></div><span className={`admin-category-word-status ${word.status === "pending" ? "is-pending" : ""}`}>{activeTab === "default" ? "Custom · Published" : word.status === "pending" ? "Waiting publish" : word.status}</span><ActionMenu label={word.word} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => void editSharedWord(word) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void removeSharedWord(word), destructive: true }]} /></li>)}
-            </ul>}
-          </div>
-        </>}
-      </section>
+      <AdminCategoryDetailPanel
+        activeTab={activeTab}
+        selectedCategory={selectedCategory}
+        selectedSharedCategory={selectedSharedCategory}
+        selectedFallbackImage={selectedFallbackImage}
+        emails={emails}
+        defaultWords={defaultWords}
+        words={words}
+        wordEmails={wordEmails}
+        wordsLoading={wordsLoading}
+        onEditCategory={(category) => void editSharedCategory(category)}
+        onRemoveCategory={(category) => void removeSharedCategory(category)}
+        onEditWord={(word) => void editSharedWord(word)}
+        onRemoveWord={(word) => void removeSharedWord(word)}
+      />
     </div>
   </div>;
-}
-
-function AdminWordThumbnail({ word, imagePath }: { word: string; imagePath?: string | null }) {
-  const imageUrl = useVocabularyImageUrl(imagePath);
-  return imageUrl
-    ? <Image src={imageUrl} alt="" width={48} height={48} unoptimized className="admin-category-word-image" />
-    : <span className="admin-category-word-image admin-category-word-fallback" aria-hidden="true">{word.slice(0, 1).toUpperCase()}</span>;
 }
