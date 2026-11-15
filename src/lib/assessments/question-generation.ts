@@ -1,5 +1,6 @@
 import { shuffle } from "@/lib/random";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 type AssessmentDifficulty = "easy" | "medium" | "hard";
 type DefaultVocabularyKey = { normalized_word: string };
@@ -37,13 +38,13 @@ export function generateAssessmentQuestions({
   const defaultSet = new Set((defaultKeys ?? []).map((item) => item.normalized_word));
   const wordMap = new Map<string, { word: string; meaning: string; category: string; imagePath: string | null }>();
   for (const row of vocabularyRows ?? []) {
-    const normalized = row.word.trim().toLowerCase().replace(/\s+/g, " ");
+    const normalized = normalizeVocabularyText(row.word);
     if (row.type === "word" && row.meaning.trim() && defaultSet.has(normalized)) {
       wordMap.set(normalized, { word: row.word, meaning: row.meaning, category: row.category, imagePath: row.image_path });
     }
   }
   for (const row of communityWords ?? []) {
-    const normalized = row.word.trim().toLowerCase().replace(/\s+/g, " ");
+    const normalized = normalizeVocabularyText(row.word);
     const category = Array.isArray(row.community_categories)
       ? row.community_categories[0]?.name
       : (row.community_categories as { name?: string } | null)?.name;
