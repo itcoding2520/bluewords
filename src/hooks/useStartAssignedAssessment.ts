@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { startAssignedAssessment } from "@/lib/assignments/api";
 
 export function useStartAssignedAssessment(assignmentId: string) {
   const router = useRouter();
@@ -7,11 +8,9 @@ export function useStartAssignedAssessment(assignmentId: string) {
 
   useEffect(() => {
     let active = true;
-    void fetch(`/api/assessments/${assignmentId}/start`, { method: "POST" })
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error ?? "Could not start this test.");
-        if (active) router.replace(`/assignments/take/${data.attempt.id}`);
+    void startAssignedAssessment(assignmentId)
+      .then((attemptId) => {
+        if (active) router.replace(`/assignments/take/${attemptId}`);
       })
       .catch((cause) => {
         if (active) setError(cause instanceof Error ? cause.message : "Could not start this test.");

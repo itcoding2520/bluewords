@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchMyAssignments } from "@/lib/assignments/api";
+import { fetchMyAssignments, startAssignedAssessment } from "@/lib/assignments/api";
 import type { Assignment, AssignmentHistoryEntry } from "@/lib/assignments/types";
 
 export function useAssignmentsController() {
@@ -38,10 +38,8 @@ export function useAssignmentsController() {
     setStarting(assignmentId);
     setError("");
     try {
-      const response = await fetch(`/api/assessments/${assignmentId}/start`, { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not start this test.");
-      router.push(`/assignments/take/${data.attempt.id}`);
+      const attemptId = await startAssignedAssessment(assignmentId);
+      router.push(`/assignments/take/${attemptId}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not start this test.");
       setStarting(null);
