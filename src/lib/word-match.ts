@@ -11,6 +11,8 @@ export type MatchPair = {
   imageUrl: string | null;
 };
 
+export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
+
 export function buildWordMatchPairs(words: VocabularyWord[], category: string): MatchPair[] {
   const eligibleWords = words.filter((word) => matchesVocabularyCategory(word.category, category));
   const usedWords = new Set<string>();
