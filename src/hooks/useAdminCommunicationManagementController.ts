@@ -9,9 +9,8 @@ import { useAdminCommunicationItemActions } from "@/hooks/useAdminCommunicationI
 import { useAdminCommunicationBulkActions } from "@/hooks/useAdminCommunicationBulkActions";
 import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSelection";
 import { useAdminCommunicationTopicView } from "@/hooks/useAdminCommunicationTopicView";
-import { createCommunicationItemDraft, createCommunicationLessonDraft, createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
+import { useAdminCommunicationDraftState } from "@/hooks/useAdminCommunicationDraftState";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
-import type { CommunicationTopicDraft, CommunicationLessonDraft, CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 
 export function useAdminCommunicationManagementController() {
   const supabase = useSupabaseClient();
@@ -26,14 +25,13 @@ export function useAdminCommunicationManagementController() {
     loading,
     refresh,
   } = useAdminCommunicationCollections(supabase);
-  const [topicDraft, setTopicDraft] = useState<CommunicationTopicDraft>(createCommunicationTopicDraft);
-  const [topicEditing, setTopicEditing] = useState<string | null>(null);
-  const [lessonDraft, setLessonDraft] = useState<CommunicationLessonDraft>(createCommunicationLessonDraft);
-  const [lessonEditing, setLessonEditing] = useState<string | null>(null);
-  const [itemDraft, setItemDraft] = useState<CommunicationItemDraft>(createCommunicationItemDraft);
-  const [itemEditing, setItemEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
+  const drafts = useAdminCommunicationDraftState({
+    topicCount: topics.length,
+    selectedTopicId,
+    selectedLessonId,
+  });
 
   const {
     currentTopic,
@@ -49,19 +47,19 @@ export function useAdminCommunicationManagementController() {
     setSelectedTopicId,
     selectedLessonId,
     setSelectedLessonId,
-    setLessonDraft,
-    setLessonEditing,
-    setItemDraft,
-    setItemEditing,
+    setLessonDraft: drafts.setLessonDraft,
+    setLessonEditing: drafts.setLessonEditing,
+    setItemDraft: drafts.setItemDraft,
+    setItemEditing: drafts.setItemEditing,
   });
 
   const { saveTopic, editTopic, removeTopic } = useAdminCommunicationTopicActions({
     supabase,
     topics,
-    draft: topicDraft,
-    editingId: topicEditing,
-    setDraft: setTopicDraft,
-    setEditingId: setTopicEditing,
+    draft: drafts.topicDraft,
+    editingId: drafts.topicEditing,
+    setDraft: drafts.setTopicDraft,
+    setEditingId: drafts.setTopicEditing,
     setBusy,
     refresh,
   });
@@ -70,11 +68,11 @@ export function useAdminCommunicationManagementController() {
     topics,
     selectedTopicId,
     lessonCount: currentLessons.length,
-    draft: lessonDraft,
-    editingId: lessonEditing,
+    draft: drafts.lessonDraft,
+    editingId: drafts.lessonEditing,
     setSelectedLessonId,
-    setDraft: setLessonDraft,
-    setEditingId: setLessonEditing,
+    setDraft: drafts.setLessonDraft,
+    setEditingId: drafts.setLessonEditing,
     setBusy,
     refresh,
   });
@@ -83,10 +81,10 @@ export function useAdminCommunicationManagementController() {
     lessons,
     selectedLessonId,
     itemCount: currentItems.length,
-    draft: itemDraft,
-    editingId: itemEditing,
-    setDraft: setItemDraft,
-    setEditingId: setItemEditing,
+    draft: drafts.itemDraft,
+    editingId: drafts.itemEditing,
+    setDraft: drafts.setItemDraft,
+    setEditingId: drafts.setItemEditing,
     setBusy,
     refresh,
   });
@@ -101,35 +99,12 @@ export function useAdminCommunicationManagementController() {
     lessonTitle: selectedLesson?.title_en ?? null,
     itemCount: currentItems.length,
     setBusy,
-    onLessonsDeleted: () => {
-      setLessonEditing(null);
-      setItemEditing(null);
-      setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
-      setItemDraft(createCommunicationItemDraft());
-    },
-    onItemsDeleted: () => {
-      setItemEditing(null);
-      setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
-    },
+    onLessonsDeleted: drafts.resetAfterLessonsDeleted,
+    onItemsDeleted: drafts.resetAfterItemsDeleted,
     refresh,
   });
 
   const { filteredTopics, topicWordCounts } = useAdminCommunicationTopicView({ topics, lessons, items, search: topicSearch });
-
-  function cancelTopicEdit() {
-    setTopicEditing(null);
-    setTopicDraft(createCommunicationTopicDraft(topics.length + 1));
-  }
-
-  function cancelLessonEdit() {
-    setLessonEditing(null);
-    setLessonDraft(createCommunicationLessonDraft({ topic_id: selectedTopicId }));
-  }
-
-  function cancelItemEdit() {
-    setItemEditing(null);
-    setItemDraft(createCommunicationItemDraft({ lesson_id: selectedLessonId }));
-  }
 
   function submitTopic(event: FormEvent<HTMLFormElement>) {
     void saveTopic(event);
@@ -158,12 +133,12 @@ export function useAdminCommunicationManagementController() {
     refresh,
     busy,
     setBusy,
-    topicDraft,
-    topicEditing,
-    lessonDraft,
-    lessonEditing,
-    itemDraft,
-    itemEditing,
+    topicDraft: drafts.topicDraft,
+    topicEditing: drafts.topicEditing,
+    lessonDraft: drafts.lessonDraft,
+    lessonEditing: drafts.lessonEditing,
+    itemDraft: drafts.itemDraft,
+    itemEditing: drafts.itemEditing,
     topicSearch,
     currentTopic,
     currentLessons,
@@ -171,9 +146,9 @@ export function useAdminCommunicationManagementController() {
     filteredTopics,
     topicWordCounts,
     selectedLessonTitle: selectedLesson?.title_en ?? null,
-    setTopicDraft,
-    setLessonDraft,
-    setItemDraft,
+    setTopicDraft: drafts.setTopicDraft,
+    setLessonDraft: drafts.setLessonDraft,
+    setItemDraft: drafts.setItemDraft,
     setTopicSearch,
     selectTopic,
     selectLesson,
@@ -184,9 +159,9 @@ export function useAdminCommunicationManagementController() {
     removeItem,
     removeAllLessons,
     removeAllItems,
-    cancelTopicEdit,
-    cancelLessonEdit,
-    cancelItemEdit,
+    cancelTopicEdit: drafts.cancelTopicEdit,
+    cancelLessonEdit: drafts.cancelLessonEdit,
+    cancelItemEdit: drafts.cancelItemEdit,
     submitTopic,
     submitLesson,
     submitItem,

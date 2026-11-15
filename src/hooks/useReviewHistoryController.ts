@@ -4,24 +4,9 @@ import {
   getLatestVocabularyReviewHistory,
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
+import { getLocalReviewDay, groupReviewsByLocalDay } from "@/lib/review-history-view";
 
 const PAGE_SIZE = 20;
-
-interface DailyReviewGroup {
-  day: string;
-  reviews: VocabularyReviewWithWord[];
-  learning: number;
-  mastered: number;
-}
-
-function getLocalDay(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export function useReviewHistoryController(userId: string) {
   const initialReviews = getCachedLatestVocabularyReviewHistory(userId);
@@ -29,7 +14,7 @@ export function useReviewHistoryController(userId: string) {
     () => initialReviews ?? []
   );
   const [selectedDay, setSelectedDay] = useState(() =>
-    initialReviews?.[0] ? getLocalDay(initialReviews[0].reviewed_at) : ""
+    initialReviews?.[0] ? getLocalReviewDay(initialReviews[0].reviewed_at) : ""
   );
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(initialReviews === null);
@@ -43,12 +28,12 @@ export function useReviewHistoryController(userId: string) {
         setReviews(latestReviews);
         setSelectedDay((current) => {
           const availableDays = new Set(
-            latestReviews.map((review) => getLocalDay(review.reviewed_at))
+            latestReviews.map((review) => getLocalReviewDay(review.reviewed_at))
           );
           return current && availableDays.has(current)
             ? current
             : latestReviews[0]
-              ? getLocalDay(latestReviews[0].reviewed_at)
+              ? getLocalReviewDay(latestReviews[0].reviewed_at)
               : "";
         });
         setIsLoading(false);
@@ -64,24 +49,7 @@ export function useReviewHistoryController(userId: string) {
     };
   }, [userId]);
 
-  const dailyGroups = useMemo(() => {
-    const groups = new Map<string, DailyReviewGroup>();
-    for (const review of reviews) {
-      const day = getLocalDay(review.reviewed_at);
-      if (!day) continue;
-      let group = groups.get(day);
-      if (!group) {
-        group = { day, reviews: [], learning: 0, mastered: 0 };
-        groups.set(day, group);
-      }
-      group.reviews.push(review);
-      if (review.vocabulary_words?.status === "mastered") group.mastered += 1;
-      else group.learning += 1;
-    }
-    return [...groups.values()].sort((left, right) =>
-      right.day.localeCompare(left.day)
-    );
-  }, [reviews]);
+  const dailyGroups = useMemo(() => groupReviewsByLocalDay(reviews), [reviews]);
 
   const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
   const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;

@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CaseSensitive, Lightbulb, RotateCcw, Star, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { Card } from "@/components/ui/Card";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { WordScrambleRound } from "@/components/games/WordScrambleRound";
 import { useWordScrambleController } from "@/hooks/useWordScrambleController";
-import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
-
-const QUESTION_COUNTS = [5, 10] as const;
+import { WordScrambleSetup } from "@/components/games/WordScrambleSetup";
+import { WordScrambleResults } from "@/components/games/WordScrambleResults";
 
 export function WordScrambleContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
@@ -36,17 +33,16 @@ export function WordScrambleContent() {
       </header>
 
       {phase === "setup" ? (
-        <div className="word-scramble-setup">
-          <Card className="word-scramble-panel">
-            <div className="word-scramble-section-title"><span><CaseSensitive size={25} /></span><div><h2>Ready to unscramble?</h2><p>Use the picture and meaning clues to spell each vocabulary word.</p></div></div>
-            <label htmlFor="word-scramble-category">Category</label>
-            <CategoryDropdown id="word-scramble-category" ariaLabel="Word Scramble category" category={category} categories={categoryDropdownCategories} words={words} onChange={setCategory} includeAll fullWidth />
-            <fieldset><legend>Questions per round</legend><div className="word-scramble-counts">{QUESTION_COUNTS.map((count) => <button key={count} type="button" aria-pressed={questionCount === count} disabled={candidates.length < count} onClick={() => setQuestionCount(count)} className={questionCount === count ? "is-selected" : ""}>{count} questions</button>)}</div><p>{candidates.length} words available. Words must have 3–10 letters.</p></fieldset>
-            {candidates.length < 5 && <p className="word-scramble-empty" role="status">Add at least five eligible words to play Word Scramble.</p>}
-            <button type="button" className="word-scramble-primary" disabled={candidates.length < questionCount} onClick={startRound}><CaseSensitive size={20} /> Start game <ArrowRight size={19} /></button>
-          </Card>
-          <Card className="word-scramble-howto"><span><Lightbulb size={22} /></span><h2>How to play</h2><p>Tap the letter tiles to spell the answer. Use a hint if you get stuck. Correct answers build your streak.</p><div className="word-scramble-example"><b>B</b><b>A</b><b>N</b><b>A</b><b>N</b><b>A</b></div><small><Star size={14} fill="currentColor" /> 20 points per answer, or 10 with a hint.</small></Card>
-        </div>
+        <WordScrambleSetup
+          words={words}
+          categories={categoryDropdownCategories}
+          category={category}
+          onCategoryChange={setCategory}
+          questionCount={questionCount}
+          onQuestionCountChange={setQuestionCount}
+          candidateCount={candidates.length}
+          onStart={startRound}
+        />
       ) : phase === "playing" && currentWord ? (
         <WordScrambleRound
           currentWord={currentWord}
@@ -68,12 +64,17 @@ export function WordScrambleContent() {
           onNextQuestion={nextQuestion}
         />
       ) : (
-        <Card className="word-scramble-results">
-          <span className="word-scramble-trophy"><Trophy size={38} /></span><p>ROUND COMPLETE</p><h2>Awesome word star!</h2><span className="word-scramble-final-score">{score}<small> points</small></span>
-          <div><span><strong>{round.length}</strong><small>questions</small></span><span><strong>{bestStreak}</strong><small>best streak</small></span><span><strong>{timeLabel}</strong><small>time</small></span></div>
-          <GameLeaderboardSaveStatus isAuthenticated={isAuthenticated} saveState={saveState} saveError={saveError} onRetry={retrySave} />
-          <button type="button" className="word-scramble-primary" onClick={startRound}><RotateCcw size={18} /> Play again</button>
-        </Card>
+        <WordScrambleResults
+          score={score}
+          questionCount={round.length}
+          bestStreak={bestStreak}
+          timeLabel={timeLabel}
+          isAuthenticated={isAuthenticated}
+          saveState={saveState}
+          saveError={saveError}
+          onRetry={retrySave}
+          onPlayAgain={startRound}
+        />
       )}
     </div>
   );

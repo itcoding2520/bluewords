@@ -4,12 +4,11 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { CommunityWordRequest } from "@/lib/vocabulary/publish-options";
 import {
-  createCommunityCategoryForWordRequest,
   createCommunityWordRequest,
-  findCommunityCategory,
   findOwnedVocabularyWord,
   findOwnCommunityWordRequest,
   findPublishedCommunityWord,
+  resolveCommunityCategoryForWordRequest,
   resubmitCommunityWordRequest,
 } from "@/lib/supabase/publish-word-request";
 
@@ -76,28 +75,30 @@ export function usePublishWordRequest({
       toast.info(`“${word.word}” is already part of the default vocabulary in ${word.category}.`);
       return;
     }
-    const categoryResult = await findCommunityCategory(supabase, normalizedCategory);
-    if (categoryResult.error) { toast.error(categoryResult.error.message); return; }
-    let communityCategory = categoryResult.data;
-    if (!communityCategory) {
-      if (defaultCategoryNames.has(normalizedCategory)) {
-        toast.error("This shared category is not available for word requests yet. Refresh the page and try again.");
-        return;
-      }
-      const category = categories.find((item) => item.name === word.category);
-      const created = await createCommunityCategoryForWordRequest(supabase, {
-        ownerId: user.id,
-        name: word.category,
-        color: category?.color ?? "blue",
-        imagePath: category?.image_path ?? null,
-      });
-      if (created.error) {
-        toast.error(created.error.code === "23505" ? "This category already has a review request." : created.error.message);
-        return;
-      }
-      communityCategory = created.data;
+    const category = categories.find((item) => item.name === word.category);
+    const categoryResolution = await resolveCommunityCategoryForWordRequest(supabase, {
+      ownerId: user.id,
+      name: word.category,
+      normalizedName: normalizedCategory,
+      defaultCategoryUnavailable: defaultCategoryNames.has(normalizedCategory),
+      color: category?.color ?? "blue",
+      imagePath: category?.image_path ?? null,
+    });
+    if (categoryResolution.status === "error") {
+      toast.error(categoryResolution.source === "create" && categoryResolution.code === "23505"
+        ? "This category already has a review request."
+        : categoryResolution.message);
+      return;
     }
-    if (!communityCategory) { toast.error("Could not locate the category."); return; }
+    if (categoryResolution.status === "default_category_unavailable") {
+      toast.error("This shared category is not available for word requests yet. Refresh the page and try again.");
+      return;
+    }
+    if (categoryResolution.status === "not_found") {
+      toast.error("Could not locate the category.");
+      return;
+    }
+    const communityCategory = categoryResolution.category;
     if (communityCategory.status !== "published"
       && !(communityCategory.status === "pending" && communityCategory.owner_id === user.id)) {
       toast.error("Words can only be requested in your own or an approved category.");

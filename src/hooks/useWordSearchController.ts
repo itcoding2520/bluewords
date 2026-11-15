@@ -1,20 +1,17 @@
 import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
-import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
+import { type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { useWordSearchTimer } from "@/hooks/useWordSearchTimer";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix } from "@/lib/word-search.mjs";
+import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 import { type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
+import { useWordSearchGameplay } from "@/hooks/useWordSearchGameplay";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
-
-function currentTimestamp() {
-  return Date.now();
-}
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -62,62 +59,22 @@ export function useWordSearchController(userId: string | null) {
     showStickyStart,
   } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab });
 
-  const {
-    selectedCells,
-    clearSelection,
-    handlePointerDown: handleGridPointerDown,
-    handlePointerMove: handleGridPointerMove,
-    handlePointerUp: handleGridPointerUp,
-    handlePointerCancel: handleGridPointerCancel,
-  } = useWordSearchSelection({
-    enabled: phase === "playing",
-    onSelectionComplete: finishCellSelection,
+  const gameplay = useWordSearchGameplay({
+    phase,
+    setPhase,
+    puzzle,
+    setPuzzle,
+    foundIds,
+    setFoundIds,
+    setFoundWordPaths,
+    candidates,
+    gridSize,
+    targetCount,
+    setStartedAt,
+    setGameError,
+    resetTimer,
+    resetSave,
   });
-
-  function handleStartGame() {
-    const nextPuzzle = createWordSearchPuzzle(candidates, gridSize, targetCount);
-    if (nextPuzzle.words.length === 0) {
-      setGameError("We couldn't build a board from this selection. Try a different category or difficulty.");
-      return;
-    }
-    setPuzzle(nextPuzzle);
-    setFoundIds(new Set());
-    setFoundWordPaths({});
-    clearSelection();
-    resetTimer();
-    resetSave();
-    setStartedAt(currentTimestamp());
-    setGameError("");
-    setPhase("playing");
-  }
-
-  function backToSetup() {
-    clearSelection();
-    setStartedAt(null);
-    setPhase("setup");
-  }
-
-  function finishCellSelection(selection: CellPosition[]) {
-    if (!puzzle || phase !== "playing" || selection.length < 2) {
-      clearSelection();
-      return;
-    }
-    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
-    if (!match?.complete) {
-      clearSelection();
-      return;
-    }
-
-    const nextFoundIds = new Set(foundIds);
-    nextFoundIds.add(match.word.id);
-    setFoundIds(nextFoundIds);
-    setFoundWordPaths((paths) => ({ ...paths, [match.word.id]: selection }));
-    clearSelection();
-
-    if (nextFoundIds.size === puzzle.words.length) {
-      setPhase("results");
-    }
-  }
 
   return {
     words,
@@ -160,13 +117,13 @@ export function useWordSearchController(userId: string | null) {
     showStickyStart,
     gameError,
     setGameError,
-    selectedCells,
-    clearSelection,
-    handleGridPointerDown,
-    handleGridPointerMove,
-    handleGridPointerUp,
-    handleGridPointerCancel,
-    handleStartGame,
-    backToSetup,
+    selectedCells: gameplay.selectedCells,
+    clearSelection: gameplay.clearSelection,
+    handleGridPointerDown: gameplay.handleGridPointerDown,
+    handleGridPointerMove: gameplay.handleGridPointerMove,
+    handleGridPointerUp: gameplay.handleGridPointerUp,
+    handleGridPointerCancel: gameplay.handleGridPointerCancel,
+    handleStartGame: gameplay.handleStartGame,
+    backToSetup: gameplay.backToSetup,
   };
 }
