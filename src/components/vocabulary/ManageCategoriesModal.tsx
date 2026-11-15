@@ -1,16 +1,13 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ManageCategoryRow } from "@/components/vocabulary/ManageCategoryRow";
+import { ManageCategoryList } from "@/components/vocabulary/ManageCategoryList";
 import { useManageCategoriesController } from "@/hooks/useManageCategoriesController";
-import {
-  VocabularyCategoryColorSelect,
-  vocabularyCategoryColorOptions,
-} from "@/components/vocabulary/VocabularyCategoryColorSelect";
+import { VocabularyCategoryColorSelect } from "@/components/vocabulary/VocabularyCategoryColorSelect";
 
 interface ManageCategoriesModalProps {
   open: boolean;
@@ -94,68 +91,20 @@ export function ManageCategoriesModal({
             </Button>
           </form>
 
-          <div className="mt-5 space-y-2">
-            {categories.map((category) => {
-              const color = vocabularyCategoryColorOptions.find(
-                (option) => option.value === category.color
-              );
-
-              return (
-                <div
-                  key={category.id}
-                  className="rounded-xl border border-slate-200 p-3"
-                >
-                  {editing?.id === category.id ? (
-                    <form
-                      onSubmit={handleUpdate}
-                      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px_auto]"
-                    >
-                      <Input
-                        aria-label="Category name"
-                        value={editName}
-                        onChange={(event) => setEditName(event.target.value)}
-                        disabled={category.is_default}
-                        maxLength={50}
-                      />
-                      <VocabularyCategoryColorSelect
-                        ariaLabel="Category color"
-                        value={editColor}
-                        onChange={setEditColor}
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          type="submit"
-                          aria-label={`Save ${category.name}`}
-                          disabled={!editName.trim() || isSaving}
-                          className="size-11 px-0"
-                        >
-                          <Check size={16} />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          aria-label="Cancel editing"
-                          onClick={() => setEditing(null)}
-                          disabled={isSaving}
-                          className="size-11 px-0"
-                        >
-                          <X size={16} />
-                        </Button>
-                      </div>
-                    </form>
-                  ) : (
-                    <ManageCategoryRow
-                      category={category}
-                      colorClass={color?.className ?? "bg-slate-300"}
-                      fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath}
-                      isSaving={isSaving}
-                      onEdit={() => startEditing(category)}
-                      onDelete={() => void handleDelete(category)}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <ManageCategoryList
+            categories={categories}
+            words={words}
+            editing={editing}
+            editName={editName}
+            editColor={editColor}
+            isSaving={isSaving}
+            onEditNameChange={setEditName}
+            onEditColorChange={setEditColor}
+            onStartEditing={startEditing}
+            onCancelEditing={() => setEditing(null)}
+            onUpdate={handleUpdate}
+            onDelete={(category) => void handleDelete(category)}
+          />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
