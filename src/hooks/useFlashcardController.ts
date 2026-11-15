@@ -1,18 +1,12 @@
 "use client";
 
-import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
-
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import { useFlashcardReviewTime, useFlashcardShuffleSeed } from "@/hooks/useFlashcardSession";
 import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules";
-import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
-
-function isFlashcardDue(dueAt: string | undefined, now: number): boolean {
-  return !dueAt || new Date(dueAt).getTime() <= now;
-}
+import { useFlashcardDeck } from "@/hooks/useFlashcardDeck";
 
 export function useFlashcardController({
   words,
@@ -39,34 +33,16 @@ export function useFlashcardController({
     loadReviewSchedules,
   } = useFlashcardReviewSchedules(isAuthenticated);
 
-  const categoryWords = useMemo(
-    () => words.filter((word) => matchesVocabularyCategory(word.category, category)),
-    [category, words]
-  );
-
-  const statusCounts = useMemo(() => {
-    return {
-      learning: categoryWords.filter((word) => word.status === "learning").length,
-      mastered: categoryWords.filter((word) => word.status === "mastered").length,
-    };
-  }, [categoryWords]);
-
-  const deck = useMemo(() => {
-    const filteredWords = categoryWords.filter((word) => {
-      if (word.status !== status) return false;
-      if (reviewMode === "all") return true;
-      if (!areSchedulesLoaded) return false;
-      const schedule = reviewSchedules.get(word.id);
-      return isFlashcardDue(schedule?.due_at, now);
-    });
-    return shuffleDeck(buildFlashcardDeck(filteredWords), shuffleSeed);
-  }, [areSchedulesLoaded, categoryWords, now, reviewMode, reviewSchedules, shuffleSeed, status]);
-
-  const dueCount = useMemo(() => categoryWords.filter((word) => {
-    if (word.status !== status) return false;
-    const schedule = reviewSchedules.get(word.id);
-    return isFlashcardDue(schedule?.due_at, now);
-  }).length, [categoryWords, now, reviewSchedules, status]);
+  const { statusCounts, deck, dueCount } = useFlashcardDeck({
+    words,
+    category,
+    status,
+    reviewMode,
+    reviewSchedules,
+    areSchedulesLoaded,
+    now,
+    shuffleSeed,
+  });
 
   const card = deck.length > 0 ? deck[index % deck.length] : undefined;
   const { isTogglingStatus, handleToggleStatus } = useFlashcardStatusAction({
