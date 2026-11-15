@@ -9,71 +9,63 @@ import { AdminAddUserForm, AdminEditUserDialog } from "@/components/admin/AdminU
 import { AdminUsersTable } from "@/components/admin/AdminUsersTable";
 
 export function AdminUsersManagement() {
-  const {
-    users, total, setPage, pageSize, setPageSize, search, setSearch,
-    loading, busy, error, notice, email, setEmail, nickname, setNickname,
-    password, setPassword, showAddForm, setShowAddForm, editingUser,
-    setEditingUser, editEmail, setEditEmail, editNickname, setEditNickname,
-    editPassword, setEditPassword, exporting, pageCount, currentPage,
-    firstVisible, lastVisible, addUser, editUser, openEditUser, removeUser,
-    exportUsers, refreshUsers,
-  } = useAdminUsersController();
+  const { directory, addForm, editForm, actions, export: usersExport } = useAdminUsersController();
 
   return <div className="admin-users-page">
     <AdminNavigation active="users" />
     <header className="admin-users-hero mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="admin-users-hero-copy"><p className="text-sm font-semibold text-blue-600">Administration</p><h1 className="page-title mt-1">User management</h1><p className="page-intro-description mt-2">Search, manage, and export accounts.</p></div>
       <div className="admin-users-actions flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={refreshUsers} disabled={loading}><RefreshCw size={16} /> Refresh</Button>
-        <Button variant="secondary" onClick={() => void exportUsers()} disabled={exporting}>{exporting ? "Exporting…" : <><Download size={16} /> Export CSV</>}</Button>
-        <Button onClick={() => setShowAddForm((value) => !value)}><UserPlus size={16} /> Add user</Button>
+        <Button variant="secondary" onClick={directory.refresh} disabled={directory.loading}><RefreshCw size={16} /> Refresh</Button>
+        <Button variant="secondary" onClick={() => void usersExport.run()} disabled={usersExport.isExporting}>{usersExport.isExporting ? "Exporting…" : <><Download size={16} /> Export CSV</>}</Button>
+        <Button onClick={() => addForm.setIsOpen((value) => !value)}><UserPlus size={16} /> Add user</Button>
       </div>
     </header>
 
-    {error && <AutoDismissMessage key={error} variant="error" className="mb-4 whitespace-pre-line">{error}</AutoDismissMessage>}
-    {notice && <AutoDismissMessage key={notice} variant="success" className="mb-4">{notice}</AutoDismissMessage>}
+    {directory.error && <AutoDismissMessage key={directory.error} variant="error" className="mb-4 whitespace-pre-line">{directory.error}</AutoDismissMessage>}
+    {actions.notice && <AutoDismissMessage key={actions.notice} variant="success" className="mb-4">{actions.notice}</AutoDismissMessage>}
 
-    {showAddForm && <AdminAddUserForm
-      email={email}
-      onEmailChange={setEmail}
-      nickname={nickname}
-      onNicknameChange={setNickname}
-      password={password}
-      onPasswordChange={setPassword}
-      busy={busy}
-      onSubmit={(event) => void addUser(event)}
+    {addForm.isOpen && <AdminAddUserForm
+      email={addForm.email}
+      onEmailChange={addForm.setEmail}
+      nickname={addForm.nickname}
+      onNicknameChange={addForm.setNickname}
+      password={addForm.password}
+      onPasswordChange={addForm.setPassword}
+      busy={actions.busy}
+      onSubmit={(event) => void addForm.submit(event)}
     />}
 
     <AdminEditUserDialog
-      editingUser={editingUser}
-      onEditingUserChange={setEditingUser}
-      email={editEmail}
-      onEmailChange={setEditEmail}
-      nickname={editNickname}
-      onNicknameChange={setEditNickname}
-      password={editPassword}
-      onPasswordChange={setEditPassword}
-      busy={busy}
-      onSubmit={(event) => void editUser(event)}
+      editingUser={editForm.user}
+      onEditingUserChange={editForm.setUser}
+      email={editForm.email}
+      onEmailChange={editForm.setEmail}
+      nickname={editForm.nickname}
+      onNicknameChange={editForm.setNickname}
+      password={editForm.password}
+      onPasswordChange={editForm.setPassword}
+      busy={actions.busy}
+      onSubmit={(event) => void editForm.submit(event)}
     />
 
     <AdminUsersTable
-      users={users}
-      total={total}
-      pageSize={pageSize}
-      pageCount={pageCount}
-      currentPage={currentPage}
-      firstVisible={firstVisible}
-      lastVisible={lastVisible}
-      search={search}
-      loading={loading}
-      busy={busy}
-      onSearchChange={(value) => { setSearch(value); setPage(1); }}
-      onPageSizeChange={(value) => { setPageSize(value); setPage(1); }}
-      onPrevious={() => setPage((value) => Math.max(1, value - 1))}
-      onNext={() => setPage((value) => Math.min(pageCount, value + 1))}
-      onEdit={openEditUser}
-      onRemove={(user) => void removeUser(user)}
+      users={directory.users}
+      total={directory.total}
+      pageSize={directory.pageSize}
+      pageCount={directory.pageCount}
+      currentPage={directory.currentPage}
+      firstVisible={directory.firstVisible}
+      lastVisible={directory.lastVisible}
+      search={directory.search}
+      loading={directory.loading}
+      busy={actions.busy}
+      onSearchChange={directory.changeSearch}
+      onPageSizeChange={directory.changePageSize}
+      onPrevious={directory.previousPage}
+      onNext={directory.nextPage}
+      onEdit={actions.openEditUser}
+      onRemove={(user) => void actions.removeUser(user)}
     />
   </div>;
 }
