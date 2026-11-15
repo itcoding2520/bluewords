@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -6,11 +6,10 @@ import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supab
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
 import { useCategoryManagementView } from "@/hooks/useCategoryManagementView";
+import { useCategoryManagementAccess } from "@/hooks/useCategoryManagementAccess";
 export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import {
-  checkCurrentUserIsAdmin,
-  loadPublishedCategoryAuthors,
   updatePublishedCategoryImageByName,
   updateSharedCategoryDetails,
   updateSharedCategoryImage,
@@ -23,8 +22,7 @@ export function useCategoryManagementController() {
     loadCategories: false,
   });
   const supabase = useSupabaseClient();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [categoryAuthors, setCategoryAuthors] = useState<Record<string, string>>({});
+  const { isAdmin, categoryAuthors } = useCategoryManagementAccess(supabase);
   const [name, setName] = useState("");
   const [color, setColor] = useState<VocabularyCategoryColor>("blue");
   const [newImage, setNewImage] = useState<File | null>(null);
@@ -37,37 +35,6 @@ export function useCategoryManagementController() {
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState<CategoryManagementSort>("name");
   const [filterBy, setFilterBy] = useState<CategoryManagementFilter>("all");
-
-  useEffect(() => {
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        const isAdmin = await checkCurrentUserIsAdmin(supabase);
-        if (!cancelled) setIsAdmin(isAdmin);
-      })();
-    }, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [supabase]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        const authors = await loadPublishedCategoryAuthors(supabase);
-        if (!cancelled) {
-          setCategoryAuthors(authors);
-        }
-      })();
-    }, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [isAdmin, supabase]);
 
   const {
     isDefaultCategory,
