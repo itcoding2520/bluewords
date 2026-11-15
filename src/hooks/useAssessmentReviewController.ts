@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { normalizeAssessmentAnswer } from "@/lib/assessments/normalize-answer";
+import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 
 type ReviewQuestion = { type: "vocabulary" | "sentence"; prompt: string; answer: string; word?: string; meaning?: string };
 type AssessmentSummary = { title: string; difficulty: string };
@@ -23,10 +24,8 @@ export function useAssessmentReviewController(attemptId: string) {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch(`/api/assessments/attempts/${attemptId}`, { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not load result.");
-      setAttempt(data.attempt);
+      const result = await fetchAssessmentAttempt<AssessmentReviewAttempt>(attemptId, "Could not load result.");
+      setAttempt(result);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load result.");
     }
