@@ -1,6 +1,5 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function findOwnedVocabularyWord(supabase: SupabaseClient, wordId: string, userId: string) {
   return supabase.from("vocabulary_words")

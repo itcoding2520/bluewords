@@ -1,7 +1,6 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VideoRow } from "@/lib/videos";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function loadVideosPage(
   supabase: SupabaseClient,

@@ -1,11 +1,10 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   CommunicationItemDraft,
   CommunicationLessonDraft,
   CommunicationTopicDraft,
 } from "@/lib/communication/admin-draft-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function saveCommunicationTopic(
   supabase: SupabaseClient,

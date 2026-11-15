@@ -1,8 +1,7 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export type CategoryTab = "default" | "published" | "pending";
 

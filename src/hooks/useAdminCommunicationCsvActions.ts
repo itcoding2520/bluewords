@@ -2,12 +2,11 @@ import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { downloadCsvFile } from "@/lib/download-csv";
 
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { exportCommunicationCsv } from "@/lib/communication/csv";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 type Options = {
   supabase: SupabaseClient;

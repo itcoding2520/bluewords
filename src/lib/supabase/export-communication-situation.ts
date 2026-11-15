@@ -1,9 +1,8 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import type { CommunicationCsvRecord } from "@/lib/communication/csv";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type ExportDialogue = { id: string; dialogue_key: string; lesson_id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
 type ExportTurn = { id: string; turn_key: string; dialogue_id: string; turn_order: number; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[] };
 

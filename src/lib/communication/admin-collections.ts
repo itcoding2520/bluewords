@@ -1,4 +1,4 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import type {
@@ -13,7 +13,6 @@ const COLLECTION_CACHE_VERSION = "v2-paginated-items";
 const collectionsCache = createInvalidatableAsyncCache();
 const collectionsCacheExpiry = new Map<string, number>();
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function loadAdminCommunicationCollections(
   supabase: SupabaseClient,

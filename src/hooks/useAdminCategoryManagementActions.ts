@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import {
   removeAdminSharedCategory,
@@ -10,7 +10,6 @@ import {
 } from "@/lib/admin-category-api";
 import type { CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 interface UseAdminCategoryManagementActionsOptions {
   supabase: SupabaseClient;

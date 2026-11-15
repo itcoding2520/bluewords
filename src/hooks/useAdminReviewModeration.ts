@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { updateAdminReviewStatus } from "@/lib/admin-review-api";
 import type { useAdminReviewData } from "@/hooks/useAdminReviewData";
 import type { PublishedWord } from "@/lib/admin-review-types";
 
 type AdminReviewData = ReturnType<typeof useAdminReviewData>;
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useAdminReviewModeration(supabase: SupabaseClient, {
   categories,

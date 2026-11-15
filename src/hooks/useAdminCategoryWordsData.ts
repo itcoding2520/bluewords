@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
 export function useAdminCategoryWordsData(

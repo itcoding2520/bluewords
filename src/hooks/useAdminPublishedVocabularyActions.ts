@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 import {
   createPublishedCategory,
@@ -10,7 +10,6 @@ import {
   removePublishedAdminReview,
 } from "@/lib/admin-review-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useAdminPublishedVocabularyActions(
   supabase: SupabaseClient,

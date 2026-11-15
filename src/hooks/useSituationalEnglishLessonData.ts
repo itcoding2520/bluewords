@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { attachDialogueTurns } from "@/lib/communication/dialogue-utils";
 import { useSituationalEnglishLessonNavigation } from "@/hooks/useSituationalEnglishLessonNavigation";
 
 import type { Lesson, Topic, Item, Dialogue, Turn, ItemReview } from "@/lib/communication/lesson-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useSituationalEnglishLessonData(
   supabase: SupabaseClient,

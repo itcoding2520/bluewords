@@ -4,10 +4,9 @@ import type { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { updateSharedCategoryDetails } from "@/lib/category-management-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type CategoryMutations = Pick<ReturnType<typeof useVocabulary>, "addCategory" | "updateCategory" | "deleteCategory">;
 
 export function useCategoryManagementActions({

@@ -2,13 +2,12 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { getCorrectReviewIntervalDays } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import type { Item, ItemReview, Lesson } from "@/lib/communication/lesson-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type Props = {
   supabase: SupabaseClient;
   lessonId: string;

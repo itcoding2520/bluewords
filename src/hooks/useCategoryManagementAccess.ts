@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { checkCurrentUserIsAdmin, loadPublishedCategoryAuthors } from "@/lib/category-management-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useCategoryManagementAccess(supabase: SupabaseClient) {
   const [isAdmin, setIsAdmin] = useState(false);

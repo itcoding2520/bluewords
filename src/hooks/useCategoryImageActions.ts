@@ -1,4 +1,4 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow, VocabularyCategoryUpdate } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage } from "@/lib/supabase/category-images";
 import {
@@ -6,7 +6,6 @@ import {
   updateSharedCategoryImage,
 } from "@/lib/category-management-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useCategoryImageActions({
   supabase,

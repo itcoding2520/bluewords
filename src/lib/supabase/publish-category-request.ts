@@ -1,6 +1,5 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function findCommunityCategoryRequest(supabase: SupabaseClient, normalizedName: string) {
   return supabase.from("community_categories")

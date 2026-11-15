@@ -1,7 +1,7 @@
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyCategoriesForUser } from "@/lib/supabase/categories";
 import { getVocabularyWords, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import {
   mapCommunityWords,
   mapVocabularyWordRow,
@@ -10,7 +10,6 @@ import {
   type PublishedCommunityWord,
 } from "@/lib/vocabulary/shared-vocabulary";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function loadAuthenticatedVocabularyCategories(
   supabase: SupabaseClient,

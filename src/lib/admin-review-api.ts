@@ -1,8 +1,7 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 import type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 export type AdminReviewTable = "community_categories" | "community_words";
 export type AdminReviewDecision = "published" | "rejected";
 

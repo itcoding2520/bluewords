@@ -1,8 +1,7 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { parseCommunicationCsvDetailed, type ContentStatus } from "@/lib/communication/csv";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export type CommunicationCsvImportResult = {
   importedItems: number;

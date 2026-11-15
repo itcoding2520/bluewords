@@ -1,10 +1,9 @@
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { NOTIFICATION_LOOKBACK_MS, type NotificationRow } from "@/lib/notifications";
 import { invalidateNotificationsCache } from "@/lib/notifications-cache.mjs";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useNotificationActions({
   supabase,

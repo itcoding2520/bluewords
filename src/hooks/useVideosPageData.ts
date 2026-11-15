@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { loadVideosPage } from "@/lib/videos-api";
 import { toast } from "sonner";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useVideosPageData(supabase: SupabaseClient, page: number) {
   const [videos, setVideos] = useState<VideoRow[]>([]);

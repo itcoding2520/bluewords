@@ -1,4 +1,4 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedNotifications, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
 import {
   NOTIFICATION_LOOKBACK_MS,
@@ -6,7 +6,6 @@ import {
   type NotificationRow,
 } from "@/lib/notifications";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function peekRecentNotifications(userId: string): NotificationRow[] | null {
   const cachedRows = peekCachedNotifications(userId) as NotificationRow[] | null;

@@ -1,9 +1,8 @@
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 import { isAdminUser } from "@/lib/supabase/admin-access";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function checkCurrentUserIsAdmin(supabase: SupabaseClient): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();

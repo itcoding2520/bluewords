@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   CommunicationCollections,
   CommunicationLesson,
@@ -12,7 +12,6 @@ import type {
 } from "@/lib/supabase/communication-admin-types";
 import { loadAdminCommunicationCollections } from "@/lib/communication/admin-collections";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useAdminCommunicationCollections(supabase: SupabaseClient) {
   const [topics, setTopics] = useState<CommunicationTopic[]>([]);

@@ -1,12 +1,11 @@
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useVideosAdminActions({
   isAdmin,

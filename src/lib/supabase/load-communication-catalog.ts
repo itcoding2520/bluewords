@@ -1,7 +1,6 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { Goal, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 function localDayStart() {
   const day = new Date();
