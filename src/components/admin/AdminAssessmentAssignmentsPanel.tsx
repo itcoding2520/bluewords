@@ -1,10 +1,10 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { CalendarDays, RefreshCw, Send, Users } from "lucide-react";
+import { CalendarDays, Send, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { formatLocalDate } from "@/lib/formatDate";
 import type { AssessmentAdminUser, AssessmentAssignment } from "@/lib/assessments/admin-api";
+import { AdminAssessmentRecentAssignments } from "@/components/admin/AdminAssessmentRecentAssignments";
 
 export function AdminAssessmentAssignmentsPanel({
   title,
@@ -53,8 +53,10 @@ export function AdminAssessmentAssignmentsPanel({
       <label className="assessment-date-field"><CalendarDays size={17} /> Due date (optional)<input type="date" min={today || undefined} value={dueAt} onChange={(event) => onDueAtChange(event.target.value)} /></label>
       <Button type="submit" disabled={sending || loading || !title.trim() || (!allUsers && selected.length === 0)}><Send size={17} /> Assign test to learners</Button>
     </form>
-    <section className="assessment-admin-card"><div className="assessment-card-heading"><span><CalendarDays size={19} /></span><div><h2>Recent assignments</h2><p>Track who has started and completed each test.</p></div><button type="button" className="assessment-refresh" onClick={onRefresh} aria-label="Refresh assignments"><RefreshCw size={17} /></button></div>
-      {loading ? <p className="assessment-empty">Loading assignments…</p> : assignments.length ? <div className="assessment-admin-list">{assignments.map((item) => { const done = item.assessment_recipients.filter((recipient) => recipient.status === "completed").length; return <article key={item.id}><div><strong>{item.title}</strong><span>{item.difficulty} · 10 questions · {done}/{item.assessment_recipients.length} complete</span><small>{item.due_at ? `Due ${formatLocalDate(item.due_at)}` : "No due date"}</small></div><span className="assessment-progress">{Math.round(done / Math.max(1, item.assessment_recipients.length) * 100)}%</span></article>; })}</div> : <p className="assessment-empty">No assignments yet.</p>}
-    </section>
+    <AdminAssessmentRecentAssignments
+      assignments={assignments}
+      loading={loading}
+      onRefresh={onRefresh}
+    />
   </>;
 }
