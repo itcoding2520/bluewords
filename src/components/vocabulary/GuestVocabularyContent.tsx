@@ -4,16 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Sparkles, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
-import { useVocabulary } from "@/contexts/VocabularyContext";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
-
-const PAGE_SIZE = 20;
+import { useGuestVocabularyController } from "@/hooks/useGuestVocabularyController";
 const categoryColors: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-100 text-blue-800", violet: "bg-violet-100 text-violet-800",
   orange: "bg-orange-100 text-orange-800", green: "bg-emerald-100 text-emerald-800",
@@ -60,22 +58,10 @@ function GuestWordRow({ word, color }: { word: VocabularyWord; color: Vocabulary
 }
 
 export function GuestVocabularyContent() {
-  const { words, categories, isLoaded } = useVocabulary();
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [page, setPage] = useState(1);
-
-  const filteredWords = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
-    return words.filter((word) => {
-      const matchesCategory = category === "all" || word.category === category;
-      const matchesQuery = !query || `${word.word} ${word.meaning}`.toLocaleLowerCase().includes(query);
-      return matchesCategory && matchesQuery;
-    });
-  }, [category, search, words]);
-  const pageCount = Math.max(1, Math.ceil(filteredWords.length / PAGE_SIZE));
-  const pageWords = filteredWords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const categoryColor = (name: string) => categories.find((item) => item.name === name)?.color ?? "blue";
+  const {
+    words, categories, isLoaded, search, category, page, setPage,
+    filteredWords, pageCount, pageWords, categoryColor, changeSearch, changeCategory,
+  } = useGuestVocabularyController();
 
   return (
     <div className="guest-vocabulary-page">
@@ -96,9 +82,9 @@ export function GuestVocabularyContent() {
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Search public vocabulary</span>
           <Search size={17} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search words or meanings…" className="h-11 w-full rounded-2xl border border-slate-200 bg-white/95 pl-10 pr-3 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+          <input value={search} onChange={(event) => changeSearch(event.target.value)} placeholder="Search words or meanings…" className="h-11 w-full rounded-2xl border border-slate-200 bg-white/95 pl-10 pr-3 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
         </label>
-        <CategoryDropdown category={category} categories={categories} words={words} onChange={(value) => { setCategory(value); setPage(1); }} includeAll allLabel="Select category" />
+        <CategoryDropdown category={category} categories={categories} words={words} onChange={changeCategory} includeAll allLabel="Select category" />
       </div>
 
       <Card className="guest-vocabulary-list mt-4 overflow-hidden p-0">
