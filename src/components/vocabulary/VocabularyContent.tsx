@@ -8,14 +8,11 @@ import { CommunityVocabulary } from "./CommunityVocabulary";
 import { VocabularyLegacyImportNotice } from "./VocabularyLegacyImportNotice";
 import { VocabularyBrowserToolbar } from "./VocabularyBrowserToolbar";
 import { VocabularyBulkActions } from "@/components/vocabulary/VocabularyBulkActions";
+import { VocabularyWordDialogs } from "@/components/vocabulary/VocabularyWordDialogs";
 import { useVocabularyContentExperience } from "@/hooks/useVocabularyContentExperience";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
-// Keep the vocabulary browsing path lean. These tools are only needed after
-// an explicit admin action (or when the user opens a modal).
-const WordFormModal = dynamic(() => import("./WordFormModal").then((module) => module.WordFormModal));
-const DeleteConfirmModal = dynamic(() => import("./DeleteConfirmModal").then((module) => module.DeleteConfirmModal));
 const CategoryManagementPanel = dynamic(() => import("./CategoryManagementPanel").then((module) => module.CategoryManagementPanel));
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
@@ -166,24 +163,18 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
 
       <CommunityVocabulary />
 
-      {isFormOpen && (
-        <WordFormModal
-          key={editingWord?.id ?? "new"}
-          open={isFormOpen}
-          words={currentPageWords}
-          categories={categories}
-          editingWord={editingWord}
-          onClose={handleCloseForm}
-          onSubmit={handleSubmitWord}
-        />
-      )}
-
-      {deletingWord && <DeleteConfirmModal
-          word={deletingWord}
-          isDeleting={isSubmitting}
-          onClose={() => setDeletingWord(null)}
-          onConfirm={handleConfirmDelete}
-        />}
+      <VocabularyWordDialogs
+        isFormOpen={isFormOpen}
+        words={currentPageWords}
+        categories={categories}
+        editingWord={editingWord}
+        onCloseForm={handleCloseForm}
+        onSubmitWord={handleSubmitWord}
+        deletingWord={deletingWord}
+        isDeleting={isSubmitting}
+        onCloseDelete={() => setDeletingWord(null)}
+        onConfirmDelete={handleConfirmDelete}
+      />
 
     </>
   );
