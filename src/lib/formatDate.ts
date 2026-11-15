@@ -2,6 +2,10 @@ export function formatDateTime(value: string): string {
   return new Date(value).toLocaleString();
 }
 
+export function formatLocalDate(value: string | Date): string {
+  return (value instanceof Date ? value : new Date(value)).toLocaleDateString();
+}
+
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
