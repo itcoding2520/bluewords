@@ -13,6 +13,7 @@ import { CategoryAvatar, CategoryIdentity } from "@/components/vocabulary/Catego
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { Select } from "@/components/ui/Select";
+import { loadAdminUserEmails } from "@/lib/admin-users";
 
 type Submission = {
   id: string;
@@ -32,7 +33,6 @@ type Submission = {
 };
 type PublishedCategory = { id: string; owner_id: string; name: string; color: string; status: string; image_path: string | null };
 type PublishedWord = { id: string; owner_id: string; category_id: string; word: string; meaning: string; status: string; image_path: string | null };
-type AdminUser = { id: string; email: string | null };
 
 export function AdminReviewContent() {
   const confirmDialog = useConfirmDialog();
@@ -71,14 +71,8 @@ export function AdminReviewContent() {
         if (publishedCategoryResult.error || publishedWordResult.error) throw publishedCategoryResult.error ?? publishedWordResult.error;
         const liveCategories = (publishedCategoryResult.data ?? []) as PublishedCategory[];
         const liveWords = (publishedWordResult.data ?? []) as PublishedWord[];
-        const ownerIds = [...new Set([...pendingCategories, ...pendingWords, ...liveCategories, ...liveWords].map((item) => item.owner_id))];
-        const nextEmails: Record<string, string> = {};
-        for (let start = 0; start < ownerIds.length; start += 100) {
-          const response = await fetch(`/api/admin/users?ids=${ownerIds.slice(start, start + 100).join(",")}`);
-          const payload = await response.json() as { users?: AdminUser[]; error?: string };
-          if (!response.ok) throw new Error(payload.error ?? "Could not load submission authors.");
-          for (const user of payload.users ?? []) nextEmails[user.id] = user.email ?? "No email";
-        }
+        const ownerIds = [...pendingCategories, ...pendingWords, ...liveCategories, ...liveWords].map((item) => item.owner_id);
+        const nextEmails = await loadAdminUserEmails(ownerIds, "Could not load submission authors.");
         return { categories: pendingCategories, words: pendingWords, publishedCategories: liveCategories, publishedWords: liveWords, ownerEmails: nextEmails };
       }, { force });
       setCategories(result.categories);

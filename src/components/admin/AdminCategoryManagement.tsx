@@ -15,6 +15,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { formatShortDate } from "@/lib/formatDate";
+import { loadAdminUserEmails } from "@/lib/admin-users";
 
 type CategoryTab = "default" | "published" | "pending";
 type CommunityCategory = {
@@ -36,7 +37,6 @@ type CommunityWord = {
   created_at: string;
   image_path: string | null;
 };
-type AdminUser = { id: string; email: string | null };
 
 const tabs: Array<{ id: CategoryTab; label: string; description: string; icon: typeof BookOpen }> = [
   { id: "default", label: "Default", description: "Starter categories and words", icon: BookOpen },
@@ -81,15 +81,8 @@ export function AdminCategoryManagement() {
         if (loadError) throw loadError;
 
         const loadedCategories = (data ?? []) as CommunityCategory[];
-        const ownerIds = [...new Set(loadedCategories.map((category) => category.owner_id))];
-        const usersById: Record<string, string> = {};
-        for (let start = 0; start < ownerIds.length; start += 100) {
-          const ownerBatch = ownerIds.slice(start, start + 100);
-          const response = await fetch(`/api/admin/users?ids=${ownerBatch.join(",")}`);
-          const payload = await response.json() as { users?: AdminUser[]; error?: string };
-          if (!response.ok) throw new Error(payload.error ?? "Could not load category owners.");
-          for (const user of payload.users ?? []) usersById[user.id] = user.email ?? "No email";
-        }
+        const ownerIds = loadedCategories.map((category) => category.owner_id);
+        const usersById = await loadAdminUserEmails(ownerIds, "Could not load category owners.");
         return { categories: loadedCategories, emails: usersById };
       }, { force });
       setCommunityCategories(result.categories);
@@ -132,14 +125,8 @@ export function AdminCategoryManagement() {
             .order("word");
           if (loadError) throw loadError;
           const loadedWords = (data ?? []) as CommunityWord[];
-          const ownerIds = [...new Set(loadedWords.map((word) => word.owner_id))];
-          const ownerEmails: Record<string, string> = {};
-          for (let start = 0; start < ownerIds.length; start += 100) {
-            const response = await fetch(`/api/admin/users?ids=${ownerIds.slice(start, start + 100).join(",")}`);
-            const payload = await response.json() as { users?: AdminUser[]; error?: string };
-            if (!response.ok) throw new Error(payload.error ?? "Could not load word authors.");
-            for (const user of payload.users ?? []) ownerEmails[user.id] = user.email ?? "No email";
-          }
+          const ownerIds = loadedWords.map((word) => word.owner_id);
+          const ownerEmails = await loadAdminUserEmails(ownerIds, "Could not load word authors.");
           return { words: loadedWords, emails: ownerEmails };
         });
         if (cancelled) return;
