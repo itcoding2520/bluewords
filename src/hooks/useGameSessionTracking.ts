@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
-import type { GameSaveState } from "@/types/game";
+import type { GameSaveState, VocabularyGameType } from "@/types/game";
 
-type GameType = "word-match" | "word-scramble" | "word-maze";
+type GameType = Exclude<VocabularyGameType, "sentence-builder">;
 
 export function useGameSessionTracking({
   isAuthenticated,
