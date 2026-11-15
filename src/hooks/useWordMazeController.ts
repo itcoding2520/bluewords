@@ -5,6 +5,7 @@ import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCa
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { buildWordMazeRound, type MazeWord } from "@/lib/word-maze";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 type Phase = "setup" | "playing" | "results";
 export type { MazeWord } from "@/lib/word-maze";
@@ -45,7 +46,7 @@ export function useWordMazeController(input: {
     for (const word of words) {
       const meaning = getPrimaryVocabularyMeaning(word);
       const key = meaning.toLocaleLowerCase();
-      if (!meaning || (category !== "all" && word.category !== category) || meanings.has(key)) continue;
+      if (!meaning || !matchesVocabularyCategory(word.category, category) || meanings.has(key)) continue;
       meanings.add(key);
       result.push(word);
     }

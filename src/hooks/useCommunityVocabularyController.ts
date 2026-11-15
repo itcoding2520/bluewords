@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 type CommunityWord = {
   id: string;
@@ -40,7 +41,7 @@ export function useCommunityVocabularyController() {
   const visibleWords = useMemo(() => {
     const matchesSearch = createVocabularySearchMatcher(search);
     return words.filter((item) =>
-      (category === "all" || item.community_categories.name === category)
+      matchesVocabularyCategory(item.community_categories.name, category)
       && matchesSearch(item.word, item.meaning)
     );
   }, [category, search, words]);
