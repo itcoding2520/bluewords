@@ -1,0 +1,104 @@
+import { useVocabulary } from "@/contexts/VocabularyContext";
+import { useVocabularySelection } from "@/hooks/useVocabularySelection";
+import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
+import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
+import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
+import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
+import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
+import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
+import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+
+export function useVocabularyContentExperience(isAdmin: boolean) {
+  const {
+    categories,
+    words,
+    categoriesLoaded,
+    addWord,
+    updateWord,
+    deleteWord,
+    deleteWords,
+    toggleMastered,
+    refreshWords,
+    authVersion,
+  } = useVocabulary({ loadWords: false });
+  const filters = useVocabularyContentFilters(categories);
+  const { page, pageSize, debouncedSearch, selectedCategory, setPage } = filters;
+  const pageData = useVocabularyPageData({
+    authVersion,
+    categories,
+    categoriesLoaded,
+    query: {
+      page,
+      pageSize,
+      search: debouncedSearch,
+      category: selectedCategory === "All" ? null : selectedCategory,
+      status: filters.status === "all" ? null : filters.status,
+    },
+    onPageOutOfRange: setPage,
+  });
+  const exportCount = useVocabularyCategoryExportCount({
+    authVersion,
+    categories,
+    pageWordCount: pageData.pageWords.length,
+    selectedCategory,
+  });
+  const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });
+
+  const visibleTotalWords = pageData.loadedAuthVersion === authVersion ? pageData.totalWords : 0;
+  const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const currentPageWords = pageData.loadedAuthVersion === authVersion ? pageData.pageWords : [];
+  const selection = useVocabularySelection(currentPageWords, authVersion);
+  const firstVisibleWord = visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const lastVisibleWord = Math.min(currentPage * pageSize, visibleTotalWords);
+  const controller = useVocabularyContentController({
+    selectedIds: selection.selectedIds,
+    setSelectedIds: selection.setSelectedIds,
+    setPageWords: pageData.setPageWords,
+    setIsPageLoading: pageData.setIsPageLoading,
+    setPage,
+    setSearch: filters.setSearch,
+    setCategory: filters.setCategory,
+    setStatus: filters.setStatus,
+    setIsExportCountLoading: exportCount.setIsLoading,
+    refreshPage: pageData.refreshPage,
+    addWord,
+    updateWord,
+    deleteWord,
+    deleteWords,
+    toggleMastered,
+  });
+
+  async function loadExportWords() {
+    if (selectedCategory === "All") return currentPageWords;
+    const rows = await getVocabularyWordsForCategory(selectedCategory);
+    return rows.map(mapVocabularyWordRow);
+  }
+
+  function handleImportComplete() {
+    setPage(1);
+    pageData.setIsPageLoading(true);
+    pageData.refreshPage();
+  }
+
+  return {
+    categories,
+    words,
+    categoriesLoaded,
+    authVersion,
+    ...filters,
+    ...pageData,
+    ...exportCount,
+    ...legacyImport,
+    ...selection,
+    ...controller,
+    loadExportWords,
+    handleImportComplete,
+    visibleTotalWords,
+    pageCount,
+    currentPage,
+    currentPageWords,
+    firstVisibleWord,
+    lastVisibleWord,
+  };
+}

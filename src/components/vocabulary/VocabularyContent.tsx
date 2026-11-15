@@ -7,16 +7,8 @@ import { VocabularyList } from "./VocabularyList";
 import { VocabularyPagination } from "./VocabularyPagination";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { CommunityVocabulary } from "./CommunityVocabulary";
-import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
-import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
-import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
-import { useVocabularySelection } from "@/hooks/useVocabularySelection";
-import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
-import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
-import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
-import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
-import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
+import { useVocabularyContentExperience } from "@/hooks/useVocabularyContentExperience";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -32,79 +24,37 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     categories,
     words,
     categoriesLoaded,
-    addWord,
-    updateWord,
-    deleteWord,
-    deleteWords,
-    toggleMastered,
-    refreshWords,
     authVersion,
-  } = useVocabulary({ loadWords: false });
-  const {
     search,
-    setSearch,
-    setCategory,
     status,
-    setStatus,
-    page,
     setPage,
     pageSize,
     setPageSize,
-    debouncedSearch,
     selectedCategory,
-  } = useVocabularyContentFilters(categories);
-  const { pageWords, setPageWords, loadedAuthVersion, totalWords, isPageLoading, setIsPageLoading, refreshPage } = useVocabularyPageData({
-    authVersion,
-    categories,
-    categoriesLoaded,
-    query: {
-      page,
-      pageSize,
-      search: debouncedSearch,
-      category: selectedCategory === "All" ? null : selectedCategory,
-      status: status === "all" ? null : status,
-    },
-    onPageOutOfRange: setPage,
-  });
-  const {
     count: categoryExportCount,
     isLoading: isExportCountLoading,
-    setIsLoading: setIsExportCountLoading,
-  } = useVocabularyCategoryExportCount({
-    authVersion,
-    categories,
-    pageWordCount: pageWords.length,
-    selectedCategory,
-  });
-  const {
     hasPendingImport,
     importPreview,
     isImporting,
     showImportPreview,
     togglePreview: handleLegacyPreviewToggle,
     importVocabulary: handleImportVocabulary,
-  } = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage });
-
-  const visibleTotalWords = loadedAuthVersion === authVersion ? totalWords : 0;
-  const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const currentPageWords = loadedAuthVersion === authVersion ? pageWords : [];
-  const {
     selectedIds,
-    setSelectedIds,
     selectPageRef,
     isPageSelected,
     isPagePartiallySelected,
     toggleSelected,
     togglePageSelection,
-  } = useVocabularySelection(currentPageWords, authVersion);
-  const firstVisibleWord =
-    visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastVisibleWord = Math.min(
-    currentPage * pageSize,
-    visibleTotalWords
-  );
-  const {
+    currentPageWords,
+    loadedAuthVersion,
+    visibleTotalWords,
+    pageCount,
+    currentPage,
+    firstVisibleWord,
+    lastVisibleWord,
+    isPageLoading,
+    setIsPageLoading,
+    setPageWords,
     isFormOpen,
     isCategoriesOpen,
     setIsCategoriesOpen,
@@ -124,23 +74,9 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     handleConfirmDelete,
     handleSubmitWord,
     handleToggleMastered,
-  } = useVocabularyContentController({
-    selectedIds,
-    setSelectedIds,
-    setPageWords,
-    setIsPageLoading,
-    setPage,
-    setSearch,
-    setCategory,
-    setStatus,
-    setIsExportCountLoading,
-    refreshPage,
-    addWord,
-    updateWord,
-    deleteWord,
-    deleteWords,
-    toggleMastered,
-  });
+    loadExportWords,
+    handleImportComplete,
+  } = useVocabularyContentExperience(isAdmin);
 
 
   if (!categoriesLoaded) {
@@ -239,18 +175,10 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       {isAdmin && <VocabularyCsvTools
         exportCount={selectedCategory === "All" ? currentPageWords.length : categoryExportCount}
         isExportCountLoading={isExportCountLoading}
-        loadExportWords={async () => {
-          if (selectedCategory === "All") return currentPageWords;
-          const rows = await getVocabularyWordsForCategory(selectedCategory);
-          return rows.map(mapVocabularyWordRow);
-        }}
+        loadExportWords={loadExportWords}
         exportCategory={selectedCategory}
         categories={categories}
-        onImportComplete={() => {
-          setPage(1);
-          setIsPageLoading(true);
-          refreshPage();
-        }}
+        onImportComplete={handleImportComplete}
       />}
 
       <VocabularyToolbar
