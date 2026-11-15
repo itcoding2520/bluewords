@@ -7,6 +7,11 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { attachDialogueTurns } from "@/lib/communication/dialogue-utils";
 import { loadSituationalEnglishLessonBase } from "@/lib/supabase/situational-english-lesson-base";
+import {
+  loadSituationalEnglishDialogueTurns,
+  loadSituationalEnglishLearnerProgress,
+  startSituationalEnglishLessonProgress,
+} from "@/lib/supabase/situational-english-lesson-queries";
 import { useSituationalEnglishLessonNavigation } from "@/hooks/useSituationalEnglishLessonNavigation";
 
 import type { Lesson, Topic, Item, Dialogue, Turn, ItemReview } from "@/lib/communication/lesson-types";
@@ -48,14 +53,17 @@ export function useSituationalEnglishLessonData(
         initializeNavigation(loadedItems, reviewItem);
 
         const user = loadedUserId ? { id: loadedUserId } : null;
-        const dialogueTurnsRequest = foundDialogues.length
-          ? supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order")
-          : null;
+        const dialogueTurnsRequest = loadSituationalEnglishDialogueTurns(
+          supabase,
+          foundDialogues.map((dialogue) => dialogue.id)
+        );
         const learnerProgressRequest = user
-          ? Promise.all([
-            supabase.from("communication_item_reviews").select("item_id,status,review_count,correct_count").eq("user_id", user.id).in("item_id", loadedItems.map((item) => item.id)),
-            supabase.from("communication_lesson_progress").select("status").eq("user_id", user.id).eq("lesson_id", lessonId).maybeSingle(),
-          ])
+          ? loadSituationalEnglishLearnerProgress(
+            supabase,
+            user.id,
+            lessonId,
+            loadedItems.map((item) => item.id)
+          )
           : null;
 
         const [turnsResult, learnerProgressResult] = await Promise.all([
@@ -74,10 +82,20 @@ export function useSituationalEnglishLessonData(
           if (reviewResult.error) throw reviewResult.error;
           if (active) setReviews(Object.fromEntries((reviewResult.data ?? []).map((row) => [row.item_id, { status: row.status, review_count: row.review_count, correct_count: row.correct_count }])));
           if (!progressResult.error && !progressResult.data) {
-            const { error } = await supabase.from("communication_lesson_progress").upsert({ user_id: user.id, lesson_id: lessonId, status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: "user_id,lesson_id" });
+            const { error } = await startSituationalEnglishLessonProgress(
+              supabase,
+              user.id,
+              lessonId,
+              false
+            );
             if (!error) invalidateCommunicationCatalogCache(user.id);
           } else if (progressResult.data?.status === "not_started") {
-            const { error } = await supabase.from("communication_lesson_progress").update({ status: "in_progress", started_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("user_id", user.id).eq("lesson_id", lessonId);
+            const { error } = await startSituationalEnglishLessonProgress(
+              supabase,
+              user.id,
+              lessonId,
+              true
+            );
             if (!error) invalidateCommunicationCatalogCache(user.id);
           }
         }
