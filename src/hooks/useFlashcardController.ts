@@ -84,25 +84,33 @@ export function useFlashcardController({
   }
 
   return {
-    category,
-    status,
-    index,
-    setIsRevealed,
-    isRevealed,
-    isTogglingStatus,
-    reviewMode,
-    areSchedulesLoaded,
-    isLoadingSchedules,
-    scheduleLoadFailed,
-    statusCounts,
-    deck,
-    dueCount,
-    card,
-    changeCategory,
-    changeStatus,
-    moveCard,
-    changeReviewMode,
-    loadReviewSchedules,
-    handleToggleStatus,
+    filters: {
+      category,
+      status,
+      reviewMode,
+      statusCounts,
+      dueCount,
+      changeCategory,
+      changeStatus,
+      changeReviewMode,
+    },
+    schedules: {
+      areLoaded: areSchedulesLoaded,
+      isLoading: isLoadingSchedules,
+      loadFailed: scheduleLoadFailed,
+      load: loadReviewSchedules,
+    },
+    deck: {
+      cards: deck,
+      index,
+      currentCard: card,
+      moveCard,
+    },
+    card: {
+      isRevealed,
+      setIsRevealed,
+      isTogglingStatus,
+      toggleStatus: handleToggleStatus,
+    },
   };
 }
