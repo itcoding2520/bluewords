@@ -2,15 +2,9 @@
 
 import { useRef } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import type { VocabularyWord } from "@/data/vocabulary";
-import {
-  VOCABULARY_TYPES,
-  type VocabularyCategory,
-  type VocabularyType,
-} from "@/config/vocabulary";
+import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { Select } from "../ui/Select";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { VocabularyImageField } from "@/components/vocabulary/VocabularyImageField";
@@ -18,6 +12,8 @@ import { useWordFormController } from "@/hooks/useWordFormController";
 import { DetailedMeaningsEditor } from "@/components/vocabulary/DetailedMeaningsEditor";
 import { VocabularyWordCategoryField } from "@/components/vocabulary/VocabularyWordCategoryField";
 import { VocabularyWordTextFields } from "@/components/vocabulary/VocabularyWordTextFields";
+import { VocabularyWordTypeField } from "@/components/vocabulary/VocabularyWordTypeField";
+import { WordFormActions } from "@/components/vocabulary/WordFormActions";
 
 interface WordFormModalProps {
   open: boolean;
@@ -156,29 +152,7 @@ export function WordFormModal({
               onRemove={removeDetailedMeaning}
             />
 
-            <div>
-              <label
-                htmlFor="type"
-                className="text-sm font-medium text-slate-700"
-              >
-                Type
-              </label>
-
-              <Select
-                id="type"
-                value={type}
-                onChange={(event) =>
-                  setType(event.target.value as VocabularyType)
-                }
-                containerClassName="mt-2"
-              >
-                {VOCABULARY_TYPES.map((vocabularyType) => (
-                  <option key={vocabularyType} value={vocabularyType}>
-                    {vocabularyType === "word" ? "Word" : "Expression"}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <VocabularyWordTypeField value={type} onChange={setType} />
 
             <VocabularyWordCategoryField
               category={category}
@@ -187,24 +161,11 @@ export function WordFormModal({
               onChange={(value) => setCategory(value as VocabularyCategory)}
             />
 
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? "Saving..."
-                  : isEditing
-                    ? "Save changes"
-                    : "Add word"}
-              </Button>
-            </div>
+            <WordFormActions
+              isSubmitting={isSubmitting}
+              isEditing={isEditing}
+              onClose={handleClose}
+            />
           </form>
         </Dialog.Content>
       </Dialog.Portal>
