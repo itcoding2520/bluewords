@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 import {
   getCachedUserProfile,
   getUserProfile,
@@ -48,9 +49,9 @@ export function useSidebarAccount() {
       setAuthUserId(session?.user.id ?? null);
       if (session?.user.id) {
         setIsAdminChecked(false);
-        const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
+        const admin = await isAdminUser(supabase, session.user.id);
         if (active) {
-          setIsAdmin(Boolean(admin));
+          setIsAdmin(admin);
           setIsAdminChecked(true);
         }
       } else {
@@ -74,9 +75,9 @@ export function useSidebarAccount() {
       setIsAdminChecked(!session?.user.id);
       if (session?.user.id) {
         const userId = session.user.id;
-        void supabase.from("app_admins").select("user_id").eq("user_id", userId).maybeSingle().then(({ data: admin }) => {
+        void isAdminUser(supabase, userId).then((admin) => {
           if (active) {
-            setIsAdmin(Boolean(admin));
+            setIsAdmin(admin);
             setIsAdminChecked(true);
           }
         });

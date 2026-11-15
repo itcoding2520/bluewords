@@ -1,15 +1,14 @@
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 import type { createClient } from "@/lib/supabase/client";
 import { loadAdminUserEmails } from "@/lib/admin-users";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 
 export async function checkCurrentUserIsAdmin(supabase: SupabaseClient): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
-  const { data } = await supabase.from("app_admins")
-    .select("user_id").eq("user_id", user.id).maybeSingle();
-  return Boolean(data);
+  return isAdminUser(supabase, user.id);
 }
 
 export async function loadPublishedCategoryAuthors(supabase: SupabaseClient) {

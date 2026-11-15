@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -15,8 +16,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle();
-  if (!admin) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  if (!await isAdminUser(supabase, user.id)) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
 
   const adminClient = createAdminClient();
   if (!adminClient) return NextResponse.json({ error: "Notification sending is not configured." }, { status: 503 });

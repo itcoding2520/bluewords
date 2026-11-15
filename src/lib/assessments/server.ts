@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 
 export function createAssessmentAdminClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,8 +16,7 @@ export async function getRequestUser() {
 }
 
 export async function isAssessmentAdmin(client: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data } = await client.from("app_admins").select("user_id").eq("user_id", userId).maybeSingle();
-  return Boolean(data);
+  return isAdminUser(client, userId);
 }
 
 export function shuffled<T>(items: T[]): T[] {

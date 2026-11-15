@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { AuthUser } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -37,8 +38,7 @@ async function authorizeAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { response: NextResponse.json({ error: "Authentication required." }, { status: 401 }) };
-  const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle();
-  if (!admin) return { response: NextResponse.json({ error: "Admin access required." }, { status: 403 }) };
+  if (!await isAdminUser(supabase, user.id)) return { response: NextResponse.json({ error: "Admin access required." }, { status: 403 }) };
   const adminClient = createAdminClient();
   if (!adminClient) return { response: NextResponse.json({ error: "User administration is not configured. Set SUPABASE_SERVICE_ROLE_KEY on the server." }, { status: 503 }) };
   return { user, adminClient };
