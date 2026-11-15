@@ -33,30 +33,34 @@ export function useFlashcardController({
     loadReviewSchedules,
   } = useFlashcardReviewSchedules(isAuthenticated);
 
+  const categoryWords = useMemo(
+    () => words.filter((word) => category === "all" || word.category === category),
+    [category, words]
+  );
+
   const statusCounts = useMemo(() => {
-    const categoryWords = words.filter((word) => category === "all" || word.category === category);
     return {
       learning: categoryWords.filter((word) => word.status === "learning").length,
       mastered: categoryWords.filter((word) => word.status === "mastered").length,
     };
-  }, [category, words]);
+  }, [categoryWords]);
 
   const deck = useMemo(() => {
-    const filteredWords = words.filter((word) => {
-      if (word.status !== status || (category !== "all" && word.category !== category)) return false;
+    const filteredWords = categoryWords.filter((word) => {
+      if (word.status !== status) return false;
       if (reviewMode === "all") return true;
       if (!areSchedulesLoaded) return false;
       const schedule = reviewSchedules.get(word.id);
       return !schedule || new Date(schedule.due_at).getTime() <= now;
     });
     return shuffleDeck(buildFlashcardDeck(filteredWords), shuffleSeed);
-  }, [areSchedulesLoaded, category, now, reviewMode, reviewSchedules, shuffleSeed, status, words]);
+  }, [areSchedulesLoaded, categoryWords, now, reviewMode, reviewSchedules, shuffleSeed, status]);
 
-  const dueCount = useMemo(() => words.filter((word) => {
-    if (word.status !== status || (category !== "all" && word.category !== category)) return false;
+  const dueCount = useMemo(() => categoryWords.filter((word) => {
+    if (word.status !== status) return false;
     const schedule = reviewSchedules.get(word.id);
     return !schedule || new Date(schedule.due_at).getTime() <= now;
-  }).length, [category, now, reviewSchedules, status, words]);
+  }).length, [categoryWords, now, reviewSchedules, status]);
 
   const card = deck.length > 0 ? deck[index % deck.length] : undefined;
   const { isTogglingStatus, handleToggleStatus } = useFlashcardStatusAction({
