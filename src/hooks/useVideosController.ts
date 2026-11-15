@@ -1,56 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { getCachedVideosPage, invalidateVideosCache, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
+import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
-import { createVideoRecord, findVideoByYoutubeId, loadVideosPage, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
+import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
+import { useVideosPageData } from "@/hooks/useVideosPageData";
 
 export function useVideosController(isAdmin: boolean) {
   const confirmDialog = useConfirmDialog();
   const supabase = useSupabaseClient();
-  const [videos, setVideos] = useState<VideoRow[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
-  const loadVideos = useCallback(async () => {
-    const cached = peekCachedVideosPage(page, VIDEOS_PAGE_SIZE) as { videos: VideoRow[]; total: number } | null;
-    if (cached) {
-      setVideos(cached.videos);
-      setTotal(cached.total);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await getCachedVideosPage(
-        page,
-        VIDEOS_PAGE_SIZE,
-        () => loadVideosPage(supabase, page, VIDEOS_PAGE_SIZE)
-      ) as { videos: VideoRow[]; total: number };
-      setVideos(result.videos);
-      setTotal(result.total);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load videos.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, supabase]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void loadVideos(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadVideos]);
+  const { videos, total, isLoading, loadVideos } = useVideosPageData(supabase, page);
 
   function resetForm() {
     setEditingId(null);
