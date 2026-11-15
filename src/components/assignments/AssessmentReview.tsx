@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Clock3, XCircle } from "lucide-react";
-import { formatDuration } from "@/components/assignments/AssignmentsContent";
+import { formatDuration } from "@/lib/assignments/format-duration";
 
 type ReviewQuestion = { type: "vocabulary" | "sentence"; prompt: string; answer: string; word?: string; meaning?: string };
 type ReviewAttempt = { id: string; attempt_number: number; questions: ReviewQuestion[]; answers: string[]; score: number; correct_count: number; elapsed_seconds: number; result: string; completed_at: string; assessment_recipients: { assessments: { title: string; difficulty: string } | Array<{ title: string; difficulty: string }> } | Array<{ assessments: { title: string; difficulty: string } | Array<{ title: string; difficulty: string }> }> };

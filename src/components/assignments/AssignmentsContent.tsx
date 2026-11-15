@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpenCheck, CalendarDays, CheckCircle2, History, Timer, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
+import { formatDuration } from "@/lib/assignments/format-duration";
 
 type Attempt = { id: string; attempt_number: number; score: number | null; correct_count: number | null; elapsed_seconds: number | null; result: string | null; started_at: string; completed_at: string | null };
 type Assignment = { id: string; status: string; assignedAt: string; assessment: { id: string; title: string; difficulty: string; dueAt: string | null; questions: Array<{ type: string }> } | null; attempts: Attempt[] };
@@ -48,5 +49,3 @@ export function AssignmentsContent() {
     <p className="assessment-private-note">🔒 Your test results and history are private. Only you can see them.</p>
   </div>;
 }
-
-export function formatDuration(seconds: number) { return `${Math.floor(seconds / 60)}m ${seconds % 60}s`; }
