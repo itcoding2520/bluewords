@@ -13,7 +13,7 @@ export type LeaderboardQuizMode = "choose-meaning" | "type-word";
 export type LeaderboardDifficulty = "easy" | "medium" | "hard";
 export type LeaderboardQuestionCount = 10 | 20 | 30;
 export type LeaderboardGridSize = 10 | 15 | 20;
-type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
+export type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
 
 export function useGamesLeaderboardController() {
   const [game, setGame] = useState<LeaderboardGame>("quiz");
