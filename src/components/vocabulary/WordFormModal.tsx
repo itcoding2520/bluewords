@@ -16,10 +16,10 @@ import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import { VocabularyImageField } from "@/components/vocabulary/VocabularyImageField";
 import { useWordFormController } from "@/hooks/useWordFormController";
 import { DetailedMeaningsEditor } from "@/components/vocabulary/DetailedMeaningsEditor";
+import { VocabularyWordCategoryField } from "@/components/vocabulary/VocabularyWordCategoryField";
 
 interface WordFormModalProps {
   open: boolean;
@@ -257,34 +257,12 @@ export function WordFormModal({
               </Select>
             </div>
 
-            <div>
-              <label
-                htmlFor="category"
-                className="text-sm font-medium text-slate-700"
-              >
-                <span className="mb-2 block">Category</span>
-                {categories.find((item) => item.name === category) && <CategoryIdentity
-                  name={category}
-                  imagePath={categories.find((item) => item.name === category)?.image_path}
-                  fallbackWordImagePath={words.find((item) => item.category.trim().toLocaleLowerCase() === category.trim().toLocaleLowerCase() && item.imagePath)?.imagePath}
-                />}
-              </label>
-
-              <Select
-                id="category"
-                value={category}
-                onChange={(event) =>
-                  setCategory(event.target.value as VocabularyCategory)
-                }
-                containerClassName="mt-2"
-              >
-                {categories.map((categoryOption) => (
-                  <option key={categoryOption.id} value={categoryOption.name}>
-                    {categoryOption.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <VocabularyWordCategoryField
+              category={category}
+              categories={categories}
+              words={words}
+              onChange={(value) => setCategory(value as VocabularyCategory)}
+            />
 
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
               <Button
