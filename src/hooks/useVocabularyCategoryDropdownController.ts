@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { CategoryDropdownOption } from "@/lib/vocabulary/category-dropdown-types";
 
-export interface VocabularyCategoryDropdownOption {
-  id: string;
-  name: string;
-  value: string;
-  color?: string | null;
-}
+export type { CategoryDropdownOption as VocabularyCategoryDropdownOption } from "@/lib/vocabulary/category-dropdown-types";
 
 export function useVocabularyCategoryDropdownController({
   category,
@@ -13,7 +9,7 @@ export function useVocabularyCategoryDropdownController({
   onChange,
 }: {
   category: string;
-  options: VocabularyCategoryDropdownOption[];
+  options: CategoryDropdownOption[];
   onChange: (value: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
