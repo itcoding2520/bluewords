@@ -12,7 +12,7 @@ import {
   validateVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
 
-interface FormErrors {
+export interface WordFormErrors {
   word?: string;
   meaning?: string;
   image?: string;
@@ -43,7 +43,7 @@ export function useWordFormController({
   const [detailedMeanings, setDetailedMeanings] = useState<VocabularyMeaning[]>(
     editingWord?.detailedMeanings ?? []
   );
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<WordFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
@@ -60,7 +60,7 @@ export function useWordFormController({
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedImage]);
 
-  function clearError(field: keyof FormErrors) {
+  function clearError(field: keyof WordFormErrors) {
     setErrors((current) => ({ ...current, [field]: undefined }));
   }
 
@@ -94,7 +94,7 @@ export function useWordFormController({
 
     const trimmedWord = word.trim();
     const trimmedMeaning = meaning.trim();
-    const nextErrors: FormErrors = {};
+    const nextErrors: WordFormErrors = {};
 
     if (!trimmedWord) nextErrors.word = "Word is required.";
     if (!trimmedMeaning) nextErrors.meaning = "Meaning is required.";
