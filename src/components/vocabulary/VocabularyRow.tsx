@@ -1,12 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import {
-  Check,
-  Circle,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 
 import {
   categorySolidColorStyles,
@@ -14,11 +9,11 @@ import {
   type VocabularyWord,
 } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { cn } from "@/lib/cn";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "./PronunciationButton";
 import { ActionMenu } from "@/components/ui/ActionMenu";
+import { VocabularyMasteryStatus } from "./VocabularyMasteryStatus";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -74,10 +69,7 @@ export function VocabularyRow({
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const [isToggling, setIsToggling] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const togglingRef = useRef(false);
-  const mastered = item.status === "mastered";
   const categoryColor = categories.find(
     (category) => category.name === item.category
   )?.color;
@@ -91,20 +83,6 @@ export function VocabularyRow({
     time: "🕒", body: "🙂", fruits: "🍓", actions: "🏃", weather: "🌤️",
   };
   const imageFallback = wordEmoji[item.word.toLocaleLowerCase()] ?? categoryEmoji[item.category.toLocaleLowerCase()] ?? "📖";
-  async function handleToggleMastered() {
-    if (togglingRef.current) return;
-
-    togglingRef.current = true;
-    setIsToggling(true);
-
-    try {
-      await onToggleMastered(item.id, item.status);
-    } finally {
-      togglingRef.current = false;
-      setIsToggling(false);
-    }
-  }
-
   return (
     <div className="vocabulary-word-row border-b border-slate-100 px-4 py-2 last:border-none sm:px-6 sm:py-2.5">
       <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
@@ -172,32 +150,10 @@ export function VocabularyRow({
           </span>
 
           {/* Status */}
-          <button
-            type="button"
-            onClick={() => void handleToggleMastered()}
-            disabled={isToggling}
-            aria-label={`Mark ${item.word} as ${
-              mastered ? "learning" : "mastered"
-            }`}
-            aria-pressed={mastered}
-            aria-busy={isToggling}
-            className={cn(
-              "inline-flex w-fit shrink-0 cursor-pointer items-center gap-1.5 rounded-lg py-1 text-sm font-medium transition",
-              "lg:col-start-5 lg:row-auto",
-              "disabled:cursor-wait disabled:opacity-60",
-              mastered
-                ? "text-emerald-600 hover:text-emerald-700"
-                : "text-amber-600 hover:text-amber-700"
-            )}
-          >
-            {mastered ? <Check size={15} /> : <Circle size={14} />}
-
-            {isToggling
-              ? "Saving..."
-              : mastered
-                ? "Mastered"
-                : "Learning"}
-          </button>
+          <VocabularyMasteryStatus
+            item={item}
+            onToggleMastered={onToggleMastered}
+          />
         </div>
 
         {/* Actions */}
