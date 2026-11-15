@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
+import type { AssessmentReviewQuestion } from "@/lib/assessments/types";
 
-type ReviewQuestion = { type: "vocabulary" | "sentence"; prompt: string; answer: string; word?: string; meaning?: string };
 type AssessmentSummary = { title: string; difficulty: string };
 type AssessmentRecipient = { assessments: AssessmentSummary | AssessmentSummary[] };
 type AssessmentReviewAttempt = {
   id: string;
   attempt_number: number;
-  questions: ReviewQuestion[];
+  questions: AssessmentReviewQuestion[];
   answers: string[];
   score: number;
   correct_count: number;
