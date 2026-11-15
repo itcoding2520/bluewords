@@ -34,6 +34,15 @@ export function loadRecentNotifications(
   }, { force });
 }
 
+export function loadUnreadNotificationCount(supabase: SupabaseClient, userId: string) {
+  return supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("recipient_id", userId)
+    .neq("kind", "assessment_assigned")
+    .is("read_at", null);
+}
+
 export async function markRecentNotificationsRead(
   supabase: SupabaseClient,
   userId: string,

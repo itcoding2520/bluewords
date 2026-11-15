@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { loadUnreadNotificationCount } from "@/lib/notifications-data";
 
 export function useSidebarNotificationCount(authUserId: string | null, isAuthenticated: boolean) {
   const supabase = useSupabaseClient();
@@ -10,14 +11,10 @@ export function useSidebarNotificationCount(authUserId: string | null, isAuthent
 
   useEffect(() => {
     if (!isAuthenticated || !authUserId) return;
+    const userId: string = authUserId;
     let active = true;
     async function refreshUnreadCount() {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", authUserId)
-        .neq("kind", "assessment_assigned")
-        .is("read_at", null);
+      const { count, error } = await loadUnreadNotificationCount(supabase, userId);
       if (active && !error) setUnreadNotificationCount(count ?? 0);
     }
 
