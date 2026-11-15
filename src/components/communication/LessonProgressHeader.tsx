@@ -1,4 +1,4 @@
-import type { Lesson, Topic } from "@/hooks/useSituationalEnglishLessonData";
+import type { Lesson, Topic } from "@/lib/communication/lesson-types";
 
 export function LessonProgressHeader({ lesson, topic, masteredCount, itemCount }: {
   lesson: Lesson;

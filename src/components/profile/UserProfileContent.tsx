@@ -1,22 +1,13 @@
 "use client";
 
-import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-
-import { useEffect, useState } from "react";
 import { Camera, Check, ImagePlus, KeyRound, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
 
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import {
-  deleteUserAvatar,
-  getUserProfile,
-  saveUserProfile,
-  uploadUserAvatar,
-  validateUserAvatar,
-  type UserProfile,
-} from "@/lib/supabase/user-profile";
+import { useUserProfileEditor } from "@/hooks/useUserProfileEditor";
+import { useProfilePasswordChange } from "@/hooks/useProfilePasswordChange";
 
 interface UserProfileContentProps {
   userId: string;
@@ -24,152 +15,37 @@ interface UserProfileContentProps {
 }
 
 export function UserProfileContent({ userId, email }: UserProfileContentProps) {
-  const supabase = useSupabaseClient();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [nickname, setNickname] = useState("");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [removeAvatar, setRemoveAvatar] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordNotice, setPasswordNotice] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    void getUserProfile(userId).then((loadedProfile) => {
-      if (!active) return;
-      setProfile(loadedProfile);
-      setNickname(loadedProfile?.nickname ?? "");
-    }).catch(() => {
-      if (active) setError("Could not load your profile. Please try again.");
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-
-    return () => { active = false; };
-  }, [userId]);
-
-  useEffect(() => {
-    if (!avatarFile) return;
-
-    let active = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (active && typeof reader.result === "string") setPreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(avatarFile);
-
-    return () => {
-      active = false;
-      reader.abort();
-    };
-  }, [avatarFile]);
-
-  const normalizedNickname = nickname.trim();
-  const hasChanges = normalizedNickname !== (profile?.nickname ?? "") || Boolean(avatarFile) || removeAvatar;
-  const previewPath = removeAvatar ? null : profile?.avatar_path;
-
-  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError("");
-    setNotice("");
-
-    let uploadedPath: string | null = null;
-    try {
-      const previousAvatarPath = profile?.avatar_path ?? null;
-      if (avatarFile) uploadedPath = await uploadUserAvatar(avatarFile);
-
-      const updatedProfile = await saveUserProfile({
-        nickname: normalizedNickname || null,
-        avatarPath: uploadedPath ?? previewPath ?? null,
-      });
-
-      setProfile(updatedProfile);
-      setNickname(updatedProfile.nickname ?? "");
-      setAvatarFile(null);
-      setPreviewUrl(null);
-      setRemoveAvatar(false);
-      setNotice("Profile updated.");
-
-      if (previousAvatarPath && previousAvatarPath !== updatedProfile.avatar_path) {
-        try {
-          await deleteUserAvatar(previousAvatarPath);
-        } catch (cleanupError) {
-          console.warn("Could not remove the previous profile avatar:", cleanupError);
-        }
-      }
-    } catch (saveError) {
-      if (uploadedPath) {
-        try {
-          await deleteUserAvatar(uploadedPath);
-        } catch (cleanupError) {
-          console.warn("Could not remove the unused profile avatar:", cleanupError);
-        }
-      }
-
-      const code = typeof saveError === "object" && saveError && "code" in saveError
-        ? saveError.code
-        : null;
-      setError(code === "23505"
-        ? "That nickname is already in use. Choose another one."
-        : saveError instanceof Error
-          ? saveError.message
-          : "Could not save your profile. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handlePasswordChange(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPasswordError("");
-    setPasswordNotice("");
-
-    if (newPassword.length < 8) {
-      setPasswordError("Use a password with at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("The passwords do not match.");
-      return;
-    }
-
-    setPasswordSaving(true);
-    try {
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-      if (updateError) throw updateError;
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordNotice("Your password has been updated.");
-    } catch (updateError) {
-      setPasswordError(updateError instanceof Error ? updateError.message : "Could not update your password. Please try again.");
-    } finally {
-      setPasswordSaving(false);
-    }
-  }
-
-  function handleAvatarChange(file: File | undefined) {
-    setError("");
-    setNotice("");
-    if (!file) return;
-
-    const validationError = validateUserAvatar(file);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setAvatarFile(file);
-    setPreviewUrl(null);
-    setRemoveAvatar(false);
-  }
+  const editor = useUserProfileEditor(userId);
+  const password = useProfilePasswordChange();
+  const {
+    profile,
+    nickname,
+    avatarFile,
+    removeAvatar,
+    previewUrl,
+    loading,
+    saving,
+    error,
+    notice,
+    normalizedNickname,
+    hasChanges,
+    previewPath,
+    saveProfile,
+    selectAvatar,
+    removeSelectedAvatar,
+    undoAvatarRemoval,
+    changeNickname,
+  } = editor;
+  const {
+    newPassword,
+    confirmPassword,
+    passwordSaving,
+    passwordError,
+    passwordNotice,
+    changePassword,
+    changeNewPassword,
+    changeConfirmPassword,
+  } = password;
 
   return (
     <div className="profile-page mx-auto max-w-5xl">
@@ -179,7 +55,7 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
         <p className="page-intro-description mt-2">Choose how you appear in BlueWords and on game leaderboards.</p>
       </header>
 
-      <form onSubmit={handleSave} className="profile-form rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <form onSubmit={saveProfile} className="profile-form rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <div className="profile-avatar-section flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="profile-avatar-display flex justify-center sm:justify-start">
             {previewUrl ? (
@@ -201,15 +77,15 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
             <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
               <label className="profile-avatar-change inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-700 transition hover:bg-slate-50">
                 <ImagePlus size={16} /> {avatarFile || profile?.avatar_path ? "Change image" : "Upload image"}
-                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={loading || saving} onChange={(event) => { handleAvatarChange(event.target.files?.[0]); event.currentTarget.value = ""; }} />
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={loading || saving} onChange={(event) => { selectAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} />
               </label>
               {(avatarFile || (profile?.avatar_path && !removeAvatar)) && (
-                <button type="button" onClick={() => { setAvatarFile(null); setPreviewUrl(null); setRemoveAvatar(Boolean(profile?.avatar_path)); setError(""); setNotice(""); }} className="profile-avatar-remove inline-flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-bold text-red-600 transition hover:bg-red-50">
+                <button type="button" onClick={removeSelectedAvatar} className="profile-avatar-remove inline-flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-bold text-red-600 transition hover:bg-red-50">
                   <Trash2 size={15} /> Remove image
                 </button>
               )}
               {removeAvatar && profile?.avatar_path && !avatarFile && (
-                <button type="button" onClick={() => setRemoveAvatar(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
+                <button type="button" onClick={undoAvatarRemoval} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
                   Undo
                 </button>
               )}
@@ -226,7 +102,7 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
             <input
               id="profile-nickname"
               value={nickname}
-              onChange={(event) => { setNickname(event.target.value); setError(""); setNotice(""); }}
+              onChange={(event) => changeNickname(event.target.value)}
               maxLength={24}
               minLength={2}
               autoComplete="nickname"
@@ -265,14 +141,14 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
             <p className="mt-1 text-sm text-slate-500">Choose a new password with at least 8 characters.</p>
           </div>
         </div>
-        <form onSubmit={handlePasswordChange} className="mt-5 grid gap-4 sm:grid-cols-2">
+        <form onSubmit={changePassword} className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-bold text-slate-700" htmlFor="profile-new-password">
             New password
-            <PasswordInput id="profile-new-password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setPasswordError(""); setPasswordNotice(""); }} placeholder="Enter new password" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+            <PasswordInput id="profile-new-password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => changeNewPassword(event.target.value)} placeholder="Enter new password" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
           </label>
           <label className="block text-sm font-bold text-slate-700" htmlFor="profile-confirm-password">
             Confirm new password
-            <PasswordInput id="profile-confirm-password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordError(""); setPasswordNotice(""); }} placeholder="Enter it again" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
+            <PasswordInput id="profile-confirm-password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => changeConfirmPassword(event.target.value)} placeholder="Enter it again" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
           </label>
           <div className="sm:col-span-2">
             {passwordError && <AutoDismissMessage key={passwordError} variant="error" className="mb-3">{passwordError}</AutoDismissMessage>}

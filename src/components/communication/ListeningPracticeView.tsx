@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Check, Headphones, Volume2 } from "lucide-react";
-import type { Item } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item } from "@/lib/communication/lesson-types";
 import { AnswerChoiceList } from "@/components/communication/AnswerChoiceList";
 
 type Props = {

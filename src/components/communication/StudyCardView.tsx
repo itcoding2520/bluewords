@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, RotateCcw, Volume2 } from "lucide-react";
-import type { Item } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item } from "@/lib/communication/lesson-types";
 
 export function StudyCardView({
   item,

@@ -6,7 +6,7 @@ import type { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 import { getCorrectReviewIntervalDays } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
-import type { Item, ItemReview, Lesson } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item, ItemReview, Lesson } from "@/lib/communication/lesson-types";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 type Props = {
@@ -22,6 +22,25 @@ type Props = {
 export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson, items, reviews, setReviews, userId }: Props) {
   const [saving, setSaving] = useState(false);
 
+  async function updateLessonProgress(itemId: string, review: ItemReview, now: string) {
+    if (!userId) return null;
+
+    const progress = getNextLessonProgress(items, reviews, itemId, review);
+    setReviews(progress.nextReviews);
+
+    const { error } = await supabase.from("communication_lesson_progress").upsert({
+      user_id: userId,
+      lesson_id: lessonId,
+      status: progress.completed ? "completed" : "in_progress",
+      completed_items: progress.masteredCount,
+      completed_at: progress.completed ? now : null,
+      updated_at: now,
+    }, { onConflict: "user_id,lesson_id" });
+
+    if (!error) invalidateCommunicationCatalogCache(userId);
+    return error;
+  }
+
   async function setItemStatus(item: Item, status: "learning" | "mastered") {
     if (!userId) { toast.error("Sign in to save your learning progress."); return; }
     setSaving(true);
@@ -33,15 +52,14 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
       due_at: status === "mastered" ? new Date(Date.now() + 7 * 86400000).toISOString() : now, updated_at: now,
     }, { onConflict: "user_id,item_id" });
     if (error) { toast.error(error.message); setSaving(false); return; }
-    const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
+    const review = {
       status,
       review_count: existingReview?.review_count ?? 0,
       correct_count: existingReview?.correct_count ?? 0,
-    });
-    setReviews(nextReviews);
-    const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({ user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress", completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now }, { onConflict: "user_id,lesson_id" });
+    } satisfies ItemReview;
+    const progressError = await updateLessonProgress(item.id, review, now);
     if (progressError) toast.error(progressError.message);
-    else { invalidateCommunicationCatalogCache(userId); toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice."); }
+    else toast.success(status === "mastered" ? "Marked as mastered." : "Saved for more practice.");
     setSaving(false);
   }
 
@@ -64,18 +82,14 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
     if (error) {
       toast.error("Could not save this practice result.");
     } else {
-      const { nextReviews, masteredCount, completed } = getNextLessonProgress(items, reviews, item.id, {
+      const review = {
         status: nextStatus,
         review_count: nextReviewCount,
         correct_count: nextCorrectCount,
-      });
-      setReviews(nextReviews);
-      const { error: progressError } = await supabase.from("communication_lesson_progress").upsert({
-        user_id: userId, lesson_id: lessonId, status: completed ? "completed" : "in_progress",
-        completed_items: masteredCount, completed_at: completed ? now : null, updated_at: now,
-      }, { onConflict: "user_id,lesson_id" });
+      } satisfies ItemReview;
+      const progressError = await updateLessonProgress(item.id, review, now);
       if (progressError) toast.error("Answer saved, but lesson progress could not be updated.");
-      else { invalidateCommunicationCatalogCache(userId); toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice."); }
+      else toast(correct ? "Correct! This item is scheduled for review." : "Not quite. This item will come back for practice.");
     }
     setSaving(false);
   }

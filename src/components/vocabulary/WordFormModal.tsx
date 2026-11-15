@@ -1,13 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import type {
-  VocabularyMeaning,
-  VocabularyWord,
-} from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
 import {
   VOCABULARY_TYPES,
   PARTS_OF_SPEECH,
@@ -21,13 +18,9 @@ import { cn } from "@/lib/cn";
 import { Select } from "../ui/Select";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import {
-  deleteVocabularyImages,
-  uploadVocabularyImage,
-  validateVocabularyImage,
-} from "@/lib/supabase/vocabulary-images";
 import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import { VocabularyImageField } from "@/components/vocabulary/VocabularyImageField";
+import { useWordFormController } from "@/hooks/useWordFormController";
 
 interface WordFormModalProps {
   open: boolean;
@@ -38,12 +31,6 @@ interface WordFormModalProps {
   onSubmit: (word: VocabularyWord) => Promise<boolean>;
 }
 
-interface FormErrors {
-  word?: string;
-  meaning?: string;
-  image?: string;
-}
-
 export function WordFormModal({
   open,
   words,
@@ -52,42 +39,34 @@ export function WordFormModal({
   onClose,
   onSubmit,
 }: WordFormModalProps) {
-  const [word, setWord] = useState(editingWord?.word ?? "");
-  const [meaning, setMeaning] = useState(editingWord?.meaning ?? "");
-  const [type, setType] = useState<VocabularyType>(
-    editingWord?.type ?? "word"
-  );
-  const [category, setCategory] = useState<VocabularyCategory>(
-    editingWord?.category ??
-      categories.find((item) => item.name === "Daily")?.name ??
-      categories[0]?.name ??
-      "Uncategorized"
-  );
-  const [detailedMeanings, setDetailedMeanings] =
-    useState<VocabularyMeaning[]>(
-      editingWord?.detailedMeanings ?? []
-    );
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const {
+    word,
+    setWord,
+    meaning,
+    setMeaning,
+    type,
+    setType,
+    category,
+    setCategory,
+    detailedMeanings,
+    errors,
+    setErrors,
+    isSubmitting,
+    selectedImage,
+    setSelectedImage,
+    removeCurrentImage,
+    setRemoveCurrentImage,
+    selectedImageUrl,
+    updateDetailedMeaning,
+    addDetailedMeaning,
+    removeDetailedMeaning,
+    handleSubmit,
+  } = useWordFormController({ words, categories, editingWord, onSubmit });
   const existingImageUrl = useVocabularyImageUrl(
     removeCurrentImage ? null : editingWord?.imagePath
   );
   const isEditing = Boolean(editingWord);
   const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (!selectedImage) {
-      setSelectedImageUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedImage);
-    setSelectedImageUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedImage]);
 
   if (!open) {
     return null;
@@ -96,109 +75,6 @@ export function WordFormModal({
   function handleClose() {
     if (isSubmitting) return;
     onClose();
-  }
-
-  function updateDetailedMeaning(
-    index: number,
-    updates: Partial<VocabularyMeaning>
-  ) {
-    setDetailedMeanings((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...updates } : item
-      )
-    );
-  }
-
-  function addDetailedMeaning() {
-    setDetailedMeanings((current) => [
-      ...current,
-      {
-        partOfSpeech: PARTS_OF_SPEECH[0],
-        meaning: "",
-      },
-    ]);
-  }
-
-  function removeDetailedMeaning(index: number) {
-    setDetailedMeanings((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index)
-    );
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (isSubmitting) return;
-
-    const trimmedWord = word.trim();
-    const trimmedMeaning = meaning.trim();
-
-    const nextErrors: FormErrors = {};
-
-    if (!trimmedWord) {
-      nextErrors.word = "Word is required.";
-    }
-
-    if (!trimmedMeaning) {
-      nextErrors.meaning = "Meaning is required.";
-    }
-
-    const wordExists = words.some(
-      (item) =>
-        item.word.toLowerCase() === trimmedWord.toLowerCase() &&
-        item.id !== editingWord?.id
-    );
-
-    if (wordExists) {
-      nextErrors.word = "This word already exists.";
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      if (selectedImage) {
-        const imageError = validateVocabularyImage(selectedImage);
-        if (imageError) {
-          setErrors((current) => ({ ...current, image: imageError }));
-          return;
-        }
-      }
-
-      const wordId = editingWord?.id ?? crypto.randomUUID();
-      const uploadedPath = selectedImage
-        ? await uploadVocabularyImage(wordId, selectedImage)
-        : null;
-      const success = await onSubmit({
-        id: wordId,
-        word: trimmedWord,
-        meaning: trimmedMeaning,
-        type,
-        category,
-        status: editingWord?.status ?? "learning",
-        detailedMeanings: detailedMeanings
-          .map((item) => ({
-            ...item,
-            meaning: item.meaning.trim(),
-          }))
-          .filter((item) => item.meaning.length > 0),
-        imagePath: uploadedPath ?? (removeCurrentImage ? null : editingWord?.imagePath ?? null),
-      });
-      if (!success && uploadedPath) {
-        await deleteVocabularyImages([uploadedPath]);
-      }
-    } catch (error) {
-      setErrors((current) => ({
-        ...current,
-        image: error instanceof Error ? error.message : "Could not upload image.",
-      }));
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
   return (

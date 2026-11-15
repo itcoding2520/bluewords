@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { Item, ItemReview } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item, ItemReview } from "@/lib/communication/lesson-types";
 
 export function useSituationalEnglishLessonProgressData({
   items,

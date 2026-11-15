@@ -22,6 +22,29 @@ export type PublicSharedVocabulary = {
   }>;
 };
 
+export type PublishedCommunityCategory = {
+  id: string;
+  owner_id: string;
+  name: string;
+  color: VocabularyCategoryColor;
+  image_path: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PublishedCommunityWord = {
+  id: string;
+  word: string;
+  meaning: string;
+  ipa: string | null;
+  community_categories: {
+    id: string;
+    name: string;
+    color: VocabularyCategoryColor;
+    status: string;
+  };
+};
+
 function normalizeLabel(value: string) {
   return value.trim().toLocaleLowerCase();
 }
@@ -52,6 +75,59 @@ export function sortCategories(categories: VocabularyCategoryRow[]): VocabularyC
   return [...categories].sort((left, right) => {
     if (left.is_default !== right.is_default) return left.is_default ? -1 : 1;
     return left.name.localeCompare(right.name);
+  });
+}
+
+export function mergeVocabularyCategories(
+  personalCategories: VocabularyCategoryRow[],
+  communityCategories: PublishedCommunityCategory[],
+): VocabularyCategoryRow[] {
+  const sharedByName = new Map(communityCategories.map((category) => [normalizeLabel(category.name), category]));
+  const personalNames = new Set(personalCategories.map((category) => normalizeLabel(category.name)));
+  const categoriesWithSharedImages = personalCategories.map((category) => ({
+    ...category,
+    image_path: sharedByName.get(normalizeLabel(category.name))?.image_path ?? category.image_path ?? null,
+  }));
+  const sharedOnlyCategories = communityCategories
+    .filter((category) => !personalNames.has(normalizeLabel(category.name)))
+    .map((category) => ({
+      id: `community-category-${category.id}`,
+      user_id: category.owner_id,
+      name: category.name,
+      color: category.color,
+      is_default: false,
+      created_at: category.created_at,
+      updated_at: category.updated_at,
+      image_path: category.image_path,
+    }));
+
+  return sortCategories([...categoriesWithSharedImages, ...sharedOnlyCategories]);
+}
+
+export function mapCommunityWords(
+  communityWords: PublishedCommunityWord[],
+  personalWords: VocabularyWord[],
+): VocabularyWord[] {
+  const personalKeys = new Set(personalWords.map((item) =>
+    `${normalizeLabel(item.category)}\u0000${normalizeLabel(item.word)}`
+  ));
+
+  return communityWords.flatMap((item) => {
+    const key = `${normalizeLabel(item.community_categories.name)}\u0000${normalizeLabel(item.word)}`;
+    if (personalKeys.has(key)) return [];
+
+    return [{
+      id: `community-${item.id}`,
+      word: item.word,
+      meaning: item.meaning,
+      category: item.community_categories.name as VocabularyCategory,
+      status: "learning" as const,
+      type: "word" as const,
+      ipa: item.ipa,
+      imagePath: null,
+      detailedMeanings: [],
+      isCustom: true,
+    }];
   });
 }
 

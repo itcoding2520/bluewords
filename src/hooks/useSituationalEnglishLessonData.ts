@@ -5,14 +5,10 @@ import { toast } from "sonner";
 
 import type { createClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
-import { shuffled } from "@/lib/communication/lesson-practice";
+import { attachDialogueTurns } from "@/lib/communication/dialogue-utils";
+import { useSituationalEnglishLessonNavigation } from "@/hooks/useSituationalEnglishLessonNavigation";
 
-export type Lesson = { id: string; topic_id: string; title_en: string; title_vi: string; difficulty: "easy" | "medium" | "hard"; status: string };
-export type Topic = { id: string; title_en: string; title_vi: string };
-export type Item = { id: string; item_key: string; item_type: "word" | "phrase" | "sentence_pattern"; content_en: string; meaning_vi: string; example_en: string; example_vi: string; image_keyword: string; audio_url: string; sort_order: number };
-export type Dialogue = { id: string; title_en: string; title_vi: string; prompt_vi: string; sort_order: number };
-export type Turn = { id: string; speaker: string; text_en: string; meaning_vi: string; audio_url: string; response_prompt_vi: string; expected_response: string; response_options: string[]; turn_order: number };
-export type ItemReview = { status: "learning" | "mastered"; review_count: number; correct_count: number };
+import type { Lesson, Topic, Item, Dialogue, Turn, ItemReview } from "@/lib/communication/lesson-types";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 
@@ -27,9 +23,14 @@ export function useSituationalEnglishLessonData(
   const [dialogues, setDialogues] = useState<Array<Dialogue & { turns: Turn[] }>>([]);
   const [reviews, setReviews] = useState<Record<string, ItemReview>>({});
   const [userId, setUserId] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [practiceOrder, setPracticeOrder] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const {
+    currentIndex,
+    setCurrentIndex,
+    practiceOrder,
+    setPracticeOrder,
+    initializeNavigation,
+  } = useSituationalEnglishLessonNavigation();
 
   useEffect(() => {
     let active = true;
@@ -55,26 +56,33 @@ export function useSituationalEnglishLessonData(
         setTopic(topicResult.data as Topic | null);
         setItems(loadedItems);
         setUserId(authResult.data.user?.id ?? null);
-        setPracticeOrder(shuffled(loadedItems.map((item) => item.id)));
-        if (reviewItem) {
-          const dueIndex = loadedItems.findIndex((item) => item.id === reviewItem);
-          if (dueIndex >= 0) setCurrentIndex(dueIndex);
-        }
+        initializeNavigation(loadedItems, reviewItem);
 
         const foundDialogues = (dialogueResult.data ?? []) as Dialogue[];
-        if (foundDialogues.length) {
-          const turnsResult = await supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order");
-          if (turnsResult.error) throw turnsResult.error;
-          const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
-          setDialogues(foundDialogues.map((dialogue) => ({ ...dialogue, turns: turns.filter((turn) => turn.dialogue_id === dialogue.id).map((turn) => ({ ...turn, response_options: shuffled(turn.response_options ?? []) })) })));
-        }
-
         const user = authResult.data.user;
-        if (user) {
-          const [reviewResult, progressResult] = await Promise.all([
+        const dialogueTurnsRequest = foundDialogues.length
+          ? supabase.from("communication_dialogue_turns").select("id,dialogue_id,speaker,text_en,meaning_vi,audio_url,response_prompt_vi,expected_response,response_options,turn_order").in("dialogue_id", foundDialogues.map((dialogue) => dialogue.id)).order("turn_order")
+          : null;
+        const learnerProgressRequest = user
+          ? Promise.all([
             supabase.from("communication_item_reviews").select("item_id,status,review_count,correct_count").eq("user_id", user.id).in("item_id", loadedItems.map((item) => item.id)),
             supabase.from("communication_lesson_progress").select("status").eq("user_id", user.id).eq("lesson_id", lessonId).maybeSingle(),
-          ]);
+          ])
+          : null;
+
+        const [turnsResult, learnerProgressResult] = await Promise.all([
+          dialogueTurnsRequest,
+          learnerProgressRequest,
+        ]);
+
+        if (turnsResult) {
+          if (turnsResult.error) throw turnsResult.error;
+          const turns = (turnsResult.data ?? []) as (Turn & { dialogue_id: string })[];
+          if (active) setDialogues(attachDialogueTurns(foundDialogues, turns));
+        }
+
+        if (user && learnerProgressResult) {
+          const [reviewResult, progressResult] = learnerProgressResult;
           if (reviewResult.error) throw reviewResult.error;
           if (active) setReviews(Object.fromEntries((reviewResult.data ?? []).map((row) => [row.item_id, { status: row.status, review_count: row.review_count, correct_count: row.correct_count }])));
           if (!progressResult.error && !progressResult.data) {
@@ -93,7 +101,7 @@ export function useSituationalEnglishLessonData(
       }
     })();
     return () => { active = false; window.speechSynthesis?.cancel(); };
-  }, [lessonId, reviewItem, supabase]);
+  }, [initializeNavigation, lessonId, reviewItem, supabase]);
 
   return { lesson, topic, items, dialogues, reviews, setReviews, userId, loading, currentIndex, setCurrentIndex, practiceOrder, setPracticeOrder };
 }

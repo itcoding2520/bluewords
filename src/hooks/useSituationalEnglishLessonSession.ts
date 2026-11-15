@@ -1,6 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 
-import type { Item } from "@/hooks/useSituationalEnglishLessonData";
+import type { Item } from "@/lib/communication/lesson-types";
 import { shuffled } from "@/lib/communication/lesson-practice";
 
 export type LessonMode = "study" | "practice" | "drills" | "listening";
