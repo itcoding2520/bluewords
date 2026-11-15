@@ -1,35 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, Circle, RotateCcw, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import {
-  getCachedLatestVocabularyReviewHistory,
-  getLatestVocabularyReviewHistory,
-  type VocabularyReviewWithWord,
-} from "@/lib/supabase/reviews";
-
-const PAGE_SIZE = 20;
-
-interface DailyReviewGroup {
-  day: string;
-  reviews: VocabularyReviewWithWord[];
-  learning: number;
-  mastered: number;
-}
-
-function getLocalDay(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+import { useReviewHistoryController } from "@/hooks/useReviewHistoryController";
 
 function formatDay(day: string): string {
   const date = new Date(`${day}T12:00:00`);
@@ -49,65 +26,23 @@ function formatReviewedAt(value: string): string {
 }
 
 export function ReviewHistoryContent({ userId }: { userId: string }) {
-  const initialReviews = getCachedLatestVocabularyReviewHistory(userId);
-  const [reviews, setReviews] = useState<VocabularyReviewWithWord[]>(() => initialReviews ?? []);
-  const [selectedDay, setSelectedDay] = useState(() =>
-    initialReviews?.[0] ? getLocalDay(initialReviews[0].reviewed_at) : ""
-  );
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(initialReviews === null);
-  const [loadFailed, setLoadFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void getLatestVocabularyReviewHistory(userId)
-      .then((latestReviews) => {
-        if (cancelled) return;
-        setReviews(latestReviews);
-        setSelectedDay((current) => {
-          const availableDays = new Set(latestReviews.map((review) => getLocalDay(review.reviewed_at)));
-          return current && availableDays.has(current)
-            ? current
-            : latestReviews[0]
-              ? getLocalDay(latestReviews[0].reviewed_at)
-              : "";
-        });
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadFailed(true);
-          setIsLoading(false);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [userId]);
-
-  const dailyGroups = useMemo(() => {
-    const groups = new Map<string, DailyReviewGroup>();
-    for (const review of reviews) {
-      const day = getLocalDay(review.reviewed_at);
-      if (!day) continue;
-      let group = groups.get(day);
-      if (!group) {
-        group = { day, reviews: [], learning: 0, mastered: 0 };
-        groups.set(day, group);
-      }
-      group.reviews.push(review);
-      if (review.vocabulary_words?.status === "mastered") group.mastered += 1;
-      else group.learning += 1;
-    }
-    return [...groups.values()].sort((left, right) => right.day.localeCompare(left.day));
-  }, [reviews]);
-
-  const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
-  const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;
-  const latestDay = dailyGroups[0]?.day;
-  const pageCount = Math.max(1, Math.ceil((selectedGroup?.reviews.length ?? 0) / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const pageReviews = selectedGroup?.reviews.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) ?? [];
-  const firstVisible = pageReviews.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const lastVisible = Math.min(currentPage * PAGE_SIZE, selectedGroup?.reviews.length ?? 0);
+  const {
+    isLoading,
+    loadFailed,
+    dailyGroups,
+    selectedGroup,
+    selectedDay,
+    setSelectedDay,
+    setPage,
+    earliestDay,
+    latestDay,
+    pageReviews,
+    firstVisible,
+    lastVisible,
+    pageCount,
+    currentPage,
+    pageSize,
+  } = useReviewHistoryController(userId);
 
   return (
     <div className="review-results-page mx-auto max-w-5xl">
@@ -202,7 +137,7 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
                   </article>
                 ))}
               </div>
-              {selectedGroup.reviews.length > PAGE_SIZE && (
+              {selectedGroup.reviews.length > pageSize && (
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-4 text-sm text-slate-500 sm:px-6">
                   <span>Showing {firstVisible}–{lastVisible} of {selectedGroup.reviews.length} words</span>
                   <div className="flex items-center gap-2">
