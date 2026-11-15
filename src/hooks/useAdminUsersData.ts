@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } 
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
 import { getPageCount } from "@/lib/pagination";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export function useAdminUsersData({
   page,
@@ -18,13 +19,8 @@ export function useAdminUsersData({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search.trim(), 250);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
-    return () => window.clearTimeout(timer);
-  }, [search]);
 
   const loadUsers = useCallback(async (signal?: AbortSignal, force = false) => {
     setLoading(true);
