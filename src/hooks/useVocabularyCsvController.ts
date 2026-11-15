@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
+import { downloadCsvFile } from "@/lib/download-csv";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
@@ -102,10 +103,6 @@ export function useVocabularyCsvController({
     setIsExporting(true);
     try {
       const wordsToExport = await loadExportWords();
-      const blob = new Blob([exportVocabularyCsv(wordsToExport)], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
       const date = new Date();
       const dateSuffix = `${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${date.getFullYear()}`;
       const categoryFileName = exportCategory
@@ -114,11 +111,11 @@ export function useVocabularyCsvController({
         .trim()
         .replace(/[^a-zA-Z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "") || "All";
-      link.download = `${categoryFileName}_${dateSuffix}.csv`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadCsvFile(
+        `${categoryFileName}_${dateSuffix}.csv`,
+        exportVocabularyCsv(wordsToExport),
+        { appendLinkToDocument: true, revokeAfterMs: 1000 }
+      );
       toast.success(`Exported ${wordsToExport.length} words.`);
       setExportOpen(false);
     } finally {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
+import { downloadCsvFile } from "@/lib/download-csv";
 
 export interface AdminUser {
   id: string;
@@ -13,17 +14,6 @@ export interface AdminUser {
 
 interface UserActionResponse {
   error?: string;
-}
-
-function downloadCsv(name: string, contents: string) {
-  const url = URL.createObjectURL(new Blob([contents], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function useAdminUsersController() {
@@ -184,7 +174,10 @@ export function useAdminUsersController() {
       if (!response.ok) throw new Error(payload.error ?? "Could not export users.");
       const date = new Date();
       const suffix = `${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${date.getFullYear()}`;
-      downloadCsv(`users_${suffix}.csv`, exportAdminUsersCsv(payload.users ?? []));
+      downloadCsvFile(`users_${suffix}.csv`, exportAdminUsersCsv(payload.users ?? []), {
+        appendLinkToDocument: true,
+        revokeAfterMs: 1000,
+      });
       setNotice(`Exported ${payload.users?.length ?? 0} user(s). Passwords are never included.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not export users.");

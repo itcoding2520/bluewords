@@ -7,6 +7,7 @@ import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { toast } from "sonner";
 import { Select } from "@/components/ui/Select";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { downloadCsvFile } from "@/lib/download-csv";
 import { exportSentenceBuilderCsv, loadSentenceBuilderQuestions, parseSentenceBuilderCsv, type SentenceBuilderQuestion, type SentenceDifficulty, type SentenceQuestionInput } from "@/lib/supabase/sentence-builder";
 
 const empty: SentenceQuestionInput = { question_id: "", difficulty: "easy", category: "", prompt_vi: "", answer_sentence: "", answer_tokens: [], distractor_tokens: [], image_keyword: "", vocabulary_words: [], is_active: true };
@@ -90,9 +91,11 @@ export function AdminSentenceBuilderManagement() {
   async function exportCsv() {
     try {
       const rows = await loadSentenceBuilderQuestions(false);
-      const blob = new Blob(["\uFEFF", exportSentenceBuilderCsv(rows)], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const link = document.createElement("a");
-      link.href = url; link.download = "BlueWords_Sentence_Builder_Questions.csv"; link.click(); URL.revokeObjectURL(url);
+      downloadCsvFile(
+        "BlueWords_Sentence_Builder_Questions.csv",
+        exportSentenceBuilderCsv(rows),
+        { includeUtf8Bom: true }
+      );
     } catch { toast.error("Could not export questions."); }
   }
 
