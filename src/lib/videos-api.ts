@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VideoRow } from "@/lib/videos";
+import { getInclusivePageRange } from "@/lib/pagination";
 
 
 export async function loadVideosPage(
@@ -7,13 +8,13 @@ export async function loadVideosPage(
   page: number,
   pageSize: number
 ): Promise<{ videos: VideoRow[]; total: number }> {
-  const start = (page - 1) * pageSize;
+  const { from, to } = getInclusivePageRange(page, pageSize);
   const { data, count, error } = await supabase
     .from("videos")
     .select("id, title, youtube_url, created_by, created_at, updated_at", { count: "exact" })
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
-    .range(start, start + pageSize - 1);
+    .range(from, to);
   if (error) throw error;
   return { videos: (data ?? []) as VideoRow[], total: count ?? 0 };
 }
