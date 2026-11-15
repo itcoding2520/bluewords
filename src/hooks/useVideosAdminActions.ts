@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
+import { getPageCount } from "@/lib/pagination";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 
@@ -96,7 +97,7 @@ export function useVideosAdminActions({
       toast.success("Video deleted.");
       invalidateVideosCache();
       const nextTotal = Math.max(0, total - 1);
-      const nextPage = Math.max(1, Math.min(page, Math.ceil(nextTotal / VIDEOS_PAGE_SIZE) || 1));
+      const nextPage = Math.max(1, Math.min(page, getPageCount(nextTotal, VIDEOS_PAGE_SIZE)));
       if (nextPage !== page) setPage(nextPage);
       else await loadVideos();
     } catch (error) {

@@ -5,7 +5,7 @@ import {
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
 import { getLocalReviewDay, groupReviewsByLocalDay } from "@/lib/review-history-view";
-import { getPageItems, getPageRange } from "@/lib/pagination";
+import { getPageCount, getPageItems, getPageRange } from "@/lib/pagination";
 
 const PAGE_SIZE = 20;
 
@@ -55,10 +55,7 @@ export function useReviewHistoryController(userId: string) {
   const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
   const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;
   const latestDay = dailyGroups[0]?.day;
-  const pageCount = Math.max(
-    1,
-    Math.ceil((selectedGroup?.reviews.length ?? 0) / PAGE_SIZE)
-  );
+  const pageCount = getPageCount(selectedGroup?.reviews.length ?? 0, PAGE_SIZE);
   const currentPage = Math.min(page, pageCount);
   const pageReviews = selectedGroup
     ? getPageItems(selectedGroup.reviews, currentPage, PAGE_SIZE)
