@@ -4,12 +4,20 @@ import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/defa
 import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
 import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
 import { useAdminCategoryManagementActions } from "@/hooks/useAdminCategoryManagementActions";
-import type { CategoryTab } from "@/lib/admin-category-data";
+import type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
 export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
+function normalizeCategoryName(name: string): string {
+  return name.trim().toLocaleLowerCase();
+}
+
 export function useAdminCategoryManagementController() {
   const supabase = useSupabaseClient();
+  const defaultCategoryNames = useMemo(
+    () => new Set(defaultVocabularyCategories.map((category) => normalizeCategoryName(category.name))),
+    []
+  );
   const defaultWordsByCategory = useMemo(() => {
     const wordsByCategory = new Map<string, typeof defaultVocabularyWords>();
     for (const word of defaultVocabularyWords) {
@@ -30,15 +38,22 @@ export function useAdminCategoryManagementController() {
     setError,
     refresh,
   } = useAdminCategoryListData(supabase);
+  const publishedCategoriesByName = useMemo(() => {
+    const categoriesByName = new Map<string, CommunityCategory>();
+    for (const category of communityCategories) {
+      if (category.status !== "published") continue;
+      const key = normalizeCategoryName(category.name);
+      if (!categoriesByName.has(key)) categoriesByName.set(key, category);
+    }
+    return categoriesByName;
+  }, [communityCategories]);
 
   const customCategories = useMemo(
     () => communityCategories.filter((category) =>
       category.status === (activeTab === "pending" ? "pending" : "published")
-      && !defaultVocabularyCategories.some((item) =>
-        item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase()
-      )
+      && !defaultCategoryNames.has(normalizeCategoryName(category.name))
     ),
-    [activeTab, communityCategories]
+    [activeTab, communityCategories, defaultCategoryNames]
   );
   const currentCategories = activeTab === "default" ? defaultVocabularyCategories : customCategories;
   const visibleCategories = currentCategories.filter((category) =>
@@ -68,8 +83,7 @@ export function useAdminCategoryManagementController() {
 
   const visibleCategoryRows = visibleCategories.map((category) => {
     const shared = activeTab === "default"
-      ? communityCategories.find((item) => item.status === "published"
-        && item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())
+      ? publishedCategoriesByName.get(normalizeCategoryName(category.name))
       : "owner_id" in category ? category : null;
     const fallbackImage = activeTab === "default"
       ? defaultWordsByCategory.get(category.name)?.find((word) => word.imagePath)?.imagePath
@@ -94,8 +108,7 @@ export function useAdminCategoryManagementController() {
     : [];
   const selectedSharedCategory = selectedCategory
     ? activeTab === "default"
-      ? communityCategories.find((item) => item.status === "published"
-        && item.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase()) ?? null
+      ? publishedCategoriesByName.get(normalizeCategoryName(selectedCategory.name)) ?? null
       : "owner_id" in selectedCategory ? selectedCategory : null
     : null;
   const selectedFallbackImage = defaultWords.find((word) => word.imagePath)?.imagePath
