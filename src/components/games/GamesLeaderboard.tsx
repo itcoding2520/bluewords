@@ -7,15 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { useGamesLeaderboardController } from "@/hooks/useGamesLeaderboardController";
-
-function formatTime(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-    : `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
+import { formatClockDuration } from "@/lib/clock-duration";
 
 const selectClassName = "min-h-10 rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-12 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
@@ -122,7 +114,7 @@ export function GamesLeaderboard() {
                         <span className="block truncate text-sm font-semibold text-slate-900">{row.is_you ? "You" : row.player_name}{row.rank_position === 1 ? " 🏆" : ""}</span>
                         <span className="mt-0.5 block text-xs text-slate-500">{resultLabel}</span>
                       </span>
-                      <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold tabular-nums text-slate-700"><Clock3 size={15} className="text-slate-400" />{formatTime(row.duration_seconds)}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold tabular-nums text-slate-700"><Clock3 size={15} className="text-slate-400" />{formatClockDuration(row.duration_seconds)}</span>
                       {row.rank_position <= 3 && <Crown size={27} className="games-rank-crown" aria-label={`Rank ${row.rank_position}`} />}
                     </li>;
                   })}
