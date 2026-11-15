@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getPageCount, getPageItems } from "@/lib/pagination";
+import { getPageCount, getPageItems, getPageRange } from "@/lib/pagination";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
@@ -56,8 +56,7 @@ export function useCategoryManagementView({
   const pageCount = getPageCount(managedCategories.length, pageSize);
   const currentPage = Math.min(page, pageCount);
   const pageCategories = getPageItems(managedCategories, currentPage, pageSize);
-  const firstVisibleCategory = managedCategories.length ? (currentPage - 1) * pageSize + 1 : 0;
-  const lastVisibleCategory = Math.min(currentPage * pageSize, managedCategories.length);
+  const pageRange = getPageRange(managedCategories.length, currentPage, pageSize);
 
   return {
     isDefaultCategory,
@@ -65,7 +64,7 @@ export function useCategoryManagementView({
     pageCount,
     currentPage,
     pageCategories,
-    firstVisibleCategory,
-    lastVisibleCategory,
+    firstVisibleCategory: pageRange.first,
+    lastVisibleCategory: pageRange.last,
   };
 }

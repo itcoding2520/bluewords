@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, getPageRange } from "@/lib/pagination";
 
 export function QuizHistoryPagination({
   total,
@@ -18,10 +18,11 @@ export function QuizHistoryPagination({
   onPageChange: (page: number) => void;
 }) {
   const pageCount = getPageCount(total, pageSize);
+  const pageRange = getPageRange(total, page, pageSize);
 
   return (
     <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-      <p aria-live="polite">Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total} attempts</p>
+      <p aria-live="polite">Showing {pageRange.first}–{pageRange.last} of {total} attempts</p>
       <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
         <label className="flex items-center gap-2 whitespace-nowrap">
           <span className="relative inline-flex">

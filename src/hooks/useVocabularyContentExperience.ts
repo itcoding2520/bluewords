@@ -7,7 +7,7 @@ import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
 import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, getPageRange } from "@/lib/pagination";
 
 export function useVocabularyContentExperience(isAdmin: boolean) {
   const {
@@ -48,10 +48,11 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const visibleTotalWords = pageData.loadedAuthVersion === authVersion ? pageData.totalWords : 0;
   const pageCount = getPageCount(visibleTotalWords, pageSize);
   const currentPage = Math.min(page, pageCount);
+  const pageRange = getPageRange(visibleTotalWords, currentPage, pageSize);
   const currentPageWords = pageData.loadedAuthVersion === authVersion ? pageData.pageWords : [];
   const selection = useVocabularySelection(currentPageWords, authVersion);
-  const firstVisibleWord = visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastVisibleWord = Math.min(currentPage * pageSize, visibleTotalWords);
+  const firstVisibleWord = pageRange.first;
+  const lastVisibleWord = pageRange.last;
   const controller = useVocabularyContentController({
     selectedIds: selection.selectedIds,
     setSelectedIds: selection.setSelectedIds,
