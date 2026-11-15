@@ -2,15 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import { getCachedPublishRequests, invalidatePublishRequestCache } from "@/lib/supabase/publish-request-cache.mjs";
-
-type CommunityCategoryRequest = { id: string; owner_id: string; name: string; status: string };
-type CommunityWordRequest = { id: string; owner_id: string; category_id: string; normalized_word: string; word: string; meaning: string; ipa: string | null; category_name: string; status: string };
-
-export function normalize(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
-}
+import {
+  getPublishVocabularyOptions,
+  normalize,
+  type CommunityCategoryRequest,
+  type CommunityWordRequest,
+} from "@/lib/vocabulary/publish-options";
 
 export function usePublishVocabularyController() {
   const { words, categories, isAuthenticated, isLoaded } = useVocabulary();
@@ -77,69 +75,18 @@ export function usePublishVocabularyController() {
     };
   }, [isAuthenticated, loadPublishRequests, supabase]);
 
-  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalize(item.name)));
-  const communityCategoryNames = new Map(communityCategoryRequests.map((item) => [item.id, normalize(item.name)]));
-  const ownCommunityCategoryIds = new Set(communityCategoryRequests
-    .filter((item) => item.owner_id && item.status !== "removed")
-    .map((item) => item.id));
-  const blockedCategoryNames = new Set(communityCategoryRequests
-    .filter((item) => item.status === "pending" || item.status === "published")
-    .map((item) => normalize(item.name)));
-  const userCategories = categories.filter((item) => {
-    const normalizedName = normalize(item.name);
-    const isOwnedCommunityCategory = !item.id.startsWith("community-category-")
-      || ownCommunityCategoryIds.has(item.id.slice("community-category-".length));
-    return !item.is_default
-      && !defaultCategoryNames.has(normalizedName)
-      && isOwnedCommunityCategory
-      && !blockedCategoryNames.has(normalizedName);
-  });
-  const visibleCategoryNames = new Set(userCategories.map((item) => normalize(item.name)));
-  const rejectedCategoryFallbacks = communityCategoryRequests
-    .filter((item) => item.owner_id
-      && item.status === "rejected"
-      && !defaultCategoryNames.has(normalize(item.name))
-      && !visibleCategoryNames.has(normalize(item.name)))
-    .map((item) => ({ id: `retry-category-${item.id}`, name: item.name, color: "blue" }));
-  const requestableCategories = [...userCategories, ...rejectedCategoryFallbacks];
-  const userCategoryNames = new Set(requestableCategories.map((item) => normalize(item.name)));
-  const defaultWordKeys = new Set(defaultVocabularyWords.map((item) =>
-    `${normalize(item.category)}\u0000${normalize(item.word)}`
-  ));
-  const ownCommunityCategoryNames = new Set(communityCategoryRequests
-    .filter((item) => item.owner_id && item.status !== "removed")
-    .map((item) => normalize(item.name)));
-  const blockedWordKeys = new Set(communityWordRequests
-    .filter((item) => item.status === "pending" || item.status === "published")
-    .flatMap((item) => {
-      const categoryName = communityCategoryNames.get(item.category_id);
-      return categoryName ? [`${categoryName}\u0000${normalize(item.normalized_word)}`] : [];
-    }));
-  const personalWordKeys = new Set(words.map((item) =>
-    `${normalize(item.category)}\u0000${normalize(item.word)}`
-  ));
-  const rejectedWordFallbacks = communityWordRequests
-    .filter((item) => item.status === "rejected"
-      && item.owner_id
-      && !personalWordKeys.has(`${normalize(item.category_name)}\u0000${normalize(item.word)}`))
-    .map((item) => ({
-      id: `retry-word-${item.id}`,
-      word: item.word,
-      meaning: item.meaning,
-      category: item.category_name,
-      ipa: item.ipa,
-    }));
-  const requestableWords = [...words, ...rejectedWordFallbacks];
-  const userWords = requestableWords.filter((item) => {
-    if (item.id.startsWith("community-")) return false;
-    const categoryKey = normalize(item.category);
-    const wordKey = `${categoryKey}\u0000${normalize(item.word)}`;
-    const isDefaultWord = defaultWordKeys.has(wordKey);
-    return !isDefaultWord
-      && (userCategoryNames.has(categoryKey)
-        || ownCommunityCategoryNames.has(categoryKey)
-        || defaultCategoryNames.has(categoryKey))
-      && !blockedWordKeys.has(wordKey);
+  const {
+    defaultCategoryNames,
+    communityCategoryNames,
+    defaultWordKeys,
+    requestableCategories,
+    requestableWords,
+    userWords,
+  } = getPublishVocabularyOptions({
+    categories,
+    words,
+    categoryRequests: communityCategoryRequests,
+    wordRequests: communityWordRequests,
   });
 
   async function publishCategory(categoryName: string) {

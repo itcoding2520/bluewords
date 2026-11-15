@@ -4,7 +4,8 @@ import { BookOpen, FolderHeart, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { normalize, usePublishVocabularyController } from "@/hooks/usePublishVocabularyController";
+import { usePublishVocabularyController } from "@/hooks/usePublishVocabularyController";
+import { normalize } from "@/lib/vocabulary/publish-options";
 
 export function PublishVocabularyContent() {
   const {
