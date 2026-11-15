@@ -2,7 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
+import type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationTopic } from "@/lib/supabase/communication-admin-types";

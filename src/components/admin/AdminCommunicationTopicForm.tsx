@@ -3,12 +3,8 @@ import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
 import type { ContentStatus } from "@/lib/communication/csv";
-import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
-
-export type CommunicationTopicDraft = Pick<
-  CommunicationTopic,
-  "slug" | "title_en" | "title_vi" | "description_en" | "description_vi" | "sort_order" | "status"
->;
+import type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
+export type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 

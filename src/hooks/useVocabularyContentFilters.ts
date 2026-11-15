@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import type { CategoryFilter, VocabularyStatusFilter } from "@/components/vocabulary/VocabularyToolbar";
+import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
 
 export function useVocabularyContentFilters(categories: VocabularyCategoryRow[]) {
   const [search, setSearch] = useState("");

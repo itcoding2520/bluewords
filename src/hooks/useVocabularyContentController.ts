@@ -2,7 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { toast } from "sonner";
-import type { CategoryFilter, VocabularyStatusFilter } from "@/components/vocabulary/VocabularyToolbar";
+import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
 
 interface VocabularyContentControllerOptions {
   selectedIds: Set<string>;

@@ -3,9 +3,8 @@ import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
 import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/csv";
-import type { CommunicationLesson } from "@/lib/supabase/communication-admin-types";
-
-export type CommunicationLessonDraft = Omit<CommunicationLesson, "id">;
+import type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
+export type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
