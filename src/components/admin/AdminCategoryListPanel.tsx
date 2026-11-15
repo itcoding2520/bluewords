@@ -19,13 +19,17 @@ interface AdminCategoryListRow {
 interface AdminCategoryListPanelProps {
   activeTab: CategoryTab;
   loading: boolean;
-  categorySearch: string;
-  currentCategories: AdminCategory[];
-  visibleCategories: AdminCategory[];
-  visibleCategoryRows: AdminCategoryListRow[];
-  selectedCategory: AdminCategory | null;
-  onSearchChange: (value: string) => void;
-  onSelect: (id: string) => void;
+  search: {
+    query: string;
+    onChange: (value: string) => void;
+  };
+  categories: {
+    current: AdminCategory[];
+    visible: AdminCategory[];
+    rows: AdminCategoryListRow[];
+    selected: AdminCategory | null;
+  };
+  onSelectCategory: (id: string) => void;
 }
 
 const tabLabel: Record<CategoryTab, string> = {
@@ -37,13 +41,14 @@ const tabLabel: Record<CategoryTab, string> = {
 export function AdminCategoryListPanel({
   activeTab,
   loading,
-  categorySearch,
-  currentCategories,
-  visibleCategories,
-  visibleCategoryRows,
-  selectedCategory,
-  onSearchChange,
-  onSelect,
+  search: { query, onChange: onSearchChange },
+  categories: {
+    current: currentCategories,
+    visible: visibleCategories,
+    rows: visibleCategoryRows,
+    selected: selectedCategory,
+  },
+  onSelectCategory: onSelect,
 }: AdminCategoryListPanelProps) {
   return (
     <section className="admin-category-list-panel overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -53,7 +58,7 @@ export function AdminCategoryListPanel({
       <label className="admin-category-search">
         <Search size={17} />
         <input
-          value={categorySearch}
+          value={query}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search categories…"
           aria-label="Search categories"

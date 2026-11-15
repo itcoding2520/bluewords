@@ -35,13 +35,14 @@ export function AdminCategoryManagement() {
       <AdminCategoryListPanel
         activeTab={selection.activeTab}
         loading={data.loading}
-        categorySearch={selection.categorySearch}
-        currentCategories={view.currentCategories}
-        visibleCategories={view.visibleCategories}
-        visibleCategoryRows={view.visibleCategoryRows}
-        selectedCategory={view.selectedCategory}
-        onSearchChange={selection.setCategorySearch}
-        onSelect={selection.setSelectedId}
+        search={{ query: selection.categorySearch, onChange: selection.setCategorySearch }}
+        categories={{
+          current: view.currentCategories,
+          visible: view.visibleCategories,
+          rows: view.visibleCategoryRows,
+          selected: view.selectedCategory,
+        }}
+        onSelectCategory={selection.setSelectedId}
       />
 
       <AdminCategoryDetailPanel
