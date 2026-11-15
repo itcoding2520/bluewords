@@ -90,22 +90,6 @@ export const categoryStyles: Record<string, string> = {
   Work: "bg-[#ff990a] text-white",
 };
 
-export const categoryColorStyles: Record<
-  VocabularyCategoryColor,
-  string
-> = {
-  blue: "bg-blue-700 text-white",
-  violet: "bg-[#bf00ff] text-white",
-  orange: "bg-[#ff990a] text-white",
-  green: "bg-emerald-700 text-white",
-  rose: "bg-rose-700 text-white",
-  indigo: "bg-indigo-700 text-white",
-  teal: "bg-teal-700 text-white",
-  amber: "bg-amber-700 text-white",
-  pink: "bg-pink-700 text-white",
-  slate: "bg-slate-700 text-white",
-};
-
 export const categorySolidColorStyles: Record<
   VocabularyCategoryColor,
   string
