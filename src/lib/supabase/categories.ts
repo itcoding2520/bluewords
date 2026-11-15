@@ -1,20 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/types/database";
+export type { VocabularyCategoryRow } from "@/types/database";
 export type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 const supabase = createClient();
-
-export interface VocabularyCategoryRow {
-  id: string;
-  user_id: string;
-  name: string;
-  color: VocabularyCategoryColor;
-  image_path?: string | null;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export type VocabularyCategoryUpdate = Partial<
   Pick<VocabularyCategoryRow, "name" | "color" | "image_path">

@@ -1,6 +1,15 @@
-import type {
-  PartOfSpeech,
-} from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyCategoryColor } from "@/config/vocabulary";
+
+export type VocabularyCategoryRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  color: VocabularyCategoryColor;
+  image_path?: string | null;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+};
 
 export type VocabularyWordRow = {
   id: string;
