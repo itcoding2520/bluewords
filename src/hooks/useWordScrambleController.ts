@@ -4,6 +4,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { shuffle } from "@/lib/quiz-random";
+import { formatGameDuration } from "@/lib/game-duration";
 import {
   buildWordScrambleCandidates,
   createScrambledTiles,
@@ -57,7 +58,7 @@ export function useWordScrambleController(input: {
   );
   const currentWord = round[questionIndex];
   const usedTileIds = new Set(answerTileIds);
-  const timeLabel = `${Math.floor(session.elapsedSeconds / 60)}:${String(session.elapsedSeconds % 60).padStart(2, "0")}`;
+  const timeLabel = formatGameDuration(session.elapsedSeconds);
 
   function startRound() {
     if (candidates.length < questionCount) return;

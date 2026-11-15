@@ -119,10 +119,6 @@ export function useWordSearchController(userId: string | null) {
     }
   }
 
-  function formatDuration(seconds: number) {
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  }
-
   return {
     words,
     categories,
@@ -172,6 +168,5 @@ export function useWordSearchController(userId: string | null) {
     handleGridPointerCancel,
     handleStartGame,
     backToSetup,
-    formatDuration,
   };
 }

@@ -14,6 +14,7 @@ import { WordSearchBoard } from "@/components/games/WordSearchBoard";
 import { WordSearchGameHeader } from "@/components/games/WordSearchGameHeader";
 import { Card } from "@/components/ui/Card";
 import { useWordSearchController } from "@/hooks/useWordSearchController";
+import { formatGameDuration } from "@/lib/game-duration";
 
 export function WordSearchContent({ userId }: { userId: string | null }) {
   const {
@@ -62,7 +63,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     handleGridPointerCancel,
     handleStartGame,
     backToSetup,
-    formatDuration,
   } = useWordSearchController(userId);
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
@@ -144,7 +144,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
       {phase === "results" ? (
         <WordSearchResults
           wordCount={puzzle.words.length}
-          duration={formatDuration(elapsedSeconds)}
+          duration={formatGameDuration(elapsedSeconds)}
           saveState={saveState}
           saveError={saveError}
           onRetrySave={() => {

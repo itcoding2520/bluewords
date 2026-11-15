@@ -11,6 +11,7 @@ import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { loadSentenceBuilderQuestions, type SentenceBuilderQuestion, type SentenceDifficulty } from "@/lib/supabase/sentence-builder";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { formatGameDuration } from "@/lib/game-duration";
 import Image from "next/image";
 
 type Phase = "setup" | "playing" | "results";
@@ -57,7 +58,7 @@ export function SentenceBuilderContent() {
     });
   }, [difficulty, questions, vocabularyCategories]);
   const current = round[index];
-  const elapsed = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const elapsed = formatGameDuration(seconds);
 
   useEffect(() => { let active = true; void loadSentenceBuilderQuestions().then((data) => { if (active) setQuestions(data); }).catch(() => { if (active) setQuestions([]); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, []);
   useEffect(() => { if (phase !== "playing" || startedAt === null) return; const tick = () => setSeconds(Math.floor((Date.now() - startedAt) / 1000)); tick(); const timer = window.setInterval(tick, 1000); return () => window.clearInterval(timer); }, [phase, startedAt]);

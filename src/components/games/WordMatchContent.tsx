@@ -10,14 +10,12 @@ import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { useWordMatchController, type MatchCardData, type MatchPair } from "@/hooks/useWordMatchController";
+import { formatGameDuration } from "@/lib/game-duration";
 
 type PairCount = 6 | 8 | 10;
 
 const PAIR_COUNTS: PairCount[] = [6, 8, 10];
 
-function formatTime(totalSeconds: number): string {
-  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
-}
 
 function MatchCard({
   card,
@@ -127,7 +125,7 @@ export function WordMatchContent() {
               <span className="word-match-score-stat"><Trophy size={18} /> <small>Score</small> {score}</span>
               <span><Shuffle size={17} /> <small>Moves</small> {moves}</span>
               <span className="word-match-level-stat"><small>Level 1</small><strong>{matchedIds.size} / {pairs.length} pairs</strong><i><b style={{ width: `${progressPercent}%` }} /></i></span>
-              <span><Clock3 size={17} /> {formatTime(elapsedSeconds)}</span>
+              <span><Clock3 size={17} /> {formatGameDuration(elapsedSeconds)}</span>
             </div>
           </div>
           <p className={`word-match-instruction ${feedback.startsWith("Great match") ? "is-success" : feedback.startsWith("Those cards") ? "is-error" : ""}`} aria-live="polite">{feedback}</p>
@@ -146,7 +144,7 @@ export function WordMatchContent() {
           <p className="word-match-eyebrow">ROUND COMPLETE</p>
           <h2>Great matching!</h2>
           <p className="word-match-results-copy">You matched all {pairs.length} pairs and scored {score} points.</p>
-          <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatTime(elapsedSeconds)}</strong><small>time</small></span></div>
+          <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatGameDuration(elapsedSeconds)}</strong><small>time</small></span></div>
           {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
           <div className="word-match-result-actions"><button type="button" onClick={startRound} className="word-match-start"><RotateCcw size={18} /> Play again</button><button type="button" onClick={() => setPhase("setup")} className="word-match-secondary">Change settings</button></div>
         </Card>
