@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { BookOpen, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
@@ -11,6 +11,7 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { formatShortDate } from "@/lib/formatDate";
 import { useAdminCategoryManagementController } from "@/hooks/useAdminCategoryManagementController";
 import { AdminCategoryTabs } from "@/components/admin/AdminCategoryTabs";
+import { AdminCategoryListPanel } from "@/components/admin/AdminCategoryListPanel";
 
 export function AdminCategoryManagement() {
   const {
@@ -45,22 +46,17 @@ export function AdminCategoryManagement() {
     />
 
     <div className="admin-category-layout grid items-start gap-5 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.65fr)]">
-      <section className="admin-category-list-panel overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="admin-category-list-heading"><h2><BookOpen size={19} />{activeTab === "default" ? "Default" : activeTab === "pending" ? "Custom waiting publish" : "Custom published"} categories</h2></div>
-        <label className="admin-category-search"><Search size={17} /><input value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} placeholder="Search categories…" aria-label="Search categories" /></label>
-        {loading ? <p className="p-5 text-sm text-slate-500">Loading categories…</p> : visibleCategories.length === 0 ? <p className="p-5 text-sm text-slate-500">{currentCategories.length ? "No categories match your search." : "No categories in this tab yet."}</p> : <ul className="admin-category-list max-h-[65vh] divide-y divide-slate-100 overflow-y-auto">
-          {visibleCategoryRows.map(({ category, shared, owner, fallbackImage, defaultWordCount, createdAt }) => {
-            const active = category.id === selectedCategory?.id;
-            return <li key={category.id}>
-              <button onClick={() => setSelectedId(category.id)} aria-current={active ? "true" : undefined} className={`admin-category-list-item flex w-full items-start gap-3 px-4 py-3 text-left transition ${active ? "is-selected bg-blue-50" : "hover:bg-slate-50"}`}>
-                <CategoryAvatar name={category.name} imagePath={shared?.image_path} fallbackWordImagePath={fallbackImage} colorClass={active ? "bg-blue-100" : "bg-slate-200"} />
-                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{category.name}</span>{owner && <span className="mt-1 block truncate text-xs text-slate-500">{owner}</span>}</span>
-                <span className="mt-1 text-xs text-slate-400">{defaultWordCount ?? (createdAt ? formatShortDate(createdAt, "Date unavailable") : "")}</span>
-              </button>
-            </li>;
-          })}
-        </ul>}
-      </section>
+      <AdminCategoryListPanel
+        activeTab={activeTab}
+        loading={loading}
+        categorySearch={categorySearch}
+        currentCategories={currentCategories}
+        visibleCategories={visibleCategories}
+        visibleCategoryRows={visibleCategoryRows}
+        selectedCategory={selectedCategory}
+        onSearchChange={setCategorySearch}
+        onSelect={setSelectedId}
+      />
 
       <section className="admin-category-detail min-h-72 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
         {!selectedCategory ? <div className="grid min-h-64 place-items-center text-center text-sm text-slate-500">Choose a category to see its words.</div> : <>
