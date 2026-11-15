@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 
 import {
@@ -9,11 +8,9 @@ import {
   type VocabularyWord,
 } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import Image from "next/image";
-import { PronunciationButton } from "./PronunciationButton";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { VocabularyMasteryStatus } from "./VocabularyMasteryStatus";
+import { VocabularyWordIdentity } from "./VocabularyWordIdentity";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
@@ -25,41 +22,6 @@ interface VocabularyRowProps {
   onDelete: (word: VocabularyWord) => void;
 }
 
-function GridMeanings({
-  item,
-}: {
-  item: VocabularyWord;
-}) {
-  const detailedMeanings = (item.detailedMeanings ?? []).filter(
-    (meaning) => typeof meaning.meaning === "string" && meaning.meaning.trim()
-  );
-  const hasPartOfSpeech = detailedMeanings.some(
-    (meaning) => typeof meaning.partOfSpeech === "string" && meaning.partOfSpeech.trim()
-  );
-
-  if (!detailedMeanings.length) {
-    return <p className="break-words">{item.meaning}</p>;
-  }
-
-  return (
-    <ul aria-label="Detailed meanings" className="space-y-1.5">
-      {detailedMeanings.map((meaning, index) => (
-        <li
-          key={meaning.id ?? `${meaning.partOfSpeech}-${index}`}
-          className="break-words text-xs text-slate-500"
-        >
-          {hasPartOfSpeech && meaning.partOfSpeech && (
-            <span className="mr-1.5 inline-flex rounded-md bg-blue-50 px-1.5 py-0.5 font-medium capitalize text-blue-700">
-              {meaning.partOfSpeech}
-            </span>
-          )}
-          {meaning.meaning}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function VocabularyRow({
   item,
   categories,
@@ -69,20 +31,9 @@ export function VocabularyRow({
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const categoryColor = categories.find(
     (category) => category.name === item.category
   )?.color;
-  const imageUrl = useVocabularyImageUrl(item.imagePath);
-  const wordEmoji: Record<string, string> = {
-    football: "⚽", soccer: "⚽", tennis: "🎾", silver: "🪙", elephant: "🐘",
-    biscuit: "🍪", suit: "🧥", cheek: "😊", happy: "😊", horse: "🐴",
-  };
-  const categoryEmoji: Record<string, string> = {
-    sports: "🏅", animals: "🐾", food: "🍎", clothes: "👕", colors: "🎨",
-    time: "🕒", body: "🙂", fruits: "🍓", actions: "🏃", weather: "🌤️",
-  };
-  const imageFallback = wordEmoji[item.word.toLocaleLowerCase()] ?? categoryEmoji[item.category.toLocaleLowerCase()] ?? "📖";
   return (
     <div className="vocabulary-word-row border-b border-slate-100 px-4 py-2 last:border-none sm:px-6 sm:py-2.5">
       <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
@@ -96,45 +47,7 @@ export function VocabularyRow({
           />
         </div>
 
-        {/* Word */}
-        <div className="col-start-2 row-start-1 flex min-w-0 items-start gap-3 lg:items-center">
-          {imageUrl && failedImageUrl !== imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={`Illustration for ${item.word}`}
-              width={48}
-              height={48}
-              unoptimized
-              onError={() => setFailedImageUrl(imageUrl)}
-              className="vocabulary-word-thumbnail size-11 shrink-0 rounded-lg border border-slate-100 object-cover"
-            />
-          ) : (
-            <span aria-hidden="true" className="vocabulary-word-fallback">{imageFallback}</span>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="break-words font-semibold text-slate-950">
-                {item.word}
-              </p>
-              <PronunciationButton word={item.word} />
-            </div>
-
-            <span className="mt-1 hidden w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 lg:inline-flex">
-              {item.type === "expression" ? "Expression" : "Word"}
-            </span>
-
-            <div className="mt-1 lg:hidden">
-              <div className="text-sm text-slate-500">
-                <GridMeanings item={item} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Meaning - desktop */}
-        <div className="hidden min-w-0 text-sm text-slate-500 lg:col-start-3 lg:block">
-          <GridMeanings item={item} />
-        </div>
+        <VocabularyWordIdentity item={item} />
 
         {/* Category and status share a compact row on mobile. */}
         <div className="col-start-2 row-start-2 flex min-w-0 items-center justify-between gap-3 lg:contents">
