@@ -3,7 +3,7 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { useAdminReviewData } from "@/hooks/useAdminReviewData";
-import type { PublishedCategory, PublishedWord } from "@/hooks/useAdminReviewData";
+import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 
 export function useAdminReviewController() {
   const confirmDialog = useConfirmDialog();
