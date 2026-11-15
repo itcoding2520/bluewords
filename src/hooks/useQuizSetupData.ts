@@ -25,9 +25,13 @@ export function useQuizSetupData({
   const categoryOptions = useMemo(() => buildQuizCategoryOptions(categories, words), [categories, words]);
   const meaningQuestions = useMemo(() => buildMeaningQuestions(categoryWords), [categoryWords]);
   const previewMeaningQuestion = useMemo(() => buildQuizPreviewQuestion(meaningQuestions), [meaningQuestions]);
+  const imageWords = useMemo(
+    () => categoryWords.filter((word) => Boolean(word.imagePath)),
+    [categoryWords]
+  );
   const eligibleWords = useMemo(
-    () => mode === "type-word" ? categoryWords.filter((word) => Boolean(word.imagePath)) : meaningQuestions.map((question) => question.word),
-    [categoryWords, mode, meaningQuestions]
+    () => mode === "type-word" ? imageWords : meaningQuestions.map((question) => question.word),
+    [imageWords, meaningQuestions, mode]
   );
 
   return {
@@ -35,7 +39,7 @@ export function useQuizSetupData({
     categoryOptions,
     meaningQuestions,
     previewMeaningQuestion,
-    typeWordCount: categoryWords.filter((word) => Boolean(word.imagePath)).length,
+    typeWordCount: imageWords.length,
     eligibleWords,
     maximumQuestions: eligibleWords.length,
   };
