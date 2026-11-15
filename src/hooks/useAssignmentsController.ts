@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type AssignmentAttempt = { id: string; attempt_number: number; score: number | null; correct_count: number | null; elapsed_seconds: number | null; result: string | null; started_at: string; completed_at: string | null };
-type Assignment = { id: string; status: string; assignedAt: string; assessment: { id: string; title: string; difficulty: string; dueAt: string | null; questions: Array<{ type: string }> } | null; attempts: AssignmentAttempt[] };
-type AssignmentHistoryEntry = { assignment: Assignment; attempt: AssignmentAttempt };
+import { fetchMyAssignments } from "@/lib/assignments/api";
+import type { Assignment, AssignmentHistoryEntry } from "@/lib/assignments/types";
 
 export function useAssignmentsController() {
   const router = useRouter();
@@ -16,10 +14,8 @@ export function useAssignmentsController() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/assessments", { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not load assignments.");
-      setAssignments(data.assignments);
+      const data = await fetchMyAssignments();
+      setAssignments(data);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load assignments.");

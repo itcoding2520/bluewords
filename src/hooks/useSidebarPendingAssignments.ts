@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchMyAssignments } from "@/lib/assignments/api";
 
 export function useSidebarPendingAssignments(authUserId: string | null, isAuthenticated: boolean) {
   const [pendingAssignmentCount, setPendingAssignmentCount] = useState(0);
@@ -13,10 +14,9 @@ export function useSidebarPendingAssignments(authUserId: string | null, isAuthen
     let active = true;
     async function refreshAssignments() {
       try {
-        const response = await fetch("/api/assessments", { cache: "no-store" });
-        const payload = await response.json();
-        if (active && response.ok) {
-          setPendingAssignmentCount((payload.assignments ?? []).filter((item: { status: string }) => item.status !== "completed").length);
+        const assignments = await fetchMyAssignments();
+        if (active) {
+          setPendingAssignmentCount(assignments.filter((item) => item.status !== "completed").length);
         }
       } catch {
         // Keep the last known badge count while offline.
