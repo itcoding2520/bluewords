@@ -11,12 +11,18 @@ import { useCategoryManagementController } from "@/hooks/useCategoryManagementCo
 
 export function CategoryManagementPanel() {
   const {
-    words, isAdmin, categoryAuthors, name, setName, color, setColor,
-    setNewImage, editing, setEditing, editName, setEditName,
-    editColor, setEditColor, setEditImage, isSaving, setPage,
-    pageSize, setPageSize, sortBy, setSortBy, filterBy, setFilterBy,
-    isDefaultCategory, managedCategories, pageCount, currentPage, pageCategories,
-    firstVisibleCategory, lastVisibleCategory, startEdit, handleAdd, handleUpdate, handleDelete,
+    access: { isAdmin },
+    data: { words, categoryAuthors, managedCategories, pageCategories },
+    pagination: {
+      setPage, pageSize, setPageSize, pageCount, currentPage,
+      firstVisibleCategory, lastVisibleCategory,
+    },
+    filters: { sortBy, setSortBy, filterBy, setFilterBy, isDefaultCategory },
+    form: {
+      name, setName, color, setColor, setNewImage, editing, setEditing,
+      editName, setEditName, editColor, setEditColor, setEditImage,
+    },
+    actions: { isSaving, startEdit, handleAdd, handleUpdate, handleDelete },
   } = useCategoryManagementController();
 
   return (

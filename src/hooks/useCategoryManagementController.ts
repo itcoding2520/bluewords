@@ -67,9 +67,32 @@ export function useCategoryManagementController() {
   });
 
   return {
-    categories, words, isAdmin, categoryAuthors, page, setPage,
-    pageSize, setPageSize, sortBy, setSortBy, filterBy, setFilterBy,
-    isDefaultCategory, managedCategories, pageCount, currentPage, pageCategories,
-    firstVisibleCategory, lastVisibleCategory, ...formState, ...actions,
+    access: { isAdmin },
+    data: {
+      categories,
+      words,
+      categoryAuthors,
+      managedCategories,
+      pageCategories,
+    },
+    pagination: {
+      page,
+      setPage,
+      pageSize,
+      setPageSize,
+      pageCount,
+      currentPage,
+      firstVisibleCategory,
+      lastVisibleCategory,
+    },
+    filters: {
+      sortBy,
+      setSortBy,
+      filterBy,
+      setFilterBy,
+      isDefaultCategory,
+    },
+    form: formState,
+    actions: { ...actions, startEdit: form.startEdit },
   };
 }
