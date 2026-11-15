@@ -10,8 +10,8 @@ import {
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
-import { mapVocabularyMeaning } from "@/lib/vocabulary/shared-vocabulary";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
+import { hasDuplicateVocabularyWord, mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
 import { toast } from "sonner";
 
 interface VocabularyWordMutationOptions {
@@ -28,11 +28,7 @@ export function useVocabularyWordMutations({
   refreshWords,
 }: VocabularyWordMutationOptions) {
   async function addWord(word: VocabularyWord): Promise<boolean> {
-    const duplicate = words.some((current) =>
-      current.category.trim().replace(/\s+/g, " ").toLowerCase() === word.category.trim().replace(/\s+/g, " ").toLowerCase()
-      && current.word.trim().replace(/\s+/g, " ").toLowerCase() === word.word.trim().replace(/\s+/g, " ").toLowerCase()
-    );
-    if (duplicate) {
+    if (hasDuplicateVocabularyWord(words, word)) {
       toast.error(`"${word.word.trim()}" already exists in ${word.category}.`);
       return false;
     }
@@ -64,20 +60,8 @@ export function useVocabularyWordMutations({
         throw error;
       }
 
-      setWords((current) => [
-        {
-          id: row.id,
-          word: row.word,
-          meaning: row.meaning,
-          category: row.category,
-          status: row.status,
-          type: row.type ?? "word",
-          ipa: row.ipa ?? null,
-          imagePath: row.image_path ?? null,
-          detailedMeanings: savedMeanings,
-        },
-        ...current,
-      ]);
+      const savedWord = mapVocabularyMutationWord(row, savedMeanings);
+      setWords((current) => [savedWord, ...current]);
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined);
       toast.success(`"${row.word}" added successfully!`);
       return true;
@@ -89,12 +73,7 @@ export function useVocabularyWordMutations({
   }
 
   async function updateWord(updatedWord: VocabularyWord): Promise<boolean> {
-    const duplicate = words.some((current) =>
-      current.id !== updatedWord.id
-      && current.category.trim().replace(/\s+/g, " ").toLowerCase() === updatedWord.category.trim().replace(/\s+/g, " ").toLowerCase()
-      && current.word.trim().replace(/\s+/g, " ").toLowerCase() === updatedWord.word.trim().replace(/\s+/g, " ").toLowerCase()
-    );
-    if (duplicate) {
+    if (hasDuplicateVocabularyWord(words, updatedWord, updatedWord.id)) {
       toast.error(`"${updatedWord.word.trim()}" already exists in ${updatedWord.category}.`);
       return false;
     }
@@ -124,21 +103,11 @@ export function useVocabularyWordMutations({
           .filter((item) => item.meaning.trim())
           .map((item) => ({ part_of_speech: item.partOfSpeech, meaning: item.meaning.trim() })),
       });
-      const savedMeanings = meaningRows.map(mapVocabularyMeaning);
+      const savedWord = mapVocabularyMutationWord(row, meaningRows);
 
       setWords((current) => current.map((word) =>
         word.id === row.id
-          ? {
-              id: row.id,
-              word: row.word,
-              meaning: row.meaning,
-              category: row.category,
-              status: row.status,
-              type: row.type ?? "word",
-              ipa: row.ipa ?? null,
-              imagePath: row.image_path ?? null,
-              detailedMeanings: savedMeanings,
-            }
+          ? savedWord
           : word
       ));
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });

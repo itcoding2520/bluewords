@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
-import { importVocabularyWords } from "@/lib/vocabulary/bulk-import";
 import { useVocabularyMutations } from "@/contexts/vocabulary/useVocabularyMutations";
 import { useVocabularyStoreData } from "@/contexts/vocabulary/useVocabularyStoreData";
 import { VocabularyContext } from "@/contexts/vocabulary/context";
-import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
+import { useVocabularyImportMutations } from "@/contexts/vocabulary/useVocabularyImportMutations";
 
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   return <VocabularyStoreProvider>{children}</VocabularyStoreProvider>;
@@ -33,36 +31,7 @@ function VocabularyStoreProvider({ children }: { children: ReactNode }) {
     ownerIdRef,
     refreshWords,
   });
-
-  async function importWords(
-    importedWords: VocabularyCsvWord[],
-    imageFilesByWord?: Map<string, File>
-  ) {
-    const result = await importVocabularyWords(importedWords, words, imageFilesByWord);
-
-    if (result.importedWords.length > 0) {
-      setWords((current) => [...result.importedWords, ...current]);
-    }
-    if (result.existingImageUpdates.length > 0) {
-      const imagePaths = new Map(result.existingImageUpdates.map(({ id, imagePath }) => [id, imagePath]));
-      setWords((current) => current.map((word) => {
-        const imagePath = imagePaths.get(word.id);
-        return imagePath ? { ...word, imagePath } : word;
-      }));
-    }
-    if (result.imported > 0 || result.existingImageUpdates.length > 0) {
-      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined);
-    }
-
-    return {
-      imported: result.imported,
-      duplicates: result.duplicates,
-      failed: result.failed,
-      imagesUploaded: result.imagesUploaded,
-      imagesFailed: result.imagesFailed,
-      limitExceeded: result.limitExceeded,
-    };
-  }
+  const importMutations = useVocabularyImportMutations({ words, setWords, ownerIdRef });
 
   return (
     <VocabularyContext.Provider
@@ -76,7 +45,7 @@ function VocabularyStoreProvider({ children }: { children: ReactNode }) {
         ...mutations,
         refreshWords,
         refreshCategories,
-        importWords,
+        ...importMutations,
       }}
     >
       {children}

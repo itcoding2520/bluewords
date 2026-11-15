@@ -5,13 +5,11 @@ import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { WordSearchResults } from "@/components/games/WordSearchResults";
-import { WordSearchWordList } from "@/components/games/WordSearchWordList";
 import { WordSearchSetupForm } from "@/components/games/WordSearchSetupForm";
 import { WordSearchHistoryView } from "@/components/games/WordSearchHistoryView";
 import { WordSearchBoardPreview } from "@/components/games/WordSearchBoardPreview";
-import { WordSearchBoard } from "@/components/games/WordSearchBoard";
+import { WordSearchPlayingBoard } from "@/components/games/WordSearchPlayingBoard";
 import { WordSearchGameHeader } from "@/components/games/WordSearchGameHeader";
-import { Card } from "@/components/ui/Card";
 import { useWordSearchController } from "@/hooks/useWordSearchController";
 import { formatGameDuration } from "@/lib/game-duration";
 
@@ -149,27 +147,20 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
           }}
         />
       ) : (
-        <div className="word-search-game-layout grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_250px]">
-          <WordSearchBoard
-            letters={puzzle.letters}
-            gridSize={gridSize}
-            foundCount={foundIds.size}
-            totalWords={puzzle.words.length}
-            foundWordPaths={foundWordPaths}
-            selectedCells={selectedCells}
-            onClearSelection={clearSelection}
-            onPointerDown={handleGridPointerDown}
-            onPointerMove={handleGridPointerMove}
-            onPointerUp={handleGridPointerUp}
-            onPointerCancel={handleGridPointerCancel}
-          />
-
-          <Card className="word-search-words-card order-1 p-5 lg:order-2">
-            <h2 className="font-semibold text-slate-950">Words to find</h2>
-            <p className="mt-1 text-xs text-slate-500 hidden md:block">Find them in any order.</p>
-            <WordSearchWordList words={puzzle.words} vocabularyById={vocabularyById} foundIds={foundIds} />
-          </Card>
-        </div>
+        <WordSearchPlayingBoard
+          letters={puzzle.letters}
+          words={puzzle.words}
+          gridSize={gridSize}
+          foundIds={foundIds}
+          foundWordPaths={foundWordPaths}
+          selectedCells={selectedCells}
+          vocabularyById={vocabularyById}
+          onClearSelection={clearSelection}
+          onPointerDown={handleGridPointerDown}
+          onPointerMove={handleGridPointerMove}
+          onPointerUp={handleGridPointerUp}
+          onPointerCancel={handleGridPointerCancel}
+        />
       )}
     </div>
   );

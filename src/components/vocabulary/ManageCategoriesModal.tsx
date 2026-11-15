@@ -1,33 +1,13 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import type {
-  VocabularyCategoryColor,
-} from "@/lib/supabase/categories";
-import { ManageCategoryRow } from "@/components/vocabulary/ManageCategoryRow";
+import { ManageCategoryList } from "@/components/vocabulary/ManageCategoryList";
 import { useManageCategoriesController } from "@/hooks/useManageCategoriesController";
-
-const colorOptions: Array<{
-  value: VocabularyCategoryColor;
-  label: string;
-  className: string;
-}> = [
-  { value: "blue", label: "Blue", className: "bg-blue-500" },
-  { value: "violet", label: "Violet", className: "bg-[#bf00ff]" },
-  { value: "orange", label: "Orange", className: "bg-[#ff990a]" },
-  { value: "green", label: "Green", className: "bg-emerald-500" },
-  { value: "rose", label: "Rose", className: "bg-rose-500" },
-  { value: "indigo", label: "Indigo", className: "bg-indigo-500" },
-  { value: "teal", label: "Teal", className: "bg-teal-500" },
-  { value: "amber", label: "Amber", className: "bg-amber-500" },
-  { value: "pink", label: "Pink", className: "bg-pink-500" },
-  { value: "slate", label: "Slate", className: "bg-slate-500" },
-];
+import { VocabularyCategoryColorSelect } from "@/components/vocabulary/VocabularyCategoryColorSelect";
 
 interface ManageCategoriesModalProps {
   open: boolean;
@@ -100,97 +80,31 @@ export function ManageCategoriesModal({
               placeholder="New category"
               maxLength={50}
             />
-            <Select
-              aria-label="New category color"
+            <VocabularyCategoryColorSelect
+              ariaLabel="New category color"
               value={newColor}
-              onChange={(event) =>
-                setNewColor(event.target.value as VocabularyCategoryColor)
-              }
-            >
-              {colorOptions.map((color) => (
-                <option key={color.value} value={color.value}>
-                  {color.label}
-                </option>
-              ))}
-            </Select>
+              onChange={setNewColor}
+            />
             <Button type="submit" disabled={!newName.trim() || isSaving}>
               <Plus size={16} />
               Add
             </Button>
           </form>
 
-          <div className="mt-5 space-y-2">
-            {categories.map((category) => {
-              const color = colorOptions.find(
-                (option) => option.value === category.color
-              );
-
-              return (
-                <div
-                  key={category.id}
-                  className="rounded-xl border border-slate-200 p-3"
-                >
-                  {editing?.id === category.id ? (
-                    <form
-                      onSubmit={handleUpdate}
-                      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px_auto]"
-                    >
-                      <Input
-                        aria-label="Category name"
-                        value={editName}
-                        onChange={(event) => setEditName(event.target.value)}
-                        disabled={category.is_default}
-                        maxLength={50}
-                      />
-                      <Select
-                        aria-label="Category color"
-                        value={editColor}
-                        onChange={(event) =>
-                          setEditColor(
-                            event.target.value as VocabularyCategoryColor
-                          )
-                        }
-                      >
-                        {colorOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </Select>
-                      <div className="flex gap-2">
-                        <Button
-                          type="submit"
-                          aria-label={`Save ${category.name}`}
-                          disabled={!editName.trim() || isSaving}
-                          className="size-11 px-0"
-                        >
-                          <Check size={16} />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          aria-label="Cancel editing"
-                          onClick={() => setEditing(null)}
-                          disabled={isSaving}
-                          className="size-11 px-0"
-                        >
-                          <X size={16} />
-                        </Button>
-                      </div>
-                    </form>
-                  ) : (
-                    <ManageCategoryRow
-                      category={category}
-                      colorClass={color?.className ?? "bg-slate-300"}
-                      fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath}
-                      isSaving={isSaving}
-                      onEdit={() => startEditing(category)}
-                      onDelete={() => void handleDelete(category)}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <ManageCategoryList
+            categories={categories}
+            words={words}
+            editing={editing}
+            editName={editName}
+            editColor={editColor}
+            isSaving={isSaving}
+            onEditNameChange={setEditName}
+            onEditColorChange={setEditColor}
+            onStartEditing={startEditing}
+            onCancelEditing={() => setEditing(null)}
+            onUpdate={handleUpdate}
+            onDelete={(category) => void handleDelete(category)}
+          />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
