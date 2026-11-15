@@ -7,13 +7,7 @@ import {
   getVocabularyWordImagePaths,
 } from "@/lib/supabase/vocabulary";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
-import {
-  invalidateLatestVocabularyReviewsCache,
-  invalidateVocabularyReviewScheduleCache,
-} from "@/lib/supabase/reviews";
-import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
-import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
-import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
+import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { toast } from "sonner";
 
 interface VocabularyDeletionMutationOptions {
@@ -46,11 +40,11 @@ export function useVocabularyDeletionMutations({
       }
 
       setWords((current) => current.filter((item) => item.id !== id));
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
-      invalidateLearningAnalyticsCache();
-      invalidateVocabularyReviewScheduleCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
+        reviewHistory: true,
+        learningAnalytics: true,
+        reviewSchedule: true,
+      });
 
       toast.success(`"${word?.word ?? storedWord?.word ?? "Word"}" deleted successfully!`);
       return true;
@@ -79,11 +73,11 @@ export function useVocabularyDeletionMutations({
       }
 
       setWords((current) => current.filter((word) => !deletedSet.has(word.id)));
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
-      invalidateLearningAnalyticsCache();
-      invalidateVocabularyReviewScheduleCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
+        reviewHistory: true,
+        learningAnalytics: true,
+        reviewSchedule: true,
+      });
 
       return deletedIds.length;
     } catch (error) {

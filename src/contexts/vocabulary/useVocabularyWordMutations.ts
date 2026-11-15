@@ -9,9 +9,7 @@ import {
 } from "@/lib/supabase/vocabulary";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
-import { invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/reviews";
-import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
-import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
+import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { mapVocabularyMeaning } from "@/lib/vocabulary/shared-vocabulary";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { toast } from "sonner";
@@ -80,8 +78,7 @@ export function useVocabularyWordMutations({
         },
         ...current,
       ]);
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined);
       toast.success(`"${row.word}" added successfully!`);
       return true;
     } catch (error) {
@@ -144,9 +141,7 @@ export function useVocabularyWordMutations({
             }
           : word
       ));
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });
 
       if (previousImagePath && previousImagePath !== row.image_path) {
         void deleteVocabularyImages([previousImagePath]).catch((error) =>
@@ -174,9 +169,7 @@ export function useVocabularyWordMutations({
       setWords((current) => current.map((item) =>
         item.id === row.id ? { ...item, status: row.status } : item
       ));
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });
       return true;
     } catch {
       toast.error("Failed to update word status.");

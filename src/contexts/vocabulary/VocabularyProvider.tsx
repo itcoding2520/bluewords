@@ -4,8 +4,7 @@ import { importVocabularyWords } from "@/lib/vocabulary/bulk-import";
 import { useVocabularyMutations } from "@/contexts/vocabulary/useVocabularyMutations";
 import { useVocabularyStoreData } from "@/contexts/vocabulary/useVocabularyStoreData";
 import { VocabularyContext } from "@/contexts/vocabulary/context";
-import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
-import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
+import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   return <VocabularyStoreProvider>{children}</VocabularyStoreProvider>;
@@ -52,8 +51,7 @@ function VocabularyStoreProvider({ children }: { children: ReactNode }) {
       }));
     }
     if (result.imported > 0 || result.existingImageUpdates.length > 0) {
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined);
     }
 
     return {
