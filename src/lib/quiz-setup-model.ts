@@ -1,44 +1,17 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { isUncategorizedVocabularyCategory } from "@/lib/vocabulary/category-visibility";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { buildVocabularyGameCategoryOptions, type VocabularyGameCategoryOption } from "@/lib/vocabulary/game-category-options";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { QuizQuestion } from "@/lib/quiz-model";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import { sampleRandom, shuffle } from "@/lib/quiz-random";
 
-export type QuizCategoryOption = {
-  id: string;
-  name: string;
-  value: string;
-  color: VocabularyCategoryColor;
-  imagePath: string | null;
-};
+export type QuizCategoryOption = VocabularyGameCategoryOption;
 
 export function buildQuizCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[]
 ): QuizCategoryOption[] {
-  let firstWordImage: string | null = null;
-  const wordImagesByCategory = new Map<string, string>();
-  for (const word of words) {
-    if (!word.imagePath) continue;
-    firstWordImage ??= word.imagePath;
-    if (word.category && !wordImagesByCategory.has(word.category)) {
-      wordImagesByCategory.set(word.category, word.imagePath);
-    }
-  }
-  const visibleCategories = categories.filter((item) => !isUncategorizedVocabularyCategory(item.name));
-  return [
-    { id: "all-categories", name: "All categories", value: "all", color: "blue", imagePath: firstWordImage },
-    ...visibleCategories.map((item) => ({
-      id: item.id,
-      name: item.name,
-      value: item.name,
-      color: item.color,
-      imagePath: item.image_path
-        ? `category:${item.image_path}`
-        : wordImagesByCategory.get(item.name) ?? null,
-    })),
-  ];
+  return buildVocabularyGameCategoryOptions(categories, words, true);
 }
 
 export function buildQuizPreviewQuestion(questions: QuizQuestion[]): QuizQuestion | undefined {

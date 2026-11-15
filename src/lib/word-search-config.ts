@@ -1,17 +1,11 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { isUncategorizedVocabularyCategory } from "@/lib/vocabulary/category-visibility";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { buildVocabularyGameCategoryOptions, type VocabularyGameCategoryOption } from "@/lib/vocabulary/game-category-options";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 
 export type GridSize = 10 | 15 | 20;
 export type Difficulty = "easy" | "medium" | "hard";
-export type WordSearchCategoryOption = {
-  id: string;
-  name: string;
-  value: string;
-  color: VocabularyCategoryColor;
-  imagePath: string | null;
-};
+export type WordSearchCategoryOption = VocabularyGameCategoryOption;
 
 export const GRID_SIZES: GridSize[] = [10, 15, 20];
 export const DIFFICULTIES: { value: Difficulty; label: string }[] = [
@@ -63,17 +57,5 @@ export function buildWordSearchCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[]
 ): WordSearchCategoryOption[] {
-  const visibleCategories = categories.filter((item) => !isUncategorizedVocabularyCategory(item.name));
-  return [
-    { id: "all-categories", name: "All categories", value: "all", color: "blue", imagePath: null },
-    ...visibleCategories.map((item) => ({
-      id: item.id,
-      name: item.name,
-      value: item.name,
-      color: item.color,
-      imagePath: item.image_path
-        ? `category:${item.image_path}`
-        : words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
-    })),
-  ];
+  return buildVocabularyGameCategoryOptions(categories, words, false);
 }
