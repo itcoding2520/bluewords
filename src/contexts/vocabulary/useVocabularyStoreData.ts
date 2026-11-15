@@ -1,5 +1,5 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import {
@@ -9,14 +9,12 @@ import {
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
 import { useVocabularyCategoryData } from "@/contexts/vocabulary/useVocabularyCategoryData";
+import { useVocabularyStoreAuth } from "@/contexts/vocabulary/useVocabularyStoreAuth";
 
 export function useVocabularyStoreData() {
   const supabase = useSupabaseClient();
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authVersion, setAuthVersion] = useState(0);
-
   const requestIdRef = useRef(0);
   const pendingRequestIdRef = useRef<number | null>(null);
   const ownerIdRef = useRef<string | null>(null);
@@ -30,6 +28,18 @@ export function useVocabularyStoreData() {
     refreshCategories,
     invalidatePendingRequests: invalidateCategoryRequests,
   } = categoryData;
+  const auth = useVocabularyStoreAuth({
+    supabase,
+    setWords,
+    setCategories,
+    setCategoriesLoaded,
+    setIsLoaded,
+    invalidateCategoryRequests,
+    requestIdRef,
+    ownerIdRef,
+    mountedRef,
+  });
+  const { isAuthenticated, setIsAuthenticated, authVersion } = auth;
 
   const refreshWords = useCallback(async (): Promise<void> => {
     if (pendingRequestIdRef.current === requestIdRef.current) return;
@@ -97,35 +107,7 @@ export function useVocabularyStoreData() {
     } finally {
       if (pendingRequestIdRef.current === currentRequest) pendingRequestIdRef.current = null;
     }
-  }, [setCategories, setCategoriesLoaded, supabase]);
-
-  useEffect(() => {
-    const requestId = requestIdRef;
-    mountedRef.current = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "INITIAL_SESSION" && event !== "SIGNED_IN"
-        && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      const nextUserId = session?.user.id ?? null;
-      if (nextUserId === ownerIdRef.current) return;
-
-      requestId.current++;
-      invalidateCategoryRequests();
-      ownerIdRef.current = nextUserId;
-      invalidateDashboardVocabularyOverviewCache();
-      setAuthVersion((version) => version + 1);
-      setIsAuthenticated(Boolean(nextUserId));
-      setWords(nextUserId ? [] : defaultVocabularyWords);
-      setCategories(nextUserId ? [] : defaultVocabularyCategories);
-      setCategoriesLoaded(nextUserId === null);
-      setIsLoaded(nextUserId === null);
-    });
-
-    return () => {
-      mountedRef.current = false;
-      requestId.current++;
-      subscription.unsubscribe();
-    };
-  }, [invalidateCategoryRequests, setCategories, setCategoriesLoaded, supabase]);
+  }, [setCategories, setCategoriesLoaded, setIsAuthenticated, supabase]);
 
   return {
     words,
