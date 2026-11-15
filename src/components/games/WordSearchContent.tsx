@@ -11,138 +11,91 @@ import { useWordSearchController } from "@/hooks/useWordSearchController";
 import { formatGameDuration } from "@/lib/game-duration";
 
 export function WordSearchContent({ userId }: { userId: string | null }) {
-  const {
-    isLoaded,
-    gridSize,
-    setGridSize,
-    difficulty,
-    setDifficulty,
-    category,
-    setCategory,
-    categoriesExpanded,
-    setCategoriesExpanded,
-    phase,
-    tab,
-    puzzle,
-    foundIds,
-    foundWordPaths,
-    selectedHistory,
-    setSelectedHistory,
-    elapsedSeconds,
-    saveState,
-    saveError,
-    retrySave,
-    history,
-    historyPage,
-    historyTotal,
-    historyLoading,
-    historyError,
-    loadHistory,
-    fastestHistorySeconds,
-    averageWordsPerRound,
-    vocabularyById,
-    vocabularyByWord,
-    categoryOptions,
-    targetCount,
-    showStickyStart,
-    gameError,
-    selectedCells,
-    clearSelection,
-    handleGridPointerDown,
-    handleGridPointerMove,
-    handleGridPointerUp,
-    handleGridPointerCancel,
-    handleStartGame,
-    backToSetup,
-    openPlayTab,
-    openHistoryTab,
-    viewHistory,
-    changeHistoryPage,
-  } = useWordSearchController(userId);
+  const { isLoaded, setup, history, game } = useWordSearchController(userId);
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
 
-  if (phase === "setup") {
+  if (game.phase === "setup") {
     return (
       <WordSearchSetupShell
         userId={userId}
-        tab={tab}
-        showStickyStart={showStickyStart}
-        targetCount={targetCount}
-        onStart={handleStartGame}
-        onOpenPlay={openPlayTab}
-        onOpenHistory={openHistoryTab}
+        tab={setup.tab}
+        showStickyStart={setup.showStickyStart}
+        targetCount={setup.targetCount}
+        onStart={setup.startGame}
+        onOpenPlay={setup.openPlayTab}
+        onOpenHistory={setup.openHistoryTab}
       >
-        {tab === "history" ? (
+        {setup.tab === "history" ? (
           <WordSearchHistoryView
-            selectedHistory={selectedHistory}
-            history={history}
-            historyTotal={historyTotal}
-            historyPage={historyPage}
-            historyLoading={historyLoading}
-            historyError={historyError}
-            fastestSeconds={fastestHistorySeconds}
-            averageWordsPerRound={averageWordsPerRound}
-            vocabularyByWord={vocabularyByWord}
-            onBack={() => setSelectedHistory(null)}
-            onPlay={openPlayTab}
-            onSelect={setSelectedHistory}
-            onRefresh={() => void loadHistory(true)}
-            onPageChange={changeHistoryPage}
+            selectedHistory={history.selected}
+            history={history.sessions}
+            historyTotal={history.total}
+            historyPage={history.page}
+            historyLoading={history.loading}
+            historyError={history.error}
+            fastestSeconds={history.fastestSeconds}
+            averageWordsPerRound={history.averageWordsPerRound}
+            vocabularyByWord={history.vocabularyByWord}
+            onBack={() => history.select(null)}
+            onPlay={setup.openPlayTab}
+            onSelect={history.select}
+            onRefresh={() => void history.load(true)}
+            onPageChange={history.changePage}
           />
         ) : (
         <WordSearchSetupForm
-          gridSize={gridSize}
-          difficulty={difficulty}
-          category={category}
-          categoriesExpanded={categoriesExpanded}
-          categoryOptions={categoryOptions}
-          targetCount={targetCount}
-          gameError={gameError}
-          onGridSizeChange={setGridSize}
-          onDifficultyChange={setDifficulty}
-          onCategoryChange={setCategory}
-          onCategoriesExpandedChange={() => setCategoriesExpanded((expanded) => !expanded)}
-          onStart={handleStartGame}
-          preview={<WordSearchBoardPreview gridSize={gridSize} difficulty={difficulty} wordCount={targetCount} />}
+          gridSize={setup.gridSize}
+          difficulty={setup.difficulty}
+          category={setup.category}
+          categoriesExpanded={setup.categoriesExpanded}
+          categoryOptions={setup.categoryOptions}
+          targetCount={setup.targetCount}
+          gameError={setup.gameError}
+          onGridSizeChange={setup.setGridSize}
+          onDifficultyChange={setup.setDifficulty}
+          onCategoryChange={setup.setCategory}
+          onCategoriesExpandedChange={setup.toggleCategoriesExpanded}
+          onStart={setup.startGame}
+          preview={<WordSearchBoardPreview gridSize={setup.gridSize} difficulty={setup.difficulty} wordCount={setup.targetCount} />}
         />
         )}
       </WordSearchSetupShell>
     );
   }
 
-  if (!puzzle) return null;
+  if (!game.puzzle) return null;
 
   return (
-    <div className={phase === "playing" ? "word-search-playing" : "pb-8"}>
-      <WordSearchGameHeader isPlaying={phase === "playing"} difficulty={difficulty} elapsedSeconds={elapsedSeconds} onBackToSetup={backToSetup} />
+    <div className={game.phase === "playing" ? "word-search-playing" : "pb-8"}>
+      <WordSearchGameHeader isPlaying={game.phase === "playing"} difficulty={setup.difficulty} elapsedSeconds={game.elapsedSeconds} onBackToSetup={game.backToSetup} />
 
-      {phase === "results" ? (
+      {game.phase === "results" ? (
         <WordSearchResults
-          wordCount={puzzle.words.length}
-          duration={formatGameDuration(elapsedSeconds)}
-          saveState={saveState}
-          saveError={saveError}
+          wordCount={game.puzzle.words.length}
+          duration={formatGameDuration(game.elapsedSeconds)}
+          saveState={game.saveState}
+          saveError={game.saveError}
           onRetrySave={() => {
-            retrySave();
+            game.retrySave();
           }}
-          onPlayAgain={handleStartGame}
-          onViewHistory={viewHistory}
+          onPlayAgain={setup.startGame}
+          onViewHistory={history.view}
         />
       ) : (
         <WordSearchPlayingBoard
-          letters={puzzle.letters}
-          words={puzzle.words}
-          gridSize={gridSize}
-          foundIds={foundIds}
-          foundWordPaths={foundWordPaths}
-          selectedCells={selectedCells}
-          vocabularyById={vocabularyById}
-          onClearSelection={clearSelection}
-          onPointerDown={handleGridPointerDown}
-          onPointerMove={handleGridPointerMove}
-          onPointerUp={handleGridPointerUp}
-          onPointerCancel={handleGridPointerCancel}
+          letters={game.puzzle.letters}
+          words={game.puzzle.words}
+          gridSize={setup.gridSize}
+          foundIds={game.foundIds}
+          foundWordPaths={game.foundWordPaths}
+          selectedCells={game.selectedCells}
+          vocabularyById={game.vocabularyById}
+          onClearSelection={game.clearSelection}
+          onPointerDown={game.onPointerDown}
+          onPointerMove={game.onPointerMove}
+          onPointerUp={game.onPointerUp}
+          onPointerCancel={game.onPointerCancel}
         />
       )}
     </div>
