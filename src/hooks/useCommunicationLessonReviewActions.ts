@@ -10,6 +10,7 @@ import {
 import { getCorrectReviewIntervalDays } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import type { Item, ItemReview, Lesson } from "@/lib/communication/lesson-types";
+import type { LearningStatus } from "@/types/learning";
 
 type Props = {
   supabase: SupabaseClient;
@@ -41,7 +42,7 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
     return error;
   }
 
-  async function setItemStatus(item: Item, status: "learning" | "mastered") {
+  async function setItemStatus(item: Item, status: LearningStatus) {
     if (!userId) { toast.error("Sign in to save your learning progress."); return; }
     setSaving(true);
     const existingReview = reviews[item.id];

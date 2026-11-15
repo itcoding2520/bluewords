@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, RotateCcw } from "lucide-react";
+import type { LearningStatus } from "@/types/learning";
 
 export function StudyCardControls({
   index,
@@ -13,9 +14,9 @@ export function StudyCardControls({
   index: number;
   itemCount: number;
   revealed: boolean;
-  status: "learning" | "mastered";
+  status: LearningStatus;
   saving: boolean;
-  onStatusChange: (status: "learning" | "mastered") => void;
+  onStatusChange: (status: LearningStatus) => void;
   onPrevious: () => void;
   onNext: () => void;
 }) {

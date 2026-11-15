@@ -1,4 +1,5 @@
 import type { DifficultyLevel } from "@/types/difficulty";
+import type { LearningStatus } from "@/types/learning";
 
 export type LessonMode = "study" | "practice" | "drills" | "listening";
 
@@ -51,7 +52,7 @@ export type Turn = {
 };
 
 export type ItemReview = {
-  status: "learning" | "mastered";
+  status: LearningStatus;
   review_count: number;
   correct_count: number;
 };

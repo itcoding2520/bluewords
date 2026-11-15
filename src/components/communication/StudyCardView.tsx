@@ -4,6 +4,7 @@ import { Volume2 } from "lucide-react";
 import type { Item } from "@/lib/communication/lesson-types";
 import { StudyCardContent } from "@/components/communication/StudyCardContent";
 import { StudyCardControls } from "@/components/communication/StudyCardControls";
+import type { LearningStatus } from "@/types/learning";
 
 export function StudyCardView({
   item,
@@ -22,10 +23,10 @@ export function StudyCardView({
   index: number;
   itemCount: number;
   revealed: boolean;
-  status: "learning" | "mastered";
+  status: LearningStatus;
   saving: boolean;
   onReveal: () => void;
-  onStatusChange: (status: "learning" | "mastered") => void;
+  onStatusChange: (status: LearningStatus) => void;
   onPrevious: () => void;
   onNext: () => void;
   onListen: () => void;

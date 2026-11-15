@@ -8,6 +8,7 @@ import { useSituationalEnglishLessonSession } from "@/hooks/useSituationalEnglis
 import { useSituationalEnglishLessonAnswerActions } from "@/hooks/useSituationalEnglishLessonAnswerActions";
 import { useSituationalEnglishLessonProgressData } from "@/hooks/useSituationalEnglishLessonProgressData";
 import { playCommunicationAudio } from "@/lib/communication/audio";
+import type { LearningStatus } from "@/types/learning";
 
 export function useSituationalEnglishLessonController(lessonId: string, reviewItem?: string) {
   const supabase = useSupabaseClient();
@@ -79,7 +80,7 @@ export function useSituationalEnglishLessonController(lessonId: string, reviewIt
         status: progress.currentStatus,
         saving,
         onReveal: () => session.setRevealed(true),
-        onStatusChange: (status: "learning" | "mastered") => void setItemStatus(progress.currentItem, status),
+        onStatusChange: (status: LearningStatus) => void setItemStatus(progress.currentItem, status),
         onPrevious: () => { setCurrentIndex((index) => index - 1); session.setRevealed(false); },
         onNext: () => { setCurrentIndex((index) => index + 1); session.setRevealed(false); },
         onListen: () => playCommunicationAudio(progress.currentItem.audio_url, progress.currentItem.example_en || progress.currentItem.content_en),

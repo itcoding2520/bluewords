@@ -1,10 +1,11 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import type { LearningStatus } from "@/types/learning";
 
 interface ItemReviewRecord {
   user_id: string;
   item_id: string;
-  status: "learning" | "mastered";
+  status: LearningStatus;
   review_count: number;
   correct_count: number;
   last_reviewed_at: string;

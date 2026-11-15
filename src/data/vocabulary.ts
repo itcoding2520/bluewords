@@ -4,8 +4,9 @@ import type {
   VocabularyCategoryColor,
   VocabularyType,
 } from "@/config/vocabulary";
+import type { LearningStatus } from "@/types/learning";
 
-export type VocabularyStatus = "learning" | "mastered";
+export type VocabularyStatus = LearningStatus;
 
 export interface VocabularyMeaning {
   id?: string;

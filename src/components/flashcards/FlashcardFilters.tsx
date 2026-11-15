@@ -1,10 +1,9 @@
 import Image from "next/image";
 import { CalendarClock, Star } from "lucide-react";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 
-type VocabularyStatus = "learning" | "mastered";
 type ReviewMode = "all" | "due";
 
 interface FlashcardFiltersProps {

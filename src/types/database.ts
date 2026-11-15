@@ -1,6 +1,7 @@
 import type { PartOfSpeech, VocabularyCategoryColor } from "@/config/vocabulary";
 import type { DifficultyLevel } from "@/types/difficulty";
 import type { QuizMode } from "@/types/quiz";
+import type { LearningStatus } from "@/types/learning";
 
 export type VocabularyCategoryRow = {
   id: string;
@@ -22,7 +23,7 @@ export type VocabularyWordRow = {
   type: "word" | "expression";
   ipa: string | null;
   image_path: string | null;
-  status: "learning" | "mastered";
+  status: LearningStatus;
   created_at: string;
   updated_at: string;
 };
