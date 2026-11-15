@@ -93,9 +93,20 @@ export function useGamesLeaderboardController() {
   }
 
   return {
-    game, quizMode, questionCount, gridSize, difficulty, rows,
-    loading, refreshing, error, expanded, setExpanded,
-    refresh, selectGame, selectQuizMode, selectQuestionCount,
-    selectGridSize, selectDifficulty,
+    filters: {
+      game,
+      quizMode,
+      questionCount,
+      gridSize,
+      difficulty,
+      selectGame,
+      selectQuizMode,
+      selectQuestionCount,
+      selectGridSize,
+      selectDifficulty,
+    },
+    results: { rows, loading, error },
+    display: { refreshing, expanded, setExpanded },
+    actions: { refresh },
   };
 }
