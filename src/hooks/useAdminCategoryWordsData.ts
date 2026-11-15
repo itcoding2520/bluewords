@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { loadAdminCategoryWords } from "@/lib/admin-category-data";
+import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
@@ -21,7 +21,7 @@ export function useAdminCategoryWordsData(
   useEffect(() => {
     if (!selectedCategory) return;
     const sharedCategory = activeTab === "default"
-      ? communityCategories.find((category) => category.status === "published"
+      ? communityCategories.find((category) => category.status === getCommunityContentStatus("published")
         && normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(selectedCategory.name))
       : "owner_id" in selectedCategory ? selectedCategory : null;
     if (!sharedCategory) {
@@ -41,7 +41,7 @@ export function useAdminCategoryWordsData(
         const result = await loadAdminCategoryWords(
           supabase,
           sharedCategory,
-          activeTab === "pending" ? "pending" : "published"
+          getCommunityContentStatus(activeTab)
         );
         if (cancelled) return;
         setWords(result.words);

@@ -4,6 +4,11 @@ import { loadAdminUserEmails } from "@/lib/admin-users";
 
 
 export type CategoryTab = "default" | "published" | "pending";
+export type CommunityContentStatus = "pending" | "published";
+
+export function getCommunityContentStatus(tab: CategoryTab): CommunityContentStatus {
+  return tab === "pending" ? "pending" : "published";
+}
 
 export interface CommunityCategory {
   id: string;
@@ -45,7 +50,7 @@ export function loadAdminCategories(supabase: SupabaseClient, force = false) {
 export function loadAdminCategoryWords(
   supabase: SupabaseClient,
   category: Pick<CommunityCategory, "id">,
-  status: "pending" | "published"
+  status: CommunityContentStatus
 ) {
   return getAdminCachedData(
     `admin:categories:words:${category.id}:${status}`,

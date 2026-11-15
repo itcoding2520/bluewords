@@ -1,5 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
+import { getCommunityContentStatus, type CategoryTab, type CommunityCategory, type CommunityWord } from "@/lib/admin-category-data";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
@@ -40,7 +40,7 @@ export function deriveAdminCategorySelection({
   defaultCategoryNames: Set<string>;
 }) {
   const customCategories = communityCategories.filter((category) =>
-    category.status === (activeTab === "pending" ? "pending" : "published")
+    category.status === getCommunityContentStatus(activeTab)
     && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
   );
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;

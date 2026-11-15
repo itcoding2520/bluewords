@@ -1,6 +1,6 @@
 import { BookOpen, CheckCircle2, Clock3 } from "lucide-react";
 
-import type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
+import { getCommunityContentStatus, type CategoryTab, type CommunityCategory } from "@/lib/admin-category-data";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 
 const tabs: Array<{
@@ -26,7 +26,7 @@ export function AdminCategoryTabs({ activeTab, communityCategories, onChange }: 
       {tabs.map(({ id, label, description, icon: Icon }) => {
         const count = id === "default"
           ? defaultVocabularyCategories.length
-          : communityCategories.filter((category) => category.status === (id === "pending" ? "pending" : "published")).length;
+          : communityCategories.filter((category) => category.status === getCommunityContentStatus(id)).length;
         const active = activeTab === id;
 
         return (
