@@ -6,6 +6,7 @@ import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supab
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
+import { loadAdminUserEmails } from "@/lib/admin-users";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
 export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
@@ -58,13 +59,10 @@ export function useCategoryManagementController() {
           .select("name, owner_id").eq("status", "published");
         const owners = (data ?? []) as Array<{ name: string; owner_id: string }>;
         const ownerIds = [...new Set(owners.map((item) => item.owner_id))];
-        const emails: Record<string, string> = {};
-        for (let start = 0; start < ownerIds.length; start += 100) {
-          const response = await fetch(`/api/admin/users?ids=${ownerIds.slice(start, start + 100).join(",")}`);
-          if (!response.ok) continue;
-          const payload = await response.json() as { users?: Array<{ id: string; email: string | null }> };
-          for (const user of payload.users ?? []) emails[user.id] = user.email ?? "No email";
-        }
+        const emails = await loadAdminUserEmails(
+          ownerIds,
+          "Could not load category authors."
+        ).catch((): Record<string, string> => ({}));
         if (!cancelled) {
           setCategoryAuthors(Object.fromEntries(owners.map((item) => [
             item.name.trim().toLocaleLowerCase(),
