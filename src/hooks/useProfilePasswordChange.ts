@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { updateAccountPassword } from "@/lib/supabase/account-security";
 
 export function useProfilePasswordChange() {
   const supabase = useSupabaseClient();
@@ -27,8 +28,7 @@ export function useProfilePasswordChange() {
 
     setPasswordSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      await updateAccountPassword(supabase, newPassword);
       setNewPassword("");
       setConfirmPassword("");
       setPasswordNotice("Your password has been updated.");
