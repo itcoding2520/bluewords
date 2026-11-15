@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, getPageItems } from "@/lib/pagination";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { downloadCsvFile } from "@/lib/download-csv";
@@ -30,7 +30,7 @@ export function useAdminSentenceBuilderController() {
   const filteredQuestions = useMemo(() => filter === "all" ? questions : questions.filter((question) => question.difficulty === filter), [filter, questions]);
   const pageCount = getPageCount(filteredQuestions.length, pageSize);
   const currentPage = Math.min(page, pageCount);
-  const visible = filteredQuestions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visible = getPageItems(filteredQuestions, currentPage, pageSize);
   const categoryOptions = [...new Set([...questions.map((question) => question.category), draft.category].map((name) => name.trim()).filter(Boolean))].sort((left, right) => left.localeCompare(right));
 
   async function refresh() {

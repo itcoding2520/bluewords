@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, getPageItems } from "@/lib/pagination";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
 export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
@@ -54,7 +54,7 @@ export function useCategoryManagementView({
 
   const pageCount = getPageCount(managedCategories.length, pageSize);
   const currentPage = Math.min(page, pageCount);
-  const pageCategories = managedCategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageCategories = getPageItems(managedCategories, currentPage, pageSize);
   const firstVisibleCategory = managedCategories.length ? (currentPage - 1) * pageSize + 1 : 0;
   const lastVisibleCategory = Math.min(currentPage * pageSize, managedCategories.length);
 

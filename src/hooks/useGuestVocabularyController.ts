@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, getPageItems } from "@/lib/pagination";
 
 export const GUEST_VOCABULARY_PAGE_SIZE = 20;
 
@@ -19,7 +19,7 @@ export function useGuestVocabularyController() {
     });
   }, [category, search, words]);
   const pageCount = getPageCount(filteredWords.length, GUEST_VOCABULARY_PAGE_SIZE);
-  const pageWords = filteredWords.slice((page - 1) * GUEST_VOCABULARY_PAGE_SIZE, page * GUEST_VOCABULARY_PAGE_SIZE);
+  const pageWords = getPageItems(filteredWords, page, GUEST_VOCABULARY_PAGE_SIZE);
   const categoryColors = useMemo(() => {
     const colors = new Map<string, (typeof categories)[number]["color"]>();
     for (const item of categories) {
