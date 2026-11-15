@@ -21,9 +21,28 @@ export function useAdminReviewController() {
   const publishedActions = useAdminPublishedVocabularyActions(supabase, setError, refresh);
 
   return {
-    categories, words, loading, error, busy, blockedWordId,
-    publishedCategories, publishedWords, ownerEmails,
-    ...publishedActions,
-    refresh, moderate,
+    requests: { categories, words, ownerEmails },
+    published: {
+      categories: publishedCategories,
+      words: publishedWords,
+      newCategory: publishedActions.newCategory,
+      setNewCategory: publishedActions.setNewCategory,
+      newWord: publishedActions.newWord,
+      setNewWord: publishedActions.setNewWord,
+      newMeaning: publishedActions.newMeaning,
+      setNewMeaning: publishedActions.setNewMeaning,
+      newWordCategory: publishedActions.newWordCategory,
+      setNewWordCategory: publishedActions.setNewWordCategory,
+    },
+    status: { loading, error, busy, blockedWordId },
+    actions: {
+      refresh,
+      moderate,
+      addPublishedCategory: publishedActions.addPublishedCategory,
+      addPublishedWord: publishedActions.addPublishedWord,
+      removePublished: publishedActions.removePublished,
+      editPublishedWord: publishedActions.editPublishedWord,
+      editPublishedCategory: publishedActions.editPublishedCategory,
+    },
   };
 }

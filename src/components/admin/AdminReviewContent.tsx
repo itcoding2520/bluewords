@@ -10,12 +10,17 @@ import { AdminReviewPublishedVocabulary } from "@/components/admin/AdminReviewPu
 
 export function AdminReviewContent() {
   const {
-    categories, words, loading, error, busy, blockedWordId,
-    publishedCategories, publishedWords, ownerEmails,
-    newCategory, setNewCategory, newWord, setNewWord,
-    newMeaning, setNewMeaning, newWordCategory, setNewWordCategory,
-    refresh, moderate, addPublishedCategory, addPublishedWord,
-    removePublished, editPublishedWord, editPublishedCategory,
+    requests: { categories, words, ownerEmails },
+    published: {
+      categories: publishedCategories, words: publishedWords,
+      newCategory, setNewCategory, newWord, setNewWord, newMeaning,
+      setNewMeaning, newWordCategory, setNewWordCategory,
+    },
+    status: { loading, error, busy, blockedWordId },
+    actions: {
+      refresh, moderate, addPublishedCategory, addPublishedWord,
+      removePublished, editPublishedWord, editPublishedCategory,
+    },
   } = useAdminReviewController();
 
   return <div className="admin-review-page">
