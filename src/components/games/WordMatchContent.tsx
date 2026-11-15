@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, RotateCcw, Shuffle, Sparkles, Tro
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
-import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 

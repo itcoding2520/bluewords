@@ -9,7 +9,7 @@ import { Search, Sparkles, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 

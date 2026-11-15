@@ -7,7 +7,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import { FlashcardAnswer, FlashcardWord } from "@/components/flashcards/FlashcardCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { useFlashcardController } from "@/hooks/useFlashcardController";
 
 export function FlashcardsContent() {

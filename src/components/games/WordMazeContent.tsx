@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Flag, Heart, Map, RotateCcw, Shie
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
-import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 

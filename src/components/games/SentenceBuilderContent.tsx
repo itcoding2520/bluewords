@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Lightbulb, RotateCcw, Sparkles, S
 import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { loadSentenceBuilderQuestions, type SentenceBuilderQuestion, type SentenceDifficulty } from "@/lib/supabase/sentence-builder";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";

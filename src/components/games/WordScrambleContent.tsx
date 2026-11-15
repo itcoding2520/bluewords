@@ -9,7 +9,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { Card } from "@/components/ui/Card";
-import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
+import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 
