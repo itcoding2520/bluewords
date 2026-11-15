@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import {
   PARTS_OF_SPEECH,
@@ -6,11 +6,7 @@ import {
   type VocabularyType,
 } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import {
-  deleteVocabularyImages,
-  uploadVocabularyImage,
-  validateVocabularyImage,
-} from "@/lib/supabase/vocabulary-images";
+import { useWordFormImage } from "@/hooks/useWordFormImage";
 
 export interface WordFormErrors {
   word?: string;
@@ -45,20 +41,7 @@ export function useWordFormController({
   );
   const [errors, setErrors] = useState<WordFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedImage) {
-      setSelectedImageUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedImage);
-    setSelectedImageUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedImage]);
+  const image = useWordFormImage(setErrors);
 
   function clearError(field: keyof WordFormErrors) {
     setErrors((current) => ({ ...current, [field]: undefined }));
@@ -113,18 +96,10 @@ export function useWordFormController({
 
     setIsSubmitting(true);
     try {
-      if (selectedImage) {
-        const imageError = validateVocabularyImage(selectedImage);
-        if (imageError) {
-          setErrors((current) => ({ ...current, image: imageError }));
-          return;
-        }
-      }
+      if (!image.validateSelectedImage()) return;
 
       const wordId = editingWord?.id ?? crypto.randomUUID();
-      const uploadedPath = selectedImage
-        ? await uploadVocabularyImage(wordId, selectedImage)
-        : null;
+      const uploadedPath = await image.uploadSelectedImage(wordId);
       const success = await onSubmit({
         id: wordId,
         word: trimmedWord,
@@ -137,9 +112,9 @@ export function useWordFormController({
           .filter((item) => item.meaning.length > 0),
         imagePath:
           uploadedPath ??
-          (removeCurrentImage ? null : editingWord?.imagePath ?? null),
+          (image.removeCurrentImage ? null : editingWord?.imagePath ?? null),
       });
-      if (!success && uploadedPath) await deleteVocabularyImages([uploadedPath]);
+      if (!success && uploadedPath) await image.removeUploadedImage(uploadedPath);
     } catch (error) {
       setErrors((current) => ({
         ...current,
@@ -163,11 +138,11 @@ export function useWordFormController({
     errors,
     setErrors,
     isSubmitting,
-    selectedImage,
-    setSelectedImage,
-    removeCurrentImage,
-    setRemoveCurrentImage,
-    selectedImageUrl,
+    selectedImage: image.selectedImage,
+    removeCurrentImage: image.removeCurrentImage,
+    selectedImageUrl: image.selectedImageUrl,
+    selectImage: image.selectImage,
+    removeImage: image.removeImage,
     clearError,
     updateDetailedMeaning,
     addDetailedMeaning,

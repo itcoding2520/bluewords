@@ -50,10 +50,10 @@ export function WordFormModal({
     clearError,
     isSubmitting,
     selectedImage,
-    setSelectedImage,
     removeCurrentImage,
-    setRemoveCurrentImage,
     selectedImageUrl,
+    selectImage,
+    removeImage,
     updateDetailedMeaning,
     addDetailedMeaning,
     removeDetailedMeaning,
@@ -143,14 +143,10 @@ export function WordFormModal({
               error={errors.image}
               disabled={isSubmitting}
               onSelect={(file) => {
-                setSelectedImage(file);
-                setRemoveCurrentImage(false);
+                selectImage(file);
                 clearError("image");
               }}
-              onRemove={() => {
-                setSelectedImage(null);
-                setRemoveCurrentImage(true);
-              }}
+              onRemove={removeImage}
             />
 
             <DetailedMeaningsEditor
