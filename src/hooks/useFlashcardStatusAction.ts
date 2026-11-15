@@ -7,6 +7,7 @@ import type { Flashcard } from "@/lib/flashcards/deck";
 import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
 import { recordVocabularyReview } from "@/lib/supabase/reviews";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 interface UseFlashcardStatusActionOptions {
   card: Flashcard | undefined;
@@ -19,7 +20,7 @@ interface UseFlashcardStatusActionOptions {
     currentStatus?: VocabularyStatus
   ) => Promise<boolean>;
   setStatus: Dispatch<SetStateAction<VocabularyStatus>>;
-  setReviewMode: Dispatch<SetStateAction<"all" | "due">>;
+  setReviewMode: Dispatch<SetStateAction<FlashcardReviewMode>>;
   setIndex: Dispatch<SetStateAction<number>>;
   setIsRevealed: Dispatch<SetStateAction<boolean>>;
   setReviewSchedules: Dispatch<

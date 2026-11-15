@@ -7,6 +7,7 @@ import { useFlashcardReviewTime, useFlashcardShuffleSeed } from "@/hooks/useFlas
 import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
 import { useFlashcardDeck } from "@/hooks/useFlashcardDeck";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 export function useFlashcardController({
   words,
@@ -23,7 +24,7 @@ export function useFlashcardController({
   const [status, setStatus] = useState<VocabularyStatus>("learning");
   const [index, setIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
-  const [reviewMode, setReviewMode] = useState<"all" | "due">("all");
+  const [reviewMode, setReviewMode] = useState<FlashcardReviewMode>("all");
   const {
     reviewSchedules,
     setReviewSchedules,
@@ -76,7 +77,7 @@ export function useFlashcardController({
     setIsRevealed(false);
   }
 
-  function changeReviewMode(value: "all" | "due") {
+  function changeReviewMode(value: FlashcardReviewMode) {
     setReviewMode(value);
     setIndex(0);
     setIsRevealed(false);

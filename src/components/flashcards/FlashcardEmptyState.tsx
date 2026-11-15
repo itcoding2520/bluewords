@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 export function FlashcardEmptyState({
   reviewMode,
@@ -7,7 +8,7 @@ export function FlashcardEmptyState({
   scheduleLoadFailed,
   onRetry,
 }: {
-  reviewMode: "all" | "due";
+  reviewMode: FlashcardReviewMode;
   isLoadingSchedules: boolean;
   scheduleLoadFailed: boolean;
   onRetry: () => void;

@@ -3,6 +3,7 @@ import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 function isFlashcardDue(dueAt: string | undefined, now: number): boolean {
   return !dueAt || new Date(dueAt).getTime() <= now;
@@ -12,7 +13,7 @@ export function useFlashcardDeck(input: {
   words: VocabularyWord[];
   category: string;
   status: VocabularyStatus;
-  reviewMode: "all" | "due";
+  reviewMode: FlashcardReviewMode;
   reviewSchedules: Map<string, VocabularyReviewScheduleRow>;
   areSchedulesLoaded: boolean;
   now: number;
