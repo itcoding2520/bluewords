@@ -46,5 +46,10 @@ export function useAssignmentsController() {
     }
   }
 
-  return { outstanding, history, loading, starting, error, tab, setTab, start };
+  return {
+    data: { outstanding, history },
+    status: { loading, starting, error },
+    navigation: { tab, setTab },
+    actions: { start },
+  };
 }

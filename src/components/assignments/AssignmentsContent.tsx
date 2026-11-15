@@ -8,7 +8,12 @@ import { AssignmentTodoList } from "@/components/assignments/AssignmentTodoList"
 import { useAssignmentsController } from "@/hooks/useAssignmentsController";
 
 export function AssignmentsContent() {
-  const { outstanding, history, loading, starting, error, tab, setTab, start } = useAssignmentsController();
+  const {
+    data: { outstanding, history },
+    status: { loading, starting, error },
+    navigation: { tab, setTab },
+    actions: { start },
+  } = useAssignmentsController();
 
   return (
     <div className="assignments-page">
