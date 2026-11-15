@@ -7,6 +7,7 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getCachedVideosPage, invalidateVideosCache, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
+import { createVideoRecord, findVideoByYoutubeId, loadVideosPage, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 
 export function useVideosController(isAdmin: boolean) {
   const confirmDialog = useConfirmDialog();
@@ -31,18 +32,12 @@ export function useVideosController(isAdmin: boolean) {
     }
 
     setIsLoading(true);
-    const start = (page - 1) * VIDEOS_PAGE_SIZE;
     try {
-      const result = await getCachedVideosPage(page, VIDEOS_PAGE_SIZE, async () => {
-        const { data, count, error } = await supabase
-          .from("videos")
-          .select("id, title, youtube_url, created_by, created_at, updated_at", { count: "exact" })
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: false })
-          .range(start, start + VIDEOS_PAGE_SIZE - 1);
-        if (error) throw error;
-        return { videos: (data ?? []) as VideoRow[], total: count ?? 0 };
-      }) as { videos: VideoRow[]; total: number };
+      const result = await getCachedVideosPage(
+        page,
+        VIDEOS_PAGE_SIZE,
+        () => loadVideosPage(supabase, page, VIDEOS_PAGE_SIZE)
+      ) as { videos: VideoRow[]; total: number };
       setVideos(result.videos);
       setTotal(result.total);
     } catch (error) {
@@ -88,27 +83,17 @@ export function useVideosController(isAdmin: boolean) {
     try {
       const videoId = getYoutubeVideoId(trimmedUrl);
       if (!videoId) throw new Error("Enter a valid YouTube video link.");
-      const { data: duplicate, error: lookupError } = await supabase
-        .from("videos")
-        .select("id")
-        .eq("youtube_video_id", videoId)
-        .maybeSingle();
-      if (lookupError) throw lookupError;
+      const duplicate = await findVideoByYoutubeId(supabase, videoId);
       if (duplicate && duplicate.id !== editingId) {
         toast.error("This YouTube video is already in the library.");
         return;
       }
 
       if (editingId) {
-        const { error } = await supabase.from("videos").update({ title: trimmedTitle, youtube_url: trimmedUrl }).eq("id", editingId);
-        if (error) throw error;
+        await updateVideoRecord(supabase, editingId, { title: trimmedTitle, youtube_url: trimmedUrl });
         toast.success("Video updated.");
       } else {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) throw new Error("Sign in to add a video.");
-        const { error } = await supabase.from("videos").insert({ title: trimmedTitle, youtube_url: trimmedUrl, created_by: user.id });
-        if (error) throw error;
+        await createVideoRecord(supabase, { title: trimmedTitle, youtube_url: trimmedUrl });
         setPage(1);
         toast.success("Video added.");
       }
@@ -131,8 +116,7 @@ export function useVideosController(isAdmin: boolean) {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.from("videos").delete().eq("id", video.id);
-      if (error) throw error;
+      await removeVideoRecord(supabase, video.id);
       toast.success("Video deleted.");
       invalidateVideosCache();
       const nextTotal = Math.max(0, total - 1);
