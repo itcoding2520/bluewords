@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, signQuestionImages } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
-
-const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+([.,!?])/g, "$1").replace(/\s+/g, " ");
+import { normalizeAssessmentAnswer } from "@/lib/assessments/normalize-answer";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { user } = await getRequestUser();
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (error || !attempt) return NextResponse.json({ error: "Attempt not found." }, { status: 404 });
   if (attempt.completed_at) return NextResponse.json({ error: "This attempt has already been submitted." }, { status: 409 });
   const questions = attempt.questions as AssessmentQuestion[];
-  const correctCount = questions.reduce((total, question, index) => total + (normalize(String(answers[index])) === normalize(question.answer) ? 1 : 0), 0);
+  const correctCount = questions.reduce((total, question, index) => total + (normalizeAssessmentAnswer(String(answers[index])) === normalizeAssessmentAnswer(question.answer) ? 1 : 0), 0);
   const score = correctCount * 10;
   const result = score > 50 ? "passed" : "failed";
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(attempt.started_at).getTime()) / 1000));

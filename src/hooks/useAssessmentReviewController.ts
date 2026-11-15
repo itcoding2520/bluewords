@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { normalizeAssessmentAnswer } from "@/lib/assessments/normalize-answer";
 
 type ReviewQuestion = { type: "vocabulary" | "sentence"; prompt: string; answer: string; word?: string; meaning?: string };
 type AssessmentSummary = { title: string; difficulty: string };
@@ -15,8 +16,6 @@ type AssessmentReviewAttempt = {
   completed_at: string;
   assessment_recipients: AssessmentRecipient | AssessmentRecipient[];
 };
-
-const normalizeAnswer = (value: string) => value.trim().toLowerCase().replace(/\s+([.,!?])/g, "$1").replace(/\s+/g, " ");
 
 export function useAssessmentReviewController(attemptId: string) {
   const [attempt, setAttempt] = useState<AssessmentReviewAttempt | null>(null);
@@ -39,7 +38,7 @@ export function useAssessmentReviewController(attemptId: string) {
   }, [load]);
 
   function isCorrectAnswer(answer: string, expected: string) {
-    return normalizeAnswer(answer) === normalizeAnswer(expected);
+    return normalizeAssessmentAnswer(answer) === normalizeAssessmentAnswer(expected);
   }
 
   return { attempt, error, isCorrectAnswer };
