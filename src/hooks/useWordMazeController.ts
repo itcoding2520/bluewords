@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
+import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { buildWordMazeRound, type MazeWord } from "@/lib/word-maze";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
@@ -51,10 +51,7 @@ export function useWordMazeController(input: {
     }
     return result;
   }, [category, words]);
-  const categoryDropdownCategories = useMemo(
-    () => getVocabularyDropdownCategories(categories, words, true),
-    [categories, words]
-  );
+  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words, true);
   const current = round[questionIndex];
   const pathProgress = questionIndex + (feedback === "correct" ? 1 : 0);
   const solvedCount = questionIndex + (feedback === "correct" ? 1 : 0);

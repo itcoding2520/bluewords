@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
+import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { shuffle } from "@/lib/quiz-random";
 import { buildWordMatchPairs, type MatchPair } from "@/lib/word-match";
@@ -46,10 +46,7 @@ export function useWordMatchController(input: {
 
   const availablePairs = useMemo(() => buildWordMatchPairs(words, category), [category, words]);
 
-  const categoryDropdownCategories = useMemo(
-    () => getVocabularyDropdownCategories(categories, words),
-    [categories, words]
-  );
+  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
 
   useEffect(() => () => {
     if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);

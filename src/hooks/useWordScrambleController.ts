@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
+import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { shuffle } from "@/lib/quiz-random";
 import { formatGameDuration } from "@/lib/game-duration";
@@ -52,10 +52,7 @@ export function useWordScrambleController(input: {
   });
 
   const candidates = useMemo(() => buildWordScrambleCandidates(words, category), [category, words]);
-  const categoryDropdownCategories = useMemo(
-    () => getVocabularyDropdownCategories(categories, words),
-    [categories, words]
-  );
+  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
   const currentWord = round[questionIndex];
   const usedTileIds = new Set(answerTileIds);
   const timeLabel = formatGameDuration(session.elapsedSeconds);
