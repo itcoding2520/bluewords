@@ -1,3 +1,4 @@
+import { isOptionalHttpUrl } from "@/lib/communication/url-validation";
 import type {
   CommunicationCsvRecord,
   CommunicationDifficulty,
@@ -14,11 +15,7 @@ function integer(value: string, fallback: number, row: number, label: string) {
 }
 
 function validateAudioUrl(value: string, row: number, label: string) {
-  if (!value) return;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
-  } catch {
+  if (!isOptionalHttpUrl(value)) {
     throw new Error(`Row ${row}: ${label} must be a valid HTTP or HTTPS URL.`);
   }
 }
