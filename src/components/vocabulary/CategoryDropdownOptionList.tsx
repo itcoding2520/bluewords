@@ -4,6 +4,7 @@ import { Check, ListFilter } from "lucide-react";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export interface CategoryDropdownOption {
   id: string;
@@ -52,7 +53,7 @@ export function CategoryDropdownOptionList({
       {options.map((item, index) => {
         const isSelected = item.value === category;
         const isActive = index === activeIndex;
-        const fallbackWordImagePath = wordImagesByCategory.get(item.name.trim().toLocaleLowerCase());
+        const fallbackWordImagePath = wordImagesByCategory.get(normalizeVocabularyLabel(item.name));
 
         return (
           <div

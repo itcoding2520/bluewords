@@ -12,6 +12,7 @@ import type {
   VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 interface ManageCategoryListProps {
   categories: VocabularyCategoryRow[];
@@ -98,8 +99,8 @@ export function ManageCategoryList({
                 fallbackWordImagePath={
                   words.find(
                     (word) =>
-                      word.category.trim().toLocaleLowerCase() ===
-                        category.name.trim().toLocaleLowerCase() &&
+                      normalizeVocabularyLabel(word.category) ===
+                        normalizeVocabularyLabel(category.name) &&
                       word.imagePath
                   )?.imagePath
                 }

@@ -2,18 +2,19 @@ import { useMemo } from "react";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageCount, getPageItems } from "@/lib/pagination";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
 export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
 
 const defaultCategoryNames = new Set(
   defaultVocabularyCategories.map((category) =>
-    category.name.trim().toLocaleLowerCase()
+    normalizeVocabularyLabel(category.name)
   )
 );
 
 function isDefaultCategory(category: VocabularyCategoryRow) {
-  return category.is_default || defaultCategoryNames.has(category.name.trim().toLocaleLowerCase());
+  return category.is_default || defaultCategoryNames.has(normalizeVocabularyLabel(category.name));
 }
 
 function isPublishedSharedCategory(category: VocabularyCategoryRow) {

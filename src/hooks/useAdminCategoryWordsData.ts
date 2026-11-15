@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
@@ -21,7 +22,7 @@ export function useAdminCategoryWordsData(
     if (!selectedCategory) return;
     const sharedCategory = activeTab === "default"
       ? communityCategories.find((category) => category.status === "published"
-        && category.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase())
+        && normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(selectedCategory.name))
       : "owner_id" in selectedCategory ? selectedCategory : null;
     if (!sharedCategory) {
       const timer = window.setTimeout(() => {

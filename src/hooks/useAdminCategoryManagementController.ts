@@ -5,17 +5,14 @@ import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
 import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
 import { useAdminCategoryManagementActions } from "@/hooks/useAdminCategoryManagementActions";
 import type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
-
-function normalizeCategoryName(name: string): string {
-  return name.trim().toLocaleLowerCase();
-}
 
 export function useAdminCategoryManagementController() {
   const supabase = useSupabaseClient();
   const defaultCategoryNames = useMemo(
-    () => new Set(defaultVocabularyCategories.map((category) => normalizeCategoryName(category.name))),
+    () => new Set(defaultVocabularyCategories.map((category) => normalizeVocabularyLabel(category.name))),
     []
   );
   const defaultWordsByCategory = useMemo(() => {
@@ -42,7 +39,7 @@ export function useAdminCategoryManagementController() {
     const categoriesByName = new Map<string, CommunityCategory>();
     for (const category of communityCategories) {
       if (category.status !== "published") continue;
-      const key = normalizeCategoryName(category.name);
+      const key = normalizeVocabularyLabel(category.name);
       if (!categoriesByName.has(key)) categoriesByName.set(key, category);
     }
     return categoriesByName;
@@ -51,7 +48,7 @@ export function useAdminCategoryManagementController() {
   const customCategories = useMemo(
     () => communityCategories.filter((category) =>
       category.status === (activeTab === "pending" ? "pending" : "published")
-      && !defaultCategoryNames.has(normalizeCategoryName(category.name))
+      && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
     ),
     [activeTab, communityCategories, defaultCategoryNames]
   );
@@ -83,7 +80,7 @@ export function useAdminCategoryManagementController() {
 
   const visibleCategoryRows = visibleCategories.map((category) => {
     const shared = activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeCategoryName(category.name))
+      ? publishedCategoriesByName.get(normalizeVocabularyLabel(category.name))
       : "owner_id" in category ? category : null;
     const fallbackImage = activeTab === "default"
       ? defaultWordsByCategory.get(category.name)?.find((word) => word.imagePath)?.imagePath
@@ -108,7 +105,7 @@ export function useAdminCategoryManagementController() {
     : [];
   const selectedSharedCategory = selectedCategory
     ? activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeCategoryName(selectedCategory.name)) ?? null
+      ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
       : "owner_id" in selectedCategory ? selectedCategory : null
     : null;
   const selectedFallbackImage = defaultWords.find((word) => word.imagePath)?.imagePath

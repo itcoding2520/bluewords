@@ -6,6 +6,7 @@ import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { useVocabularyCategoryDropdownController } from "@/hooks/useVocabularyCategoryDropdownController";
 import { CategoryDropdownOptionList, type CategoryDropdownOption } from "@/components/vocabulary/CategoryDropdownOptionList";
 import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 export { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 
 interface CategoryDropdownProps {
@@ -48,13 +49,13 @@ export function CategoryDropdown({
   const wordImagesByCategory = useMemo(() => {
     const images = new Map<string, string>();
     for (const word of words) {
-      const key = word.category.trim().toLocaleLowerCase();
+      const key = normalizeVocabularyLabel(word.category);
       if (!images.has(key) && word.imagePath) images.set(key, word.imagePath);
     }
     return images;
   }, [words]);
   const getFallbackImage = (name: string) =>
-    wordImagesByCategory.get(name.trim().toLocaleLowerCase());
+    wordImagesByCategory.get(normalizeVocabularyLabel(name));
   const options: CategoryDropdownOption[] = [
     ...(includeAll
       ? [{ id: "all-categories", name: allLabel, value: "all", color: null }]

@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow, VocabularyCategoryColor } from "@/lib/supabase/categories";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type PublicSharedVocabulary = {
   categories: Array<{
@@ -20,10 +21,6 @@ export type PublicSharedVocabulary = {
   }>;
 };
 
-function normalizeLabel(value: string) {
-  return value.trim().toLocaleLowerCase();
-}
-
 export async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabulary> {
   const response = await fetch("/api/public-vocabulary");
   if (!response.ok) throw new Error("Could not load approved shared vocabulary.");
@@ -31,16 +28,16 @@ export async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabula
 }
 
 export function mapPublicCategories(shared: PublicSharedVocabulary): VocabularyCategoryRow[] {
-  const sharedByName = new Map(shared.categories.map((category) => [normalizeLabel(category.name), category]));
-  const defaultNames = new Set(defaultVocabularyCategories.map((category) => normalizeLabel(category.name)));
+  const sharedByName = new Map(shared.categories.map((category) => [normalizeVocabularyLabel(category.name), category]));
+  const defaultNames = new Set(defaultVocabularyCategories.map((category) => normalizeVocabularyLabel(category.name)));
 
   return [
     ...defaultVocabularyCategories.map((category) => ({
       ...category,
-      image_path: sharedByName.get(normalizeLabel(category.name))?.image_path ?? category.image_path ?? null,
+      image_path: sharedByName.get(normalizeVocabularyLabel(category.name))?.image_path ?? category.image_path ?? null,
     })),
     ...shared.categories
-      .filter((category) => !defaultNames.has(normalizeLabel(category.name)))
+      .filter((category) => !defaultNames.has(normalizeVocabularyLabel(category.name)))
       .map((category) => ({
         id: `community-category-${category.id}`,
         user_id: "community",
@@ -56,11 +53,11 @@ export function mapPublicCategories(shared: PublicSharedVocabulary): VocabularyC
 
 export function mapPublicWords(shared: PublicSharedVocabulary): VocabularyWord[] {
   const defaultKeys = new Set(defaultVocabularyWords.map((word) =>
-    `${normalizeLabel(word.category)}\u0000${normalizeLabel(word.word)}`
+    `${normalizeVocabularyLabel(word.category)}\u0000${normalizeVocabularyLabel(word.word)}`
   ));
 
   return shared.words.flatMap((word) => {
-    const key = `${normalizeLabel(word.category)}\u0000${normalizeLabel(word.word)}`;
+    const key = `${normalizeVocabularyLabel(word.category)}\u0000${normalizeVocabularyLabel(word.word)}`;
     if (!word.category || defaultKeys.has(key)) return [];
 
     return [{
