@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getCachedPublishRequests, invalidatePublishRequestCache } from "@/lib/supabase/publish-request-cache.mjs";
 import { loadPublishVocabularyRequests } from "@/lib/supabase/publish-vocabulary-requests";
-import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 
 export function usePublishVocabularyRequests(isAuthenticated: boolean) {
   const supabase = useSupabaseClient();

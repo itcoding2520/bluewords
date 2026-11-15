@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   CommunityCategoryRequest,
   CommunityWordRequest,
-} from "@/lib/vocabulary/publish-options";
+} from "@/lib/supabase/publish-vocabulary-request-types";
 
 export async function loadPublishVocabularyRequests(supabase: SupabaseClient) {
   const [categoryResult, wordResult] = await Promise.all([
