@@ -62,29 +62,27 @@ export function useVocabularyContentController({
     setDeletingWord(word);
   }
 
-  function handleSearchChange(value: string) {
-    setSearch(value);
+  function resetFilteredPage() {
     setIsPageLoading(true);
     setPageWords([]);
     setPage(1);
     setSelectedIds(new Set());
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    resetFilteredPage();
   }
 
   function handleCategoryChange(value: CategoryFilter) {
     setCategory(value);
-    setIsPageLoading(true);
     setIsExportCountLoading(value !== "All");
-    setPageWords([]);
-    setPage(1);
-    setSelectedIds(new Set());
+    resetFilteredPage();
   }
 
   function handleStatusChange(value: VocabularyStatusFilter) {
     setStatus(value);
-    setIsPageLoading(true);
-    setPageWords([]);
-    setPage(1);
-    setSelectedIds(new Set());
+    resetFilteredPage();
   }
 
   const mutations = useVocabularyContentMutations({
