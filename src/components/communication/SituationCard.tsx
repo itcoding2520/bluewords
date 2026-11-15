@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, type LucideIcon } from "lucide-react";
 
-import type { Lesson, Progress, Topic } from "@/hooks/useSituationalEnglishCatalogData";
+import type { Lesson, Progress, Topic } from "@/lib/communication/catalog-types";
 
 const difficultyLabel = { easy: "Easy · Dễ", medium: "Medium · Trung bình", hard: "Hard · Khó" };
 const requiredLevels = ["easy", "medium", "hard"] as const;

@@ -1,7 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import type { createClient } from "@/lib/supabase/client";
-import type { Goal } from "@/hooks/useSituationalEnglishCatalogData";
+import type { Goal } from "@/lib/communication/catalog-types";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
 
 type SupabaseClient = ReturnType<typeof createClient>;

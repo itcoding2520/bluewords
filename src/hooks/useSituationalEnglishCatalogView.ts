@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Lesson, Progress, Topic } from "@/hooks/useSituationalEnglishCatalogData";
+import type { Lesson, Progress, Topic } from "@/lib/communication/catalog-types";
 
 export function useSituationalEnglishCatalogView({
   topics,
