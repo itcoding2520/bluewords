@@ -6,9 +6,11 @@ import { normalize, type CommunityWordRequest } from "@/lib/vocabulary/publish-o
 import {
   findOwnedVocabularyWord,
   findPublishedCommunityWord,
+} from "@/lib/supabase/publish-word-request";
+import {
   resolveCommunityCategoryForWordRequest,
   saveCommunityWordRequest,
-} from "@/lib/supabase/publish-word-request";
+} from "@/lib/vocabulary/publish-word-request-workflows";
 
 interface PublishableWord {
   id: string;
