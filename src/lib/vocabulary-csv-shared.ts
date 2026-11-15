@@ -1,3 +1,4 @@
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 import type { VocabularyWord } from "@/data/vocabulary";
 
 export const MAX_VOCABULARY_IMPORT_WORDS = 50;
@@ -14,7 +15,7 @@ export const VOCABULARY_CSV_HEADERS = [
 ] as const;
 
 export function normalizeVocabularyCsvValue(value: string): string {
-  return value.trim().toLowerCase();
+  return normalizeVocabularyKey(value);
 }
 
 export type VocabularyCsvWord = Omit<VocabularyWord, "id">;
