@@ -1,16 +1,14 @@
-const histories = new Map();
-const answersBySession = new Map();
+import { createUserPageCache } from "./user-page-cache.mjs";
 
-function historyKey(userId, page = 1, pageSize = 10) {
-  return `${userId}:${page}:${pageSize}`;
-}
+const answersBySession = new Map();
+const historyPages = createUserPageCache();
 
 export function getCachedQuizHistory(userId, page = 1, pageSize = 10) {
-  return histories.get(historyKey(userId, page, pageSize)) ?? null;
+  return historyPages.get(userId, page, pageSize);
 }
 
 export function setCachedQuizHistory(userId, page, pageSize, history) {
-  histories.set(historyKey(userId, page, pageSize), history);
+  historyPages.set(userId, page, pageSize, history);
 }
 
 export function getCachedQuizAnswers(userId, sessionId) {
@@ -23,15 +21,13 @@ export function setCachedQuizAnswers(userId, sessionId, answers) {
 
 export function invalidateQuizHistoryCache(userId) {
   if (userId) {
-    for (const key of histories.keys()) {
-      if (key.startsWith(`${userId}:`)) histories.delete(key);
-    }
+    historyPages.invalidate(userId);
     for (const key of answersBySession.keys()) {
       if (key.startsWith(`${userId}:`)) answersBySession.delete(key);
     }
     return;
   }
 
-  histories.clear();
+  historyPages.invalidate();
   answersBySession.clear();
 }
