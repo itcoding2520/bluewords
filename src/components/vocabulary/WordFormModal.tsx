@@ -33,27 +33,22 @@ export function WordFormModal({
   onSubmit,
 }: WordFormModalProps) {
   const {
-    word,
-    setWord,
-    meaning,
-    setMeaning,
-    type,
-    setType,
-    category,
-    setCategory,
-    detailedMeanings,
-    errors,
-    clearError,
-    isSubmitting,
-    selectedImage,
-    removeCurrentImage,
-    selectedImageUrl,
-    selectImage,
-    removeImage,
-    updateDetailedMeaning,
-    addDetailedMeaning,
-    removeDetailedMeaning,
-    handleSubmit,
+    fields: { word, setWord, meaning, setMeaning, type, setType, category, setCategory },
+    validation: { errors, clearError },
+    image: {
+      selected: selectedImage,
+      removeCurrent: removeCurrentImage,
+      previewUrl: selectedImageUrl,
+      select: selectImage,
+      remove: removeImage,
+    },
+    detailedMeanings: {
+      items: detailedMeanings,
+      update: updateDetailedMeaning,
+      add: addDetailedMeaning,
+      remove: removeDetailedMeaning,
+    },
+    submission: { isSubmitting, handleSubmit },
   } = useWordFormController({ words, categories, editingWord, onSubmit });
   const existingImageUrl = useVocabularyImageUrl(
     removeCurrentImage ? null : editingWord?.imagePath

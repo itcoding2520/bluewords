@@ -89,27 +89,21 @@ export function useWordFormController({
   }
 
   return {
-    word,
-    setWord,
-    meaning,
-    setMeaning,
-    type,
-    setType,
-    category,
-    setCategory,
-    detailedMeanings,
-    errors,
-    setErrors,
-    isSubmitting,
-    selectedImage: image.selectedImage,
-    removeCurrentImage: image.removeCurrentImage,
-    selectedImageUrl: image.selectedImageUrl,
-    selectImage: image.selectImage,
-    removeImage: image.removeImage,
-    clearError,
-    updateDetailedMeaning,
-    addDetailedMeaning,
-    removeDetailedMeaning,
-    handleSubmit,
+    fields: { word, setWord, meaning, setMeaning, type, setType, category, setCategory },
+    validation: { errors, clearError },
+    image: {
+      selected: image.selectedImage,
+      removeCurrent: image.removeCurrentImage,
+      previewUrl: image.selectedImageUrl,
+      select: image.selectImage,
+      remove: image.removeImage,
+    },
+    detailedMeanings: {
+      items: detailedMeanings,
+      update: updateDetailedMeaning,
+      add: addDetailedMeaning,
+      remove: removeDetailedMeaning,
+    },
+    submission: { isSubmitting, handleSubmit },
   };
 }
