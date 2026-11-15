@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
+import { removeCommunicationTopic, saveCommunicationTopic } from "@/lib/communication/admin-actions";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
@@ -48,10 +49,7 @@ export function useAdminCommunicationTopicActions({
     }
 
     setBusy(true);
-    const query = editingId
-      ? supabase.from("communication_topics").update(payload).eq("id", editingId)
-      : supabase.from("communication_topics").insert(payload);
-    const { error } = await query;
+    const { error } = await saveCommunicationTopic(supabase, editingId, payload);
     setBusy(false);
     if (error) return toast.error(error.message);
 
@@ -81,7 +79,7 @@ export function useAdminCommunicationTopicActions({
       confirmLabel: "Remove",
     })) return;
 
-    const { error } = await supabase.from("communication_topics").delete().eq("id", topic.id);
+    const { error } = await removeCommunicationTopic(supabase, topic.id);
     if (error) {
       toast.error(error.message);
       return;
