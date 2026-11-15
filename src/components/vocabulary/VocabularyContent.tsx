@@ -1,14 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Trash2 } from "lucide-react";
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyPagination } from "./VocabularyPagination";
 import { CommunityVocabulary } from "./CommunityVocabulary";
 import { VocabularyLegacyImportNotice } from "./VocabularyLegacyImportNotice";
 import { VocabularyBrowserToolbar } from "./VocabularyBrowserToolbar";
-import { Button } from "@/components/ui/Button";
+import { VocabularyBulkActions } from "@/components/vocabulary/VocabularyBulkActions";
 import { useVocabularyContentExperience } from "@/hooks/useVocabularyContentExperience";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
@@ -129,21 +128,12 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         onImportComplete={handleImportComplete}
       />
 
-      {loadedAuthVersion === authVersion && selectedIds.size > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
-            <span aria-live="polite" className="text-sm font-medium text-slate-600">
-              {selectedIds.size} selected
-            </span>
-            <Button
-              variant="secondary"
-              onClick={() => void handleBulkDelete()}
-              disabled={isBulkDeleting}
-              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              <Trash2 size={16} />
-              {isBulkDeleting ? "Deleting..." : "Delete selected"}
-            </Button>
-        </div>
+      {loadedAuthVersion === authVersion && (
+        <VocabularyBulkActions
+          selectedCount={selectedIds.size}
+          isDeleting={isBulkDeleting}
+          onDelete={() => void handleBulkDelete()}
+        />
       )}
 
       <VocabularyList
