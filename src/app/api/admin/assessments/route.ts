@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin, shuffled, type AssessmentQuestion } from "@/lib/assessments/server";
+import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin } from "@/lib/assessments/server";
+import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
 
 export async function GET() {
   const { client, user } = await getRequestUser();
@@ -36,32 +37,14 @@ export async function POST(request: NextRequest) {
   ]);
   const sourceError = keyError ?? wordError ?? sharedError ?? sentenceError;
   if (sourceError) return NextResponse.json({ error: sourceError.message }, { status: 400 });
-  const defaultSet = new Set((defaultKeys ?? []).map((item) => item.normalized_word));
-  const wordMap = new Map<string, { word: string; meaning: string; category: string; imagePath: string | null }>();
-  for (const row of wordsData ?? []) {
-    const normalized = row.word.trim().toLowerCase().replace(/\s+/g, " ");
-    if (row.type === "word" && row.meaning.trim() && defaultSet.has(normalized)) wordMap.set(normalized, { word: row.word, meaning: row.meaning, category: row.category, imagePath: row.image_path });
-  }
-  for (const row of sharedData ?? []) {
-    const normalized = row.word.trim().toLowerCase().replace(/\s+/g, " ");
-    const category = Array.isArray(row.community_categories) ? row.community_categories[0]?.name : (row.community_categories as { name?: string } | null)?.name;
-    if (row.meaning.trim()) wordMap.set(normalized, { word: row.word, meaning: row.meaning, category: category ?? "Community", imagePath: row.image_path });
-  }
-  const wordPool = shuffled([...wordMap.values()].filter(({ word }) => difficulty === "easy" ? word.length <= 5 : difficulty === "medium" ? word.length >= 6 && word.length <= 8 : word.length >= 9));
-  const sentencePool = shuffled(sentencesData ?? []);
-  if (wordPool.length < 5 || sentencePool.length < 5) return NextResponse.json({ error: "This difficulty needs at least 5 public vocabulary words and 5 active sentence questions." }, { status: 422 });
-
-  const vocabularyQuestions: AssessmentQuestion[] = wordPool.slice(0, 5).map((word) => {
-    const distractors = shuffled(wordPool.filter((candidate) => candidate.word !== word.word && candidate.meaning !== word.meaning)).slice(0, 3).map((candidate) => candidate.meaning);
-    const choices = shuffled([word.meaning, ...distractors]);
-    return { type: "vocabulary", prompt: `Choose the correct meaning of “${word.word}”.`, word: word.word, meaning: word.meaning, category: word.category, imagePath: word.imagePath, choices, answer: word.meaning };
+  const questions = generateAssessmentQuestions({
+    defaultKeys,
+    vocabularyRows: wordsData,
+    communityWords: sharedData,
+    sentenceQuestions: sentencesData,
+    difficulty: difficulty as "easy" | "medium" | "hard",
   });
-  const sentenceQuestions: AssessmentQuestion[] = sentencePool.slice(0, 5).map((question) => {
-    const answerTokens = Array.isArray(question.answer_tokens) ? question.answer_tokens.map(String) : [];
-    const distractors = Array.isArray(question.distractor_tokens) ? question.distractor_tokens.map(String) : [];
-    return { type: "sentence", prompt: question.prompt_vi, category: question.category, imageKeyword: question.image_keyword, tiles: shuffled([...answerTokens, ...distractors]), answer: question.answer_sentence };
-  });
-  const questions = shuffled([...vocabularyQuestions, ...sentenceQuestions]);
+  if (!questions) return NextResponse.json({ error: "This difficulty needs at least 5 public vocabulary words and 5 active sentence questions." }, { status: 422 });
 
   let recipientIds: string[] = [];
   if (body.allUsers === true) {
