@@ -9,6 +9,7 @@ import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDrop
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { useWordMazeController } from "@/hooks/useWordMazeController";
 import { formatGameDuration } from "@/lib/game-duration";
+import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
 
 const pathNodes = [
   { x: 9, y: 77 },
@@ -111,7 +112,7 @@ export function WordMazeContent() {
           <div className="word-maze-result-score"><Star size={22} fill="currentColor" /> {score} <small>points</small></div>
           <p className="word-maze-result-progress">{solvedCount} of {round.length} paths opened · {lives} lives left</p>
           <p className="word-maze-result-time"><Clock3 size={16} /> Completed in {formatGameDuration(elapsedSeconds)}</p>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
+          <GameLeaderboardSaveStatus isAuthenticated={isAuthenticated} saveState={saveState} saveError={saveError} onRetry={retrySave} />
           <button type="button" className="word-maze-primary" onClick={startGame}><RotateCcw size={19} /> Play again</button>
         </Card>
       )}

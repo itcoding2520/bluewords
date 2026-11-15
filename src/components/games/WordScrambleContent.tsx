@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { WordScrambleRound } from "@/components/games/WordScrambleRound";
 import { useWordScrambleController } from "@/hooks/useWordScrambleController";
+import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
 
 const QUESTION_COUNTS = [5, 10] as const;
 
@@ -70,7 +71,7 @@ export function WordScrambleContent() {
         <Card className="word-scramble-results">
           <span className="word-scramble-trophy"><Trophy size={38} /></span><p>ROUND COMPLETE</p><h2>Awesome word star!</h2><span className="word-scramble-final-score">{score}<small> points</small></span>
           <div><span><strong>{round.length}</strong><small>questions</small></span><span><strong>{bestStreak}</strong><small>best streak</small></span><span><strong>{timeLabel}</strong><small>time</small></span></div>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
+          <GameLeaderboardSaveStatus isAuthenticated={isAuthenticated} saveState={saveState} saveError={saveError} onRetry={retrySave} />
           <button type="button" className="word-scramble-primary" onClick={startRound}><RotateCcw size={18} /> Play again</button>
         </Card>
       )}

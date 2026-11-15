@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { useWordMatchController } from "@/hooks/useWordMatchController";
 import { WordMatchCard } from "@/components/games/WordMatchCard";
+import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
 import { formatGameDuration } from "@/lib/game-duration";
 
 type PairCount = 6 | 8 | 10;
@@ -97,7 +98,7 @@ export function WordMatchContent() {
           <h2>Great matching!</h2>
           <p className="word-match-results-copy">You matched all {pairs.length} pairs and scored {score} points.</p>
           <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatGameDuration(elapsedSeconds)}</strong><small>time</small></span></div>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
+          <GameLeaderboardSaveStatus isAuthenticated={isAuthenticated} saveState={saveState} saveError={saveError} onRetry={retrySave} />
           <div className="word-match-result-actions"><button type="button" onClick={startRound} className="word-match-start"><RotateCcw size={18} /> Play again</button><button type="button" onClick={() => setPhase("setup")} className="word-match-secondary">Change settings</button></div>
         </Card>
       )}
