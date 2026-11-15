@@ -5,21 +5,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
-import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { QuizCategoryOption } from "@/lib/quiz-setup-model";
-
-const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
-  blue: "bg-blue-500",
-  violet: "bg-violet-500",
-  orange: "bg-orange-500",
-  green: "bg-emerald-500",
-  rose: "bg-rose-500",
-  indigo: "bg-indigo-500",
-  teal: "bg-teal-500",
-  amber: "bg-amber-500",
-  pink: "bg-pink-500",
-  slate: "bg-slate-500",
-};
+import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 
 export function QuizCategorySelector({
   options,
