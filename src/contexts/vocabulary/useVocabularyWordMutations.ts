@@ -12,6 +12,7 @@ import { fetchEnglishIpa } from "@/lib/dictionary";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { hasDuplicateVocabularyWord, mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 import { toast } from "sonner";
 
 interface VocabularyWordMutationOptions {
@@ -84,7 +85,7 @@ export function useVocabularyWordMutations({
       const previousImagePath = currentWord?.imagePath ?? storedWord?.image_path ?? null;
       const previousIpa = currentWord?.ipa ?? storedWord?.ipa ?? updatedWord.ipa;
       const type = updatedWord.type ?? "word";
-      const wordChanged = (currentWord?.word ?? storedWord?.word ?? updatedWord.word).trim().toLowerCase() !== updatedWord.word.trim().toLowerCase();
+      const wordChanged = normalizeVocabularyKey(currentWord?.word ?? storedWord?.word ?? updatedWord.word) !== normalizeVocabularyKey(updatedWord.word);
       const ipa = type !== "word"
         ? null
         : updatedWord.ipa?.trim() || (wordChanged || !previousIpa
