@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import type { CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import { normalize, type CommunityWordRequest } from "@/lib/vocabulary/publish-options";
 import {
   createCommunityWordRequest,
   findOwnedVocabularyWord,
@@ -69,8 +69,8 @@ export function usePublishWordRequest({
         return;
       }
     }
-    const normalizedCategory = word.category.trim().replace(/\s+/g, " ").toLowerCase();
-    const normalizedWord = word.word.trim().replace(/\s+/g, " ").toLowerCase();
+    const normalizedCategory = normalize(word.category);
+    const normalizedWord = normalize(word.word);
     if (defaultWordKeys.has(`${normalizedCategory}\u0000${normalizedWord}`)) {
       toast.info(`“${word.word}” is already part of the default vocabulary in ${word.category}.`);
       return;
