@@ -3,18 +3,9 @@ import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { downloadCsvFile } from "@/lib/download-csv";
+import { fetchAdminUsers, sendAdminUserAction, type AdminUserRecord } from "@/lib/admin-user-api";
 
-export interface AdminUser {
-  id: string;
-  email: string | null;
-  nickname: string;
-  created_at: string;
-  last_sign_in_at: string | null;
-}
-
-interface UserActionResponse {
-  error?: string;
-}
+export type AdminUser = AdminUserRecord;
 
 export function useAdminUsersController() {
   const confirmDialog = useConfirmDialog();
@@ -56,12 +47,11 @@ export function useAdminUsersController() {
       const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (debouncedSearch) query.set("search", debouncedSearch);
       const cacheKey = `admin:users:${page}:${pageSize}:${debouncedSearch}`;
-      const payload = await getAdminCachedData(cacheKey, async () => {
-        const response = await fetch(`/api/admin/users?${query}`, { cache: "no-store" });
-        const result = await response.json() as { users?: AdminUser[]; total?: number; error?: string };
-        if (!response.ok) throw new Error(result.error ?? "Could not load users.");
-        return result;
-      }, { force });
+      const payload = await getAdminCachedData(
+        cacheKey,
+        () => fetchAdminUsers(query),
+        { force }
+      );
       if (signal?.aborted) return;
       const nextTotal = payload.total ?? 0;
       const nextPageCount = Math.max(1, Math.ceil(nextTotal / pageSize));
@@ -88,7 +78,7 @@ export function useAdminUsersController() {
     return () => { controller.abort(); window.clearTimeout(timer); };
   }, [loadUsers, refreshKey]);
 
-  function showMutationResult(payload: UserActionResponse, fallback: string) {
+  function showMutationResult(payload: { error?: string }, fallback: string) {
     if (payload.error) {
       setError(payload.error);
       setNotice("");
@@ -105,13 +95,7 @@ export function useAdminUsersController() {
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...values }),
-      });
-      const payload = await response.json() as UserActionResponse;
-      if (!response.ok) throw new Error(payload.error ?? "Could not complete this user action.");
+      const payload = await sendAdminUserAction(action, values);
       showMutationResult(payload, action === "delete" ? "User removed." : action === "create" ? "User created." : "User saved.");
       return true;
     } catch (cause) {
@@ -169,9 +153,7 @@ export function useAdminUsersController() {
     try {
       const query = new URLSearchParams({ page: "1", pageSize: "100", all: "true" });
       if (debouncedSearch) query.set("search", debouncedSearch);
-      const response = await fetch(`/api/admin/users?${query}`, { cache: "no-store" });
-      const payload = await response.json() as { users?: AdminUser[]; error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "Could not export users.");
+      const payload = await fetchAdminUsers(query, "Could not export users.");
       const date = new Date();
       const suffix = `${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${date.getFullYear()}`;
       downloadCsvFile(`users_${suffix}.csv`, exportAdminUsersCsv(payload.users ?? []), {
