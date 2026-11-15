@@ -6,8 +6,11 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { downloadCsvFile } from "@/lib/download-csv";
 import {
   exportSentenceBuilderCsv,
+  importSentenceBuilderQuestions,
   loadSentenceBuilderQuestions,
   parseSentenceBuilderCsv,
+  removeSentenceBuilderQuestion,
+  saveSentenceBuilderQuestion,
   type SentenceBuilderQuestion,
   type SentenceDifficulty,
   type SentenceQuestionInput,
@@ -65,9 +68,12 @@ export function useAdminSentenceBuilderController() {
     if (!input.question_id || !input.category || !input.prompt_vi || !input.answer_sentence || input.answer_tokens.length < 2) { toast.error("Complete the required fields and add at least two answer tokens."); return; }
     setBusy(true);
     try {
-      const { error } = editing
-        ? await supabase.from("sentence_builder_questions").update({ ...input, updated_at: new Date().toISOString() }).eq("id", editing)
-        : await supabase.from("sentence_builder_questions").insert(input);
+      const { error } = await saveSentenceBuilderQuestion(
+        supabase,
+        editing,
+        input,
+        new Date().toISOString()
+      );
       if (error) throw error;
       toast.success(editing ? "Question updated." : "Question added.");
       setDraft(empty); setEditing(null); await refresh();
@@ -78,7 +84,7 @@ export function useAdminSentenceBuilderController() {
   async function removeQuestion(question: SentenceBuilderQuestion) {
     const confirmed = await confirm({ title: "Remove sentence question?", description: `Remove ${question.question_id} (“${question.answer_sentence}”)?`, confirmLabel: "Remove" });
     if (!confirmed) return;
-    const { error } = await supabase.from("sentence_builder_questions").delete().eq("id", question.id);
+    const { error } = await removeSentenceBuilderQuestion(supabase, question.id);
     if (error) toast.error("Could not remove this question."); else { toast.success("Question removed."); await refresh(); }
   }
 
@@ -87,7 +93,7 @@ export function useAdminSentenceBuilderController() {
     setBusy(true);
     try {
       const rows = parseSentenceBuilderCsv(await file.text());
-      const { error } = await supabase.from("sentence_builder_questions").upsert(rows, { onConflict: "question_id" });
+      const { error } = await importSentenceBuilderQuestions(supabase, rows);
       if (error) throw error;
       toast.success(`Imported ${rows.length} questions.`);
       await refresh();

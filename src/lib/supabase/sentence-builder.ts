@@ -1,5 +1,5 @@
 import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, type SupabaseClient } from "@/lib/supabase/client";
 
 export type SentenceDifficulty = "easy" | "medium" | "hard";
 export type SentenceBuilderQuestion = {
@@ -25,6 +25,30 @@ export async function loadSentenceBuilderQuestions(activeOnly = true) {
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as SentenceBuilderQuestion[];
+}
+
+export function saveSentenceBuilderQuestion(
+  supabase: SupabaseClient,
+  questionId: string | null,
+  input: SentenceQuestionInput,
+  updatedAt: string
+) {
+  return questionId
+    ? supabase.from("sentence_builder_questions")
+      .update({ ...input, updated_at: updatedAt }).eq("id", questionId)
+    : supabase.from("sentence_builder_questions").insert(input);
+}
+
+export function removeSentenceBuilderQuestion(supabase: SupabaseClient, id: string) {
+  return supabase.from("sentence_builder_questions").delete().eq("id", id);
+}
+
+export function importSentenceBuilderQuestions(
+  supabase: SupabaseClient,
+  rows: SentenceQuestionInput[]
+) {
+  return supabase.from("sentence_builder_questions")
+    .upsert(rows, { onConflict: "question_id" });
 }
 
 export function parseSentenceBuilderCsv(csv: string): SentenceQuestionInput[] {
