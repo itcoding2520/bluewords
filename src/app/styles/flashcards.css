@@ -1,0 +1,123 @@
+/* Flashcards study dashboard */
+.app-content > .flashcards-page > header.flashcards-hero {
+  position: relative;
+  display: flex;
+  min-height: 8.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / .92);
+  border-radius: 1.75rem;
+  padding: 1.25rem 1.75rem;
+  background-color: rgb(255 255 255 / .78);
+  background-image: linear-gradient(90deg,rgb(255 255 255 / .96) 0%,rgb(255 255 255 / .78) 58%,rgb(255 255 255 / .18) 100%),url('/images/ui/backgrounds/hero.svg');
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 10px 28px rgb(39 90 150 / .08);
+}
+.app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero h1,
+.app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero p { max-width: calc(100% - 13rem); }
+.flashcards-hero-copy { position: relative; z-index: 1; }
+.flashcards-hero-art { position: absolute; right: 1.25rem; top: 50%; width: 15rem; height: 8rem; object-fit: contain; transform: translateY(-50%); }
+.flashcards-filters { align-items: end; }
+.flashcards-filters > div > p,
+.flashcards-filters legend { color: #172554; }
+.flashcards-filters > div > div[role=combobox] { border-radius: 1.1rem; }
+.flashcards-status-switch { min-height: 3.4rem; border-color: #dbeafe; box-shadow: 0 3px 10px rgb(39 90 150 / .05); }
+.flashcards-status-switch button { border-radius: 999px; font-weight: 750; }
+.flashcards-status-switch button[aria-pressed=true] { background: linear-gradient(110deg,#ffae00,#ff8700); box-shadow: 0 3px 8px rgb(249 115 22 / .2); }
+.flashcards-status-switch button[aria-pressed=true]:last-child { background: linear-gradient(110deg,#10b981,#059669); }
+.flashcards-mode-button { box-shadow: 0 3px 10px rgb(39 90 150 / .05); }
+.flashcards-progress-row { min-height: 2rem; }
+.flashcards-progress-track { position: relative; height: .8rem; min-width: 5rem; flex: 1; overflow: hidden; border-radius: 999px; background: #dbeafe; }
+.flashcards-progress-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#3b82f6,#0874f9); transition: width .25s ease; }
+.flashcards-stage { height: clamp(22rem,55vh,34rem) !important; border: 4px solid #b6ddff; border-radius: 2.2rem; background: radial-gradient(ellipse at 50% 40%,#fff 0%,#fff 65%,#f6fbff 100%); box-shadow: 0 14px 36px rgb(37 99 235 / .14); }
+.flashcard-stage { height: clamp(22rem,55vh,34rem) !important; border: 4px solid #b6ddff; border-radius: 2.2rem; background: radial-gradient(ellipse at 50% 40%,#fff 0%,#fff 65%,#f6fbff 100%); box-shadow: 0 14px 36px rgb(37 99 235 / .14); }
+.flashcard-stage > div > div > section { padding: 1.5rem; }
+.flashcard-word-content { gap: .5rem; }
+.flashcard-word-content h2 { color: #10245f; font-size: clamp(2.2rem,5vw,4rem); font-weight: 900; letter-spacing: -.035em; }
+.flashcard-word-image { width: clamp(9rem,28vh,15rem); height: clamp(9rem,28vh,15rem); border: 0; border-radius: 1.5rem; object-fit: contain; }
+.flashcard-word-content button[aria-label^="Play pronunciation"] { color: #0874f9; }
+.flashcard-stage section > button { min-height: 3rem; border-radius: 999px; border-color: #7dd3fc; color: #075fe8; font-weight: 800; box-shadow: 0 4px 10px rgb(37 99 235 / .1); }
+.flashcards-navigation { min-height: 3.5rem; }
+.flashcards-navigation > button { min-height: 3.5rem; min-width: 10rem; justify-content: center; border-radius: 999px; padding-inline: 1.5rem; font-weight: 800; }
+.flashcards-navigation > button:last-child { background: linear-gradient(110deg,#167cff,#075ef4); box-shadow: 0 6px 16px rgb(37 99 235 / .2); }
+.flashcards-navigation > button.flashcards-learning-action { border-color: #fcd34d; background: white; color: #e98300; }
+.flashcards-page > .rounded-3xl { border-color: white; box-shadow: 0 12px 32px rgb(39 90 150 / .09); }
+@media (max-width: 767px) {
+  .app-content > .flashcards-page > header.flashcards-hero { min-height: 7.5rem; padding: 1rem; }
+  .app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero h1,
+  .app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero p { max-width: calc(100% - 6rem); }
+  .flashcards-hero-art { right: -.5rem; width: 7.5rem; height: 6.5rem; opacity: .85; }
+  .flashcard-stage { height: clamp(21rem,54vh,30rem) !important; border-width: 3px; border-radius: 1.6rem; }
+  .flashcard-stage > div > div > section { padding: 1rem; }
+  .flashcard-word-image { width: min(10rem,24vh); height: min(10rem,24vh); }
+  .flashcards-navigation { gap: .45rem; }
+  .flashcards-navigation > button { min-width: 0; flex: 1; min-height: 3.1rem; padding-inline: .65rem; }
+}
+@media (prefers-reduced-motion: reduce) { .flashcards-progress-track > span { transition: none; } }
+.flashcards-filters > div:first-child > div > button { min-height: 3.4rem; border-radius: 1.1rem; border-color: #dbeafe; background: rgb(255 255 255 / .9); font-weight: 700; }
+.app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy { width: min(100%,calc(100% - 15rem)); flex: 1; }
+.app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy h1,
+.app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy p { max-width: none; }
+.flashcard-stage { position: relative; background-image: radial-gradient(ellipse at 50% 42%,#fff 0%,#fff 52%,#f6fbff 100%),radial-gradient(circle at 11% 34%,#dbeafe55,transparent 12rem),radial-gradient(circle at 88% 64%,#ede9fe66,transparent 12rem); }
+.flashcard-stage::before,.flashcard-stage::after { position:absolute; z-index:0; color:#ffc928; font-size:2.5rem; line-height:1; content:"✦"; opacity:.85; pointer-events:none; }
+.flashcard-stage::before { top:16%; left:11%; transform:rotate(-12deg); }
+.flashcard-stage::after { right:12%; bottom:18%; transform:rotate(18deg); }
+.flashcard-stage > div { position:relative; z-index:1; }
+.flashcards-navigation > button span { white-space:nowrap; }
+/* Keep the full flashcard and its controls visible together on standard screens. */
+.flashcard-stage {
+  height: clamp(25rem, 55vh, 36rem) !important;
+}
+.flashcard-stage > div > div > section {
+  padding: 1rem 1.25rem;
+}
+.flashcard-word-image {
+  width: clamp(8rem, 19vh, 11rem);
+  height: clamp(8rem, 19vh, 11rem);
+  margin-bottom: .75rem;
+}
+.flashcard-word-content h2 {
+  font-size: clamp(2.1rem, 4.5vw, 3.5rem);
+}
+@media (max-height: 850px) and (min-width: 768px) {
+  .flashcard-stage { height: clamp(23rem, 50vh, 27rem) !important; }
+  .flashcard-stage > div > div > section { padding-block: .75rem; }
+  .flashcard-word-image {
+    width: clamp(7rem, 18vh, 9.5rem);
+    height: clamp(7rem, 18vh, 9.5rem);
+  }
+}
+@media (max-width: 1023px) {
+  .flashcard-stage { height: clamp(24rem, 56svh, 30rem) !important; }
+  .flashcard-stage > div > div > section[aria-label="Flashcard front"] {
+    overflow-y: hidden;
+    padding: .75rem 1rem;
+  }
+  .flashcard-word-image {
+    width: clamp(7rem, 17svh, 9rem);
+    height: clamp(7rem, 17svh, 9rem);
+    margin-bottom: .5rem;
+  }
+  .flashcard-word-content { gap: .25rem; }
+  .flashcard-word-content h2 { font-size: clamp(2rem, 5vw, 3rem); }
+}
+@media (max-width: 1023px) and (max-height: 650px) {
+  .flashcard-stage { height: 24rem !important; }
+  .flashcard-stage > div > div > section[aria-label="Flashcard front"] { padding-block: .5rem; }
+  .flashcard-word-image {
+    width: 7rem;
+    height: 7rem;
+    margin-bottom: .25rem;
+  }
+}
+@media (max-width: 767px) {
+  .app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy { width: calc(100% - 5.5rem); }
+  .app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy h1,
+  .app-content:has(.flashcards-page) > .flashcards-page > header.flashcards-hero .flashcards-hero-copy p { max-width:none; }
+  .flashcards-hero-art { width:6.5rem; }
+  .flashcards-navigation > button { gap:.35rem; padding-inline:.45rem; font-size:.8rem; }
+}
+

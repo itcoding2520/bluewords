@@ -1,0 +1,70 @@
+/* Profile dashboard */
+.app-shell:has(.profile-page) {
+  background-color:#65c8f5;
+  background-image:url('/images/dashboard/sky-hills-hero.webp');
+  background-position:center bottom;
+  background-size:cover;
+  background-attachment:fixed;
+}
+.profile-page { max-width:60rem; color:#183153; }
+.profile-page > .profile-hero {
+  position:relative;
+  display:flex;
+  min-height:10.75rem;
+  flex-direction:column;
+  justify-content:center;
+  overflow:hidden;
+  border:1px solid rgb(255 255 255 / .9);
+  border-radius:2rem;
+  padding:1.4rem 2rem;
+  background-color:rgb(255 255 255 / .82);
+  background-image:linear-gradient(90deg,rgb(255 255 255 / .97) 0%,rgb(255 255 255 / .88) 55%,rgb(255 255 255 / .16) 100%),var(--page-art),url('/images/ui/backgrounds/hero.svg');
+  background-position:center,right .5rem center,center;
+  background-repeat:no-repeat;
+  background-size:cover,17rem 11rem,cover;
+  box-shadow:0 14px 34px rgb(37 99 235 / .16);
+}
+.profile-hero h1 { color:#10245f; font-size:3.3rem; font-weight:950; letter-spacing:-.045em; }
+.profile-hero p { max-width:calc(100% - 14rem); color:#5d7398; }
+.profile-form { border-color:white; border-radius:2rem; padding:2rem; background:rgb(255 255 255 / .96); box-shadow:0 18px 40px rgb(37 99 235 / .15); }
+.profile-avatar-section { min-height:11rem; gap:2rem; }
+.profile-avatar-preview { width:10rem; height:10rem; border:4px solid white; box-shadow:0 5px 20px rgb(80 126 197 / .2),0 0 0 4px #e9dcff; }
+.profile-avatar-section h2 { color:#10245f; }
+.profile-avatar-change { border:0; border-radius:999px; background:linear-gradient(120deg,#dff5ff,#e5f0ff); color:#075fe8; }
+.profile-avatar-remove { border-radius:999px; background:#fff0f2; color:#e43555; }
+.profile-form > .profile-divider { display:none; }
+.profile-nickname-field,.profile-email-field { border-radius:1.5rem; padding:1.2rem 1.35rem; }
+.profile-nickname-field { border:1px solid #fff0c0; background:linear-gradient(110deg,#fff6dc,#fff9eb); }
+.profile-email-field { border:1px solid #e4dcff; background:linear-gradient(110deg,#f5f0ff,#f0edff); }
+.profile-field-icon { display:grid; width:2.75rem; height:2.75rem; flex-shrink:0; place-items:center; border-radius:50%; background:#ffd866; color:#a66a08; }
+.profile-email-icon { background:#e6d4ff; color:#7840dd; }
+.profile-nickname-field input { min-height:3.5rem; border:2px solid #82caff; border-radius:1.1rem; background:white; color:#10245f; font-size:1.15rem; font-weight:750; box-shadow:0 3px 8px rgb(37 99 235 / .06); }
+.profile-nickname-field input:focus { border-color:#1682ff; box-shadow:0 0 0 4px rgb(59 130 246 / .12); }
+.profile-nickname-field label { color:#10245f; }
+.profile-email-value { min-height:3.5rem; border:1px solid #d8d8f3; border-radius:1.1rem; background:rgb(255 255 255 / .62); padding:.8rem 1rem; color:#546c96; }
+.profile-privacy-note { display:flex; min-height:5.25rem; max-width:36rem; align-items:center; gap:.8rem; border:1px solid #d8f0ff; border-radius:1.4rem; background:linear-gradient(110deg,#e4f7ff,#edfaff); padding:1rem 1.2rem; color:#1459a8; font-size:.88rem; font-weight:650; }
+.profile-privacy-note svg { color:#0874f9; }
+.profile-form > div:last-child { align-items:flex-end; }
+.profile-form > div:last-child > button[type="submit"] { min-height:4rem; min-width:15rem; justify-content:center; border:0; border-radius:999px; background:linear-gradient(110deg,#1682ff,#075ef4); color:white; font-size:1.15rem; font-weight:900; box-shadow:0 8px 20px rgb(37 99 235 / .27); }
+.profile-form > div:last-child > button[type="submit"]:hover { transform:translateY(-2px); box-shadow:0 12px 24px rgb(37 99 235 / .3); }
+@media (max-width:700px) {
+  .app-shell:has(.profile-page) { background-position:center bottom; background-attachment:scroll; }
+  .profile-page { max-width:none; }
+  .profile-page > .profile-hero { min-height:8rem; padding:1rem; border-radius:1.35rem; background-position:center,right -1rem center,center; background-size:cover,7rem 6rem,cover; }
+  .profile-hero h1 { font-size:2rem; }
+  .profile-hero p { max-width:calc(100% - 4.5rem); font-size:.78rem; }
+  .profile-form { padding:1rem; border-radius:1.35rem; }
+  .profile-avatar-section { gap:1rem; }
+  .profile-avatar-preview { width:7rem; height:7rem; }
+  .profile-avatar-section h2 { font-size:1.15rem; }
+  .profile-avatar-section > div:last-child { text-align:center; }
+  .profile-avatar-change,.profile-avatar-remove { min-height:2.75rem; padding-inline:.75rem; font-size:.8rem; }
+  .profile-nickname-field,.profile-email-field { border-radius:1.1rem; padding:.9rem; }
+  .profile-nickname-field input { min-height:3.1rem; font-size:1rem; }
+  .profile-field-icon { width:2.25rem; height:2.25rem; }
+  .profile-email-value { min-height:3rem; padding:.65rem; font-size:.85rem; }
+  .profile-privacy-note { max-width:none; min-height:4.3rem; border-radius:1rem; padding:.75rem; font-size:.75rem; }
+  .profile-form > div:last-child { align-items:stretch; }
+  .profile-form > div:last-child > button[type="submit"] { width:100%; min-width:0; min-height:3.4rem; font-size:1rem; }
+}
+

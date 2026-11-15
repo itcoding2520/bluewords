@@ -1,0 +1,124 @@
+/* Word Scramble */
+.game-feature-scramble { background:radial-gradient(ellipse at 8% 14%,#fffbe0 0%,#fff2c5 48%,#ffda86 100%); }
+.game-feature-scramble .game-feature-icon { background:#fff0bd; color:#ec9a00; }
+.game-feature-scramble .game-play-button { background:linear-gradient(#ffbd42,#f49a13); }
+.game-art-scramble { display:flex; align-items:center; justify-content:center; gap:.2rem; }
+.game-art-scramble > span { display:grid; width:2.65rem; height:3.1rem; place-items:center; border:2px solid #fff; border-radius:.75rem; background:linear-gradient(145deg,#fff,#fff7db); color:#1854ac; font-size:1.65rem; font-weight:950; box-shadow:0 5px 0 #f4c85f,0 8px 14px #b8863126; }
+.game-art-scramble > svg { position:absolute; right:8%; bottom:10%; color:#f3a900; filter:drop-shadow(0 3px 2px #fff); }
+.word-scramble-page { width:100%; min-width:0; }
+.word-scramble-hero { position:relative; overflow:hidden; border:1px solid #c5ebff; border-radius:1.6rem; margin-bottom:1.25rem; background:radial-gradient(ellipse at 50% 0%,#fff 0%,transparent 52%),linear-gradient(125deg,#bceeff,#e8faff 55%,#d4f7ff); padding:1.25rem 1rem 1.15rem; text-align:center; box-shadow:0 12px 28px #367da51a; }
+.word-scramble-hero > p:first-of-type { color:#1269d8; font-size:.75rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+.word-scramble-hero h1 { margin-top:.2rem; color:#0953be; font-size:clamp(2.5rem,6vw,4.3rem); font-weight:1000; letter-spacing:-.055em; line-height:1; text-shadow:0 3px 0 #a7d9ff,0 6px 0 #fff; }
+.word-scramble-hero h1 span { color:#ffae08; text-shadow:0 3px 0 #f9d365,0 6px 0 #fff; }
+.word-scramble-hero .word-scramble-subtitle { margin-top:.55rem; color:#15427c; font-size:clamp(.95rem,2vw,1.25rem); font-weight:850; }
+.word-scramble-hero-sparkle { position:absolute; top:1rem; right:clamp(1rem,10vw,9rem); color:#ffc928; font-size:2rem; }
+.word-scramble-setup { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(16rem,.8fr); gap:1rem; }
+.word-scramble-panel,.word-scramble-howto,.word-scramble-game-card,.word-scramble-results { min-width:0; border:1px solid #fff; border-radius:1.5rem; background:linear-gradient(145deg,#fff,#f6fbff); box-shadow:0 12px 28px #377bb01b; }
+.word-scramble-panel { padding:1.35rem; }
+.word-scramble-section-title { display:flex; align-items:center; gap:.8rem; margin-bottom:1.35rem; }
+.word-scramble-section-title > span,.word-scramble-howto > span { display:grid; width:3rem; height:3rem; flex:0 0 auto; place-items:center; border-radius:1rem; background:#e4f4ff; color:#0874e8; }
+.word-scramble-section-title h2,.word-scramble-howto h2 { color:#132c68; font-size:1.3rem; font-weight:900; }
+.word-scramble-section-title p,.word-scramble-howto > p { margin-top:.25rem; color:#667f9e; font-size:.88rem; line-height:1.5; }
+.word-scramble-panel > label,.word-scramble-panel fieldset legend { display:block; margin-bottom:.45rem; color:#193769; font-size:.88rem; font-weight:850; }
+.word-scramble-panel fieldset { margin-top:1.2rem; }
+.word-scramble-counts { display:flex; flex-wrap:wrap; gap:.55rem; }
+.word-scramble-counts button { min-height:2.7rem; border:1px solid #dce8f5; border-radius:999px; background:#fff; padding:.45rem .9rem; color:#4e6689; font-size:.85rem; font-weight:800; }
+.word-scramble-counts button.is-selected { border-color:#1685f6; background:#e8f4ff; color:#0562ca; box-shadow:0 3px 10px #1685f620; }
+.word-scramble-counts button:disabled { cursor:not-allowed; opacity:.45; }
+.word-scramble-panel fieldset > p { margin-top:.6rem; color:#7489a5; font-size:.76rem; }
+.word-scramble-empty { margin-top:1rem; border-radius:.8rem; background:#fff5dc; padding:.7rem; color:#946100; font-size:.84rem; }
+.word-scramble-primary { display:inline-flex; min-height:3rem; align-items:center; justify-content:center; gap:.6rem; border:0; border-radius:999px; margin-top:1.35rem; background:linear-gradient(110deg,#1688ff,#0663ed); padding:.65rem 1.2rem; color:#fff; font-weight:900; box-shadow:0 7px 16px #167bf02e; transition:transform .15s,box-shadow .15s,opacity .15s; }
+.word-scramble-primary:not(:disabled):hover { transform:translateY(-2px); box-shadow:0 10px 20px #167bf043; }
+.word-scramble-primary:disabled { cursor:not-allowed; opacity:.5; box-shadow:none; }
+.word-scramble-howto { padding:1.3rem; background:linear-gradient(145deg,#fff9e7,#f3f1ff); }
+.word-scramble-howto > span { background:#fff0bf; color:#e99c04; }
+.word-scramble-howto h2 { margin-top:.8rem; }
+.word-scramble-example { display:flex; gap:.35rem; margin-top:1rem; }
+.word-scramble-example b { display:grid; width:2rem; height:2.25rem; place-items:center; border:1px solid #d9e9ff; border-radius:.55rem; background:#fff; color:#1865bf; box-shadow:0 3px 0 #cbdffc; }
+.word-scramble-howto small { display:flex; align-items:center; gap:.4rem; margin-top:1rem; color:#7a6592; font-size:.76rem; font-weight:750; }
+.word-scramble-howto small svg { color:#ffc126; }
+.word-scramble-game-card { max-width:64rem; margin-inline:auto; padding:1.25rem; background:radial-gradient(ellipse at 10% 10%,#fff8dd,transparent 36%),linear-gradient(145deg,#fff,#f7fbff); }
+.word-scramble-topline { display:grid; grid-template-columns:minmax(10rem,1fr) auto auto auto; align-items:center; gap:1rem; border-bottom:1px solid #e3edf7; padding:0 .2rem 1rem; }
+.word-scramble-level > div { display:flex; justify-content:space-between; gap:.5rem; color:#31547f; font-size:.85rem; }
+.word-scramble-level > div span { color:#7186a0; }
+.word-scramble-level > i { display:block; height:.7rem; overflow:hidden; border-radius:99px; margin-top:.55rem; background:#e3ebf4; }
+.word-scramble-level > i b { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#42ce62,#1fb64d); transition:width .25s ease; }
+.word-scramble-stat { display:flex; min-width:5rem; align-items:center; gap:.55rem; border-left:1px solid #e1eaf3; padding-left:1rem; color:#f4b516; }
+.word-scramble-stat > span:not(.word-scramble-flame) { display:grid; gap:.05rem; color:#173568; }
+.word-scramble-stat small { color:#687f9d; font-size:.68rem; font-weight:800; }
+.word-scramble-stat strong { font-size:1.25rem; font-weight:950; line-height:1; }
+.word-scramble-streak { color:#ff6b35; }
+.word-scramble-flame { color:#ff7040; font-size:2rem; line-height:1; }
+.word-scramble-clock { color:#2989d9; }
+.word-scramble-prompt { display:grid; grid-template-columns:minmax(12rem,.85fr) minmax(0,1fr); align-items:stretch; gap:1.2rem; border:1px solid #edf2f8; border-radius:1.4rem; margin-top:1rem; background:linear-gradient(110deg,#fff9e9,#fff 42%,#f7fbff); padding:1rem; }
+.word-scramble-picture { position:relative; display:grid; min-height:17rem; overflow:hidden; place-items:center; border-radius:1.2rem; background:linear-gradient(145deg,#fff4d8,#fff9e9); }
+.word-scramble-picture > img { object-fit:contain; padding:.75rem; }
+.word-scramble-picture-placeholder { display:grid; width:100%; height:100%; min-height:17rem; place-items:center; background:radial-gradient(circle,#fff 0 25%,transparent 26%),linear-gradient(145deg,#e7f5ff,#d7edff); color:#378bd6; }
+.word-scramble-picture-placeholder svg:last-child { position:absolute; top:1rem; right:1rem; color:#ffc52f; }
+.word-scramble-clues { display:flex; min-width:0; flex-direction:column; justify-content:center; padding:.4rem; }
+.word-scramble-meaning-clue { color:#183d77; font-size:clamp(1.2rem,2.5vw,1.85rem); font-weight:900; line-height:1.2; }
+.word-scramble-meaning-row { display:flex; align-items:center; gap:.5rem; margin-top:.7rem; color:#6d83a1; font-size:.8rem; }
+.word-scramble-meaning-row small { margin-left:auto; border-radius:999px; background:#eaf4ff; padding:.3rem .6rem; color:#286ac1; font-weight:750; }
+.word-scramble-answer { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:1.3rem; }
+.word-scramble-slot { display:grid; width:clamp(2rem,6vw,3.1rem); height:clamp(2.3rem,7vw,3.35rem); flex:0 0 auto; place-items:center; border:2px solid #d8e5f4; border-radius:.65rem; background:#fff; color:#164d9e; font-size:clamp(1.05rem,2.5vw,1.6rem); font-weight:950; box-shadow:0 3px 0 #e6edf6; }
+.word-scramble-slot.has-letter { border-color:#7fc6ff; background:#f3faff; }
+.word-scramble-slot.is-correct { border-color:#83db8b; background:#e5ffe6; color:#087947; }
+.word-scramble-slot.is-incorrect { border-color:#ffb9bd; background:#fff1f1; color:#b83343; }
+.word-scramble-slot:disabled { cursor:default; }
+.word-scramble-feedback { min-height:2.65rem; display:flex; align-items:center; border-radius:.8rem; margin-top:.75rem; background:#f1f6fc; padding:.55rem .7rem; color:#7184a1; font-size:.83rem; font-weight:800; }
+.word-scramble-feedback.is-correct { background:#e8ffe4; color:#07864c; }
+.word-scramble-feedback.is-incorrect { background:#fff0f0; color:#c34048; }
+.word-scramble-letter-bank { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:.45rem; margin:1.2rem auto 0; }
+.word-scramble-letter-bank button { display:grid; width:clamp(3rem,7vw,4.5rem); height:clamp(3rem,7vw,4.5rem); place-items:center; border:2px solid #dce9f7; border-radius:.9rem; background:linear-gradient(145deg,#fff,#f7fbff); color:#1458a8; font-size:clamp(1.25rem,3vw,2rem); font-weight:950; box-shadow:0 4px 0 #dce8f5; transition:transform .13s,border-color .13s,opacity .13s; }
+.word-scramble-letter-bank button:not(:disabled):hover { transform:translateY(-2px); border-color:#7cc4ff; }
+.word-scramble-letter-bank button.is-used { opacity:.25; box-shadow:none; }
+.word-scramble-letter-bank button:disabled { cursor:default; }
+.word-scramble-letter-bank .word-scramble-backspace { width:3.5rem; color:#2366ae; background:#edf5ff; }
+.word-scramble-actions { display:flex; align-items:center; justify-content:center; gap:.75rem; margin-top:1rem; }
+.word-scramble-hint { display:inline-flex; min-height:3.1rem; align-items:center; justify-content:center; gap:.55rem; border:1px solid #d4c8ff; border-radius:999px; background:linear-gradient(120deg,#e4d9ff,#d5c9ff); padding:.55rem 1.3rem; color:#6444bd; font-weight:900; }
+.word-scramble-hint span { display:grid; min-width:1.6rem; height:1.6rem; place-items:center; border-radius:50%; background:#7853d4; color:#fff; font-size:.8rem; }
+.word-scramble-hint:disabled { cursor:not-allowed; opacity:.48; }
+.word-scramble-hint-note { color:#788ba6; font-size:.75rem; }
+.word-scramble-correct-actions { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:1rem; }
+.word-scramble-correct-actions > span { display:flex; align-items:center; gap:.4rem; color:#07864c; font-weight:900; }
+.word-scramble-next { display:inline-flex; min-height:3.25rem; align-items:center; justify-content:center; gap:.65rem; border:0; border-radius:999px; background:linear-gradient(110deg,#2ab8ff,#087cf4); padding:.7rem 1.5rem; color:#fff; font-size:1rem; font-weight:900; box-shadow:0 6px 14px #138deb32; }
+.word-scramble-next:hover { filter:brightness(1.04); }
+.word-scramble-results { display:flex; max-width:36rem; min-height:26rem; flex-direction:column; align-items:center; justify-content:center; margin-inline:auto; padding:2rem; background:radial-gradient(ellipse at top,#fff4c9,transparent 55%),linear-gradient(145deg,#fff,#f4faff); text-align:center; }
+.word-scramble-trophy { display:grid; width:5rem; height:5rem; place-items:center; border-radius:1.5rem; background:#fff0bd; color:#eaaa00; }
+.word-scramble-results > p { margin-top:1rem; color:#2475cf; font-size:.72rem; font-weight:900; letter-spacing:.15em; }
+.word-scramble-results h2 { margin-top:.35rem; color:#112e6d; font-size:2rem; font-weight:950; }
+.word-scramble-final-score { margin-top:.5rem; color:#087cf4; font-size:3.1rem; font-weight:1000; }
+.word-scramble-final-score small { color:#617b9b; font-size:1rem; }
+.word-scramble-results > div { display:flex; gap:.7rem; margin-top:1rem; }
+.word-scramble-results > div > span { display:grid; min-width:6rem; gap:.1rem; border:1px solid #e0ebf6; border-radius:1rem; background:#fff; padding:.8rem; }
+.word-scramble-results > div strong { color:#173c77; font-size:1.2rem; }
+.word-scramble-results > div small { color:#788ba4; font-size:.72rem; }
+.word-scramble-results .word-scramble-primary { min-width:12rem; }
+@media (max-width: 800px) { .word-scramble-setup { grid-template-columns:1fr; } .word-scramble-howto { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:.5rem .8rem; } .word-scramble-howto > span { grid-row:1; align-self:center; } .word-scramble-howto h2 { margin:0; align-self:center; } .word-scramble-howto > p,.word-scramble-example,.word-scramble-howto small { grid-column:1 / -1; } }
+@media (max-width: 600px) {
+  .word-scramble-hero { border-radius:1.15rem; padding:.9rem .65rem; }
+  .word-scramble-hero-sparkle { top:.5rem; right:.8rem; font-size:1.35rem; }
+  .word-scramble-panel,.word-scramble-howto,.word-scramble-game-card { border-radius:1.1rem; padding:.85rem; }
+  .word-scramble-topline { grid-template-columns:minmax(0,1fr) auto auto; gap:.55rem; }
+  .word-scramble-level { grid-column:1 / -1; }
+  .word-scramble-stat { min-width:0; padding-left:.55rem; }
+  .word-scramble-stat > svg { width:21px; height:21px; }
+  .word-scramble-stat strong { font-size:1rem; }
+  .word-scramble-prompt { grid-template-columns:1fr; gap:.8rem; padding:.65rem; }
+  .word-scramble-picture,.word-scramble-picture-placeholder { min-height:11rem; max-height:14rem; }
+  .word-scramble-clues { padding:.2rem; }
+  .word-scramble-meaning-clue { font-size:1.15rem; }
+  .word-scramble-answer { justify-content:center; gap:.22rem; margin-top:1rem; }
+  .word-scramble-slot { width:clamp(1.75rem,8.5vw,2.8rem); height:2.5rem; border-radius:.5rem; font-size:1.15rem; }
+  .word-scramble-letter-bank { gap:.35rem; }
+  .word-scramble-letter-bank button { width:2.7rem; height:2.9rem; border-radius:.7rem; font-size:1.3rem; }
+  .word-scramble-letter-bank .word-scramble-backspace { width:2.9rem; }
+  .word-scramble-actions { flex-direction:column; gap:.4rem; }
+  .word-scramble-correct-actions { flex-direction:column; }
+  .word-scramble-next { width:100%; }
+  .word-scramble-results { min-height:22rem; padding:1.2rem; }
+  .word-scramble-results > div { gap:.35rem; }
+  .word-scramble-results > div > span { min-width:5.4rem; padding:.65rem .4rem; }
+}
+@media (prefers-reduced-motion: reduce) { .word-scramble-primary,.word-scramble-letter-bank button,.word-scramble-level > i b { transition:none; } }
+
