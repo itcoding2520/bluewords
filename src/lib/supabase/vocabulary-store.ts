@@ -6,6 +6,11 @@ import type {
   AuthenticatedVocabularySnapshot,
 } from "@/lib/supabase/vocabulary-store-mapping";
 
+function getPublishedCommunityCategoriesQuery(supabase: SupabaseClient) {
+  return supabase.from("community_categories")
+    .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
+    .eq("status", "published");
+}
 
 export async function loadAuthenticatedVocabularyCategories(
   supabase: SupabaseClient,
@@ -13,9 +18,7 @@ export async function loadAuthenticatedVocabularyCategories(
 ): Promise<AuthenticatedVocabularyCategoriesSnapshot> {
   const [personalCategories, communityResult] = await Promise.all([
     getVocabularyCategoriesForUser(userId),
-    supabase.from("community_categories")
-      .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-      .eq("status", "published"),
+    getPublishedCommunityCategoriesQuery(supabase),
   ]);
 
   return {
@@ -32,9 +35,7 @@ export async function loadAuthenticatedVocabularySnapshot(
   const [wordRows, personalCategories, communityCategoryResult, communityWordResult] = await Promise.all([
     getVocabularyWords(),
     getVocabularyCategoriesForUser(userId),
-    supabase.from("community_categories")
-      .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-      .eq("status", "published"),
+    getPublishedCommunityCategoriesQuery(supabase),
     supabase.from("community_words")
       .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
       .eq("status", "published")
