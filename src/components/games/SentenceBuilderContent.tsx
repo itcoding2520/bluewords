@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Clock3, Lightbulb, RotateCcw, Sparkles, Star, Trophy, Undo2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock3, Lightbulb, RotateCcw, Star, Trophy, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import Image from "next/image";
-import { sentenceBuilderQuestionCounts, useSentenceBuilderController } from "@/hooks/useSentenceBuilderController";
-import type { SentenceDifficulty } from "@/lib/sentence-builder";
+import { useSentenceBuilderController } from "@/hooks/useSentenceBuilderController";
+import { SentenceBuilderSetup } from "@/components/games/SentenceBuilderSetup";
 
 const icons: Record<string, string> = { apple: "🍎", banana: "🍌", cat: "🐱", dog: "🐶", book: "📚", sun: "☀️", water: "💧", milk: "🥛", ball: "⚽", girl: "👧", boy: "👦", school: "🏫", flower: "🌸", bird: "🐦", fish: "🐟", car: "🚗", tree: "🌳" };
 function SentencePicture({ keyword, questionId }: { keyword: string; questionId: string }) {
@@ -31,16 +30,18 @@ export function SentenceBuilderContent() {
   return <main className="sentence-builder-page">
     <Link href="/games" className="word-scramble-back"><ArrowLeft size={17}/> Back to Games</Link>
     <header className="sentence-builder-hero"><span>Vocabulary game</span><h1>Sentence <b>Builder</b> ✨</h1><p>Put the words in order to make a sentence!</p></header>
-    {phase === "setup" ? <div className="sentence-builder-setup">
-      <Card className="sentence-builder-panel"><div className="sentence-builder-panel-title"><span>🧩</span><div><h2>Build a sentence</h2><p>Use the picture and Vietnamese clue to arrange the word tiles.</p></div></div>
-        <label htmlFor="sentence-builder-difficulty">Difficulty</label><select id="sentence-builder-difficulty" className="sentence-builder-difficulty-select" value={difficulty} onChange={(e) => { setDifficulty(e.target.value as SentenceDifficulty); setCategory("all"); }}><option value="easy">Easy · Dễ</option><option value="medium">Medium · Trung bình</option><option value="hard">Hard · Khó</option></select>
-        <label className="sentence-builder-category-label" htmlFor="sentence-builder-category">Category</label><CategoryDropdown id="sentence-builder-category" ariaLabel="Sentence category" category={category} categories={categories} words={words} onChange={setCategory} includeAll fullWidth />
-        <fieldset><legend>Questions per round</legend><div className="sentence-builder-counts">{sentenceBuilderQuestionCounts.map((count) => <button key={count} type="button" aria-pressed={count === questionCount} disabled={eligible.length < count} className={count === questionCount ? "is-selected" : ""} onClick={() => setQuestionCount(count)}>{count} questions</button>)}</div></fieldset>
-        <p className="sentence-builder-availability">{eligible.length} questions available at this level.</p>
-        {eligible.length < 5 && <p className="sentence-builder-empty">There are not enough active questions here yet. Try another level or category.</p>}
-        <button className="sentence-builder-primary" type="button" disabled={eligible.length < questionCount} onClick={start}><Sparkles size={19}/> Start game <ArrowRight size={19}/></button>
-      </Card><Card className="sentence-builder-howto"><span>💡</span><h2>How to play</h2><p>Tap each word tile in sentence order, then check your sentence. Correct answers earn 10 points. Hints reveal one word.</p><strong><Star size={17} fill="currentColor"/> 10 points per correct sentence</strong></Card>
-    </div> : phase === "playing" && current ? <Card className="sentence-builder-game">
+    {phase === "setup" ? <SentenceBuilderSetup
+      difficulty={difficulty}
+      onDifficultyChange={setDifficulty}
+      category={category}
+      onCategoryChange={setCategory}
+      categories={categories}
+      words={words}
+      questionCount={questionCount}
+      onQuestionCountChange={setQuestionCount}
+      eligibleCount={eligible.length}
+      onStart={start}
+    /> : phase === "playing" && current ? <Card className="sentence-builder-game">
       <div className="sentence-builder-stats"><button type="button" onClick={() => void exit()}><ArrowLeft size={16}/> Exit round</button><span>Question {index + 1} of {round.length}</span><b><Star size={18} fill="currentColor"/> {score} points</b><b><Clock3 size={17}/> {elapsed}</b></div>
       <div className="sentence-builder-progress"><i style={{ width: `${((index + 1) / round.length) * 100}%` }}/></div>
       <div className="sentence-builder-question"><SentencePicture keyword={current.image_keyword} questionId={current.id}/><section><h2>Build the sentence</h2><p className="sentence-builder-clue"><Lightbulb size={20}/> {current.prompt_vi}</p><div className="sentence-builder-answer" aria-label="Your sentence">{chosen.length ? chosen.map((tile) => <button key={tile.id} type="button" disabled={solved} onClick={() => removeTile(tile.id)}>{tile.text}</button>) : <span>Choose word tiles below</span>}</div><div className="sentence-builder-feedback" aria-live="polite">{feedback}</div></section></div>
