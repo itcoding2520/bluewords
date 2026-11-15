@@ -64,12 +64,34 @@ export function useWordMazeController(input: {
   }
 
   return {
-    category, setCategory, phase, setPhase, ...gameplay,
-    candidates, categoryDropdownCategories,
-    elapsedSeconds: session.elapsedSeconds,
-    saveState: session.saveState,
-    saveError: session.saveError,
-    retrySave: session.retrySave,
-    startGame, chooseAnswer, continuePath,
+    setup: {
+      category,
+      setCategory,
+      candidates,
+      categoryDropdownCategories,
+      startGame,
+    },
+    game: {
+      phase,
+      setPhase,
+      round: gameplay.round,
+      questionIndex: gameplay.questionIndex,
+      score: gameplay.score,
+      lives: gameplay.lives,
+      feedback: gameplay.feedback,
+      selectedChoice: gameplay.selectedChoice,
+      won: gameplay.won,
+      current: gameplay.current,
+      pathProgress: gameplay.pathProgress,
+      solvedCount: gameplay.solvedCount,
+      chooseAnswer,
+      continuePath,
+    },
+    session: {
+      elapsedSeconds: session.elapsedSeconds,
+      saveState: session.saveState,
+      saveError: session.saveError,
+      retrySave: session.retrySave,
+    },
   };
 }

@@ -11,10 +11,14 @@ import { WordMazeSetup } from "@/components/games/WordMazeSetup";
 export function WordMazeContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
   const {
-    category, setCategory, phase, round, questionIndex, score, lives, feedback,
-    selectedChoice, won, candidates, categoryDropdownCategories, current,
-    pathProgress, solvedCount, elapsedSeconds, saveState, saveError, retrySave,
-    startGame, chooseAnswer, continuePath,
+    setup: {
+      category, setCategory, candidates, categoryDropdownCategories, startGame,
+    },
+    game: {
+      phase, round, questionIndex, score, lives, feedback, selectedChoice,
+      won, current, pathProgress, solvedCount, chooseAnswer, continuePath,
+    },
+    session: { elapsedSeconds, saveState, saveError, retrySave },
   } = useWordMazeController({ words, categories, isAuthenticated });
 
   if (!isLoaded) return <p className="py-16 text-center text-sm text-slate-500">Loading your vocabulary…</p>;
