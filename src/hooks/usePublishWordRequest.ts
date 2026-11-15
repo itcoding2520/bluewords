@@ -4,12 +4,10 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalize, type CommunityWordRequest } from "@/lib/vocabulary/publish-options";
 import {
-  createCommunityWordRequest,
   findOwnedVocabularyWord,
-  findOwnCommunityWordRequest,
   findPublishedCommunityWord,
   resolveCommunityCategoryForWordRequest,
-  resubmitCommunityWordRequest,
+  saveCommunityWordRequest,
 } from "@/lib/supabase/publish-word-request";
 
 interface PublishableWord {
@@ -110,48 +108,35 @@ export function usePublishWordRequest({
       toast.info(`“${word.word}” is already published in ${word.category}.`);
       return;
     }
-    const previous = await findOwnCommunityWordRequest(supabase, {
+    const result = await saveCommunityWordRequest(supabase, {
       ownerId: user.id,
       categoryId: communityCategory.id,
       normalizedWord,
-    });
-    if (previous.error) { toast.error(previous.error.message); return; }
-    if (previous.data) {
-      if (previous.data.status !== "rejected") {
-        toast.info(previous.data.status === "removed"
-          ? "This request was removed and cannot be sent again."
-          : "This word already has a review request.");
-        return;
-      }
-      const { data: updated, error } = await resubmitCommunityWordRequest(supabase, {
-        id: previous.data.id,
-        ownerId: user.id,
-        word: word.word,
-        meaning: word.meaning,
-        ipa: word.ipa ?? null,
-      });
-      if (error) toast.error(error.message);
-      else if (!updated) toast.info("This word is no longer available to resubmit. Refresh the page and try again.");
-      else {
-        setStatus(REQUEST_SENT_MESSAGE);
-        toast.success("Word request sent again.");
-      }
-      return;
-    }
-    const { error } = await createCommunityWordRequest(supabase, {
-      ownerId: user.id,
-      categoryId: communityCategory.id,
       vocabularyWordId: word.id,
       word: word.word,
       meaning: word.meaning,
       ipa: word.ipa ?? null,
     });
-    if (error) toast.error(error.code === "23505"
-      ? `“${word.word}” already has a submission in this category.`
-      : error.message);
-    else {
+    if (result.status === "error") {
+      toast.error(result.source === "create" && result.code === "23505"
+        ? `“${word.word}” already has a submission in this category.`
+        : result.message);
+      return;
+    }
+    if (result.status === "existing") {
+      toast.info(result.requestStatus === "removed"
+        ? "This request was removed and cannot be sent again."
+        : "This word already has a review request.");
+      return;
+    }
+    if (result.status === "resubmit_unavailable") {
+      toast.info("This word is no longer available to resubmit. Refresh the page and try again.");
+      return;
+    }
+
+    if (result.status === "resubmitted" || result.status === "created") {
       setStatus(REQUEST_SENT_MESSAGE);
-      toast.success("Word request sent.");
+      toast.success(result.status === "resubmitted" ? "Word request sent again." : "Word request sent.");
     }
   }
 
