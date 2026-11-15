@@ -51,15 +51,14 @@ export function useVideosAdminActions({
       toast.error("Enter a title between 1 and 150 characters.");
       return;
     }
-    if (!getYoutubeVideoId(trimmedUrl)) {
+    const videoId = getYoutubeVideoId(trimmedUrl);
+    if (!videoId) {
       toast.error("Enter a valid YouTube video link.");
       return;
     }
 
     setIsSaving(true);
     try {
-      const videoId = getYoutubeVideoId(trimmedUrl);
-      if (!videoId) throw new Error("Enter a valid YouTube video link.");
       const duplicate = await findVideoByYoutubeId(supabase, videoId);
       if (duplicate && duplicate.id !== editingId) {
         toast.error("This YouTube video is already in the library.");
