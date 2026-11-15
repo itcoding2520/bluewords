@@ -1,103 +1,19 @@
 "use client";
 
-import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useAdminSentenceBuilderController } from "@/hooks/useAdminSentenceBuilderController";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { Select } from "@/components/ui/Select";
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { downloadCsvFile } from "@/lib/download-csv";
-import { exportSentenceBuilderCsv, loadSentenceBuilderQuestions, parseSentenceBuilderCsv, type SentenceBuilderQuestion, type SentenceDifficulty, type SentenceQuestionInput } from "@/lib/supabase/sentence-builder";
+import type { SentenceDifficulty } from "@/lib/supabase/sentence-builder";
 
-const empty: SentenceQuestionInput = { question_id: "", difficulty: "easy", category: "", prompt_vi: "", answer_sentence: "", answer_tokens: [], distractor_tokens: [], image_keyword: "", vocabulary_words: [], is_active: true };
 const fields = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
 export function AdminSentenceBuilderManagement() {
-  const [questions, setQuestions] = useState<SentenceBuilderQuestion[]>([]);
-  const [draft, setDraft] = useState<SentenceQuestionInput>(empty);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [filter, setFilter] = useState<SentenceDifficulty | "all">("all");
-  const [pageSize, setPageSize] = useState<50 | 100>(50);
-  const [page, setPage] = useState(1);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const confirm = useConfirmDialog();
-  const supabase = useSupabaseClient();
-  const filteredQuestions = useMemo(() => filter === "all" ? questions : questions.filter((question) => question.difficulty === filter), [filter, questions]);
-  const pageCount = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const visible = filteredQuestions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const categoryOptions = [...new Set([...questions.map((question) => question.category), draft.category].map((name) => name.trim()).filter(Boolean))].sort((left, right) => left.localeCompare(right));
-
-  async function refresh() {
-    setLoading(true);
-    try { setQuestions(await loadSentenceBuilderQuestions(false)); }
-    catch { toast.error("Could not load Sentence Builder questions."); }
-    finally { setLoading(false); }
-  }
-  useEffect(() => {
-    let active = true;
-    void loadSentenceBuilderQuestions(false).then((data) => { if (active) setQuestions(data); })
-      .catch(() => { if (active) toast.error("Could not load Sentence Builder questions."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  function editQuestion(question: SentenceBuilderQuestion) {
-    setEditing(question.id);
-    setDraft({ ...question, answer_tokens: [...question.answer_tokens], distractor_tokens: [...question.distractor_tokens], vocabulary_words: [...question.vocabulary_words] });
-    document.getElementById("sentence-builder-editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy) return;
-    const input: SentenceQuestionInput = { ...draft, question_id: draft.question_id.trim(), category: draft.category.trim(), prompt_vi: draft.prompt_vi.trim(), answer_sentence: draft.answer_sentence.trim(), image_keyword: draft.image_keyword.trim() };
-    if (!input.question_id || !input.category || !input.prompt_vi || !input.answer_sentence || input.answer_tokens.length < 2) { toast.error("Complete the required fields and add at least two answer tokens."); return; }
-    setBusy(true);
-    try {
-      const { error } = editing
-        ? await supabase.from("sentence_builder_questions").update({ ...input, updated_at: new Date().toISOString() }).eq("id", editing)
-        : await supabase.from("sentence_builder_questions").insert(input);
-      if (error) throw error;
-      toast.success(editing ? "Question updated." : "Question added.");
-      setDraft(empty); setEditing(null); await refresh();
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save this question."); }
-    finally { setBusy(false); }
-  }
-
-  async function removeQuestion(question: SentenceBuilderQuestion) {
-    const confirmed = await confirm({ title: "Remove sentence question?", description: `Remove ${question.question_id} (“${question.answer_sentence}”)?`, confirmLabel: "Remove" });
-    if (!confirmed) return;
-    const { error } = await supabase.from("sentence_builder_questions").delete().eq("id", question.id);
-    if (error) toast.error("Could not remove this question."); else { toast.success("Question removed."); await refresh(); }
-  }
-
-  async function importCsv(file?: File) {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const rows = parseSentenceBuilderCsv(await file.text());
-      const { error } = await supabase.from("sentence_builder_questions").upsert(rows, { onConflict: "question_id" });
-      if (error) throw error;
-      toast.success(`Imported ${rows.length} questions.`);
-      await refresh();
-    } catch (error) { toast.error(error instanceof Error ? error.message : "CSV import failed."); }
-    finally { setBusy(false); if (fileRef.current) fileRef.current.value = ""; }
-  }
-
-  async function exportCsv() {
-    try {
-      const rows = await loadSentenceBuilderQuestions(false);
-      downloadCsvFile(
-        "BlueWords_Sentence_Builder_Questions.csv",
-        exportSentenceBuilderCsv(rows),
-        { includeUtf8Bom: true }
-      );
-    } catch { toast.error("Could not export questions."); }
-  }
+  const {
+    draft, setDraft, editing, loading, busy, filter, setFilter,
+    pageSize, setPageSize, setPage, fileRef, filteredQuestions, pageCount,
+    currentPage, visible, categoryOptions, refresh, editQuestion, cancelEdit,
+    save, removeQuestion, importCsv, exportCsv,
+  } = useAdminSentenceBuilderController();
 
   return <main className="space-y-5">
     <header className="rounded-3xl border border-sky-100 bg-gradient-to-r from-white via-sky-50 to-cyan-100 p-5 sm:p-7">
@@ -105,7 +21,7 @@ export function AdminSentenceBuilderManagement() {
     </header>
 
     <form id="sentence-builder-editor" onSubmit={(event) => void save(event)} className="scroll-mt-4 rounded-3xl border border-sky-100 bg-white p-4 shadow-sm sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-2"><h2 className="text-lg font-bold text-slate-900">{editing ? `Edit ${draft.question_id}` : "Add a question"}</h2>{editing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={() => { setEditing(null); setDraft(empty); }}>Cancel edit</button>}</div>
+      <div className="mb-4 flex items-center justify-between gap-2"><h2 className="text-lg font-bold text-slate-900">{editing ? `Edit ${draft.question_id}` : "Add a question"}</h2>{editing && <button type="button" className="text-sm font-semibold text-slate-500" onClick={cancelEdit}>Cancel edit</button>}</div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="text-xs font-bold text-slate-600">Question ID<input className={`${fields} mt-1`} value={draft.question_id} disabled={Boolean(editing)} placeholder="SB101" onChange={(e) => setDraft({ ...draft, question_id: e.target.value })}/><small className="mt-1 block font-normal text-slate-500">Example: SB001 (must be unique).</small></label>
         <label htmlFor="sentence-admin-difficulty" className="text-xs font-bold text-slate-600">Difficulty<Select id="sentence-admin-difficulty" containerClassName="mt-1" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={draft.difficulty} onChange={(e) => setDraft({ ...draft, difficulty: e.target.value as SentenceDifficulty })}><option value="easy">Easy / Dễ</option><option value="medium">Medium / Trung bình</option><option value="hard">Hard / Khó</option></Select><small className="mt-1 block font-normal text-slate-500">Example: Easy (CSV level 1).</small></label>
