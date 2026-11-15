@@ -3,7 +3,10 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@/lib/supabase/client";
-import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import {
+  upsertCommunicationItemReview,
+  upsertCommunicationLessonProgress,
+} from "@/lib/supabase/communication-review-mutations";
 import { getCorrectReviewIntervalDays } from "@/lib/communication/lesson-practice";
 import { getNextLessonProgress } from "@/lib/communication/lesson-progress";
 import type { Item, ItemReview, Lesson } from "@/lib/communication/lesson-types";
@@ -27,16 +30,14 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
     const progress = getNextLessonProgress(items, reviews, itemId, review);
     setReviews(progress.nextReviews);
 
-    const { error } = await supabase.from("communication_lesson_progress").upsert({
+    const { error } = await upsertCommunicationLessonProgress(supabase, {
       user_id: userId,
       lesson_id: lessonId,
       status: progress.completed ? "completed" : "in_progress",
       completed_items: progress.masteredCount,
       completed_at: progress.completed ? now : null,
       updated_at: now,
-    }, { onConflict: "user_id,lesson_id" });
-
-    if (!error) invalidateCommunicationCatalogCache(userId);
+    });
     return error;
   }
 
@@ -45,11 +46,11 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
     setSaving(true);
     const existingReview = reviews[item.id];
     const now = new Date().toISOString();
-    const { error } = await supabase.from("communication_item_reviews").upsert({
+    const { error } = await upsertCommunicationItemReview(supabase, {
       user_id: userId, item_id: item.id, status, review_count: existingReview?.review_count ?? 0,
       correct_count: existingReview?.correct_count ?? 0, last_reviewed_at: now,
       due_at: status === "mastered" ? new Date(Date.now() + 7 * 86400000).toISOString() : now, updated_at: now,
-    }, { onConflict: "user_id,item_id" });
+    });
     if (error) { toast.error(error.message); setSaving(false); return; }
     const review = {
       status,
@@ -74,10 +75,10 @@ export function useCommunicationLessonReviewActions({ supabase, lessonId, lesson
     const nextDueAt = correct
       ? new Date(reviewedAt.getTime() + getCorrectReviewIntervalDays(nextReviewCount, nextCorrectCount, lesson?.difficulty ?? "medium") * 86400000).toISOString()
       : new Date(reviewedAt.getTime() + 15 * 60000).toISOString();
-    const { error } = await supabase.from("communication_item_reviews").upsert({
+    const { error } = await upsertCommunicationItemReview(supabase, {
       user_id: userId, item_id: item.id, status: nextStatus, review_count: nextReviewCount,
       correct_count: nextCorrectCount, last_reviewed_at: now, due_at: nextDueAt, updated_at: now,
-    }, { onConflict: "user_id,item_id" });
+    });
     if (error) {
       toast.error("Could not save this practice result.");
     } else {
