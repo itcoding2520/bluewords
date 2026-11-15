@@ -4,6 +4,14 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { useAdminReviewData } from "@/hooks/useAdminReviewData";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
+import {
+  createPublishedCategory,
+  createPublishedWord,
+  editPublishedCategory as editPublishedCategoryRecord,
+  editPublishedWord as editPublishedWordRecord,
+  removePublishedAdminReview,
+  updateAdminReviewStatus,
+} from "@/lib/admin-review-api";
 
 export function useAdminReviewController() {
   const confirmDialog = useConfirmDialog();
@@ -52,7 +60,7 @@ export function useAdminReviewController() {
     setBusy(id);
     setError("");
     try {
-      const { error: updateError } = await supabase.from(table).update({ status }).eq("id", id);
+      const updateError = await updateAdminReviewStatus(supabase, table, id, status);
       if (updateError) {
         setError(updateError.code === "23505"
           ? "A published category or word with that name already exists."
@@ -103,14 +111,9 @@ export function useAdminReviewController() {
   async function addPublishedCategory() {
     const name = newCategory.trim();
     if (!name) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { error: insertError } = await supabase.from("community_categories").insert({
-      owner_id: user.id,
-      name,
-      color: "blue",
-      status: "published",
-    });
+    const result = await createPublishedCategory(supabase, name);
+    if (!result.authenticated) return;
+    const insertError = result.error;
     if (insertError) setError(insertError.code === "23505" ? "That category already exists." : insertError.message);
     else {
       setNewCategory("");
@@ -121,15 +124,13 @@ export function useAdminReviewController() {
   async function addPublishedWord() {
     const word = newWord.trim();
     if (!word || !newWordCategory) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { error: insertError } = await supabase.from("community_words").insert({
-      owner_id: user.id,
-      category_id: newWordCategory,
+    const result = await createPublishedWord(supabase, {
+      categoryId: newWordCategory,
       word,
       meaning: newMeaning.trim(),
-      status: "published",
     });
+    if (!result.authenticated) return;
+    const insertError = result.error;
     if (insertError) setError(insertError.code === "23505" ? "That word already exists in this category." : insertError.message);
     else {
       setNewWord("");
@@ -149,7 +150,7 @@ export function useAdminReviewController() {
       confirmLabel: "Remove",
     });
     if (!confirmed) return;
-    const { error: updateError } = await supabase.from(table).update({ status: "removed" }).eq("id", item.id);
+    const updateError = await removePublishedAdminReview(supabase, table, item.id);
     if (updateError) setError(updateError.message);
     else await refresh();
   }
@@ -159,10 +160,12 @@ export function useAdminReviewController() {
     if (word === null || !word.trim()) return;
     const meaning = window.prompt("Edit meaning", item.meaning);
     if (meaning === null) return;
-    const { error: updateError } = await supabase.from("community_words").update({
-      word: word.trim(),
-      meaning: meaning.trim(),
-    }).eq("id", item.id);
+    const updateError = await editPublishedWordRecord(
+      supabase,
+      item.id,
+      word.trim(),
+      meaning.trim()
+    );
     if (updateError) setError(updateError.code === "23505"
       ? "A word with that spelling already exists in this category."
       : updateError.message);
@@ -172,9 +175,7 @@ export function useAdminReviewController() {
   async function editPublishedCategory(item: PublishedCategory) {
     const name = window.prompt("Edit category name", item.name);
     if (name === null || !name.trim()) return;
-    const { error: updateError } = await supabase.from("community_categories").update({
-      name: name.trim(),
-    }).eq("id", item.id);
+    const updateError = await editPublishedCategoryRecord(supabase, item.id, name.trim());
     if (updateError) setError(updateError.code === "23505"
       ? "A category with that name already exists."
       : updateError.message);
