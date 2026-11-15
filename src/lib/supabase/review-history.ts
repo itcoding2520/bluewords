@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { mapLatestReviewRows, type LatestReviewRpcRow, type VocabularyReviewWithWord } from "@/lib/supabase/review-history-mapping";
 export type { VocabularyReviewWithWord } from "@/lib/supabase/review-history-mapping";
 
@@ -62,13 +63,9 @@ export function getCachedLatestVocabularyReviewHistory(
 export async function getLatestVocabularyReviewHistory(
   expectedUserId: string
 ): Promise<VocabularyReviewWithWord[]> {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !user || user.id !== expectedUserId) {
-    throw new Error("You must be logged in to view review history.");
-  }
+  const errorMessage = "You must be logged in to view review history.";
+  const user = await requireAuthenticatedUser(supabase, errorMessage);
+  if (user.id !== expectedUserId) throw new Error(errorMessage);
 
   const cached = latestReviewHistoryByUser.get(user.id);
   if (cached) return cached;
@@ -91,14 +88,7 @@ export async function getLatestVocabularyReviews(input: {
   page: number;
   pageSize?: number;
 }): Promise<LatestVocabularyReviewsPage> {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to view review history.");
-  }
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to view review history.");
 
   const pageSize = input.pageSize ?? REVIEW_HISTORY_PAGE_SIZE;
   if (!Number.isInteger(input.page) || input.page < 1) {
@@ -130,14 +120,7 @@ export async function getLatestVocabularyReviews(input: {
 }
 
 export async function getLatestVocabularyReviewCounts(): Promise<LatestVocabularyReviewCounts> {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to view review history.");
-  }
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to view review history.");
 
   const cachedCounts = latestReviewCountsByUser.get(user.id);
   if (cachedCounts) return cachedCounts;
