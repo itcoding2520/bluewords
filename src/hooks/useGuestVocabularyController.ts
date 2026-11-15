@@ -45,7 +45,8 @@ export function useGuestVocabularyController() {
   }
 
   return {
-    words, categories, isLoaded, search, category, page, setPage,
-    filteredWords, pageCount, pageWords, categoryColor, changeSearch, changeCategory,
+    data: { words, categories, isLoaded, filteredWords, pageWords, categoryColor },
+    filters: { search, category, changeSearch, changeCategory },
+    pagination: { page, setPage, pageCount },
   };
 }
