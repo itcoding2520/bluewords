@@ -11,7 +11,7 @@ import { AdminCategoryDetailPanel } from "@/components/admin/AdminCategoryDetail
 
 export function AdminCategoryManagement() {
   const {
-    activeTab, setActiveTab, setSelectedId, categorySearch, setCategorySearch,
+    activeTab, changeTab, setSelectedId, categorySearch, setCategorySearch,
     communityCategories, emails, words, wordEmails, wordsLoading, loading, error,
     currentCategories, visibleCategories, visibleCategoryRows, selectedCategory,
     defaultWords, selectedSharedCategory, selectedFallbackImage, refresh,
@@ -34,11 +34,7 @@ export function AdminCategoryManagement() {
     <AdminCategoryTabs
       activeTab={activeTab}
       communityCategories={communityCategories}
-      onChange={(tab) => {
-        setActiveTab(tab);
-        setSelectedId("");
-        setCategorySearch("");
-      }}
+      onChange={changeTab}
     />
 
     <div className="admin-category-layout grid items-start gap-5 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.65fr)]">

@@ -27,6 +27,12 @@ export function useAdminCategoryManagementController() {
   const [activeTab, setActiveTab] = useState<CategoryTab>("default");
   const [selectedId, setSelectedId] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
+
+  function changeTab(tab: CategoryTab) {
+    setActiveTab(tab);
+    setSelectedId("");
+    setCategorySearch("");
+  }
   const {
     communityCategories,
     emails,
@@ -114,7 +120,7 @@ export function useAdminCategoryManagementController() {
 
   return {
     activeTab,
-    setActiveTab,
+    changeTab,
     setSelectedId,
     categorySearch,
     setCategorySearch,
