@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import type { WordSearchCategoryOption } from "@/components/games/WordSearchSetupForm";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
@@ -7,7 +6,7 @@ import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { useWordSearchTimer } from "@/hooks/useWordSearchTimer";
 import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
-import { WORD_TARGETS, selectableWords, type Difficulty, type GridSize } from "@/lib/word-search-config";
+import { WORD_TARGETS, selectableWords, buildWordSearchCategoryOptions, type Difficulty, type GridSize } from "@/lib/word-search-config";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -56,19 +55,10 @@ export function useWordSearchController(userId: string | null) {
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
   const vocabularyByWord = useMemo(() => new Map(words.map((word) => [normalizeWordSearchWord(word.word), word] as const)), [words]);
-  const categoryOptions = useMemo<WordSearchCategoryOption[]>(() => {
-    const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
-    return [
-      { id: "all-categories", name: "All categories", value: "all", color: "blue", imagePath: null },
-      ...visibleCategories.map((item) => ({
-        id: item.id,
-        name: item.name,
-        value: item.name,
-        color: item.color,
-        imagePath: item.image_path ? `category:${item.image_path}` : words.find((word) => word.category === item.name && word.imagePath)?.imagePath ?? null,
-      })),
-    ];
-  }, [categories, words]);
+  const categoryOptions = useMemo(
+    () => buildWordSearchCategoryOptions(categories, words),
+    [categories, words]
+  );
   const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
   const showStickyStart = phase === "setup" && tab === "play";
 
