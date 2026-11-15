@@ -1,9 +1,7 @@
 
 "use client";
 
-import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Library,
@@ -28,12 +26,9 @@ import { logout } from "@/app/login/actions";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
 import { UserAvatar } from "@/components/user/UserAvatar";
-import {
-  getCachedUserProfile,
-  getUserProfile,
-  USER_PROFILE_UPDATED_EVENT,
-  type UserProfile,
-} from "@/lib/supabase/user-profile";
+import { useSidebarAccount } from "@/hooks/useSidebarAccount";
+import { useSidebarNotificationCount } from "@/hooks/useSidebarNotificationCount";
+import { useSidebarPendingAssignments } from "@/hooks/useSidebarPendingAssignments";
 
 const navigation = [
   {
@@ -92,156 +87,9 @@ const navigationArtwork: Record<string, string> = {
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const supabase = useSupabaseClient();
-  const [email, setEmail] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminChecked, setIsAdminChecked] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [pendingAssignmentCount, setPendingAssignmentCount] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    let currentUserId: string | null = null;
-
-    async function loadProfile(userId: string) {
-      currentUserId = userId;
-      const cachedProfile = getCachedUserProfile(userId);
-      if (active && cachedProfile !== undefined) setProfile(cachedProfile);
-      try {
-        const nextProfile = await getUserProfile(userId);
-        if (active && currentUserId === userId) setProfile(nextProfile);
-      } catch (profileError) {
-        console.error("Failed to load user profile:", profileError);
-        // Keep the cached avatar/profile visible if the network is temporarily unavailable.
-      }
-    }
-
-    // Lấy session hiện tại để hiển thị email.
-    async function loadSession() {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (!active) return;
-
-      if (error) {
-        console.error("Failed to load session:", error);
-        return;
-      }
-
-      setEmail(session?.user.email ?? null);
-      setIsAuthenticated(Boolean(session?.user.id));
-      setAuthUserId(session?.user.id ?? null);
-      if (session?.user.id) {
-        setIsAdminChecked(false);
-        const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
-        if (active) {
-          setIsAdmin(Boolean(admin));
-          setIsAdminChecked(true);
-        }
-      } else {
-        setIsAdmin(false);
-        setIsAdminChecked(true);
-      }
-      if (session?.user.id) void loadProfile(session.user.id);
-      else {
-        currentUserId = null;
-        setProfile(null);
-      }
-    }
-
-    void loadSession();
-
-    // Cập nhật email khi auth thay đổi.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!active) return;
-
-        setEmail(session?.user.email ?? null);
-        setIsAuthenticated(Boolean(session?.user.id));
-        setAuthUserId(session?.user.id ?? null);
-        setIsAdmin(false);
-        setIsAdminChecked(!session?.user.id);
-        if (session?.user.id) {
-          const userId = session.user.id;
-          void supabase.from("app_admins").select("user_id").eq("user_id", userId).maybeSingle().then(({ data: admin }) => {
-            if (active) {
-              setIsAdmin(Boolean(admin));
-              setIsAdminChecked(true);
-            }
-          });
-        }
-        if (session?.user.id) void loadProfile(session.user.id);
-        else {
-          currentUserId = null;
-          setProfile(null);
-        }
-      }
-    );
-
-    function handleProfileUpdated(event: Event) {
-      setProfile((event as CustomEvent<UserProfile>).detail);
-    }
-
-    window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
-    };
-  }, [supabase]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !authUserId) {
-      return;
-    }
-
-    let active = true;
-    async function refreshUnreadCount() {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", authUserId)
-        .neq("kind", "assessment_assigned")
-        .is("read_at", null);
-      if (active && !error) setUnreadNotificationCount(count ?? 0);
-    }
-
-    const timer = window.setInterval(() => { void refreshUnreadCount(); }, 30_000);
-    const handleNotificationsUpdated = () => { void refreshUnreadCount(); };
-    window.addEventListener("bluewords:notifications-updated", handleNotificationsUpdated);
-    void refreshUnreadCount();
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-      window.removeEventListener("bluewords:notifications-updated", handleNotificationsUpdated);
-    };
-  }, [authUserId, isAuthenticated, supabase]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !authUserId) {
-      const resetTimer = window.setTimeout(() => setPendingAssignmentCount(0), 0);
-      return () => window.clearTimeout(resetTimer);
-    }
-    let active = true;
-    async function refreshAssignments() {
-      try {
-        const response = await fetch("/api/assessments", { cache: "no-store" });
-        const payload = await response.json();
-        if (active && response.ok) setPendingAssignmentCount((payload.assignments ?? []).filter((item: { status: string }) => item.status !== "completed").length);
-      } catch { /* Keep the last known badge count while offline. */ }
-    }
-    void refreshAssignments();
-    const timer = window.setInterval(() => { void refreshAssignments(); }, 60_000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [authUserId, isAuthenticated]);
+  const { email, isAuthenticated, authUserId, isAdmin, isAdminChecked, profile } = useSidebarAccount();
+  const unreadNotificationCount = useSidebarNotificationCount(authUserId, isAuthenticated);
+  const pendingAssignmentCount = useSidebarPendingAssignments(authUserId, isAuthenticated);
 
   function closeSidebar() {
     setIsOpen(false);
