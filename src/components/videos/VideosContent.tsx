@@ -1,12 +1,11 @@
 "use client";
 
-import { Clapperboard, Pencil, Play, Plus, Trash2, X } from "lucide-react";
-import Image from "next/image";
+import { Clapperboard, Pencil, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { VideoCard } from "@/components/videos/VideoCard";
 import { Input } from "@/components/ui/Input";
-import { ActionMenu } from "@/components/ui/ActionMenu";
-import { getYoutubeVideoId, VIDEOS_PAGE_SIZE } from "@/lib/videos";
+import { VIDEOS_PAGE_SIZE } from "@/lib/videos";
 import { useVideosController } from "@/hooks/useVideosController";
 
 export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
@@ -83,59 +82,18 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-          {videos.map((video) => {
-            const videoId = getYoutubeVideoId(video.youtube_url);
-            return (
-              <Card key={video.id} className="flex h-full min-w-0 flex-col overflow-hidden">
-                {videoId ? (
-                  <div className="aspect-video bg-slate-950">
-                    {playingVideoId === video.id ? (
-                      <iframe
-                        className="h-full w-full"
-                        src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
-                        title={video.title}
-                        referrerPolicy="strict-origin-when-cross-origin"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        className="group relative block h-full w-full cursor-pointer overflow-hidden"
-                        onClick={() => setPlayingVideoId(video.id)}
-                        aria-label={`Play ${video.title}`}
-                      >
-                        <Image
-                          src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
-                          alt=""
-                          fill
-                          sizes="(max-width: 1023px) 50vw, 25vw"
-                          unoptimized
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                        <span className="absolute inset-0 grid place-items-center bg-slate-950/20 transition group-hover:bg-slate-950/35">
-                          <span className="grid size-12 place-items-center rounded-full bg-red-600 text-white shadow-lg">
-                            <Play size={22} fill="currentColor" />
-                          </span>
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid aspect-video place-items-center bg-slate-100 px-3 text-center text-xs text-slate-500">
-                    This video link is invalid.
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-3 sm:p-4">
-                  <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-slate-900 sm:min-h-12 sm:text-base sm:leading-6">{video.title}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{new Date(video.created_at).toLocaleDateString()}</p>
-                  {isAdmin && (
-                    <div className="mt-auto flex justify-end border-t border-slate-100 pt-3"><ActionMenu label={video.title} disabled={isSaving} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => startEditing(video) }, { label: "Remove", icon: <Trash2 size={15} />, onSelect: () => void deleteVideo(video), destructive: true }]} /></div>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+          {videos.map((video) => (
+            <VideoCard
+              key={video.id}
+              video={video}
+              isAdmin={isAdmin}
+              isSaving={isSaving}
+              isPlaying={playingVideoId === video.id}
+              onPlay={() => setPlayingVideoId(video.id)}
+              onEdit={() => startEditing(video)}
+              onDelete={() => void deleteVideo(video)}
+            />
+          ))}
         </div>
       )}
 
