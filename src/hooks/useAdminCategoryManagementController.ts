@@ -4,6 +4,12 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminCategories, loadAdminCategoryWords } from "@/lib/admin-category-data";
+import {
+  removeAdminSharedCategory,
+  removeAdminSharedWord,
+  updateAdminSharedCategory,
+  updateAdminSharedWord,
+} from "@/lib/admin-category-api";
 import type { CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 
 export type { CommunityCategory } from "@/lib/admin-category-data";
@@ -121,8 +127,7 @@ export function useAdminCategoryManagementController() {
   async function editSharedCategory(category: CommunityCategory) {
     const name = window.prompt("Category name", category.name)?.trim();
     if (!name || name === category.name) return;
-    const { error: updateError } = await supabase.from("community_categories")
-      .update({ name }).eq("id", category.id);
+    const updateError = await updateAdminSharedCategory(supabase, category.id, name);
     if (updateError) setError(updateError.message);
     else await refresh();
   }
@@ -134,8 +139,7 @@ export function useAdminCategoryManagementController() {
       confirmLabel: "Remove",
     });
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("community_categories")
-      .delete().eq("id", category.id);
+    const deleteError = await removeAdminSharedCategory(supabase, category.id);
     if (deleteError) setError(deleteError.message);
     else {
       setSelectedId("");
@@ -148,8 +152,7 @@ export function useAdminCategoryManagementController() {
     if (!nextWord) return;
     const meaning = window.prompt("Meaning", word.meaning)?.trim();
     if (meaning == null || (nextWord === word.word && meaning === word.meaning)) return;
-    const { error: updateError } = await supabase.from("community_words")
-      .update({ word: nextWord, meaning }).eq("id", word.id);
+    const updateError = await updateAdminSharedWord(supabase, word.id, nextWord, meaning);
     if (updateError) setError(updateError.message);
     else {
       invalidateAdminDataCache();
@@ -166,8 +169,7 @@ export function useAdminCategoryManagementController() {
       confirmLabel: "Remove",
     });
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("community_words")
-      .delete().eq("id", word.id);
+    const deleteError = await removeAdminSharedWord(supabase, word.id);
     if (deleteError) setError(deleteError.message);
     else {
       invalidateAdminDataCache();
