@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type MatchPair = {
   id: string;
@@ -20,9 +21,9 @@ export function buildWordMatchPairs(words: VocabularyWord[], category: string): 
     const meaning = getPrimaryVocabularyMeaning(word);
     const matchKey = word.imagePath || word.imageUrl
       ? `image:${word.id}`
-      : `meaning:${meaning.toLocaleLowerCase()}`;
-    if (!text || !meaning || usedWords.has(text.toLocaleLowerCase()) || usedMatches.has(matchKey)) return [];
-    usedWords.add(text.toLocaleLowerCase());
+      : `meaning:${normalizeVocabularyLabel(meaning)}`;
+    if (!text || !meaning || usedWords.has(normalizeVocabularyLabel(text)) || usedMatches.has(matchKey)) return [];
+    usedWords.add(normalizeVocabularyLabel(text));
     usedMatches.add(matchKey);
     return [{
       id: word.id,
