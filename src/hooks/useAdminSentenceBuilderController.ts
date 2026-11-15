@@ -50,10 +50,24 @@ export function useAdminSentenceBuilderController() {
   }
 
   return {
-    questions, draft, setDraft, editing, loading, busy, filter, setFilter,
-    pageSize, setPageSize, setPage, ...csvActions, filteredQuestions,
-    pageCount: pageMetadata.pageCount, currentPage: pageMetadata.currentPage,
-    visible, categoryOptions, refresh, editQuestion, cancelEdit,
-    ...actions,
+    content: {
+      questions,
+      filteredQuestions,
+      visible,
+      categoryOptions,
+      loading,
+    },
+    editor: { draft, setDraft, editing, busy },
+    pagination: {
+      filter,
+      setFilter,
+      pageSize,
+      setPageSize,
+      setPage,
+      pageCount: pageMetadata.pageCount,
+      currentPage: pageMetadata.currentPage,
+    },
+    csv: csvActions,
+    actions: { refresh, editQuestion, cancelEdit, ...actions },
   };
 }

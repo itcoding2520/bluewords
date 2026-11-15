@@ -8,10 +8,13 @@ import { AdminSentenceBuilderQuestionBank } from "@/components/admin/AdminSenten
 
 export function AdminSentenceBuilderManagement() {
   const {
-    draft, setDraft, editing, loading, busy, filter, setFilter,
-    pageSize, setPageSize, setPage, fileRef, filteredQuestions, pageCount,
-    currentPage, visible, categoryOptions, refresh, editQuestion, cancelEdit,
-    save, removeQuestion, importCsv, exportCsv,
+    content: { filteredQuestions, loading, visible, categoryOptions },
+    editor: { draft, setDraft, editing, busy },
+    pagination: {
+      filter, setFilter, pageSize, setPageSize, setPage, pageCount, currentPage,
+    },
+    csv: { fileRef, importCsv, exportCsv },
+    actions: { refresh, editQuestion, cancelEdit, save, removeQuestion },
   } = useAdminSentenceBuilderController();
   const pageRange = getPageRange(filteredQuestions.length, currentPage, pageSize);
 
