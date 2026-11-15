@@ -28,6 +28,7 @@ import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategor
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { useVocabularySelection } from "@/hooks/useVocabularySelection";
 import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
+import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -52,29 +53,31 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     refreshWords,
     authVersion,
   } = useVocabulary({ loadWords: false });
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<CategoryFilter>("All");
-  const [status, setStatus] = useState<VocabularyStatusFilter>("all");
+  const {
+    search,
+    setSearch,
+    setCategory,
+    status,
+    setStatus,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    debouncedSearch,
+    selectedCategory,
+  } = useVocabularyContentFilters(categories);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
   const [hasLegacyData, setHasLegacyData] = useState(false);
   const [categoryExportCount, setCategoryExportCount] = useState(0);
   const [isExportCountLoading, setIsExportCountLoading] = useState(false);
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
-    return () => window.clearTimeout(timer);
-  }, [search]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -91,12 +94,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const hasPendingImport = isAdmin &&
   importPreview !== null &&
   importPreview.ready.length > 0;
-
-  const selectedCategory =
-    category === "All" ||
-    categories.some((item) => item.name === category)
-      ? category
-      : "All";
 
   const { pageWords, setPageWords, loadedAuthVersion, totalWords, isPageLoading, setIsPageLoading, refreshPage } = useVocabularyPageData({
     authVersion,
