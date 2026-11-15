@@ -4,6 +4,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { shuffle } from "@/lib/quiz-random";
+import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 
 type Phase = "setup" | "playing" | "results";
 type PairCount = 6 | 8 | 10;
@@ -15,11 +16,6 @@ export type MatchPair = {
   imageUrl: string | null;
 };
 export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
-
-function getWordMeaning(word: VocabularyWord): string {
-  return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-    || word.meaning.trim();
-}
 
 export function useWordMatchController(input: {
   words: VocabularyWord[];
@@ -62,7 +58,7 @@ export function useWordMatchController(input: {
     const usedMatches = new Set<string>();
     return eligibleWords.flatMap((word) => {
       const text = word.word.trim();
-      const meaning = getWordMeaning(word);
+      const meaning = getPrimaryVocabularyMeaning(word);
       const matchKey = word.imagePath || word.imageUrl
         ? `image:${word.id}`
         : `meaning:${meaning.toLocaleLowerCase()}`;

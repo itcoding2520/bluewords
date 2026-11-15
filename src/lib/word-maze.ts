@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { shuffle } from "@/lib/quiz-random";
+import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 
 export type MazeWord = {
   id: string;
@@ -9,17 +10,12 @@ export type MazeWord = {
   choices: string[];
 };
 
-function getMeaning(word: VocabularyWord) {
-  return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-    || word.meaning.trim();
-}
-
 export function buildWordMazeRound(words: VocabularyWord[], category: string): MazeWord[] {
   const seenWords = new Set<string>();
   const seenMeanings = new Set<string>();
   const available = words.flatMap((word) => {
     const text = word.word.trim();
-    const meaning = getMeaning(word);
+    const meaning = getPrimaryVocabularyMeaning(word);
     const meaningKey = meaning.toLocaleLowerCase();
     if (!text || !meaning || (category !== "all" && word.category !== category)
       || seenWords.has(text.toLocaleLowerCase()) || seenMeanings.has(meaningKey)) return [];

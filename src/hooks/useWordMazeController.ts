@@ -4,6 +4,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { buildWordMazeRound, type MazeWord } from "@/lib/word-maze";
+import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 
 type Phase = "setup" | "playing" | "results";
 export type { MazeWord } from "@/lib/word-maze";
@@ -42,8 +43,7 @@ export function useWordMazeController(input: {
     const meanings = new Set<string>();
     const result: VocabularyWord[] = [];
     for (const word of words) {
-      const meaning = word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-        || word.meaning.trim();
+      const meaning = getPrimaryVocabularyMeaning(word);
       const key = meaning.toLocaleLowerCase();
       if (!meaning || (category !== "all" && word.category !== category) || meanings.has(key)) continue;
       meanings.add(key);

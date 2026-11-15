@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { shuffle } from "@/lib/quiz-random";
+import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 
 export type ScrambleWord = {
   id: string;
@@ -13,11 +14,6 @@ export type ScrambleWord = {
 
 export type LetterTile = { id: number; letter: string };
 
-function getMeaning(word: VocabularyWord) {
-  return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-    || word.meaning.trim();
-}
-
 export function buildWordScrambleCandidates(
   words: VocabularyWord[],
   category: string
@@ -25,7 +21,7 @@ export function buildWordScrambleCandidates(
   const seen = new Set<string>();
   return words.flatMap((word) => {
     const answer = word.word.trim().toLocaleLowerCase().replace(/[^a-z]/g, "");
-    const meaning = getMeaning(word);
+    const meaning = getPrimaryVocabularyMeaning(word);
     if ((category !== "all" && word.category !== category)
       || answer.length < 3 || answer.length > 10 || !meaning || seen.has(answer)) return [];
     seen.add(answer);
