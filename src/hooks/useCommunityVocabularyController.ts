@@ -43,5 +43,8 @@ export function useCommunityVocabularyController() {
     return images;
   }, [visibleWords]);
 
-  return { words, category, setCategory, search, setSearch, loaded, categories, visibleWords, fallbackWordImages };
+  return {
+    data: { words, loaded, categories, visibleWords, fallbackWordImages },
+    filters: { category, setCategory, search, setSearch },
+  };
 }

@@ -6,7 +6,10 @@ import { useCommunityVocabularyController } from "@/hooks/useCommunityVocabulary
 import { CommunityVocabularyWordList } from "@/components/vocabulary/CommunityVocabularyWordList";
 
 export function CommunityVocabulary() {
-  const { words, category, setCategory, search, setSearch, loaded, categories, visibleWords, fallbackWordImages } = useCommunityVocabularyController();
+  const {
+    data: { words, loaded, categories, visibleWords, fallbackWordImages },
+    filters: { category, setCategory, search, setSearch },
+  } = useCommunityVocabularyController();
 
   if (loaded && words.length === 0) return null;
 
