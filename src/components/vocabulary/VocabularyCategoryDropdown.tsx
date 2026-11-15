@@ -1,36 +1,12 @@
 import { useId, useMemo } from "react";
-import { Check, ChevronDown, ListFilter } from "lucide-react";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { ChevronDown, ListFilter } from "lucide-react";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { useVocabularyCategoryDropdownController } from "@/hooks/useVocabularyCategoryDropdownController";
+import { CategoryDropdownOptionList, type CategoryDropdownOption } from "@/components/vocabulary/CategoryDropdownOptionList";
+import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 export { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
-
-const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
-  blue: "bg-blue-700",
-  violet: "bg-[#bf00ff]",
-  orange: "bg-[#ff990a]",
-  green: "bg-emerald-700",
-  rose: "bg-rose-700",
-  indigo: "bg-indigo-700",
-  teal: "bg-teal-700",
-  amber: "bg-amber-700",
-  pink: "bg-pink-700",
-  slate: "bg-slate-700",
-};
-
-const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {
-  blue: "border-blue-700 bg-blue-700 hover:border-blue-800 hover:bg-blue-800",
-  violet: "border-[#bf00ff] bg-[#bf00ff] hover:brightness-95",
-  orange: "border-[#ff990a] bg-[#ff990a] hover:brightness-95",
-  green: "border-emerald-700 bg-emerald-700 hover:border-emerald-800 hover:bg-emerald-800",
-  rose: "border-rose-700 bg-rose-700 hover:border-rose-800 hover:bg-rose-800",
-  indigo: "border-indigo-700 bg-indigo-700 hover:border-indigo-800 hover:bg-indigo-800",
-  teal: "border-teal-700 bg-teal-700 hover:border-teal-800 hover:bg-teal-800",
-  amber: "border-amber-700 bg-amber-700 hover:border-amber-800 hover:bg-amber-800",
-  pink: "border-pink-700 bg-pink-700 hover:border-pink-800 hover:bg-pink-800",
-  slate: "border-slate-700 bg-slate-700 hover:border-slate-800 hover:bg-slate-800",
-};
 
 interface CategoryDropdownProps {
   id?: string;
@@ -43,12 +19,7 @@ interface CategoryDropdownProps {
   includeAll?: boolean;
   allLabel?: string;
   listLabel?: string;
-  options?: Array<{
-    id: string;
-    name: string;
-    value: string;
-    color?: VocabularyCategoryColor | null;
-  }>;
+  options?: CategoryDropdownOption[];
   fullWidth?: boolean;
 }
 
@@ -84,12 +55,7 @@ export function CategoryDropdown({
   }, [words]);
   const getFallbackImage = (name: string) =>
     wordImagesByCategory.get(name.trim().toLocaleLowerCase());
-  const options: Array<{
-    id: string;
-    name: string;
-    value: string;
-    color?: VocabularyCategoryColor | null;
-  }> = [
+  const options: CategoryDropdownOption[] = [
     ...(includeAll
       ? [{ id: "all-categories", name: allLabel, value: "all", color: null }]
       : []),
@@ -158,57 +124,19 @@ export function CategoryDropdown({
         />
       </button>
 
-      {isOpen && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={listLabel}
-          className="hide-scrollbar absolute right-0 z-50 mt-2 max-h-72 w-full min-w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-slate-950/5"
-        >
-          <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            {listLabel}
-          </div>
-          {options.map((item, index) => {
-            const isSelected = item.value === category;
-            const isActive = index === activeIndex;
-            const itemColor = item.color;
-
-            return (
-              <div
-                key={item.id}
-                ref={(node) => {
-                  optionRefs.current[index] = node;
-                }}
-                role="option"
-                aria-selected={isSelected}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => chooseCategory(item.value)}
-                onFocus={() => setActiveIndex(index)}
-                onKeyDown={(event) => handleOptionKeyDown(event, index)}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus:outline-none ${
-                  isSelected && itemColor
-                    ? `${CATEGORY_TRIGGER_STYLES[itemColor]} font-semibold text-white`
-                    : isSelected
-                      ? "bg-slate-950 font-semibold text-white"
-                    : isActive
-                      ? "bg-slate-50 text-slate-900"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  {itemColor ? (
-                    <CategoryAvatar name={item.name} imagePath={categoriesByName.get(item.name)?.image_path} fallbackWordImagePath={getFallbackImage(item.name)} colorClass={CATEGORY_COLOR_STYLES[itemColor]} />
-                  ) : (
-                    <ListFilter size={14} className={isSelected ? "text-white/90" : "text-slate-400"} aria-hidden="true" />
-                  )}
-                  <span className="truncate">{item.name}</span>
-                </span>
-                {isSelected && <Check size={15} aria-hidden="true" className="shrink-0" />}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {isOpen && <CategoryDropdownOptionList
+        listboxId={listboxId}
+        listLabel={listLabel}
+        options={options}
+        category={category}
+        activeIndex={activeIndex}
+        categoriesByName={categoriesByName}
+        wordImagesByCategory={wordImagesByCategory}
+        optionRefs={optionRefs}
+        setActiveIndex={setActiveIndex}
+        chooseCategory={chooseCategory}
+        handleOptionKeyDown={handleOptionKeyDown}
+      />}
     </div>
   );
 }
