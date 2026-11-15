@@ -5,9 +5,9 @@ import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters
 import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
 import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
+import { useVocabularyContentPagination } from "@/hooks/useVocabularyContentPagination";
 import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
-import { getPageCount, getPageRange } from "@/lib/pagination";
 
 export function useVocabularyContentExperience(isAdmin: boolean) {
   const {
@@ -45,14 +45,21 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   });
   const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });
 
-  const visibleTotalWords = pageData.loadedAuthVersion === authVersion ? pageData.totalWords : 0;
-  const pageCount = getPageCount(visibleTotalWords, pageSize);
-  const currentPage = Math.min(page, pageCount);
-  const pageRange = getPageRange(visibleTotalWords, currentPage, pageSize);
-  const currentPageWords = pageData.loadedAuthVersion === authVersion ? pageData.pageWords : [];
+  const pagination = useVocabularyContentPagination({
+    page,
+    pageSize,
+    authVersion,
+    loadedAuthVersion: pageData.loadedAuthVersion,
+    totalWords: pageData.totalWords,
+    pageWords: pageData.pageWords,
+    setPageWords: pageData.setPageWords,
+    setIsPageLoading: pageData.setIsPageLoading,
+    setPage,
+    setPageSize: filters.setPageSize,
+    refreshPage: pageData.refreshPage,
+  });
+  const { currentPageWords } = pagination;
   const selection = useVocabularySelection(currentPageWords, authVersion);
-  const firstVisibleWord = pageRange.first;
-  const lastVisibleWord = pageRange.last;
   const controller = useVocabularyContentController({
     selectedIds: selection.selectedIds,
     setSelectedIds: selection.setSelectedIds,
@@ -77,31 +84,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     return rows.map(mapVocabularyWordRow);
   }
 
-  function changePageSize(size: number) {
-    filters.setPageSize(size);
-    setPage(1);
-    pageData.setIsPageLoading(true);
-    pageData.setPageWords([]);
-  }
-
-  function goToPreviousPage() {
-    pageData.setIsPageLoading(true);
-    pageData.setPageWords([]);
-    setPage((current) => Math.max(1, current - 1));
-  }
-
-  function goToNextPage() {
-    pageData.setIsPageLoading(true);
-    pageData.setPageWords([]);
-    setPage((current) => Math.min(pageCount, current + 1));
-  }
-
-  function handleImportComplete() {
-    setPage(1);
-    pageData.setIsPageLoading(true);
-    pageData.refreshPage();
-  }
-
   return {
     categories,
     words,
@@ -114,15 +96,15 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     ...selection,
     ...controller,
     loadExportWords,
-    handleImportComplete,
-    changePageSize,
-    goToPreviousPage,
-    goToNextPage,
-    visibleTotalWords,
-    pageCount,
-    currentPage,
+    changePageSize: pagination.changePageSize,
+    goToPreviousPage: pagination.goToPreviousPage,
+    goToNextPage: pagination.goToNextPage,
+    visibleTotalWords: pagination.visibleTotalWords,
+    pageCount: pagination.pageCount,
+    currentPage: pagination.currentPage,
     currentPageWords,
-    firstVisibleWord,
-    lastVisibleWord,
+    firstVisibleWord: pagination.firstVisibleWord,
+    lastVisibleWord: pagination.lastVisibleWord,
+    handleImportComplete: pagination.handleImportComplete,
   };
 }
