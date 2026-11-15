@@ -24,11 +24,12 @@ import type {
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { getVocabularyWordPage, getVocabularyWords, getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
+import { getVocabularyWords, getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { useVocabularySelection } from "@/hooks/useVocabularySelection";
 import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
 import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
+import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -74,8 +75,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
   const [hasLegacyData, setHasLegacyData] = useState(false);
-  const [categoryExportCount, setCategoryExportCount] = useState(0);
-  const [isExportCountLoading, setIsExportCountLoading] = useState(false);
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -107,6 +106,16 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       status: status === "all" ? null : status,
     },
     onPageOutOfRange: setPage,
+  });
+  const {
+    count: categoryExportCount,
+    isLoading: isExportCountLoading,
+    setIsLoading: setIsExportCountLoading,
+  } = useVocabularyCategoryExportCount({
+    authVersion,
+    categories,
+    pageWordCount: pageWords.length,
+    selectedCategory,
   });
 
   async function handleImportVocabulary() {
@@ -174,28 +183,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     currentPage * pageSize,
     visibleTotalWords
   );
-
-  useEffect(() => {
-    if (selectedCategory === "All") return;
-    let cancelled = false;
-    void getVocabularyWordPage({
-      page: 1,
-      pageSize: 1,
-      search: "",
-      category: selectedCategory,
-    }).then(({ total }) => {
-      if (!cancelled) {
-        setCategoryExportCount(total);
-        setIsExportCountLoading(false);
-      }
-    }).catch(() => {
-      if (!cancelled) {
-        setCategoryExportCount(0);
-        setIsExportCountLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [authVersion, categories, pageWords.length, selectedCategory]);
 
   function handleOpenAdd() {
     setEditingWord(null);
