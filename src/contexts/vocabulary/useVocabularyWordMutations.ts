@@ -1,5 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
+import { getErrorMessage } from "@/lib/errors";
 import {
   updateVocabularyWord,
 } from "@/lib/supabase/vocabulary";
@@ -39,7 +40,7 @@ export function useVocabularyWordMutations({
       return true;
     } catch (error) {
       console.error("Supabase addWord error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to add word.");
+      toast.error(getErrorMessage(error, "Failed to add word."));
       return false;
     }
   }

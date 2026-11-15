@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
+import { getErrorMessage } from "@/lib/errors";
 
 function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   return {
@@ -47,7 +48,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
       const nicknames = await getProfileNicknames(adminClient, users);
       return NextResponse.json({ users: users.map((user) => mapAdminUser(user, nicknames.get(user.id))) });
     } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load user profiles." }, { status: 400 });
+      return NextResponse.json({ error: getErrorMessage(error, "Could not load user profiles.") }, { status: 400 });
     }
   }
 
@@ -66,7 +67,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
       try {
         profileNicknames = await getProfileNicknames(adminClient, data.users);
       } catch (profileError) {
-        return NextResponse.json({ error: profileError instanceof Error ? profileError.message : "Could not load user profiles." }, { status: 400 });
+        return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
       }
       for (const user of data.users) {
         const nickname = profileNicknames.get(user.id) ?? (typeof user.user_metadata.nickname === "string" ? user.user_metadata.nickname : "");
@@ -87,6 +88,6 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
     const nicknames = await getProfileNicknames(adminClient, data.users);
     return NextResponse.json({ users: data.users.map((user) => mapAdminUser(user, nicknames.get(user.id))), total: data.total, page, pageSize });
   } catch (profileError) {
-    return NextResponse.json({ error: profileError instanceof Error ? profileError.message : "Could not load user profiles." }, { status: 400 });
+    return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
   }
 }
