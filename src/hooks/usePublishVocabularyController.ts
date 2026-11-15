@@ -45,34 +45,42 @@ export function usePublishVocabularyController() {
     setStatus,
   });
 
-  async function sendCategoryRequests() {
-    if (!selection.selectedCategories.length || busy) return;
+  async function sendRequests<T>(
+    selected: T[],
+    publish: (item: T) => Promise<void>,
+    clearSelection: () => void,
+    fallbackMessage: string,
+  ) {
+    if (!selected.length || busy) return;
     setBusy(true);
     setStatus("");
     try {
-      for (const item of selection.selectedCategories) await publishCategory(item);
-      selection.setSelectedCategories([]);
+      for (const item of selected) await publish(item);
+      clearSelection();
       await refreshRequests();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not send category requests.");
+      toast.error(error instanceof Error ? error.message : fallbackMessage);
     } finally {
       setBusy(false);
     }
   }
 
-  async function sendWordRequests() {
-    if (!selection.selectedWordIds.length || busy) return;
-    setBusy(true);
-    setStatus("");
-    try {
-      for (const item of selection.selectedWordIds) await publishWord(item);
-      selection.setSelectedWordIds([]);
-      await refreshRequests();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not send word requests.");
-    } finally {
-      setBusy(false);
-    }
+  function sendCategoryRequests() {
+    return sendRequests(
+      selection.selectedCategories,
+      publishCategory,
+      () => selection.setSelectedCategories([]),
+      "Could not send category requests.",
+    );
+  }
+
+  function sendWordRequests() {
+    return sendRequests(
+      selection.selectedWordIds,
+      publishWord,
+      () => selection.setSelectedWordIds([]),
+      "Could not send word requests.",
+    );
   }
 
   return {
