@@ -1,14 +1,11 @@
 "use client";
 
-import { Bell, Eye, Info, MessageSquareText, Pencil, Search, Send, Users } from "lucide-react";
+import { Bell, Eye, Info, MessageSquareText, Pencil, Send, Users } from "lucide-react";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { useAdminNotificationComposerController, type AdminNotificationRecipient } from "@/hooks/useAdminNotificationComposerController";
-
-function recipientInitials(recipient: AdminNotificationRecipient) {
-  return (recipient.nickname || recipient.email || "U").trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase() || "U";
-}
+import { useAdminNotificationComposerController } from "@/hooks/useAdminNotificationComposerController";
+import { AdminNotificationRecipientPicker, recipientInitials } from "@/components/admin/AdminNotificationRecipientPicker";
 
 export function AdminNotificationComposer({ currentUserId }: { currentUserId: string }) {
   const {
@@ -23,15 +20,17 @@ export function AdminNotificationComposer({ currentUserId }: { currentUserId: st
     {notice && <AutoDismissMessage key={notice} variant="success" className="mb-4">{notice}</AutoDismissMessage>}
     <form onSubmit={(event) => void sendNotification(event)} className="admin-notification-layout">
       <section className="admin-notification-form-card">
-        <div className="admin-notification-section-heading"><span className="admin-notification-heading-icon"><Users size={22} /></span><div><h2>Recipients</h2><p>Choose who should receive this notification.</p></div></div>
-        <div className="admin-recipient-modes">
-          <label className={!allUsers ? "is-selected" : ""}><input type="radio" name="recipient-mode" checked={!allUsers} onChange={() => setAllUsers(false)} />Choose users</label>
-          <label className={allUsers ? "is-selected" : ""}><input type="radio" name="recipient-mode" checked={allUsers} onChange={() => setAllUsers(true)} />All users ({recipients.length})</label>
-        </div>
-        {!allUsers && <div className="admin-recipient-list">
-          <label className="admin-recipient-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users…" aria-label="Search recipients" /></label>
-          {loading ? <p className="p-4 text-sm text-slate-500">Loading users…</p> : <div className="admin-recipient-scroll">{filteredRecipients.map((recipient) => <label key={recipient.id} className="admin-recipient-row"><input type="checkbox" checked={selected.includes(recipient.id)} onChange={(event) => toggleRecipient(recipient.id, event.target.checked)} /><span className="admin-recipient-avatar">{recipientInitials(recipient)}</span><span className="min-w-0"><span className="block truncate font-semibold text-slate-800">{recipient.nickname || recipient.email || "User"}</span><span className="block truncate text-xs text-slate-500">{recipient.email}</span></span></label>)}{filteredRecipients.length === 0 && <p className="p-4 text-sm text-slate-500">No matching users.</p>}</div>}
-        </div>}
+        <AdminNotificationRecipientPicker
+          recipients={recipients}
+          allUsers={allUsers}
+          onAllUsersChange={setAllUsers}
+          search={search}
+          onSearchChange={setSearch}
+          loading={loading}
+          filteredRecipients={filteredRecipients}
+          selected={selected}
+          onRecipientToggle={toggleRecipient}
+        />
         <label className="admin-notification-field admin-title-field"><span className="admin-notification-field-icon"><Pencil size={19} /></span><span className="admin-notification-field-label">Title</span><input required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Notification title" /></label>
         <label className="admin-notification-field admin-message-field"><span className="admin-notification-field-icon"><MessageSquareText size={19} /></span><span className="admin-notification-field-label">Message</span><textarea required maxLength={2000} rows={4} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write your message…" /><span className="admin-notification-counter">{message.length}/2000</span></label>
         <div className="admin-notification-submit"><p>{allUsers ? `${recipients.length} recipient(s)` : `${selected.length} selected`}</p><Button type="submit" disabled={sending || loading || recipients.length === 0 || (!allUsers && selected.length === 0)}><Send size={16} />{sending ? "Sending…" : "Send notification"}</Button></div>
