@@ -3,12 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import {
-  loadPublicSharedVocabulary,
-  mapPublicCategories,
-  mapPublicWords,
-} from "@/lib/vocabulary/public-shared-vocabulary";
-import { loadAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store";
-import { mapAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store-mapping";
+  loadAuthenticatedVocabularyView,
+  loadGuestVocabularySnapshot,
+} from "@/lib/supabase/vocabulary-store-snapshots";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
 import { useVocabularyCategoryData } from "@/contexts/vocabulary/useVocabularyCategoryData";
@@ -52,10 +49,10 @@ export function useVocabularyStoreData() {
       setCategoriesLoaded(true);
       setIsLoaded(true);
       try {
-        const shared = await loadPublicSharedVocabulary();
+        const snapshot = await loadGuestVocabularySnapshot();
         if (!isCurrentRequest()) return;
-        setWords([...defaultVocabularyWords, ...mapPublicWords(shared)]);
-        setCategories(mapPublicCategories(shared));
+        setWords(snapshot.words);
+        setCategories(snapshot.categories);
       } catch (error) {
         console.error("Could not load guest shared vocabulary:", error);
       }
@@ -71,14 +68,13 @@ export function useVocabularyStoreData() {
         setIsLoaded(false);
       }
 
-      const result = await loadAuthenticatedVocabularySnapshot(supabase, userId);
+      const result = await loadAuthenticatedVocabularyView(supabase, userId);
       if (!isCurrentRequest()) return;
       if (result.communityCategoriesError || result.communityWordsError) {
         console.error("Could not load published community vocabulary:", result.communityCategoriesError ?? result.communityWordsError);
       }
-      const mappedVocabulary = mapAuthenticatedVocabularySnapshot(result);
-      setWords(mappedVocabulary.words);
-      setCategories(mappedVocabulary.categories);
+      setWords(result.words);
+      setCategories(result.categories);
       setCategoriesLoaded(true);
       setIsLoaded(true);
     }
