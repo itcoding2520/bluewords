@@ -4,8 +4,13 @@ import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/defa
 import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
 import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
 import { useAdminCategoryManagementActions } from "@/hooks/useAdminCategoryManagementActions";
-import type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
+import type { CategoryTab } from "@/lib/admin-category-data";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import {
+  deriveAdminCategoryDetails,
+  deriveAdminCategorySelection,
+  indexPublishedCategories,
+} from "@/lib/admin-category-management-view";
 
 export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
@@ -41,30 +46,23 @@ export function useAdminCategoryManagementController() {
     setError,
     refresh,
   } = useAdminCategoryListData(supabase);
-  const publishedCategoriesByName = useMemo(() => {
-    const categoriesByName = new Map<string, CommunityCategory>();
-    for (const category of communityCategories) {
-      if (category.status !== "published") continue;
-      const key = normalizeVocabularyLabel(category.name);
-      if (!categoriesByName.has(key)) categoriesByName.set(key, category);
-    }
-    return categoriesByName;
-  }, [communityCategories]);
-
-  const customCategories = useMemo(
-    () => communityCategories.filter((category) =>
-      category.status === (activeTab === "pending" ? "pending" : "published")
-      && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
-    ),
-    [activeTab, communityCategories, defaultCategoryNames]
+  const publishedCategoriesByName = useMemo(
+    () => indexPublishedCategories(communityCategories),
+    [communityCategories]
   );
-  const currentCategories = activeTab === "default" ? defaultVocabularyCategories : customCategories;
-  const visibleCategories = currentCategories.filter((category) =>
-    category.name.toLocaleLowerCase().includes(categorySearch.trim().toLocaleLowerCase())
-  );
-  const selectedCategory = currentCategories.find((category) => category.id === selectedId)
-    ?? currentCategories[0]
-    ?? null;
+  const {
+    customCategories,
+    currentCategories,
+    visibleCategories,
+    selectedCategory,
+  } = deriveAdminCategorySelection({
+    activeTab,
+    selectedId,
+    categorySearch,
+    communityCategories,
+    defaultCategories: defaultVocabularyCategories,
+    defaultCategoryNames,
+  });
   const {
     words,
     setWords,
@@ -84,39 +82,20 @@ export function useAdminCategoryManagementController() {
     setWords,
   });
 
-  const visibleCategoryRows = visibleCategories.map((category) => {
-    const shared = activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeVocabularyLabel(category.name))
-      : "owner_id" in category ? category : null;
-    const fallbackImage = activeTab === "default"
-      ? defaultWordsByCategory.get(category.name)?.find((word) => word.imagePath)?.imagePath
-      : category.id === selectedCategory?.id
-        ? words.find((word) => word.image_path)?.image_path
-        : undefined;
-
-    return {
-      category,
-      shared,
-      owner: shared ? emails[shared.owner_id] ?? "Loading owner…" : null,
-      fallbackImage,
-      defaultWordCount: activeTab === "default"
-        ? defaultWordsByCategory.get(category.name)?.length ?? 0
-        : null,
-      createdAt: "owner_id" in category ? category.created_at : null,
-    };
+  const {
+    visibleCategoryRows,
+    defaultWords,
+    selectedSharedCategory,
+    selectedFallbackImage,
+  } = deriveAdminCategoryDetails({
+    activeTab,
+    visibleCategories,
+    selectedCategory,
+    publishedCategoriesByName,
+    defaultWordsByCategory,
+    emails,
+    words,
   });
-
-  const defaultWords = activeTab === "default" && selectedCategory
-    ? defaultWordsByCategory.get(selectedCategory.name) ?? []
-    : [];
-  const selectedSharedCategory = selectedCategory
-    ? activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
-      : "owner_id" in selectedCategory ? selectedCategory : null
-    : null;
-  const selectedFallbackImage = defaultWords.find((word) => word.imagePath)?.imagePath
-    ?? words.find((word) => word.image_path)?.image_path
-    ?? null;
 
   return {
     activeTab,
