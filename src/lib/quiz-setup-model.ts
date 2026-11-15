@@ -1,4 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import { isUncategorizedVocabularyCategory } from "@/lib/vocabulary/category-visibility";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { QuizQuestion } from "@/lib/quiz-model";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
@@ -25,7 +26,7 @@ export function buildQuizCategoryOptions(
       wordImagesByCategory.set(word.category, word.imagePath);
     }
   }
-  const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
+  const visibleCategories = categories.filter((item) => !isUncategorizedVocabularyCategory(item.name));
   return [
     { id: "all-categories", name: "All categories", value: "all", color: "blue", imagePath: firstWordImage },
     ...visibleCategories.map((item) => ({

@@ -1,4 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import { isUncategorizedVocabularyCategory } from "@/lib/vocabulary/category-visibility";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 
@@ -62,7 +63,7 @@ export function buildWordSearchCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[]
 ): WordSearchCategoryOption[] {
-  const visibleCategories = categories.filter((item) => item.name.trim().toLowerCase() !== "uncategorized");
+  const visibleCategories = categories.filter((item) => !isUncategorizedVocabularyCategory(item.name));
   return [
     { id: "all-categories", name: "All categories", value: "all", color: "blue", imagePath: null },
     ...visibleCategories.map((item) => ({
