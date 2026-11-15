@@ -1,25 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import {
-  type VocabularyWord,
-} from "@/data/vocabulary";
-
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyPagination } from "./VocabularyPagination";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { CommunityVocabulary } from "./CommunityVocabulary";
-import type {
-  CategoryFilter,
-  VocabularyStatusFilter,
-} from "./VocabularyToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { useVocabularySelection } from "@/hooks/useVocabularySelection";
@@ -27,6 +16,7 @@ import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
 import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
 import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
 import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
+import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -38,7 +28,6 @@ const CategoryManagementPanel = dynamic(() => import("./CategoryManagementPanel"
 const VocabularyCsvTools = dynamic(() => import("./VocabularyCsvTools").then((module) => module.VocabularyCsvTools));
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
-  const confirmDialog = useConfirmDialog();
   const {
     categories,
     words,
@@ -64,12 +53,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     debouncedSearch,
     selectedCategory,
   } = useVocabularyContentFilters(categories);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
-  const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const { pageWords, setPageWords, loadedAuthVersion, totalWords, isPageLoading, setIsPageLoading, refreshPage } = useVocabularyPageData({
     authVersion,
     categories,
@@ -121,137 +104,43 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     currentPage * pageSize,
     visibleTotalWords
   );
-
-  function handleOpenAdd() {
-    setEditingWord(null);
-    setIsFormOpen(true);
-  }
-
-  function handleEditWord(word: VocabularyWord) {
-    setEditingWord(word);
-    setIsFormOpen(true);
-  }
-
-  function handleCloseForm() {
-    setIsFormOpen(false);
-    setEditingWord(null);
-  }
-
-  function handleDeleteWord(word: VocabularyWord) {
-    setDeletingWord(word);
-  }
-
-  function handleSearchChange(value: string) {
-    setSearch(value);
-    setIsPageLoading(true);
-    setPageWords([]);
-    setPage(1);
-    setSelectedIds(new Set());
-  }
-
-  function handleCategoryChange(value: CategoryFilter) {
-    setCategory(value);
-    setIsPageLoading(true);
-    setIsExportCountLoading(value !== "All");
-    setPageWords([]);
-    setPage(1);
-    setSelectedIds(new Set());
-  }
-
-  function handleStatusChange(value: VocabularyStatusFilter) {
-    setStatus(value);
-    setIsPageLoading(true);
-    setPageWords([]);
-    setPage(1);
-    setSelectedIds(new Set());
-  }
-
-  async function handleBulkDelete() {
-    if (selectedIds.size === 0 || isBulkDeleting) return;
-
-    const count = selectedIds.size;
-    const confirmed = await confirmDialog({
-      title: `Delete ${count} ${count === 1 ? "word" : "words"}?`,
-      description: "This action cannot be undone.",
-      confirmLabel: "Delete",
-    });
-    if (!confirmed) return;
-
-    setIsBulkDeleting(true);
-    try {
-      const deletedCount = await deleteWords([...selectedIds]);
-      if (deletedCount > 0) {
-        setSelectedIds(new Set());
-        setIsPageLoading(true);
-        refreshPage();
-        toast.success(
-          `Deleted ${deletedCount} ${deletedCount === 1 ? "word" : "words"}.`
-        );
-      }
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  }
-
-  
-  async function handleConfirmDelete() {
-    if (!deletingWord || isSubmitting) return;
-
-    setIsSubmitting(true);
-
-    try {
-      const success = await deleteWord(deletingWord.id);
-
-      if (success) {
-        setIsPageLoading(true);
-        setPageWords([]);
-        refreshPage();
-        setSelectedIds((current) => {
-          const next = new Set(current);
-          next.delete(deletingWord.id);
-          return next;
-        });
-        setDeletingWord(null);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleSubmitWord(
-    submittedWord: VocabularyWord
-  ): Promise<boolean> {
-    if (isSubmitting) return false;
-
-    setIsSubmitting(true);
-
-    try {
-      const success = editingWord
-        ? await updateWord(submittedWord)
-        : await addWord(submittedWord);
-
-      if (success) {
-        setPage(1);
-        setIsPageLoading(true);
-        setPageWords([]);
-        refreshPage();
-        handleCloseForm();
-      }
-      return success;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleToggleMastered(id: string, status: VocabularyWord["status"]) {
-    const success = await toggleMastered(id, status);
-    if (success) {
-      setIsPageLoading(true);
-      setPageWords([]);
-      refreshPage();
-    }
-    return success;
-  }
+  const {
+    isFormOpen,
+    isCategoriesOpen,
+    setIsCategoriesOpen,
+    editingWord,
+    deletingWord,
+    setDeletingWord,
+    isSubmitting,
+    isBulkDeleting,
+    handleOpenAdd,
+    handleEditWord,
+    handleCloseForm,
+    handleDeleteWord,
+    handleSearchChange,
+    handleCategoryChange,
+    handleStatusChange,
+    handleBulkDelete,
+    handleConfirmDelete,
+    handleSubmitWord,
+    handleToggleMastered,
+  } = useVocabularyContentController({
+    selectedIds,
+    setSelectedIds,
+    setPageWords,
+    setIsPageLoading,
+    setPage,
+    setSearch,
+    setCategory,
+    setStatus,
+    setIsExportCountLoading,
+    refreshPage,
+    addWord,
+    updateWord,
+    deleteWord,
+    deleteWords,
+    toggleMastered,
+  });
 
 
   if (!categoriesLoaded) {
