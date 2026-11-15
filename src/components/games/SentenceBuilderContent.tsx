@@ -9,7 +9,7 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import Image from "next/image";
 import { sentenceBuilderQuestionCounts, useSentenceBuilderController } from "@/hooks/useSentenceBuilderController";
-import type { SentenceDifficulty } from "@/lib/supabase/sentence-builder";
+import type { SentenceDifficulty } from "@/lib/sentence-builder";
 
 const icons: Record<string, string> = { apple: "🍎", banana: "🍌", cat: "🐱", dog: "🐶", book: "📚", sun: "☀️", water: "💧", milk: "🥛", ball: "⚽", girl: "👧", boy: "👦", school: "🏫", flower: "🌸", bird: "🐦", fish: "🐟", car: "🚗", tree: "🌳" };
 function SentencePicture({ keyword, questionId }: { keyword: string; questionId: string }) {

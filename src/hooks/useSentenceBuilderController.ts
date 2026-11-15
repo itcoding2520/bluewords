@@ -5,7 +5,8 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
 import { shuffle } from "@/lib/random";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
-import { loadSentenceBuilderQuestions, type SentenceBuilderQuestion, type SentenceDifficulty } from "@/lib/supabase/sentence-builder";
+import { loadSentenceBuilderQuestions } from "@/lib/supabase/sentence-builder";
+import type { SentenceBuilderQuestion, SentenceDifficulty } from "@/lib/sentence-builder";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 
 type Phase = "setup" | "playing" | "results";

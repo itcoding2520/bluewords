@@ -5,16 +5,17 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { downloadCsvFile } from "@/lib/download-csv";
 import {
-  exportSentenceBuilderCsv,
   importSentenceBuilderQuestions,
   loadSentenceBuilderQuestions,
-  parseSentenceBuilderCsv,
   removeSentenceBuilderQuestion,
   saveSentenceBuilderQuestion,
-  type SentenceBuilderQuestion,
-  type SentenceDifficulty,
-  type SentenceQuestionInput,
 } from "@/lib/supabase/sentence-builder";
+import { exportSentenceBuilderCsv, parseSentenceBuilderCsv } from "@/lib/sentence-builder-csv";
+import type {
+  SentenceBuilderQuestion,
+  SentenceDifficulty,
+  SentenceQuestionInput,
+} from "@/lib/sentence-builder";
 
 const empty: SentenceQuestionInput = { question_id: "", difficulty: "easy", category: "", prompt_vi: "", answer_sentence: "", answer_tokens: [], distractor_tokens: [], image_keyword: "", vocabulary_words: [], is_active: true };
 
