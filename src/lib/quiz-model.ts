@@ -1,6 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import type { QuizMode } from "@/types/quiz";
 
-export type QuizMode = "type-word" | "choose-meaning";
+export type { QuizMode };
 export type QuizPhase = "setup" | "playing" | "results";
 export type QuizTab = "play" | "history";
 export type QuizSaveState = "idle" | "saving" | "saved" | "error";

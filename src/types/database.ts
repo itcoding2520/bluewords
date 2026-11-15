@@ -1,5 +1,6 @@
 import type { PartOfSpeech, VocabularyCategoryColor } from "@/config/vocabulary";
 import type { DifficultyLevel } from "@/types/difficulty";
+import type { QuizMode } from "@/types/quiz";
 
 export type VocabularyCategoryRow = {
   id: string;
@@ -90,7 +91,7 @@ export type VocabularyReviewScheduleUpsert = Pick<
   "user_id" | "vocabulary_word_id" | "due_at" | "interval_days" | "repetitions" | "last_reviewed_at"
 >;
 
-export type VocabularyQuizMode = "type-word" | "choose-meaning";
+export type VocabularyQuizMode = QuizMode;
 
 export type VocabularyQuizSessionRow = {
   id: string;

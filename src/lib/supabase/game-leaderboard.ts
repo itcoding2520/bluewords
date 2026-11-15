@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
-import type { WordSearchDifficulty } from "@/types/database";
+import type { VocabularyQuizMode, WordSearchDifficulty } from "@/types/database";
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
@@ -81,7 +81,7 @@ export async function getVocabularyGameLeaderboard(input: {
 }
 
 export async function getQuizLeaderboard(input: {
-  mode: "type-word" | "choose-meaning";
+  mode: VocabularyQuizMode;
   questionCount: 10 | 20 | 30;
 }): Promise<QuizLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_vocabulary_quiz_leaderboard", {

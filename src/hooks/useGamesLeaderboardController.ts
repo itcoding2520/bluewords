@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { DifficultyLevel } from "@/types/difficulty";
+import type { QuizMode } from "@/types/quiz";
 import {
   getQuizLeaderboard,
   getVocabularyGameLeaderboard,
@@ -10,7 +11,7 @@ import {
 } from "@/lib/supabase/game-leaderboard";
 
 export type LeaderboardGame = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
-export type LeaderboardQuizMode = "choose-meaning" | "type-word";
+export type LeaderboardQuizMode = QuizMode;
 export type LeaderboardDifficulty = DifficultyLevel;
 export type LeaderboardQuestionCount = 10 | 20 | 30;
 export type LeaderboardGridSize = 10 | 15 | 20;
