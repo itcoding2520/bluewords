@@ -21,16 +21,18 @@ export function useSituationalEnglishLessonAnswerActions({
   saving: boolean;
   recordPracticeOutcome: (item: Item, correct: boolean) => Promise<void>;
 }) {
-  async function recordMeaningAnswer(item: Item, selectedAnswer: string) {
+  async function recordChoiceAnswer(item: Item, selectedAnswer: string, expectedAnswer: string) {
     if (answer !== null || saving) return;
     setAnswer(selectedAnswer);
-    await recordPracticeOutcome(item, selectedAnswer === item.meaning_vi);
+    await recordPracticeOutcome(item, selectedAnswer === expectedAnswer);
+  }
+
+  async function recordMeaningAnswer(item: Item, selectedAnswer: string) {
+    await recordChoiceAnswer(item, selectedAnswer, item.meaning_vi);
   }
 
   async function recordListeningAnswer(item: Item, selectedAnswer: string) {
-    if (answer !== null || saving) return;
-    setAnswer(selectedAnswer);
-    await recordPracticeOutcome(item, selectedAnswer === item.example_vi);
+    await recordChoiceAnswer(item, selectedAnswer, item.example_vi);
   }
 
   async function submitSentenceDrill(selectedAnswer: string) {
