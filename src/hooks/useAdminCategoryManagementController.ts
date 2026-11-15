@@ -6,6 +6,8 @@ import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminCategories, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 
+export type { CommunityCategory } from "@/lib/admin-category-data";
+
 export type CategoryTab = "default" | "published" | "pending";
 
 export function useAdminCategoryManagementController() {
