@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 import type { AssessmentReviewQuestion } from "@/lib/assessments/types";
+import type { AssessmentSummary } from "@/lib/assignments/types";
 
-type AssessmentSummary = { title: string; difficulty: string };
-type AssessmentRecipient = { assessments: AssessmentSummary | AssessmentSummary[] };
+type AssessmentRecipient = { assessments: AssessmentSummary | AssessmentSummary[] | null };
 type AssessmentReviewAttempt = {
   id: string;
   attempt_number: number;
@@ -15,8 +15,18 @@ type AssessmentReviewAttempt = {
   elapsed_seconds: number;
   result: string;
   completed_at: string;
-  assessment_recipients: AssessmentRecipient | AssessmentRecipient[];
+  assessment_recipients: AssessmentRecipient | AssessmentRecipient[] | null;
 };
+
+function getAssessmentSummary(attempt: AssessmentReviewAttempt | null): AssessmentSummary | null {
+  if (!attempt) return null;
+  const recipient = Array.isArray(attempt.assessment_recipients)
+    ? attempt.assessment_recipients[0]
+    : attempt.assessment_recipients;
+  if (!recipient) return null;
+  const assessment = recipient.assessments;
+  return Array.isArray(assessment) ? assessment[0] ?? null : assessment;
+}
 
 export function useAssessmentReviewController(attemptId: string) {
   const [attempt, setAttempt] = useState<AssessmentReviewAttempt | null>(null);
@@ -36,5 +46,5 @@ export function useAssessmentReviewController(attemptId: string) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  return { attempt, error, isCorrectAnswer: areAssessmentAnswersEqual };
+  return { attempt, assessment: getAssessmentSummary(attempt), error, isCorrectAnswer: areAssessmentAnswersEqual };
 }

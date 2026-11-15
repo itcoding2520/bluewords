@@ -27,3 +27,8 @@ export type AssignmentHistoryEntry = {
   assignment: Assignment;
   attempt: AssignmentAttempt;
 };
+
+export type AssessmentSummary = {
+  title: string;
+  difficulty: string;
+};
