@@ -1,7 +1,8 @@
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient } from "@/lib/supabase/client";
-import { NOTIFICATION_LOOKBACK_MS, type NotificationRow } from "@/lib/notifications";
+import type { NotificationRow } from "@/lib/notifications";
+import { markNotificationRead as updateNotificationRead, markRecentNotificationsRead } from "@/lib/notifications-data";
 import { invalidateNotificationsCache } from "@/lib/notifications-cache.mjs";
 
 
@@ -23,8 +24,7 @@ export function useNotificationActions({
     const user = session?.user;
     if (!user) return;
     const now = new Date();
-    const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
-    const { error: updateError } = await supabase.from("notifications").update({ read_at: now.toISOString() }).eq("recipient_id", user.id).neq("kind", "assessment_assigned").gte("created_at", cutoff).lte("created_at", now.toISOString()).is("read_at", null);
+    const { error: updateError } = await markRecentNotificationsRead(supabase, user.id, now);
     if (updateError) setError(updateError.message);
     else {
       invalidateNotificationsCache(user.id);
@@ -39,12 +39,7 @@ export function useNotificationActions({
     const user = session?.user;
     if (!user) return;
     const readAt = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from("notifications")
-      .update({ read_at: readAt })
-      .eq("id", item.id)
-      .eq("recipient_id", user.id)
-      .is("read_at", null);
+    const { error: updateError } = await updateNotificationRead(supabase, user.id, item.id, readAt);
     if (updateError) {
       setError(updateError.message);
       return;
