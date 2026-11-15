@@ -5,9 +5,9 @@ import { Trash2 } from "lucide-react";
 import { VocabularyHeader } from "./VocabularyHeader";
 import { VocabularyList } from "./VocabularyList";
 import { VocabularyPagination } from "./VocabularyPagination";
-import { VocabularyToolbar } from "./VocabularyToolbar";
 import { CommunityVocabulary } from "./CommunityVocabulary";
 import { VocabularyLegacyImportNotice } from "./VocabularyLegacyImportNotice";
+import { VocabularyBrowserToolbar } from "./VocabularyBrowserToolbar";
 import { Button } from "@/components/ui/Button";
 import { useVocabularyContentExperience } from "@/hooks/useVocabularyContentExperience";
 
@@ -18,7 +18,6 @@ const LEGACY_IMPORT_NOTICE_ENABLED = false;
 const WordFormModal = dynamic(() => import("./WordFormModal").then((module) => module.WordFormModal));
 const DeleteConfirmModal = dynamic(() => import("./DeleteConfirmModal").then((module) => module.DeleteConfirmModal));
 const CategoryManagementPanel = dynamic(() => import("./CategoryManagementPanel").then((module) => module.CategoryManagementPanel));
-const VocabularyCsvTools = dynamic(() => import("./VocabularyCsvTools").then((module) => module.VocabularyCsvTools));
 
 export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const {
@@ -114,27 +113,21 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       )}
 
       <section className="vocabulary-words-section mt-5 rounded-[1.75rem] border border-blue-100/80 bg-white/80 p-3 shadow-[0_12px_35px_rgb(39_90_150/0.08)] backdrop-blur-sm sm:p-5">
-      <div className="vocabulary-toolbar-row flex flex-wrap items-center justify-between gap-3">
-      {isAdmin && <VocabularyCsvTools
+      <VocabularyBrowserToolbar
+        isAdmin={isAdmin}
         exportCount={selectedCategory === "All" ? currentPageWords.length : categoryExportCount}
         isExportCountLoading={isExportCountLoading}
         loadExportWords={loadExportWords}
         exportCategory={selectedCategory}
         categories={categories}
-        onImportComplete={handleImportComplete}
-      />}
-
-      <VocabularyToolbar
-        search={search}
-        category={selectedCategory}
-        status={status}
-        categories={categories}
         words={words}
+        search={search}
+        status={status}
         onSearchChange={handleSearchChange}
         onCategoryChange={handleCategoryChange}
         onStatusChange={handleStatusChange}
+        onImportComplete={handleImportComplete}
       />
-      </div>
 
       {loadedAuthVersion === authVersion && selectedIds.size > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
