@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { buildVocabularyGameCategoryOptions, type VocabularyGameCategoryOption } from "@/lib/vocabulary/game-category-options";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 
@@ -43,7 +44,7 @@ export function selectableWords(
   return words.flatMap((word) => {
     const normalized = normalizeWordSearchWord(word.word);
     if (
-      (category !== "all" && word.category !== category) ||
+      !matchesVocabularyCategory(word.category, category) ||
       normalized.length < MIN_WORD_LENGTH[difficulty] ||
       normalized.length > size ||
       seen.has(normalized)

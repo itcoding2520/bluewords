@@ -1,6 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export type MatchPair = {
   id: string;
@@ -11,9 +12,7 @@ export type MatchPair = {
 };
 
 export function buildWordMatchPairs(words: VocabularyWord[], category: string): MatchPair[] {
-  const eligibleWords = category === "all"
-    ? words
-    : words.filter((word) => word.category === category);
+  const eligibleWords = words.filter((word) => matchesVocabularyCategory(word.category, category));
   const usedWords = new Set<string>();
   const usedMatches = new Set<string>();
   return eligibleWords.flatMap((word) => {

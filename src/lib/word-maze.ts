@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { shuffle } from "@/lib/quiz-random";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export type MazeWord = {
   id: string;
@@ -18,7 +19,7 @@ export function buildWordMazeRound(words: VocabularyWord[], category: string): M
     const text = word.word.trim();
     const meaning = getPrimaryVocabularyMeaning(word);
     const meaningKey = normalizeVocabularyLabel(meaning);
-    if (!text || !meaning || (category !== "all" && word.category !== category)
+    if (!text || !meaning || !matchesVocabularyCategory(word.category, category)
       || seenWords.has(normalizeVocabularyLabel(text)) || seenMeanings.has(meaningKey)) return [];
     seenWords.add(normalizeVocabularyLabel(text));
     seenMeanings.add(meaningKey);

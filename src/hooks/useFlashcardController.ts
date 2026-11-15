@@ -1,5 +1,7 @@
 "use client";
 
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
+
 import { useMemo, useState } from "react";
 
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
@@ -38,7 +40,7 @@ export function useFlashcardController({
   } = useFlashcardReviewSchedules(isAuthenticated);
 
   const categoryWords = useMemo(
-    () => words.filter((word) => category === "all" || word.category === category),
+    () => words.filter((word) => matchesVocabularyCategory(word.category, category)),
     [category, words]
   );
 

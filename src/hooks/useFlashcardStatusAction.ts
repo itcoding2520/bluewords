@@ -1,3 +1,4 @@
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 
@@ -55,7 +56,7 @@ export function useFlashcardStatusAction({
         buildFlashcardDeck(
           words
             .map((word) => word.id === card.word.id ? { ...word, status: nextStatus } : word)
-            .filter((word) => word.status === nextStatus && (category === "all" || word.category === category))
+            .filter((word) => word.status === nextStatus && matchesVocabularyCategory(word.category, category))
         ),
         shuffleSeed
       );

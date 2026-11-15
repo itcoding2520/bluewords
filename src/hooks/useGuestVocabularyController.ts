@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { getPageCount, getPageItems } from "@/lib/pagination";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export const GUEST_VOCABULARY_PAGE_SIZE = 20;
 
@@ -14,7 +15,7 @@ export function useGuestVocabularyController() {
   const filteredWords = useMemo(() => {
     const matchesSearch = createVocabularySearchMatcher(search);
     return words.filter((word) => {
-      const matchesCategory = category === "all" || word.category === category;
+      const matchesCategory = matchesVocabularyCategory(word.category, category);
       const matchesQuery = matchesSearch(word.word, word.meaning);
       return matchesCategory && matchesQuery;
     });
