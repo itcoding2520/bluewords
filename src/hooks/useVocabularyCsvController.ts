@@ -8,21 +8,13 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { validateVocabularyImage } from "@/lib/supabase/vocabulary-images";
+import { matchVocabularyImportImages } from "@/lib/vocabulary-image-matching";
 import {
   MAX_VOCABULARY_IMPORT_WORDS,
   exportVocabularyCsv,
   previewVocabularyCsvImport,
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
-
-function normalizeImageName(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase()
-    .replace(/\.[^.]+$/, "")
-    .replace(/[^a-z0-9]/g, "");
-}
 
 export function useVocabularyCsvController({
   exportCount,
@@ -50,43 +42,12 @@ export function useVocabularyCsvController({
   const [exportOpen, setExportOpen] = useState(false);
 
   const imageMatch = useMemo(() => {
-    const supported = imageFiles.filter((file) => !validateVocabularyImage(file));
-    const invalidCount = imageFiles.length - supported.length;
-    const filesByName = new Map<string, File>();
-    const ambiguousNames = new Set<string>();
-
-    for (const file of supported) {
-      const key = normalizeImageName(file.name);
-      if (filesByName.has(key)) {
-        filesByName.delete(key);
-        ambiguousNames.add(key);
-      } else if (!ambiguousNames.has(key)) {
-        filesByName.set(key, file);
-      }
-    }
-
-    const imageFilesByWord = new Map<string, File>();
-    const importableNames = new Set((preview?.items ?? []).map((item) => normalizeImageName(item.word)));
-    const currentWordsByName = new Map(allWords.map((word) => [normalizeImageName(word.word), word]));
-    let alreadyHasImage = 0;
-
-    for (const [key, file] of filesByName) {
-      if (ambiguousNames.has(key)) continue;
-      const existingWord = currentWordsByName.get(key);
-      if (existingWord && !existingWord.imagePath) imageFilesByWord.set(key, file);
-      else if (existingWord?.imagePath) alreadyHasImage++;
-      else if (importableNames.has(key)) imageFilesByWord.set(key, file);
-    }
-
-    return {
-      imageFilesByWord,
-      matched: imageFilesByWord.size,
-      unmatched: [...filesByName.keys()].filter((key) =>
-        !importableNames.has(key) && !currentWordsByName.has(key)
-      ).length + ambiguousNames.size,
-      invalidCount,
-      alreadyHasImage,
-    };
+    return matchVocabularyImportImages(
+      imageFiles,
+      (preview?.items ?? []).map((item) => item.word),
+      allWords,
+      (file) => validateVocabularyImage(file) === null
+    );
   }, [allWords, imageFiles, preview]);
 
   async function openImport() {
