@@ -7,6 +7,7 @@ import { VocabularyList } from "./VocabularyList";
 import { VocabularyPagination } from "./VocabularyPagination";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { CommunityVocabulary } from "./CommunityVocabulary";
+import { VocabularyLegacyImportNotice } from "./VocabularyLegacyImportNotice";
 import { Button } from "@/components/ui/Button";
 import { useVocabularyContentExperience } from "@/hooks/useVocabularyContentExperience";
 
@@ -103,71 +104,13 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
       />
 
       {LEGACY_IMPORT_NOTICE_ENABLED && hasPendingImport && (
-        <div className="my-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                Have vocabulary from BlueWords v1.0?
-              </h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Import words saved in this browser to your account.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void handleLegacyPreviewToggle()}
-              disabled={isImporting}
-              className="rounded-lg cursor-pointer border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:opacity-50"
-            >
-              {showImportPreview ? "Hide preview" : "Preview import"}
-            </button>
-          </div>
-
-          {showImportPreview && importPreview && (
-            <div className="mt-4 border-t border-blue-100 pt-4">
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xl font-semibold text-slate-900">
-                    {importPreview.total}
-                  </p>
-                  <p className="text-xs text-slate-500">Old words</p>
-                </div>
-
-                <div>
-                  <p className="text-xl font-semibold text-slate-900">
-                    {importPreview.duplicates}
-                  </p>
-                  <p className="text-xs text-slate-500">Duplicates</p>
-                </div>
-
-                <div>
-                  <p className="text-xl font-semibold text-blue-700">
-                    {importPreview.ready.length}
-                  </p>
-                  <p className="text-xs text-slate-500">Ready to import</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">
-                  Your browser data will not be deleted.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => void handleImportVocabulary()}
-                  disabled={isImporting || importPreview.ready.length === 0}
-                  className="rounded-lg cursor-pointer bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isImporting
-                    ? "Importing..."
-                    : `Import ${importPreview.ready.length} words`}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <VocabularyLegacyImportNotice
+          importPreview={importPreview}
+          isImporting={isImporting}
+          showImportPreview={showImportPreview}
+          onTogglePreview={() => void handleLegacyPreviewToggle()}
+          onImport={() => void handleImportVocabulary()}
+        />
       )}
 
       <section className="vocabulary-words-section mt-5 rounded-[1.75rem] border border-blue-100/80 bg-white/80 p-3 shadow-[0_12px_35px_rgb(39_90_150/0.08)] backdrop-blur-sm sm:p-5">
