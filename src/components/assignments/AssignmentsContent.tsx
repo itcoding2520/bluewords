@@ -5,8 +5,7 @@ import { ArrowRight, BookOpenCheck, CalendarDays, CheckCircle2, History, Timer, 
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { formatDuration } from "@/lib/assignments/format-duration";
-import { formatDateTime } from "@/lib/formatDate";
-import { formatLocalDate } from "@/lib/formatDate";
+import { formatDateTime, formatLocalDate } from "@/lib/formatDate";
 import { useAssignmentsController } from "@/hooks/useAssignmentsController";
 
 const vietnamDateKey = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
