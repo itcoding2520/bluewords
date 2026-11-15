@@ -1,16 +1,16 @@
 "use client";
 
-import { BookOpen, Check, FolderOpen, LoaderCircle, Pencil, Plus, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
+import { BookOpen, FolderOpen, LoaderCircle, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
-import { CategoryAvatar, CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
+import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Select } from "@/components/ui/Select";
 import { useAdminReviewController } from "@/hooks/useAdminReviewController";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
-import { formatDateTime } from "@/lib/formatDate";
+import { AdminReviewPendingRequests } from "@/components/admin/AdminReviewPendingRequests";
 
 export function AdminReviewContent() {
   const {
@@ -30,11 +30,15 @@ export function AdminReviewContent() {
       <Button variant="secondary" onClick={() => void refresh()} disabled={loading}><RefreshCw size={17} /> Refresh</Button>
     </header>
     {error && <AutoDismissMessage key={error} variant="error" className="mb-4">{error}</AutoDismissMessage>}
-    {!loading && <div className="admin-review-stats"><article className="admin-review-stat-card is-categories"><span><FolderOpen size={25} /></span><div><h2>Categories ({categories.length})</h2><p>{categories.length ? "Waiting for admin review." : "No category requests."}</p></div><Sparkles size={19} className="admin-review-stat-sparkle" /></article><article className="admin-review-stat-card is-words"><span><BookOpen size={25} /></span><div><h2>Words ({words.length})</h2><p>{words.length ? "Waiting for admin review." : "No word requests."}</p></div><Sparkles size={19} className="admin-review-stat-sparkle" /></article></div>}
-    {loading ? <p className="py-10 text-center text-slate-500">Loading requests…</p> : <div className="admin-review-pending-grid grid gap-5 lg:grid-cols-2">
-      <section className="admin-review-pending-card is-categories"><div className="admin-review-section-title"><FolderOpen size={20} /><h2>Category requests</h2><span>{categories.length}</span></div>{categories.length === 0 ? <div className="admin-review-empty"><FolderOpen size={42} /><p>No category requests.</p><span>New community category submissions will appear here.</span></div> : <div className="mt-4 space-y-3">{categories.map((item) => <article key={item.id} className="admin-review-request-row"><div className="flex items-center gap-3"><CategoryAvatar name={item.name ?? ""} imagePath={item.image_path} /><div className="min-w-0"><p className="font-semibold text-slate-900">{item.name}</p><p className="mt-1 text-xs text-slate-500">By {ownerEmails[item.owner_id] ?? "Loading author…"} · Submitted {formatDateTime(item.created_at)}</p></div></div><div className="mt-3 flex gap-2"><Button onClick={() => void moderate("community_categories", item.id, "published")} disabled={busy === item.id}><Check size={15} /> Approve</Button><Button variant="secondary" onClick={() => void moderate("community_categories", item.id, "rejected")} disabled={busy === item.id}><X size={15} /> Reject</Button></div></article>)}</div>}</section>
-      <section className="admin-review-pending-card is-words"><div className="admin-review-section-title"><BookOpen size={20} /><h2>Word requests</h2><span>{words.length}</span></div>{words.length === 0 ? <div className="admin-review-empty"><BookOpen size={42} /><p>No word requests.</p><span>New vocabulary submissions will appear here.</span></div> : <div className="mt-4 space-y-3">{words.map((item) => <article key={item.id} className="admin-review-request-row"><p className="font-semibold text-slate-900">{item.word}</p><p className="mt-1 text-sm text-slate-600">{item.meaning}</p><div className="mt-2 flex items-center gap-2 text-sm text-slate-600"><CategoryAvatar name={item.category_name ?? ""} imagePath={item.category_image_path} colorClass="bg-slate-200" />{item.category_name}</div><p className="mt-1 text-xs text-slate-500">Requested by {ownerEmails[item.owner_id] ?? "Loading author…"} · Submitted {formatDateTime(item.created_at)}</p><p className={`mt-2 text-xs font-medium ${item.category_status === "published" ? "text-emerald-700" : "text-amber-700"}`}>Category: {item.category_status === "published" ? "Approved" : item.category_status === "rejected" ? "Rejected" : "Waiting for approval"}</p>{blockedWordId === item.id && item.category_status !== "published" && <p role="alert" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{item.category_status === "rejected" ? `Category “${item.category_name}” was rejected. Review or restore that category before approving this word.` : `Approve category “${item.category_name}” before approving this word.`}</p>}<div className="mt-3 flex gap-2"><Button onClick={() => void moderate("community_words", item.id, "published")} disabled={busy === item.id}><Check size={15} /> Approve</Button><Button variant="secondary" onClick={() => void moderate("community_words", item.id, "rejected")} disabled={busy === item.id}><X size={15} /> Reject</Button></div></article>)}</div>}</section>
-    </div>}
+    <AdminReviewPendingRequests
+      categories={categories}
+      words={words}
+      loading={loading}
+      busy={busy}
+      blockedWordId={blockedWordId}
+      ownerEmails={ownerEmails}
+      onModerate={moderate}
+    />
     <section className="admin-review-published mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
       <h2 className="admin-review-published-title"><Sparkles size={22} /> Published custom vocabulary</h2>
       <form className="admin-review-category-form mt-4 flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); void addPublishedCategory(); }}><input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="New category name" aria-label="New category name" className="min-w-48 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" /><Button type="submit"><Plus size={16} /> Add category</Button></form>
