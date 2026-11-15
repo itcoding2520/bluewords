@@ -11,8 +11,10 @@ import { AssessmentProgressNavigation } from "@/components/assignments/Assessmen
 
 export function AssessmentRunner({ attemptId }: { attemptId: string }) {
   const {
-    attempt, answers, sentenceTiles, current, setCurrent, seconds, loading, submitting, error,
-    setAnswer, toggleSentenceTile, clearSentence, submit,
+    test: { attempt, loading, error },
+    progress: { current, setCurrent, seconds, submitting },
+    answers: { answers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence },
+    actions: { submit },
   } = useAssessmentRunnerController(attemptId);
 
   if (loading) return <div className="assessment-loading">Loading your test…</div>;

@@ -57,7 +57,9 @@ export function useAssessmentRunnerController(attemptId: string) {
   }
 
   return {
-    attempt, answers, sentenceTiles, current, setCurrent, seconds, loading, submitting, error,
-    load, setAnswer, toggleSentenceTile, clearSentence, submit,
+    test: { attempt, loading, error },
+    progress: { current, setCurrent, seconds, submitting },
+    answers: { answers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence },
+    actions: { load, submit },
   };
 }
