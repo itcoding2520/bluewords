@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Clock3, Flag, Heart, Map, RotateCcw, ShieldAlert, Sparkles, Star } from "lucide-react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -9,7 +9,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
-import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
+import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 
 type Phase = "setup" | "playing" | "results";
 type MazeWord = { id: string; word: string; meaning: string; category: string; choices: string[] };
@@ -92,43 +92,17 @@ export function WordMazeContent() {
   const [won, setWon] = useState(false);
   const [moves, setMoves] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [saveError, setSaveError] = useState("");
-  const [saveRetryCount, setSaveRetryCount] = useState(0);
-  const saveStartedRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-    const updateClock = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    updateClock();
-    const interval = window.setInterval(updateClock, 1000);
-    return () => window.clearInterval(interval);
-  }, [phase, startedAt]);
-
-  useEffect(() => {
-    if (!isAuthenticated || phase !== "results" || !won || startedAt === null || saveStartedRef.current === startedAt) return;
-    saveStartedRef.current = startedAt;
-    const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
-    void saveVocabularyGameSession({
-      gameType: "word-maze",
-      roundSize: round.length,
-      score,
-      correctCount: round.length,
-      moves,
-      durationSeconds,
-      startedAt: new Date(startedAt).toISOString(),
-      completedAt: new Date(completedAt).toISOString(),
-    }).then(() => setSaveState("saved")).catch((error: unknown) => {
-      saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this result.");
-    });
-  }, [isAuthenticated, moves, phase, round.length, saveRetryCount, score, startedAt, won]);
+  const { elapsedSeconds, saveState, saveError, resetSession, retrySave } = useGameSessionTracking({
+    isAuthenticated,
+    isPlaying: phase === "playing",
+    shouldSubmit: phase === "results" && won,
+    gameType: "word-maze",
+    roundSize: round.length,
+    score,
+    correctCount: round.length,
+    moves,
+    startedAt,
+  });
 
   const candidates = useMemo(() => {
     const meanings = new Set<string>();
@@ -159,11 +133,8 @@ export function WordMazeContent() {
     setSelectedChoice(null);
     setWon(false);
     setMoves(0);
+    resetSession();
     setStartedAt(Date.now());
-    setElapsedSeconds(0);
-    setSaveState("idle");
-    setSaveError("");
-    saveStartedRef.current = null;
     setPhase("playing");
   }
 
@@ -254,7 +225,7 @@ export function WordMazeContent() {
           <div className="word-maze-result-score"><Star size={22} fill="currentColor" /> {score} <small>points</small></div>
           <p className="word-maze-result-progress">{solvedCount} of {round.length} paths opened · {lives} lives left</p>
           <p className="word-maze-result-time"><Clock3 size={16} /> Completed in {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, "0")}</p>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={() => setSaveRetryCount((count) => count + 1)}>Try again</button>}</p>}
+          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
           <button type="button" className="word-maze-primary" onClick={startGame}><RotateCcw size={19} /> Play again</button>
         </Card>
       )}

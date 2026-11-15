@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CaseSensitive, Check, Clock3, Delete, Lightbulb, RotateCcw, Sparkles, Star, Trophy } from "lucide-react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -11,7 +11,7 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
-import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
+import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 
 type Phase = "setup" | "playing" | "results";
 type ScrambleWord = { id: string; word: string; answer: string; meaning: string; category: string; imagePath: string | null; imageUrl: string | null };
@@ -77,43 +77,17 @@ export function WordScrambleContent() {
   const [feedback, setFeedback] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [saveError, setSaveError] = useState("");
-  const [saveRetryCount, setSaveRetryCount] = useState(0);
-  const saveStartedRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-    const updateClock = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    updateClock();
-    const interval = window.setInterval(updateClock, 1000);
-    return () => window.clearInterval(interval);
-  }, [phase, startedAt]);
-
-  useEffect(() => {
-    if (!isAuthenticated || phase !== "results" || startedAt === null || saveStartedRef.current === startedAt) return;
-    saveStartedRef.current = startedAt;
-    const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
-    void saveVocabularyGameSession({
-      gameType: "word-scramble",
-      roundSize: round.length,
-      score,
-      correctCount: round.length,
-      moves,
-      durationSeconds,
-      startedAt: new Date(startedAt).toISOString(),
-      completedAt: new Date(completedAt).toISOString(),
-    }).then(() => setSaveState("saved")).catch((error: unknown) => {
-      saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this result.");
-    });
-  }, [isAuthenticated, moves, phase, round.length, saveRetryCount, score, startedAt]);
+  const { elapsedSeconds, setElapsedSeconds, saveState, saveError, resetSession, retrySave } = useGameSessionTracking({
+    isAuthenticated,
+    isPlaying: phase === "playing",
+    shouldSubmit: phase === "results",
+    gameType: "word-scramble",
+    roundSize: round.length,
+    score,
+    correctCount: round.length,
+    moves,
+    startedAt,
+  });
 
   const candidates = useMemo(() => {
     const seen = new Set<string>();
@@ -147,11 +121,8 @@ export function WordScrambleContent() {
     setHintUsed(false);
     setFeedback("");
     setIsCorrect(false);
+    resetSession();
     setStartedAt(Date.now());
-    saveStartedRef.current = null;
-    setSaveState("idle");
-    setSaveError("");
-    setElapsedSeconds(0);
     setPhase("playing");
   }
 
@@ -278,7 +249,7 @@ export function WordScrambleContent() {
         <Card className="word-scramble-results">
           <span className="word-scramble-trophy"><Trophy size={38} /></span><p>ROUND COMPLETE</p><h2>Awesome word star!</h2><span className="word-scramble-final-score">{score}<small> points</small></span>
           <div><span><strong>{round.length}</strong><small>questions</small></span><span><strong>{bestStreak}</strong><small>best streak</small></span><span><strong>{timeLabel}</strong><small>time</small></span></div>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={() => setSaveRetryCount((count) => count + 1)}>Try again</button>}</p>}
+          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
           <button type="button" className="word-scramble-primary" onClick={startRound}><RotateCcw size={18} /> Play again</button>
         </Card>
       )}

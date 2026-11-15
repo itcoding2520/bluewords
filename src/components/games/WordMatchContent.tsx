@@ -10,7 +10,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown, getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyToolbar";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
+import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 
 type Phase = "setup" | "playing" | "results";
 type PairCount = 6 | 8 | 10;
@@ -96,14 +96,20 @@ export function WordMatchContent() {
   const [moves, setMoves] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [saveError, setSaveError] = useState("");
-  const [saveRetryCount, setSaveRetryCount] = useState(0);
   const mismatchTimerRef = useRef<number | null>(null);
   const resolvingRef = useRef(false);
-  const saveStartedRef = useRef<number | null>(null);
+  const { elapsedSeconds, setElapsedSeconds, saveState, saveError, resetSession, retrySave } = useGameSessionTracking({
+    isAuthenticated,
+    isPlaying: phase === "playing",
+    shouldSubmit: phase === "results",
+    gameType: "word-match",
+    roundSize: pairs.length,
+    score,
+    correctCount: pairs.length,
+    moves,
+    startedAt,
+  });
 
   const availablePairs = useMemo(() => {
     const eligibleWords = category === "all" ? words : words.filter((word) => word.category === category);
@@ -121,38 +127,6 @@ export function WordMatchContent() {
   }, [category, words]);
 
   const categoryDropdownCategories = useMemo(() => getVocabularyDropdownCategories(categories, words), [categories, words]);
-
-  useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-    const updateTime = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    updateTime();
-    const interval = window.setInterval(updateTime, 1000);
-    return () => window.clearInterval(interval);
-  }, [phase, startedAt]);
-
-  useEffect(() => {
-    if (!isAuthenticated || phase !== "results" || startedAt === null || saveStartedRef.current === startedAt) return;
-    saveStartedRef.current = startedAt;
-    const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
-    setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
-    void saveVocabularyGameSession({
-      gameType: "word-match",
-      roundSize: pairs.length,
-      score,
-      correctCount: pairs.length,
-      moves,
-      durationSeconds,
-      startedAt: new Date(startedAt).toISOString(),
-      completedAt: new Date(completedAt).toISOString(),
-    }).then(() => setSaveState("saved")).catch((error: unknown) => {
-      saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this result.");
-    });
-  }, [isAuthenticated, moves, pairs.length, phase, saveRetryCount, score, startedAt]);
 
   useEffect(() => () => {
     if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
@@ -175,11 +149,8 @@ export function WordMatchContent() {
     setMoves(0);
     setScore(0);
     setFeedback("Flip two cards to find a matching word and picture or meaning.");
-    setElapsedSeconds(0);
+    resetSession();
     setStartedAt(now);
-    saveStartedRef.current = null;
-    setSaveState("idle");
-    setSaveError("");
     resolvingRef.current = false;
     setIsResolving(false);
     setPhase("playing");
@@ -302,7 +273,7 @@ export function WordMatchContent() {
           <h2>Great matching!</h2>
           <p className="word-match-results-copy">You matched all {pairs.length} pairs and scored {score} points.</p>
           <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatTime(elapsedSeconds)}</strong><small>time</small></span></div>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={() => setSaveRetryCount((count) => count + 1)}>Try again</button>}</p>}
+          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
           <div className="word-match-result-actions"><button type="button" onClick={startRound} className="word-match-start"><RotateCcw size={18} /> Play again</button><button type="button" onClick={() => setPhase("setup")} className="word-match-secondary">Change settings</button></div>
         </Card>
       )}
