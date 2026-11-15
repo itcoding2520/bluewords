@@ -62,13 +62,37 @@ export function useWordMatchController(input: {
   const progressPercent = gameplay.pairs.length ? (gameplay.matchedIds.size / gameplay.pairs.length) * 100 : 0;
 
   return {
-    category, setCategory, pairCount, setPairCount, phase, setPhase,
-    ...gameplay,
-    availablePairs, categoryDropdownCategories,
-    elapsedSeconds: session.elapsedSeconds,
-    saveState: session.saveState,
-    saveError: session.saveError,
-    retrySave: session.retrySave,
-    pairById, matchedLabel, progressPercent, startRound, selectCard,
+    setup: {
+      category,
+      setCategory,
+      pairCount,
+      setPairCount,
+      availablePairs,
+      categoryDropdownCategories,
+      startRound,
+    },
+    game: {
+      phase,
+      setPhase,
+      pairs: gameplay.pairs,
+      cards: gameplay.cards,
+      matchedIds: gameplay.matchedIds,
+      selectedCardIds: gameplay.selectedCardIds,
+      wrongCardIds: gameplay.wrongCardIds,
+      isResolving: gameplay.isResolving,
+      moves: gameplay.moves,
+      score: gameplay.score,
+      feedback: gameplay.feedback,
+      pairById,
+      matchedLabel,
+      progressPercent,
+      selectCard,
+    },
+    session: {
+      elapsedSeconds: session.elapsedSeconds,
+      saveState: session.saveState,
+      saveError: session.saveError,
+      retrySave: session.retrySave,
+    },
   };
 }
