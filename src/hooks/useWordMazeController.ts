@@ -3,13 +3,13 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
-import { buildWordMazeRound, type MazeWord } from "@/lib/word-maze";
+import { buildWordMazeRound } from "@/lib/word-maze";
+import { useWordMazeGameplay } from "@/hooks/useWordMazeGameplay";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 type Phase = "setup" | "playing" | "results";
 export type { MazeWord } from "@/lib/word-maze";
-type Feedback = "correct" | "wrong" | null;
 
 export function useWordMazeController(input: {
   words: VocabularyWord[];
@@ -19,24 +19,17 @@ export function useWordMazeController(input: {
   const { words, categories, isAuthenticated } = input;
   const [category, setCategory] = useState("all");
   const [phase, setPhase] = useState<Phase>("setup");
-  const [round, setRound] = useState<MazeWord[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [won, setWon] = useState(false);
-  const [moves, setMoves] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  const gameplay = useWordMazeGameplay();
   const session = useGameSessionTracking({
     isAuthenticated,
     isPlaying: phase === "playing",
-    shouldSubmit: phase === "results" && won,
+    shouldSubmit: phase === "results" && gameplay.won,
     gameType: "word-maze",
-    roundSize: round.length,
-    score,
-    correctCount: round.length,
-    moves,
+    roundSize: gameplay.round.length,
+    score: gameplay.score,
+    correctCount: gameplay.round.length,
+    moves: gameplay.moves,
     startedAt,
   });
 
@@ -53,56 +46,26 @@ export function useWordMazeController(input: {
     return result;
   }, [category, words]);
   const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words, true);
-  const current = round[questionIndex];
-  const pathProgress = questionIndex + (feedback === "correct" ? 1 : 0);
-  const solvedCount = questionIndex + (feedback === "correct" ? 1 : 0);
-
   function startGame() {
     const nextRound = buildWordMazeRound(words, category);
     if (nextRound.length < 5 || nextRound.some((question) => question.choices.length < 4)) return;
-    setRound(nextRound);
-    setQuestionIndex(0);
-    setScore(0);
-    setLives(3);
-    setFeedback(null);
-    setSelectedChoice(null);
-    setWon(false);
-    setMoves(0);
+    gameplay.startRound(nextRound);
     session.resetSession();
     setStartedAt(Date.now());
     setPhase("playing");
   }
 
   function chooseAnswer(choice: string) {
-    if (!current || feedback === "correct" || selectedChoice === choice) return;
-    setMoves((value) => value + 1);
-    setSelectedChoice(choice);
-    if (choice === current.meaning) {
-      setScore((value) => value + 10);
-      setFeedback("correct");
-      return;
-    }
-    const remainingLives = lives - 1;
-    setLives(remainingLives);
-    setFeedback("wrong");
-    if (remainingLives === 0) setPhase("results");
+    if (gameplay.chooseAnswer(choice)) setPhase("results");
   }
 
   function continuePath() {
-    if (questionIndex >= round.length - 1) {
-      setWon(true);
-      setPhase("results");
-      return;
-    }
-    setQuestionIndex((index) => index + 1);
-    setFeedback(null);
-    setSelectedChoice(null);
+    if (gameplay.continuePath()) setPhase("results");
   }
 
   return {
-    category, setCategory, phase, setPhase, round, questionIndex, score, lives,
-    feedback, selectedChoice, won, candidates, categoryDropdownCategories,
-    current, pathProgress, solvedCount,
+    category, setCategory, phase, setPhase, ...gameplay,
+    candidates, categoryDropdownCategories,
     elapsedSeconds: session.elapsedSeconds,
     saveState: session.saveState,
     saveError: session.saveError,
