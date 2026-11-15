@@ -9,9 +9,9 @@ import {
   deleteVocabularyImages,
   uploadVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
-import { fetchEnglishIpa } from "@/lib/dictionary";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { normalizeVocabularyImageKey } from "@/lib/vocabulary/bulk-import-existing-images";
+import { resolveVocabularyIpa } from "@/lib/vocabulary/resolve-ipa";
 
 export type SingleVocabularyImportResult =
   | { status: "duplicate" }
@@ -43,9 +43,7 @@ export async function importSingleVocabularyWord(
       category: word.category,
       status: word.status,
       type: word.type ?? "word",
-      ipa: (word.type ?? "word") === "word"
-        ? word.ipa?.trim() || await fetchEnglishIpa(word.word)
-        : null,
+      ipa: await resolveVocabularyIpa({ word: word.word, type: word.type ?? "word", providedIpa: word.ipa }),
       image_path: word.imagePath ?? null,
     });
     insertedId = row.id;

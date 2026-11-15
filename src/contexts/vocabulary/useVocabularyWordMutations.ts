@@ -8,11 +8,11 @@ import {
   updateVocabularyWordWithMeanings,
 } from "@/lib/supabase/vocabulary";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
-import { fetchEnglishIpa } from "@/lib/dictionary";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { hasDuplicateVocabularyWord, mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
 import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
+import { resolveVocabularyIpa } from "@/lib/vocabulary/resolve-ipa";
 import { toast } from "sonner";
 
 interface VocabularyWordMutationOptions {
@@ -36,9 +36,7 @@ export function useVocabularyWordMutations({
 
     try {
       const type = word.type ?? "word";
-      const ipa = type === "word"
-        ? word.ipa?.trim() || await fetchEnglishIpa(word.word)
-        : null;
+      const ipa = await resolveVocabularyIpa({ word: word.word, type, providedIpa: word.ipa });
       const row = await addVocabularyWord({
         word: word.word,
         meaning: word.meaning,
@@ -86,11 +84,12 @@ export function useVocabularyWordMutations({
       const previousIpa = currentWord?.ipa ?? storedWord?.ipa ?? updatedWord.ipa;
       const type = updatedWord.type ?? "word";
       const wordChanged = normalizeVocabularyKey(currentWord?.word ?? storedWord?.word ?? updatedWord.word) !== normalizeVocabularyKey(updatedWord.word);
-      const ipa = type !== "word"
-        ? null
-        : updatedWord.ipa?.trim() || (wordChanged || !previousIpa
-          ? await fetchEnglishIpa(updatedWord.word)
-          : previousIpa);
+      const ipa = await resolveVocabularyIpa({
+        word: updatedWord.word,
+        type,
+        providedIpa: updatedWord.ipa,
+        existingIpa: wordChanged ? null : previousIpa,
+      });
       const { word: row, meanings: meaningRows } = await updateVocabularyWordWithMeanings({
         id: updatedWord.id,
         word: updatedWord.word,
