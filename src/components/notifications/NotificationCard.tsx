@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { MouseEvent } from "react";
 import { ArrowRight, BookOpen, Clock3, FolderOpen } from "lucide-react";
-import type { NotificationRow } from "@/hooks/useNotificationsController";
+import type { NotificationRow } from "@/lib/notifications";
 
 export function NotificationCard({
   item,

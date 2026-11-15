@@ -1,32 +1,12 @@
-import { useCallback, useEffect, useState, type MouseEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { getCachedNotifications, invalidateNotificationsCache, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
+import { getCachedNotifications, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
+import { NOTIFICATION_LOOKBACK_MS, recentNotifications, type NotificationRow } from "@/lib/notifications";
+import { useNotificationActions } from "@/hooks/useNotificationActions";
 
-export type NotificationRow = {
-  id: string;
-  title: string;
-  body: string;
-  kind: string;
-  entity_type: string | null;
-  entity_id: string | null;
-  read_at: string | null;
-  created_at: string;
-};
-
-const NOTIFICATION_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
-
-function recentNotifications(rows: NotificationRow[], now = Date.now()) {
-  const cutoff = now - NOTIFICATION_LOOKBACK_MS;
-  return rows.filter((item) => {
-    if (item.kind === "assessment_assigned") return false;
-    const createdAt = new Date(item.created_at).getTime();
-    return Number.isFinite(createdAt) && createdAt >= cutoff && createdAt <= now;
-  });
-}
+export type { NotificationRow } from "@/lib/notifications";
 
 export function useNotificationsController() {
-  const router = useRouter();
   const supabase = useSupabaseClient();
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,47 +60,12 @@ export function useNotificationsController() {
     };
   }, [refresh]);
 
-  async function markAllRead() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
-    const now = new Date();
-    const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
-    const { error: updateError } = await supabase.from("notifications").update({ read_at: now.toISOString() }).eq("recipient_id", user.id).neq("kind", "assessment_assigned").gte("created_at", cutoff).lte("created_at", now.toISOString()).is("read_at", null);
-    if (updateError) setError(updateError.message);
-    else {
-      invalidateNotificationsCache(user.id);
-      window.dispatchEvent(new Event("bluewords:notifications-updated"));
-      await refresh(true);
-    }
-  }
-
-  async function markAsRead(item: NotificationRow) {
-    if (item.read_at) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
-    const readAt = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from("notifications")
-      .update({ read_at: readAt })
-      .eq("id", item.id)
-      .eq("recipient_id", user.id)
-      .is("read_at", null);
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-    invalidateNotificationsCache(user.id);
-    setNotifications((current) => current.map((notification) => notification.id === item.id ? { ...notification, read_at: readAt } : notification));
-    window.dispatchEvent(new Event("bluewords:notifications-updated"));
-  }
-
-  async function reviewRequest(event: MouseEvent<HTMLAnchorElement>, item: NotificationRow) {
-    event.preventDefault();
-    await markAsRead(item);
-    router.push("/admin");
-  }
+  const { markAllRead, markAsRead, reviewRequest } = useNotificationActions({
+    supabase,
+    setNotifications,
+    setError,
+    refresh,
+  });
 
   const unreadCount = notifications.filter((item) => !item.read_at).length;
 
