@@ -3,12 +3,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import {
-  deleteUserAvatar,
   getUserProfile,
-  saveUserProfile,
-  uploadUserAvatar,
   type UserProfile,
 } from "@/lib/supabase/user-profile";
+import { removeReplacedProfileAvatar, saveProfileWithAvatar } from "@/lib/supabase/user-profile-workflows";
 import { useUserProfileAvatar } from "@/hooks/useUserProfileAvatar";
 
 export function useUserProfileEditor(userId: string) {
@@ -44,36 +42,21 @@ export function useUserProfileEditor(userId: string) {
     setError("");
     setNotice("");
 
-    let uploadedPath: string | null = null;
     try {
       const previousAvatarPath = profile?.avatar_path ?? null;
-      if (avatar.avatarFile) uploadedPath = await uploadUserAvatar(avatar.avatarFile);
-      const updatedProfile = await saveUserProfile({
+      const { profile: updatedProfile } = await saveProfileWithAvatar({
         nickname: normalizedNickname || null,
-        avatarPath: uploadedPath ?? avatar.previewPath ?? null,
+        avatarFile: avatar.avatarFile,
+        avatarPath: avatar.previewPath ?? null,
+        previousAvatarPath,
       });
 
       setProfile(updatedProfile);
       setNickname(updatedProfile.nickname ?? "");
       avatar.resetAvatarSelection();
       setNotice("Profile updated.");
-
-      if (previousAvatarPath && previousAvatarPath !== updatedProfile.avatar_path) {
-        try {
-          await deleteUserAvatar(previousAvatarPath);
-        } catch (cleanupError) {
-          console.warn("Could not remove the previous profile avatar:", cleanupError);
-        }
-      }
+      await removeReplacedProfileAvatar(previousAvatarPath, updatedProfile.avatar_path);
     } catch (saveError) {
-      if (uploadedPath) {
-        try {
-          await deleteUserAvatar(uploadedPath);
-        } catch (cleanupError) {
-          console.warn("Could not remove the unused profile avatar:", cleanupError);
-        }
-      }
-
       const code = typeof saveError === "object" && saveError && "code" in saveError
         ? saveError.code
         : null;
