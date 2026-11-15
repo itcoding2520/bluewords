@@ -70,8 +70,14 @@ export function useAdminAssessmentsController() {
   }
 
   return {
-    activeTab, setActiveTab, users, assignments, attempts, title, setTitle, difficulty, setDifficulty, selected, setSelected,
-    allUsers, setAllUsers, dueAt, setDueAt, today, search, setSearch, loading, sending, error, notice,
-    visibleUsers, userById, assignmentByRecipientId, refresh, assign,
+    navigation: { activeTab, setActiveTab },
+    data: { users, assignments, attempts, loading },
+    form: {
+      title, setTitle, difficulty, setDifficulty, selected, setSelected,
+      allUsers, setAllUsers, dueAt, setDueAt, today, search, setSearch, sending,
+    },
+    feedback: { error, notice },
+    view: { visibleUsers, userById, assignmentByRecipientId },
+    actions: { refresh, assign },
   };
 }
