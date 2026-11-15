@@ -5,11 +5,10 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
-import { defaultVocabularyCategories } from "@/data/default-vocabulary";
+import { useCategoryManagementView } from "@/hooks/useCategoryManagementView";
+export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
+import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import { loadAdminUserEmails } from "@/lib/admin-users";
-
-export type CategoryManagementSort = "name" | "newest" | "oldest";
-export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
 
 export function useCategoryManagementController() {
   const confirmDialog = useConfirmDialog();
@@ -77,33 +76,15 @@ export function useCategoryManagementController() {
     };
   }, [isAdmin, supabase]);
 
-  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((category) =>
-    category.name.trim().toLocaleLowerCase()
-  ));
-  const isDefaultCategory = (category: VocabularyCategoryRow) =>
-    category.is_default || defaultCategoryNames.has(category.name.trim().toLocaleLowerCase());
-  const isPublishedSharedCategory = (category: VocabularyCategoryRow) =>
-    category.id.startsWith("community-category-") || category.user_id === "community";
-  const filteredCategories = categories.filter((category) => {
-    if (filterBy === "mine") return !isDefaultCategory(category) && !isPublishedSharedCategory(category);
-    if (filterBy === "default") return isDefaultCategory(category);
-    if (filterBy === "community") return isPublishedSharedCategory(category) && !isDefaultCategory(category);
-    return true;
-  });
-  const managedCategories = [...filteredCategories].sort((left, right) => {
-    if (sortBy === "name") return left.name.localeCompare(right.name);
-    if (!left.created_at || !right.created_at) {
-      if (!left.created_at && !right.created_at) return left.name.localeCompare(right.name);
-      return left.created_at ? -1 : 1;
-    }
-    const byDate = new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
-    return (sortBy === "newest" ? -byDate : byDate) || left.name.localeCompare(right.name);
-  });
-  const pageCount = Math.max(1, Math.ceil(managedCategories.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const pageCategories = managedCategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const firstVisibleCategory = managedCategories.length ? (currentPage - 1) * pageSize + 1 : 0;
-  const lastVisibleCategory = Math.min(currentPage * pageSize, managedCategories.length);
+  const {
+    isDefaultCategory,
+    managedCategories,
+    pageCount,
+    currentPage,
+    pageCategories,
+    firstVisibleCategory,
+    lastVisibleCategory,
+  } = useCategoryManagementView({ categories, filterBy, sortBy, page, pageSize });
 
   function startEdit(category: VocabularyCategoryRow) {
     setEditing(category);
