@@ -43,6 +43,26 @@ export function useAdminCategoryManagementController() {
   const visibleCategories = currentCategories.filter((category) =>
     category.name.toLocaleLowerCase().includes(categorySearch.trim().toLocaleLowerCase())
   );
+  const visibleCategoryRows = visibleCategories.map((category) => {
+    const shared = activeTab === "default"
+      ? communityCategories.find((item) => item.status === "published"
+        && item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())
+      : "owner_id" in category ? category : null;
+    const fallbackImage = activeTab === "default"
+      ? defaultVocabularyWords.find((word) => word.category === category.name && word.imagePath)?.imagePath
+      : words.find((word) => word.image_path)?.image_path;
+
+    return {
+      category,
+      shared,
+      owner: shared ? emails[shared.owner_id] ?? "Loading owner…" : null,
+      fallbackImage,
+      defaultWordCount: activeTab === "default"
+        ? defaultVocabularyWords.filter((word) => word.category === category.name).length
+        : null,
+      createdAt: "owner_id" in category ? category.created_at : null,
+    };
+  });
   const selectedCategory = currentCategories.find((category) => category.id === selectedId)
     ?? currentCategories[0]
     ?? null;
@@ -135,6 +155,7 @@ export function useAdminCategoryManagementController() {
     customCategories,
     currentCategories,
     visibleCategories,
+    visibleCategoryRows,
     selectedCategory,
     defaultWords,
     selectedSharedCategory,
