@@ -7,7 +7,7 @@ import {
   loadAuthenticatedVocabularyCategories,
   mapAuthenticatedVocabularyCategories,
 } from "@/lib/supabase/vocabulary-store";
-import { loadPublicSharedVocabulary, mapPublicCategories } from "@/lib/vocabulary/shared-vocabulary";
+import { loadPublicSharedVocabulary, mapPublicCategories } from "@/lib/vocabulary/public-shared-vocabulary";
 import { toast } from "sonner";
 
 type SupabaseClient = ReturnType<typeof createClient>;

@@ -6,7 +6,7 @@ import {
   loadPublicSharedVocabulary,
   mapPublicCategories,
   mapPublicWords,
-} from "@/lib/vocabulary/shared-vocabulary";
+} from "@/lib/vocabulary/public-shared-vocabulary";
 import { loadAuthenticatedVocabularySnapshot, mapAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
