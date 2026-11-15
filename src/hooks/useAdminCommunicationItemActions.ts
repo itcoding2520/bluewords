@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
 import type { createClient } from "@/lib/supabase/client";

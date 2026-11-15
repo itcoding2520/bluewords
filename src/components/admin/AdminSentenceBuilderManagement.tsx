@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, FileUp, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Select } from "@/components/ui/Select";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { downloadCsvFile } from "@/lib/download-csv";
 import { exportSentenceBuilderCsv, loadSentenceBuilderQuestions, parseSentenceBuilderCsv, type SentenceBuilderQuestion, type SentenceDifficulty, type SentenceQuestionInput } from "@/lib/supabase/sentence-builder";
 

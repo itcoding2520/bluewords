@@ -10,7 +10,7 @@ import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDrop
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { loadSentenceBuilderQuestions, type SentenceBuilderQuestion, type SentenceDifficulty } from "@/lib/supabase/sentence-builder";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import Image from "next/image";
 
 type Phase = "setup" | "playing" | "results";

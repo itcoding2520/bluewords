@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { importLegacyVocabulary, previewVocabularyImport } from "@/lib/vocabulary-import";
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";

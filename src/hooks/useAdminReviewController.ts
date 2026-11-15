@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { useAdminReviewData } from "@/hooks/useAdminReviewData";

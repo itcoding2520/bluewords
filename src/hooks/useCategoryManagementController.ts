@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";

@@ -4,7 +4,7 @@ import type {
   VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 
 export function useManageCategoriesController() {
   const confirmDialog = useConfirmDialog();

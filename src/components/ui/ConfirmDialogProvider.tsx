@@ -1,21 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AlertTriangle } from "lucide-react";
-
-export type ConfirmDialogOptions = {
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  destructive?: boolean;
-};
+import { ConfirmDialogContext, type ConfirmDialogOptions, type ConfirmFunction } from "@/contexts/confirm-dialog";
 
 type ConfirmDialogRequest = ConfirmDialogOptions & { id: number };
-type ConfirmFunction = (options: ConfirmDialogOptions) => Promise<boolean>;
-
-const ConfirmDialogContext = createContext<ConfirmFunction | null>(null);
 
 export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<ConfirmDialogRequest | null>(null);
@@ -58,8 +48,4 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   </ConfirmDialogContext.Provider>;
 }
 
-export function useConfirmDialog() {
-  const confirm = useContext(ConfirmDialogContext);
-  if (!confirm) throw new Error("useConfirmDialog must be used within ConfirmDialogProvider.");
-  return confirm;
-}
+export { useConfirmDialog, type ConfirmDialogOptions } from "@/contexts/confirm-dialog";

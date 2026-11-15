@@ -1,6 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { toast } from "sonner";
 import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
 
