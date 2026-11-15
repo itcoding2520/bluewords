@@ -1,24 +1,16 @@
-import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyCategoriesForUser } from "@/lib/supabase/categories";
-import { getVocabularyWords, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import type { SupabaseClient } from "@/lib/supabase/client";
-import {
-  mapCommunityWords,
-  mapVocabularyWordRow,
-  mergeVocabularyCategories,
-  type PublishedCommunityCategory,
-  type PublishedCommunityWord,
-} from "@/lib/vocabulary/shared-vocabulary";
+import type {
+  AuthenticatedVocabularyCategoriesSnapshot,
+  AuthenticatedVocabularySnapshot,
+} from "@/lib/supabase/vocabulary-store-mapping";
 
 
 export async function loadAuthenticatedVocabularyCategories(
   supabase: SupabaseClient,
   userId: string
-): Promise<{
-  personalCategories: VocabularyCategoryRow[];
-  communityCategories: PublishedCommunityCategory[];
-  error: Error | null;
-}> {
+): Promise<AuthenticatedVocabularyCategoriesSnapshot> {
   const [personalCategories, communityResult] = await Promise.all([
     getVocabularyCategoriesForUser(userId),
     supabase.from("community_categories")
@@ -28,7 +20,7 @@ export async function loadAuthenticatedVocabularyCategories(
 
   return {
     personalCategories,
-    communityCategories: (communityResult.data ?? []) as PublishedCommunityCategory[],
+    communityCategories: (communityResult.data ?? []) as AuthenticatedVocabularyCategoriesSnapshot["communityCategories"],
     error: communityResult.error,
   };
 }
@@ -36,14 +28,7 @@ export async function loadAuthenticatedVocabularyCategories(
 export async function loadAuthenticatedVocabularySnapshot(
   supabase: SupabaseClient,
   userId: string
-): Promise<{
-  wordRows: VocabularyWordWithMeaningsRow[];
-  personalCategories: VocabularyCategoryRow[];
-  communityCategories: PublishedCommunityCategory[];
-  communityWords: PublishedCommunityWord[];
-  communityCategoriesError: Error | null;
-  communityWordsError: Error | null;
-}> {
+): Promise<AuthenticatedVocabularySnapshot> {
   const [wordRows, personalCategories, communityCategoryResult, communityWordResult] = await Promise.all([
     getVocabularyWords(),
     getVocabularyCategoriesForUser(userId),
@@ -56,8 +41,8 @@ export async function loadAuthenticatedVocabularySnapshot(
       .eq("community_categories.status", "published"),
   ]);
 
-  const communityCategories = (communityCategoryResult.data ?? []) as PublishedCommunityCategory[];
-  const communityWords = (communityWordResult.data ?? []) as unknown as PublishedCommunityWord[];
+  const communityCategories = (communityCategoryResult.data ?? []) as AuthenticatedVocabularySnapshot["communityCategories"];
+  const communityWords = (communityWordResult.data ?? []) as unknown as AuthenticatedVocabularySnapshot["communityWords"];
 
   return {
     wordRows,
@@ -67,16 +52,4 @@ export async function loadAuthenticatedVocabularySnapshot(
     communityCategoriesError: communityCategoryResult.error,
     communityWordsError: communityWordResult.error,
   };
-}
-
-export function mapAuthenticatedVocabularySnapshot(snapshot: Awaited<ReturnType<typeof loadAuthenticatedVocabularySnapshot>>) {
-  const personalWords = snapshot.wordRows.map(mapVocabularyWordRow);
-  return {
-    words: [...personalWords, ...mapCommunityWords(snapshot.communityWords, personalWords)],
-    categories: mergeVocabularyCategories(snapshot.personalCategories, snapshot.communityCategories),
-  };
-}
-
-export function mapAuthenticatedVocabularyCategories(snapshot: Awaited<ReturnType<typeof loadAuthenticatedVocabularyCategories>>) {
-  return mergeVocabularyCategories(snapshot.personalCategories, snapshot.communityCategories);
 }

@@ -7,7 +7,8 @@ import {
   mapPublicCategories,
   mapPublicWords,
 } from "@/lib/vocabulary/public-shared-vocabulary";
-import { loadAuthenticatedVocabularySnapshot, mapAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store";
+import { loadAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store";
+import { mapAuthenticatedVocabularySnapshot } from "@/lib/supabase/vocabulary-store-mapping";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
 import { useVocabularyCategoryData } from "@/contexts/vocabulary/useVocabularyCategoryData";
