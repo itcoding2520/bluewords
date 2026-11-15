@@ -2,9 +2,12 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import {
   addVocabularyWord,
   deleteVocabularyWord,
+  deleteVocabularyWords,
   getVocabularyWordById,
+  getVocabularyWordImagePaths,
   updateVocabularyWordWithMeanings,
 } from "@/lib/supabase/vocabulary";
+import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
 import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
@@ -68,4 +71,41 @@ export async function updateVocabularyWordRecord(
   });
 
   return { word: mapVocabularyMutationWord(row, meanings), previousImagePath };
+}
+
+export async function deleteVocabularyWordRecord(
+  id: string,
+  currentWord: VocabularyWord | undefined
+): Promise<string> {
+  const storedWord = currentWord ? null : await getVocabularyWordById(id);
+  await deleteVocabularyWord(id);
+
+  const imagePath = currentWord?.imagePath ?? storedWord?.image_path;
+  if (imagePath) {
+    void deleteVocabularyImages([imagePath]).catch((error) =>
+      console.error("Could not remove vocabulary image:", error)
+    );
+  }
+
+  return currentWord?.word ?? storedWord?.word ?? "Word";
+}
+
+export async function deleteVocabularyWordRecords(ids: string[]): Promise<string[]> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) return [];
+
+  const imageRows = await getVocabularyWordImagePaths(uniqueIds);
+  const deletedIds = await deleteVocabularyWords(uniqueIds);
+  const deletedSet = new Set(deletedIds);
+  const deletedImagePaths = imageRows
+    .filter((word) => deletedSet.has(word.id))
+    .map((word) => word.image_path);
+
+  if (deletedImagePaths.some(Boolean)) {
+    void deleteVocabularyImages(deletedImagePaths).catch((error) =>
+      console.error("Could not remove deleted vocabulary images:", error)
+    );
+  }
+
+  return deletedIds;
 }
