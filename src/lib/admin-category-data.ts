@@ -4,6 +4,8 @@ import { loadAdminUserEmails } from "@/lib/admin-users";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 
+export type CategoryTab = "default" | "published" | "pending";
+
 export interface CommunityCategory {
   id: string;
   owner_id: string;
