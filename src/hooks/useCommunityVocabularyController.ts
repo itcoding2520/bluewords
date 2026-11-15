@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
 
 type CommunityWord = {
   id: string;
@@ -36,10 +37,13 @@ export function useCommunityVocabularyController() {
   }, [supabase]);
 
   const categories = useMemo(() => [...new Set(words.map((item) => item.community_categories.name))].sort((a, b) => a.localeCompare(b)), [words]);
-  const visibleWords = useMemo(() => words.filter((item) =>
-    (category === "all" || item.community_categories.name === category)
-    && (!search.trim() || `${item.word} ${item.meaning}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
-  ), [category, search, words]);
+  const visibleWords = useMemo(() => {
+    const matchesSearch = createVocabularySearchMatcher(search);
+    return words.filter((item) =>
+      (category === "all" || item.community_categories.name === category)
+      && matchesSearch(item.word, item.meaning)
+    );
+  }, [category, search, words]);
   const fallbackWordImages = useMemo(() => {
     const images = new Map<string, string>();
     for (const item of visibleWords) {
