@@ -17,13 +17,7 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-.app-shell {
-  background-color: #f1f8ff;
-  background-image: url('/images/ui/backgrounds/page.svg');
-  background-size: 100% 100%;
-  background-attachment: fixed;
-}
-
+.app-shell,
 .login-shell {
   background-color: #f1f8ff;
   background-image: url('/images/ui/backgrounds/page.svg');
