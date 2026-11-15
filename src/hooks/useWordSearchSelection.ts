@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { getWordSearchSelectionPath } from "@/lib/word-search.mjs";
+import { getWordSearchSelectionPath } from "@/lib/word-search-selection.mjs";
 
 export type CellPosition = { row: number; column: number };
 type ActiveDrag = { pointerId: number; start: CellPosition };

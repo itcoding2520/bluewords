@@ -1,7 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix } from "@/lib/word-search.mjs";
+import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
+import { findWordSearchSelectionPrefix } from "@/lib/word-search-selection.mjs";
 import type { GridSize } from "@/lib/word-search-config";
 
 type Phase = "setup" | "playing" | "results";
