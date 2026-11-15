@@ -1,3 +1,4 @@
+import { parseCsvRows } from "@/lib/csv-rows";
 import { createClient } from "@/lib/supabase/client";
 
 export type SentenceDifficulty = "easy" | "medium" | "hard";
@@ -27,28 +28,10 @@ export async function loadSentenceBuilderQuestions(activeOnly = true) {
 }
 
 export function parseSentenceBuilderCsv(csv: string): SentenceQuestionInput[] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  for (let index = 0; index < csv.length; index += 1) {
-    const char = csv[index];
-    if (quoted) {
-      if (char === '"' && csv[index + 1] === '"') { field += '"'; index += 1; }
-      else if (char === '"') quoted = false;
-      else field += char;
-    } else if (char === '"' && field.length === 0) quoted = true;
-    else if (char === ",") { row.push(field); field = ""; }
-    else if (char === "\n" || char === "\r") {
-      if (char === "\r" && csv[index + 1] === "\n") index += 1;
-      row.push(field); field = "";
-      if (row.some((cell) => cell.trim())) rows.push(row);
-      row = [];
-    } else field += char;
-  }
-  if (quoted) throw new Error("CSV contains an unclosed quoted field.");
-  if (field || row.length) { row.push(field); if (row.some((cell) => cell.trim())) rows.push(row); }
-  if (rows.length < 2) throw new Error("CSV needs a header and at least one question.");
+  const rows = parseCsvRows(csv, {
+    unclosedQuote: "CSV contains an unclosed quoted field.",
+    missingContent: "CSV needs a header and at least one question.",
+  });
   const headers = rows[0].map((header) => header.trim().replace(/^\uFEFF/, ""));
   const index = (name: string) => headers.indexOf(name);
   const required = ["question_id", "level", "category", "prompt_vi", "answer_sentence", "answer_tokens_json", "distractor_tokens_json", "image_keyword", "vocabulary_words"];

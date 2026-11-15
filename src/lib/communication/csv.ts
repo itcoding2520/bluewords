@@ -1,3 +1,4 @@
+import { parseCsvRows } from "@/lib/csv-rows";
 import { validateCommunicationCsvConsistency } from "@/lib/communication/csv-consistency";
 import { parseCommunicationCsvRecord } from "@/lib/communication/csv-record";
 
@@ -50,37 +51,15 @@ const headers = [
   "turn_audio_url", "response_prompt_vi", "expected_response", "response_options_json",
 ];
 
-function parseCsvRows(csv: string) {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  for (let i = 0; i < csv.length; i += 1) {
-    const char = csv[i];
-    if (quoted) {
-      if (char === '"' && csv[i + 1] === '"') { field += '"'; i += 1; }
-      else if (char === '"') quoted = false;
-      else field += char;
-    } else if (char === '"' && field.length === 0) quoted = true;
-    else if (char === ",") { row.push(field); field = ""; }
-    else if (char === "\n" || char === "\r") {
-      if (char === "\r" && csv[i + 1] === "\n") i += 1;
-      row.push(field); field = "";
-      if (row.some((cell) => cell.trim())) rows.push(row);
-      row = [];
-    } else field += char;
-  }
-  if (quoted) throw new Error("CSV has an unclosed quoted field.");
-  if (field || row.length) { row.push(field); if (row.some((cell) => cell.trim())) rows.push(row); }
-  if (rows.length < 2) throw new Error("CSV needs a header and at least one content row.");
-  return rows;
-}
 
 export type CommunicationCsvDuplicate = { row: number; recordType: CommunicationRecordType; recordKey: string };
 export type ParsedCommunicationCsv = { records: CommunicationCsvRecord[]; recordRows: number[]; duplicates: CommunicationCsvDuplicate[] };
 
 export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationCsv {
-  const rows = parseCsvRows(csv);
+  const rows = parseCsvRows(csv, {
+    unclosedQuote: "CSV has an unclosed quoted field.",
+    missingContent: "CSV needs a header and at least one content row.",
+  });
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
   const missing = headers.filter((name) => !columnNames.includes(name));
   if (missing.length) throw new Error(`Missing CSV columns: ${missing.join(", ")}. Export a template from this page to get the expected columns.`);
