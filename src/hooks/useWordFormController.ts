@@ -7,12 +7,9 @@ import {
 } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useWordFormImage } from "@/hooks/useWordFormImage";
+import { validateVocabularyWordForm, type WordFormErrors } from "@/lib/vocabulary/word-form";
 
-export interface WordFormErrors {
-  word?: string;
-  meaning?: string;
-  image?: string;
-}
+export type { WordFormErrors } from "@/lib/vocabulary/word-form";
 
 interface UseWordFormControllerOptions {
   words: VocabularyWord[];
@@ -75,20 +72,12 @@ export function useWordFormController({
     event.preventDefault();
     if (isSubmitting) return;
 
-    const trimmedWord = word.trim();
-    const trimmedMeaning = meaning.trim();
-    const nextErrors: WordFormErrors = {};
-
-    if (!trimmedWord) nextErrors.word = "Word is required.";
-    if (!trimmedMeaning) nextErrors.meaning = "Meaning is required.";
-
-    const wordExists = words.some(
-      (item) =>
-        item.word.toLowerCase() === trimmedWord.toLowerCase() &&
-        item.id !== editingWord?.id
-    );
-    if (wordExists) nextErrors.word = "This word already exists.";
-
+    const nextErrors = validateVocabularyWordForm({
+      word,
+      meaning,
+      words,
+      editingWordId: editingWord?.id,
+    });
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -98,6 +87,8 @@ export function useWordFormController({
     try {
       if (!image.validateSelectedImage()) return;
 
+      const trimmedWord = word.trim();
+      const trimmedMeaning = meaning.trim();
       const wordId = editingWord?.id ?? crypto.randomUUID();
       const uploadedPath = await image.uploadSelectedImage(wordId);
       const success = await onSubmit({
