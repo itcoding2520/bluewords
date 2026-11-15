@@ -13,6 +13,10 @@ export const VOCABULARY_CSV_HEADERS = [
   "ipa",
 ] as const;
 
+export function normalizeVocabularyCsvValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export type VocabularyCsvWord = Omit<VocabularyWord, "id">;
 
 export interface VocabularyCsvIssue {

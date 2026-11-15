@@ -2,15 +2,12 @@ import { parseRecords } from "@/lib/vocabulary-csv-parser";
 import { processVocabularyCsvRow, type VocabularyCsvWordGroup } from "@/lib/vocabulary-csv-row";
 import {
   MAX_VOCABULARY_IMPORT_WORDS,
+  normalizeVocabularyCsvValue,
   type VocabularyCsvPreview,
   type VocabularyCsvWord,
 } from "@/lib/vocabulary-csv-shared";
 
 const REQUIRED_CSV_HEADERS = ["word", "type", "meaning", "category", "status"];
-
-function normalized(value: string): string {
-  return value.trim().toLowerCase();
-}
 
 export function previewVocabularyCsvImport(
   csv: string,
@@ -32,7 +29,7 @@ export function previewVocabularyCsvImport(
     };
   }
 
-  const header = parsed.records[0].fields.map((value) => normalized(value));
+  const header = parsed.records[0].fields.map(normalizeVocabularyCsvValue);
   const missingHeaders = REQUIRED_CSV_HEADERS.filter(
     (name) => !header.includes(name)
   );
@@ -64,9 +61,9 @@ export function previewVocabularyCsvImport(
 
   const columnIndex = new Map(header.map((name, index) => [name, index]));
   const categoriesByName = new Map(
-    categoryNames.map((name) => [normalized(name), name])
+    categoryNames.map((name) => [normalizeVocabularyCsvValue(name), name])
   );
-  const existing = new Set(existingWords.map(normalized));
+  const existing = new Set(existingWords.map(normalizeVocabularyCsvValue));
   const groups = new Map<string, VocabularyCsvWordGroup>();
   const invalidGroups = new Set<string>();
   const duplicateWords = new Set<string>();
