@@ -1,5 +1,5 @@
 import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
-import type { CommunicationDifficulty } from "@/lib/supabase/situational-english";
+import type { CommunicationDifficulty } from "@/lib/communication/csv";
 
 export type TopicWordCounts = Record<CommunicationDifficulty, number>;
 

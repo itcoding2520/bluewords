@@ -1,4 +1,4 @@
-import type { CommunicationDifficulty, ContentStatus } from "@/lib/supabase/situational-english";
+import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/csv";
 
 export type CommunicationTopic = {
   id: string;

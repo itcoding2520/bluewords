@@ -2,7 +2,7 @@ import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 
 import type { createClient } from "@/lib/supabase/client";
-import { exportCommunicationCsv } from "@/lib/supabase/situational-english";
+import { exportCommunicationCsv } from "@/lib/communication/csv";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 

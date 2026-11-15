@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
-import type { ContentStatus } from "@/lib/supabase/situational-english";
+import type { ContentStatus } from "@/lib/communication/csv";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 export type CommunicationTopicDraft = Pick<
