@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/Select";
 import type {
   VocabularyCategoryColor,
 } from "@/lib/supabase/categories";
-import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
+import { ManageCategoryRow } from "@/components/vocabulary/ManageCategoryRow";
 import { useManageCategoriesController } from "@/hooks/useManageCategoriesController";
 
 const colorOptions: Array<{
@@ -178,39 +178,14 @@ export function ManageCategoriesModal({
                       </div>
                     </form>
                   ) : (
-                    <div className="flex items-center gap-3">
-                      <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath} colorClass={color?.className ?? "bg-slate-300"} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-900">
-                          {category.name}
-                        </p>
-                        {category.is_default && (
-                          <p className="text-xs text-slate-500">
-                            Default fallback category
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        aria-label={`Edit ${category.name}`}
-                        onClick={() => startEditing(category)}
-                        disabled={isSaving}
-                        className="flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      {!category.is_default && (
-                        <button
-                          type="button"
-                          aria-label={`Delete ${category.name}`}
-                          onClick={() => void handleDelete(category)}
-                          disabled={isSaving}
-                          className="flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
+                    <ManageCategoryRow
+                      category={category}
+                      colorClass={color?.className ?? "bg-slate-300"}
+                      fallbackWordImagePath={words.find((word) => word.category.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase() && word.imagePath)?.imagePath}
+                      isSaving={isSaving}
+                      onEdit={() => startEditing(category)}
+                      onDelete={() => void handleDelete(category)}
+                    />
                   )}
                 </div>
               );
