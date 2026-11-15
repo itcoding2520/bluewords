@@ -76,6 +76,30 @@ export function useWordSearchController(userId: string | null) {
     resetSave,
   });
 
+  function openPlayTab() {
+    setTab("play");
+    setSelectedHistory(null);
+  }
+
+  function openHistoryTab() {
+    setTab("history");
+    setSelectedHistory(null);
+    void loadHistory();
+  }
+
+  function viewHistory() {
+    setPhase("setup");
+    setTab("history");
+    setHistoryPage(1);
+    setSelectedHistory(null);
+    void loadHistory(true, 1);
+  }
+
+  function changeHistoryPage(page: number) {
+    setHistoryPage(page);
+    void loadHistory(false, page);
+  }
+
   return {
     words,
     categories,
@@ -89,9 +113,7 @@ export function useWordSearchController(userId: string | null) {
     categoriesExpanded,
     setCategoriesExpanded,
     phase,
-    setPhase,
     tab,
-    setTab,
     puzzle,
     foundIds,
     foundWordPaths,
@@ -103,7 +125,6 @@ export function useWordSearchController(userId: string | null) {
     retrySave,
     history,
     historyPage,
-    setHistoryPage,
     historyTotal,
     historyLoading,
     historyError,
@@ -125,5 +146,9 @@ export function useWordSearchController(userId: string | null) {
     handleGridPointerCancel: gameplay.handleGridPointerCancel,
     handleStartGame: gameplay.handleStartGame,
     backToSetup: gameplay.backToSetup,
+    openPlayTab,
+    openHistoryTab,
+    viewHistory,
+    changeHistoryPage,
   };
 }

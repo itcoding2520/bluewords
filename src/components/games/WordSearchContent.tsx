@@ -25,9 +25,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     categoriesExpanded,
     setCategoriesExpanded,
     phase,
-    setPhase,
     tab,
-    setTab,
     puzzle,
     foundIds,
     foundWordPaths,
@@ -39,7 +37,6 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     retrySave,
     history,
     historyPage,
-    setHistoryPage,
     historyTotal,
     historyLoading,
     historyError,
@@ -60,6 +57,10 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
     handleGridPointerCancel,
     handleStartGame,
     backToSetup,
+    openPlayTab,
+    openHistoryTab,
+    viewHistory,
+    changeHistoryPage,
   } = useWordSearchController(userId);
 
   if (!isLoaded) return <p className="py-16 text-sm text-slate-500">Loading vocabulary…</p>;
@@ -75,8 +76,8 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
         </header>
 
         <div className="word-search-setup-tabs mb-5 flex gap-2 border-b border-slate-200">
-          <button type="button" onClick={() => { setTab("play"); setSelectedHistory(null); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium ${tab === "play" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}><Gamepad2 size={16} /> Play</button>
-          {userId && <button type="button" onClick={() => { setTab("history"); setSelectedHistory(null); void loadHistory(); }} className={`inline-flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-slate-500 hover:text-slate-800 ${tab === "history" ? "!border-blue-600 !text-blue-700" : ""}`}><History size={16} /> History</button>}
+          <button type="button" onClick={openPlayTab} className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium ${tab === "play" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}><Gamepad2 size={16} /> Play</button>
+          {userId && <button type="button" onClick={openHistoryTab} className={`inline-flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-slate-500 hover:text-slate-800 ${tab === "history" ? "!border-blue-600 !text-blue-700" : ""}`}><History size={16} /> History</button>}
         </div>
 
         {tab === "history" ? (
@@ -91,10 +92,10 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
             averageWordsPerRound={averageWordsPerRound}
             vocabularyByWord={vocabularyByWord}
             onBack={() => setSelectedHistory(null)}
-            onPlay={() => { setSelectedHistory(null); setTab("play"); }}
+            onPlay={openPlayTab}
             onSelect={setSelectedHistory}
             onRefresh={() => void loadHistory(true)}
-            onPageChange={(page) => { setHistoryPage(page); void loadHistory(false, page); }}
+            onPageChange={changeHistoryPage}
           />
         ) : (
         <WordSearchSetupForm
@@ -138,13 +139,7 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
             retrySave();
           }}
           onPlayAgain={handleStartGame}
-          onViewHistory={() => {
-            setPhase("setup");
-            setTab("history");
-            setHistoryPage(1);
-            setSelectedHistory(null);
-            void loadHistory(true, 1);
-          }}
+          onViewHistory={viewHistory}
         />
       ) : (
         <WordSearchPlayingBoard
