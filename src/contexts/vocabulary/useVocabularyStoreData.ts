@@ -1,22 +1,19 @@
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { getVocabularyWords } from "@/lib/supabase/vocabulary";
-import {
-  getVocabularyCategoriesForUser,
-  type VocabularyCategoryRow,
-} from "@/lib/supabase/categories";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import {
   loadPublicSharedVocabulary,
   mapPublicCategories,
   mapPublicWords,
-  mapVocabularyWordRow,
-  mergeVocabularyCategories,
-  mapCommunityWords,
-  type PublishedCommunityCategory,
-  type PublishedCommunityWord,
 } from "@/lib/vocabulary/shared-vocabulary";
+import {
+  loadAuthenticatedVocabularyCategories,
+  loadAuthenticatedVocabularySnapshot,
+  mapAuthenticatedVocabularyCategories,
+  mapAuthenticatedVocabularySnapshot,
+} from "@/lib/supabase/vocabulary-store";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { toast } from "sonner";
 
@@ -52,18 +49,12 @@ export function useVocabularyStoreData() {
         setCategoriesLoaded(true);
         return;
       }
-      const [rows, sharedResult] = await Promise.all([
-        getVocabularyCategoriesForUser(user.id),
-        supabase.from("community_categories")
-          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-          .eq("status", "published"),
-      ]);
+      const result = await loadAuthenticatedVocabularyCategories(supabase, user.id);
       if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
-      if (sharedResult.error) {
-        console.error("Could not load published community categories:", sharedResult.error);
+      if (result.error) {
+        console.error("Could not load published community categories:", result.error);
       }
-      const publishedRows = (sharedResult.data ?? []) as PublishedCommunityCategory[];
-      setCategories(mergeVocabularyCategories(rows, publishedRows));
+      setCategories(mapAuthenticatedVocabularyCategories(result));
       setCategoriesLoaded(true);
     } catch (error) {
       if (requestId !== categoriesRequestIdRef.current) return;
@@ -110,33 +101,15 @@ export function useVocabularyStoreData() {
         setIsLoaded(false);
       }
 
-      const [rows, categoryRows, communityCategoryResult, communityWordResult] = await Promise.all([
-        getVocabularyWords(),
-        getVocabularyCategoriesForUser(user.id),
-        supabase.from("community_categories")
-          .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-          .eq("status", "published"),
-        supabase.from("community_words")
-          .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
-          .eq("status", "published")
-          .eq("community_categories.status", "published"),
-      ]);
+      const result = await loadAuthenticatedVocabularySnapshot(supabase, user.id);
 
       if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
-      const personalWords = rows.map(mapVocabularyWordRow);
-      const { data: communityCategories, error: communityCategoriesError } = communityCategoryResult;
-      const { data: communityWords, error: communityWordsError } = communityWordResult;
-      if (communityCategoriesError || communityWordsError) {
-        console.error("Could not load published community vocabulary:", communityCategoriesError ?? communityWordsError);
+      if (result.communityCategoriesError || result.communityWordsError) {
+        console.error("Could not load published community vocabulary:", result.communityCategoriesError ?? result.communityWordsError);
       }
-      const publishedCategoryRows = (communityCategories ?? []) as PublishedCommunityCategory[];
-      const mergedCategories = mergeVocabularyCategories(categoryRows, publishedCategoryRows);
-      const sharedWords = mapCommunityWords(
-        (communityWords ?? []) as unknown as PublishedCommunityWord[],
-        personalWords
-      );
-      setWords([...personalWords, ...sharedWords]);
-      setCategories(mergedCategories);
+      const mappedVocabulary = mapAuthenticatedVocabularySnapshot(result);
+      setWords(mappedVocabulary.words);
+      setCategories(mappedVocabulary.categories);
       setCategoriesLoaded(true);
       setIsLoaded(true);
     } catch (error) {
