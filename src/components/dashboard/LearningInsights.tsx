@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Activity, BookOpenCheck, Flame, Target } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
-import {
-  getCachedLearningAnalytics,
-  getLearningAnalytics,
-  type LearningAnalytics as LearningAnalyticsData,
-} from "@/lib/supabase/learning-analytics";
+import { useLearningInsights } from "@/hooks/useLearningInsights";
 
 const weekdayFormatter = new Intl.DateTimeFormat("en", {
   weekday: "short",
@@ -22,35 +17,7 @@ function getWeekday(date: string): string {
 }
 
 export function LearningInsights({ userId }: { userId: string }) {
-  const [analytics, setAnalytics] = useState<LearningAnalyticsData | null>(
-    () => getCachedLearningAnalytics(userId) ?? null
-  );
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    void getLearningAnalytics(userId)
-      .then((result) => {
-        if (active) setAnalytics(result);
-      })
-      .catch((error) => {
-        console.error("Failed to load learning analytics:", error);
-        if (active) setHasError(true);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [userId]);
-
-  const accuracy = analytics && analytics.totalReviews > 0
-    ? `${Math.round((analytics.rememberedReviews / analytics.totalReviews) * 100)}%`
-    : "—";
-  const maxDailyCount = Math.max(
-    1,
-    ...(analytics?.dailyActivity.map((day) => day.count) ?? [])
-  );
+  const { analytics, hasError, accuracy, maxDailyCount } = useLearningInsights(userId);
 
   return (
     <Card className="ui-art-background h-full border-violet-100 bg-white p-5 sm:p-6" style={{ backgroundImage: "url('/images/ui/backgrounds/activity.svg')" }}>
