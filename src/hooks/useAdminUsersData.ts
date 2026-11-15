@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
+import { getPageCount } from "@/lib/pagination";
 
 export function useAdminUsersData({
   page,
@@ -39,7 +40,7 @@ export function useAdminUsersData({
       );
       if (signal?.aborted) return;
       const nextTotal = payload.total ?? 0;
-      const nextPageCount = Math.max(1, Math.ceil(nextTotal / pageSize));
+      const nextPageCount = getPageCount(nextTotal, pageSize);
       setTotal(nextTotal);
       if (page > nextPageCount) {
         setPage(nextPageCount);

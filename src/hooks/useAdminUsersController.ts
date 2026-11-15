@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAdminUsersActions } from "@/hooks/useAdminUsersActions";
 import { useAdminUsersData } from "@/hooks/useAdminUsersData";
 import { useAdminUsersExport } from "@/hooks/useAdminUsersExport";
+import { getPageCount } from "@/lib/pagination";
 
 export function useAdminUsersController() {
   const [page, setPage] = useState(1);
@@ -20,7 +21,7 @@ export function useAdminUsersController() {
     setNotice: actions.setNotice,
   });
 
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const pageCount = getPageCount(total, pageSize);
   const currentPage = Math.min(page, pageCount);
   const firstVisible = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const lastVisible = Math.min(currentPage * pageSize, total);

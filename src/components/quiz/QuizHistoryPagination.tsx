@@ -2,6 +2,7 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { getPageCount } from "@/lib/pagination";
 
 export function QuizHistoryPagination({
   total,
@@ -16,7 +17,7 @@ export function QuizHistoryPagination({
   onPageSizeChange: (size: number) => void;
   onPageChange: (page: number) => void;
 }) {
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const pageCount = getPageCount(total, pageSize);
 
   return (
     <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VIDEOS_PAGE_SIZE } from "@/lib/videos";
+import { getPageCount } from "@/lib/pagination";
 import { useVideosController } from "@/hooks/useVideosController";
 import { VideoAdminForm } from "@/components/videos/VideoAdminForm";
 
@@ -29,7 +30,7 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
     saveVideo,
     deleteVideo,
   } = controller;
-  const pageCount = Math.max(1, Math.ceil(total / VIDEOS_PAGE_SIZE));
+  const pageCount = getPageCount(total, VIDEOS_PAGE_SIZE);
 
   return (
     <div>

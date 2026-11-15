@@ -7,6 +7,7 @@ import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
 import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import { getPageCount } from "@/lib/pagination";
 
 export function useVocabularyContentExperience(isAdmin: boolean) {
   const {
@@ -45,7 +46,7 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });
 
   const visibleTotalWords = pageData.loadedAuthVersion === authVersion ? pageData.totalWords : 0;
-  const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
+  const pageCount = getPageCount(visibleTotalWords, pageSize);
   const currentPage = Math.min(page, pageCount);
   const currentPageWords = pageData.loadedAuthVersion === authVersion ? pageData.pageWords : [];
   const selection = useVocabularySelection(currentPageWords, authVersion);

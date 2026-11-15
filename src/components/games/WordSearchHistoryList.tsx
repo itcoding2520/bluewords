@@ -5,6 +5,7 @@ import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { Button } from "@/components/ui/Button";
 import type { WordSearchSessionRow } from "@/types/database";
 import { formatGameDuration } from "@/lib/game-duration";
+import { getPageCount } from "@/lib/pagination";
 
 
 export function WordSearchHistoryList({
@@ -32,7 +33,7 @@ export function WordSearchHistoryList({
   onSelect: (session: WordSearchSessionRow) => void;
   onPageChange: (page: number) => void;
 }) {
-  const totalPages = Math.max(1, Math.ceil(historyTotal / 10));
+  const totalPages = getPageCount(historyTotal, 10);
 
   return (
     <>
