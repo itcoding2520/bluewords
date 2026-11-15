@@ -28,10 +28,17 @@ export function VocabularyCsvTools({
 }: VocabularyCsvToolsProps) {
   const {
     import: {
-      fileInputRef, imageInputRef, open, setOpen, fileName, imageFiles, preview,
-      isReading, isImporting, imageMatch, openImport: handleOpenImport,
-      readCsvFile: handleFileChange, selectImageFiles: handleImageFilesChange,
-      importCsv: handleImport,
+      dialog: { open, setOpen, isReading, isImporting },
+      files: {
+        csvInputRef: fileInputRef, imageInputRef, fileName, imageFiles,
+      },
+      preview: { content: preview, imageMatch },
+      actions: {
+        openImport: handleOpenImport,
+        readCsvFile: handleFileChange,
+        selectImageFiles: handleImageFilesChange,
+        importCsv: handleImport,
+      },
     },
     export: {
       isExporting,

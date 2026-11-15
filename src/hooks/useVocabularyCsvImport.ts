@@ -89,19 +89,19 @@ export function useVocabularyCsvImport({
   }
 
   return {
-    fileInputRef,
-    open,
-    setOpen,
-    fileName,
-    imageInputRef: imageSelection.imageInputRef,
-    imageFiles: imageSelection.imageFiles,
-    preview,
-    isReading,
-    isImporting,
-    imageMatch: imageSelection.imageMatch,
-    openImport,
-    readCsvFile,
-    selectImageFiles: imageSelection.selectImageFiles,
-    importCsv,
+    dialog: { open, setOpen, isReading, isImporting },
+    files: {
+      csvInputRef: fileInputRef,
+      imageInputRef: imageSelection.imageInputRef,
+      fileName,
+      imageFiles: imageSelection.imageFiles,
+    },
+    preview: { content: preview, imageMatch: imageSelection.imageMatch },
+    actions: {
+      openImport,
+      readCsvFile,
+      selectImageFiles: imageSelection.selectImageFiles,
+      importCsv,
+    },
   };
 }
