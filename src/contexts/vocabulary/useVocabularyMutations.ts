@@ -3,9 +3,7 @@ import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import {
   addVocabularyWord,
   deleteVocabularyWord,
-  deleteVocabularyWords,
   getVocabularyWordById,
-  getVocabularyWordImagePaths,
   updateVocabularyWord,
   updateVocabularyWordWithMeanings,
 } from "@/lib/supabase/vocabulary";
@@ -14,15 +12,14 @@ import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { fetchEnglishIpa } from "@/lib/dictionary";
 import {
   invalidateLatestVocabularyReviewsCache,
-  invalidateVocabularyReviewScheduleCache,
 } from "@/lib/supabase/reviews";
-import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import { mapVocabularyMeaning } from "@/lib/vocabulary/shared-vocabulary";
 import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
 import { toast } from "sonner";
 import { useVocabularyCategoryMutations } from "@/contexts/vocabulary/useVocabularyCategoryMutations";
+import { useVocabularyDeletionMutations } from "@/contexts/vocabulary/useVocabularyDeletionMutations";
 
 type MutationOptions = {
   words: VocabularyWord[];
@@ -38,6 +35,11 @@ export function useVocabularyMutations({ words, categories, setWords, setCategor
     categories,
     setWords,
     setCategories,
+    ownerIdRef,
+  });
+  const deletionMutations = useVocabularyDeletionMutations({
+    words,
+    setWords,
     ownerIdRef,
   });
 
@@ -202,76 +204,6 @@ export function useVocabularyMutations({ words, categories, setWords, setCategor
     }
   }
 
-  async function deleteWord(id: string): Promise<boolean> {
-    if (id.startsWith("community-")) {
-      toast.error("Published community words are read-only.");
-      return false;
-    }
-    const word = words.find((item) => item.id === id);
-
-    try {
-      const storedWord = word ? null : await getVocabularyWordById(id);
-      await deleteVocabularyWord(id);
-
-      const imagePath = word?.imagePath ?? storedWord?.image_path;
-      if (imagePath) {
-        void deleteVocabularyImages([imagePath]).catch((error) =>
-          console.error("Could not remove vocabulary image:", error)
-        );
-      }
-
-      setWords((current) =>
-        current.filter((item) => item.id !== id)
-      );
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
-      invalidateLearningAnalyticsCache();
-      invalidateVocabularyReviewScheduleCache();
-
-      toast.success(`"${word?.word ?? storedWord?.word ?? "Word"}" deleted successfully!`);
-      return true;
-    } catch {
-      toast.error("Failed to delete word.");
-      return false;
-    }
-  }
-
-  async function deleteWords(ids: string[]): Promise<number> {
-    const uniqueIds = [...new Set(ids)];
-    if (uniqueIds.length === 0) return 0;
-
-    try {
-      const imageRows = await getVocabularyWordImagePaths(uniqueIds);
-      const deletedIds = await deleteVocabularyWords(uniqueIds);
-      const deletedSet = new Set(deletedIds);
-      const deletedImagePaths = imageRows
-        .filter((word) => deletedSet.has(word.id))
-        .map((word) => word.image_path);
-
-      if (deletedImagePaths.some(Boolean)) {
-        void deleteVocabularyImages(deletedImagePaths).catch((error) =>
-          console.error("Could not remove deleted vocabulary images:", error)
-        );
-      }
-
-      setWords((current) =>
-        current.filter((word) => !deletedSet.has(word.id))
-      );
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
-      invalidateLearningAnalyticsCache();
-      invalidateVocabularyReviewScheduleCache();
-
-      return deletedIds.length;
-    } catch (error) {
-      console.error("Supabase deleteWords error:", error);
-      toast.error("Failed to delete selected words.");
-      return 0;
-    }
-  }
-
   async function toggleMastered(id: string, currentStatus?: VocabularyWord["status"]): Promise<boolean> {
     const word = words.find((item) => item.id === id);
     if (word?.isCustom) return false;
@@ -305,8 +237,7 @@ export function useVocabularyMutations({ words, categories, setWords, setCategor
   return {
     addWord,
     updateWord,
-    deleteWord,
-    deleteWords,
+    ...deletionMutations,
     toggleMastered,
     ...categoryMutations,
   };
