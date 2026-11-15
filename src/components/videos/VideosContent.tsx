@@ -9,25 +9,13 @@ import { VideoAdminForm } from "@/components/videos/VideoAdminForm";
 export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
   const controller = useVideosController(isAdmin);
   const {
-    videos,
-    total,
-    page,
-    pageCount,
-    previousPage,
-    nextPage,
-    isLoading,
-    isSaving,
-    editingId,
-    title,
-    setTitle,
-    youtubeUrl,
-    setYoutubeUrl,
-    playingVideoId,
-    setPlayingVideoId,
-    resetForm,
-    startEditing,
-    saveVideo,
-    deleteVideo,
+    library: { videos, total, isLoading },
+    pagination: { page, pageCount, previousPage, nextPage },
+    playback: { playingVideoId, setPlayingVideoId },
+    admin: {
+      isSaving, editingId, title, setTitle, youtubeUrl, setYoutubeUrl,
+      resetForm, startEditing, saveVideo, deleteVideo,
+    },
   } = controller;
   return (
     <div>

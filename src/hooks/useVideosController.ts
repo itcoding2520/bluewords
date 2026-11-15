@@ -26,17 +26,16 @@ export function useVideosController(isAdmin: boolean) {
   }
 
   return {
-    videos,
-    total,
-    page,
-    pageCount,
-    setPage,
-    previousPage,
-    nextPage,
-    isLoading,
-    playingVideoId,
-    setPlayingVideoId,
-    pageSize: VIDEOS_PAGE_SIZE,
-    ...adminActions,
+    library: { videos, total, isLoading },
+    pagination: {
+      page,
+      pageCount,
+      pageSize: VIDEOS_PAGE_SIZE,
+      setPage,
+      previousPage,
+      nextPage,
+    },
+    playback: { playingVideoId, setPlayingVideoId },
+    admin: adminActions,
   };
 }
