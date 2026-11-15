@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { normalizeAssessmentAnswer } from "@/lib/assessments/normalize-answer";
+import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 
 type ReviewQuestion = { type: "vocabulary" | "sentence"; prompt: string; answer: string; word?: string; meaning?: string };
@@ -36,9 +36,5 @@ export function useAssessmentReviewController(attemptId: string) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  function isCorrectAnswer(answer: string, expected: string) {
-    return normalizeAssessmentAnswer(answer) === normalizeAssessmentAnswer(expected);
-  }
-
-  return { attempt, error, isCorrectAnswer };
+  return { attempt, error, isCorrectAnswer: areAssessmentAnswersEqual };
 }
