@@ -10,6 +10,15 @@ export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
 export function useAdminCategoryManagementController() {
   const supabase = useSupabaseClient();
+  const defaultWordsByCategory = useMemo(() => {
+    const wordsByCategory = new Map<string, typeof defaultVocabularyWords>();
+    for (const word of defaultVocabularyWords) {
+      const categoryWords = wordsByCategory.get(word.category) ?? [];
+      categoryWords.push(word);
+      wordsByCategory.set(word.category, categoryWords);
+    }
+    return wordsByCategory;
+  }, []);
   const [activeTab, setActiveTab] = useState<CategoryTab>("default");
   const [selectedId, setSelectedId] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
@@ -63,7 +72,7 @@ export function useAdminCategoryManagementController() {
         && item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())
       : "owner_id" in category ? category : null;
     const fallbackImage = activeTab === "default"
-      ? defaultVocabularyWords.find((word) => word.category === category.name && word.imagePath)?.imagePath
+      ? defaultWordsByCategory.get(category.name)?.find((word) => word.imagePath)?.imagePath
       : category.id === selectedCategory?.id
         ? words.find((word) => word.image_path)?.image_path
         : undefined;
@@ -74,14 +83,14 @@ export function useAdminCategoryManagementController() {
       owner: shared ? emails[shared.owner_id] ?? "Loading owner…" : null,
       fallbackImage,
       defaultWordCount: activeTab === "default"
-        ? defaultVocabularyWords.filter((word) => word.category === category.name).length
+        ? defaultWordsByCategory.get(category.name)?.length ?? 0
         : null,
       createdAt: "owner_id" in category ? category.created_at : null,
     };
   });
 
   const defaultWords = activeTab === "default" && selectedCategory
-    ? defaultVocabularyWords.filter((word) => word.category === selectedCategory.name)
+    ? defaultWordsByCategory.get(selectedCategory.name) ?? []
     : [];
   const selectedSharedCategory = selectedCategory
     ? activeTab === "default"
