@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useMemo, useRef, useState } from "react";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
-import { loadSentenceBuilderQuestions } from "@/lib/supabase/sentence-builder";
 import { useAdminSentenceBuilderActions } from "@/hooks/useAdminSentenceBuilderActions";
+import { useAdminSentenceBuilderData } from "@/hooks/useAdminSentenceBuilderData";
 import type {
   SentenceBuilderQuestion,
   SentenceDifficulty,
@@ -12,10 +11,9 @@ import type {
 const empty: SentenceQuestionInput = { question_id: "", difficulty: "easy", category: "", prompt_vi: "", answer_sentence: "", answer_tokens: [], distractor_tokens: [], image_keyword: "", vocabulary_words: [], is_active: true };
 
 export function useAdminSentenceBuilderController() {
-  const [questions, setQuestions] = useState<SentenceBuilderQuestion[]>([]);
+  const { questions, loading, refresh } = useAdminSentenceBuilderData();
   const [draft, setDraft] = useState<SentenceQuestionInput>(empty);
   const [editing, setEditing] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<SentenceDifficulty | "all">("all");
   const [pageSize, setPageSize] = useState<50 | 100>(50);
@@ -25,13 +23,6 @@ export function useAdminSentenceBuilderController() {
   const pageMetadata = getPageMetadata(filteredQuestions.length, page, pageSize);
   const visible = getPageItems(filteredQuestions, pageMetadata.currentPage, pageSize);
   const categoryOptions = [...new Set([...questions.map((question) => question.category), draft.category].map((name) => name.trim()).filter(Boolean))].sort((left, right) => left.localeCompare(right));
-
-  async function refresh() {
-    setLoading(true);
-    try { setQuestions(await loadSentenceBuilderQuestions(false)); }
-    catch { toast.error("Could not load Sentence Builder questions."); }
-    finally { setLoading(false); }
-  }
 
   const actions = useAdminSentenceBuilderActions({
     draft,
@@ -43,14 +34,6 @@ export function useAdminSentenceBuilderController() {
     fileRef,
     refresh,
   });
-
-  useEffect(() => {
-    let active = true;
-    void loadSentenceBuilderQuestions(false).then((data) => { if (active) setQuestions(data); })
-      .catch(() => { if (active) toast.error("Could not load Sentence Builder questions."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
 
   function editQuestion(question: SentenceBuilderQuestion) {
     setEditing(question.id);
