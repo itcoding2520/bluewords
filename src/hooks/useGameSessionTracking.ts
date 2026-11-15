@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useRef, useState } from "react";
 
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
@@ -56,7 +57,7 @@ export function useGameSessionTracking({
     }).then(() => setSaveState("saved")).catch((error: unknown) => {
       submittedSessionRef.current = null;
       setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this result.");
+      setSaveError(getErrorMessage(error, "Could not save this result."));
     });
   }, [correctCount, gameType, isAuthenticated, moves, retryCount, roundSize, score, shouldSubmit, startedAt, setElapsedSeconds]);
 

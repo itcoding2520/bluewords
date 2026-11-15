@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers } from "@/lib/admin-user-api";
@@ -25,7 +26,7 @@ export function useAdminNotificationRecipients(
         ) as { users?: AdminNotificationRecipient[] };
         if (active) setRecipients((payload.users ?? []).filter((recipient) => recipient.id !== currentUserId));
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load users.");
+        if (active) setError(getErrorMessage(cause, "Could not load users."));
       } finally {
         if (active) setLoading(false);
       }

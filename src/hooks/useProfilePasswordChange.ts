@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type FormEvent } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
@@ -33,7 +34,7 @@ export function useProfilePasswordChange() {
       setConfirmPassword("");
       setPasswordNotice("Your password has been updated.");
     } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "Could not update your password. Please try again.");
+      setPasswordError(getErrorMessage(error, "Could not update your password. Please try again."));
     } finally {
       setPasswordSaving(false);
     }

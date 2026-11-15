@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type FormEvent } from "react";
 import { createAdminNotification } from "@/lib/admin-notifications-api";
 import { useAdminNotificationRecipients } from "@/hooks/useAdminNotificationRecipients";
@@ -29,7 +30,7 @@ export function useAdminNotificationComposerController(currentUserId: string) {
       recipientState.setSelected([]);
       recipientState.setAllUsers(false);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not send notification.");
+      setError(getErrorMessage(cause, "Could not send notification."));
     } finally {
       setSending(false);
     }

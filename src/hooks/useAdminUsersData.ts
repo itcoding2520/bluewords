@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
@@ -46,7 +47,7 @@ export function useAdminUsersData({
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === "AbortError") return;
       if (signal?.aborted) return;
-      setError(cause instanceof Error ? cause.message : "Could not load users.");
+      setError(getErrorMessage(cause, "Could not load users."));
       setUsers([]);
       setTotal(0);
     } finally {

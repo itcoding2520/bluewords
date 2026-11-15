@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
@@ -31,7 +32,7 @@ export function useAdminReviewData() {
       setPublishedWords(result.publishedWords);
       setOwnerEmails(result.ownerEmails);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load requests.");
+      setError(getErrorMessage(cause, "Could not load requests."));
     } finally {
       setLoading(false);
     }

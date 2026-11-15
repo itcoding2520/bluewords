@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Difficulty, GridSize } from "@/lib/word-search-config";
@@ -71,7 +72,7 @@ export function useWordSearchSessionSave({
     }).catch((error: unknown) => {
       saveStartedRef.current = null;
       setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this game attempt.");
+      setSaveError(getErrorMessage(error, "Could not save this game attempt."));
     });
   }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt, userId]);
 

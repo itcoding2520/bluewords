@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { toLocalDateInputValue } from "@/lib/formatDate";
 import { createAssessmentAssignment, fetchAssessmentAdminSnapshot, type AssessmentAdminUser, type AssessmentAssignment, type AssessmentAttempt } from "@/lib/assessments/admin-api";
@@ -25,7 +26,7 @@ export function useAdminAssessmentsController() {
     try {
       const data = await fetchAssessmentAdminSnapshot();
       setUsers(data.users); setAssignments(data.assignments); setAttempts(data.attempts); setError("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load assignments."); }
+    } catch (cause) { setError(getErrorMessage(cause, "Could not load assignments.")); }
     finally { setLoading(false); }
   }, []);
 
@@ -65,7 +66,7 @@ export function useAdminAssessmentsController() {
       setTitle(""); setSelected([]); setAllUsers(false); setDueAt("");
       setActiveTab("tests");
       await refresh();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not assign test."); }
+    } catch (cause) { setError(getErrorMessage(cause, "Could not assign test.")); }
     finally { setSending(false); }
   }
 

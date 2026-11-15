@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { sendAdminUserAction, type AdminUserRecord } from "@/lib/admin-user-api";
@@ -45,7 +46,7 @@ export function useAdminUsersActions({
       showMutationResult(payload, action === "delete" ? "User removed." : action === "create" ? "User created." : "User saved.");
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not complete this user action.");
+      setError(getErrorMessage(cause, "Could not complete this user action."));
       return false;
     } finally {
       setBusy(null);

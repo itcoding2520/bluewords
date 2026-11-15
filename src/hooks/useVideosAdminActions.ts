@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
@@ -79,7 +80,7 @@ export function useVideosAdminActions({
       else setPage(1);
     } catch (error) {
       const isDuplicate = Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
-      toast.error(isDuplicate ? "This YouTube video is already in the library." : error instanceof Error ? error.message : "Could not save video.");
+      toast.error(isDuplicate ? "This YouTube video is already in the library." : getErrorMessage(error, "Could not save video."));
     } finally {
       setIsSaving(false);
     }
@@ -100,7 +101,7 @@ export function useVideosAdminActions({
       if (nextPage !== page) setPage(nextPage);
       else await loadVideos();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete video.");
+      toast.error(getErrorMessage(error, "Could not delete video."));
     } finally {
       setIsSaving(false);
     }

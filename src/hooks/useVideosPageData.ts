@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
@@ -30,7 +31,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
       setVideos(result.videos);
       setTotal(result.total);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load videos.");
+      toast.error(getErrorMessage(error, "Could not load videos."));
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
@@ -83,7 +84,7 @@ export function useAdminReviewModeration(supabase: SupabaseClient, {
         }
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update this request.");
+      setError(getErrorMessage(cause, "Could not update this request."));
     } finally {
       setBusy(null);
     }

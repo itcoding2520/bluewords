@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { downloadCsvFile } from "@/lib/download-csv";
@@ -25,7 +26,7 @@ export function useAdminSentenceBuilderCsvActions(input: {
       toast.success(`Imported ${rows.length} questions.`);
       await input.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "CSV import failed.");
+      toast.error(getErrorMessage(error, "CSV import failed."));
     } finally {
       input.setBusy(false);
       if (fileRef.current) fileRef.current.value = "";

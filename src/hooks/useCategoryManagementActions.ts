@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type FormEvent } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { useVocabulary } from "@/contexts/VocabularyContext";
@@ -49,7 +50,7 @@ export function useCategoryManagementActions({
       }
     } catch (error) {
       if (uploadedPath) await deleteCategoryImage(uploadedPath).catch(() => undefined);
-      toast.error(error instanceof Error ? error.message : "Could not save the category image.");
+      toast.error(getErrorMessage(error, "Could not save the category image."));
     } finally {
       setIsSaving(false);
     }
@@ -79,7 +80,7 @@ export function useCategoryManagementActions({
       if (updated && form.editImage && (isAdmin || !form.editing.is_default)) await saveImage(form.editing, form.editImage);
       if (updated) form.closeEdit();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save the category image.");
+      toast.error(getErrorMessage(error, "Could not save the category image."));
     } finally {
       setIsSaving(false);
     }

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
@@ -53,7 +54,7 @@ export function useAdminSentenceBuilderActions({
       setEditing(null);
       await refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save this question.");
+      toast.error(getErrorMessage(error, "Could not save this question."));
     } finally {
       setBusy(false);
     }

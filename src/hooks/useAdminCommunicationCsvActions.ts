@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { downloadCsvFile } from "@/lib/download-csv";
@@ -36,7 +37,7 @@ export function useAdminCommunicationCsvActions({ supabase, selectedTopicId, set
       }
       await onRefresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "CSV import failed.");
+      toast.error(getErrorMessage(error, "CSV import failed."));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -58,7 +59,7 @@ export function useAdminCommunicationCsvActions({ supabase, selectedTopicId, set
       );
       toast.success(`Exported ${records.length} content rows.`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not export communication content.");
+      toast.error(getErrorMessage(error, "Could not export communication content."));
     } finally {
       setBusy(false);
     }

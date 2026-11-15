@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -59,7 +60,7 @@ export function usePublishVocabularyController() {
       clearSelection();
       await refreshRequests();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : fallbackMessage);
+      toast.error(getErrorMessage(error, fallbackMessage));
     } finally {
       setBusy(false);
     }

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -48,7 +49,7 @@ export function useAdminCategoryWordsData(
         setWordEmails(result.emails);
       } catch (cause) {
         if (cancelled) return;
-        setError(cause instanceof Error ? cause.message : "Could not load words.");
+        setError(getErrorMessage(cause, "Could not load words."));
         setWords([]);
         setWordEmails({});
       }

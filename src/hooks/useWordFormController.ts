@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { type FormEvent, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategory, VocabularyType } from "@/config/vocabulary";
@@ -81,7 +82,7 @@ export function useWordFormController({
     } catch (error) {
       setErrors((current) => ({
         ...current,
-        image: error instanceof Error ? error.message : "Could not upload image.",
+        image: getErrorMessage(error, "Could not upload image."),
       }));
     } finally {
       setIsSubmitting(false);

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
@@ -24,7 +25,7 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
       setCommunityCategoryRequests(requests.categories);
       setCommunityWordRequests(requests.words);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not refresh request status.");
+      toast.error(getErrorMessage(error, "Could not refresh request status."));
     }
   }, [loadPublishRequests, supabase]);
 
@@ -50,7 +51,7 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
         setRequestsLoaded(true);
       } catch (error) {
         if (active) {
-          toast.error(error instanceof Error ? error.message : "Could not load request status.");
+          toast.error(getErrorMessage(error, "Could not load request status."));
           setRequestsLoaded(true);
         }
       }

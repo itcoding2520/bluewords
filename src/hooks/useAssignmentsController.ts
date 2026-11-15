@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMyAssignments, startAssignedAssessment } from "@/lib/assignments/api";
@@ -18,7 +19,7 @@ export function useAssignmentsController() {
       setAssignments(data);
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load assignments.");
+      setError(getErrorMessage(cause, "Could not load assignments."));
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ export function useAssignmentsController() {
       const attemptId = await startAssignedAssessment(assignmentId);
       router.push(`/assignments/take/${attemptId}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not start this test.");
+      setError(getErrorMessage(cause, "Could not start this test."));
       setStarting(null);
     }
   }

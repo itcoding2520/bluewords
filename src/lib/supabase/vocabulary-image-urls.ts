@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/client";
 import { VOCABULARY_IMAGES_BUCKET } from "@/lib/supabase/vocabulary-image-config";
 
@@ -67,7 +68,7 @@ async function flushSignedUrlBatch() {
   } catch (error) {
     console.warn(
       "Could not create vocabulary image URL:",
-      error instanceof Error ? error.message : "Storage request failed."
+      getErrorMessage(error, "Storage request failed.")
     );
     for (const [path, resolve] of batch) {
       signedUrlRequests.delete(path);

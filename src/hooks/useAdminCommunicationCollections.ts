@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
     try {
       applyCollections(await loadCollections(true));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load communication content.");
+      toast.error(getErrorMessage(error, "Could not load communication content."));
     }
   }, [applyCollections, loadCollections]);
 
@@ -52,7 +53,7 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
     void loadCollections()
       .then((result) => { if (active) applyCollections(result); })
       .catch((error: unknown) => {
-        if (active) toast.error(error instanceof Error ? error.message : "Could not load communication content.");
+        if (active) toast.error(getErrorMessage(error, "Could not load communication content."));
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

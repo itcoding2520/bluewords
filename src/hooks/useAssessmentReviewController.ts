@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
@@ -37,7 +38,7 @@ export function useAssessmentReviewController(attemptId: string) {
       const result = await fetchAssessmentAttempt<AssessmentReviewAttempt>(attemptId, "Could not load result.");
       setAttempt(result);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load result.");
+      setError(getErrorMessage(cause, "Could not load result."));
     }
   }, [attemptId]);
 

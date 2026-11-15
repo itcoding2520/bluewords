@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
@@ -29,7 +30,7 @@ export function useAssessmentRunnerController(attemptId: string) {
       setAnswers(value.answers?.length === 10 ? value.answers : Array(10).fill(""));
       setSeconds(Math.max(0, Math.floor((Date.now() - new Date(value.started_at).getTime()) / 1000)));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load test.");
+      setError(getErrorMessage(cause, "Could not load test."));
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export function useAssessmentRunnerController(attemptId: string) {
       await submitAssessmentAttempt(attemptId, answers);
       router.replace(`/assignments/results/${attemptId}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not submit test.");
+      setError(getErrorMessage(cause, "Could not submit test."));
       setSubmitting(false);
     }
   }
