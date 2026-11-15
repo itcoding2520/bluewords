@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
+import { fetchAdminUsers } from "@/lib/admin-user-api";
 
 export type AdminNotificationRecipient = { id: string; email: string | null; nickname: string };
 
@@ -20,12 +21,10 @@ export function useAdminNotificationComposerController(currentUserId: string) {
     async function loadRecipients() {
       try {
         const query = new URLSearchParams({ page: "1", pageSize: "100", all: "true" });
-        const payload = await getAdminCachedData("admin:users:all-recipients", async () => {
-          const response = await fetch(`/api/admin/users?${query}`, { cache: "no-store" });
-          const result = await response.json() as { users?: AdminNotificationRecipient[]; error?: string };
-          if (!response.ok) throw new Error(result.error ?? "Could not load users.");
-          return result;
-        }) as { users?: AdminNotificationRecipient[]; error?: string };
+        const payload = await getAdminCachedData(
+          "admin:users:all-recipients",
+          () => fetchAdminUsers(query)
+        ) as { users?: AdminNotificationRecipient[] };
         if (active) setRecipients((payload.users ?? []).filter((recipient) => recipient.id !== currentUserId));
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "Could not load users.");
