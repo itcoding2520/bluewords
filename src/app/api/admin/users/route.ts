@@ -1,18 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { AuthUser } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/supabase/admin-access";
-
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function createAdminClient() {
-  if (!serviceKey) return null;
-  return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
+import { handleAdminUserMutation, type AdminUserMutationInput } from "@/app/api/admin/users/mutations";
 
 function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   return {
@@ -24,7 +16,7 @@ function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   };
 }
 
-async function getProfileNicknames(adminClient: NonNullable<ReturnType<typeof createAdminClient>>, users: AuthUser[]) {
+async function getProfileNicknames(adminClient: AdminClient, users: AuthUser[]) {
   if (users.length === 0) return new Map<string, string>();
   const { data, error } = await adminClient.from("user_profiles").select("user_id, nickname").in("user_id", users.map((user) => user.id));
   if (error) {
@@ -123,58 +115,9 @@ export async function POST(request: NextRequest) {
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  const input = body as { action?: unknown; userId?: unknown; email?: unknown; password?: unknown; nickname?: unknown };
-
-  if (input.action === "create") {
-    if (typeof input.email !== "string" || !input.email.includes("@") || typeof input.password !== "string" || input.password.length < 8) return NextResponse.json({ error: "Provide a valid email and password of at least 8 characters." }, { status: 400 });
-    const { data, error } = await auth.adminClient.auth.admin.createUser({ email: input.email.trim(), password: input.password, email_confirm: true, user_metadata: { nickname: typeof input.nickname === "string" ? input.nickname.trim().slice(0, 60) : "" } });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ user: { id: data.user.id, email: data.user.email } }, { status: 201 });
-  }
-
-  if (typeof input.userId !== "string") return NextResponse.json({ error: "A userId is required." }, { status: 400 });
-  if (input.action === "delete") {
-    if (input.userId === auth.user.id) return NextResponse.json({ error: "You cannot delete your own admin account." }, { status: 400 });
-
-    // vocabulary_categories are deleted with their owner, while vocabulary_words
-    // reference those categories with ON DELETE RESTRICT. Remove the owner's
-    // words first so the auth user's category cascade can complete.
-    const { error: vocabularyError } = await auth.adminClient
-      .from("vocabulary_words")
-      .delete()
-      .eq("user_id", input.userId);
-    if (vocabularyError) {
-      console.error("Could not remove vocabulary before deleting admin user:", vocabularyError.message);
-      return NextResponse.json({ error: "Could not remove the user's vocabulary. The account was not deleted." }, { status: 500 });
-    }
-
-    const { error } = await auth.adminClient.auth.admin.deleteUser(input.userId);
-    if (error) {
-      console.error("Could not delete admin-managed user:", error.message);
-      return NextResponse.json({ error: "Could not delete this account. Please refresh and try again." }, { status: 500 });
-    }
-    return NextResponse.json({ ok: true });
-  }
-  if (input.action === "update") {
-    const attributes: { email?: string; password?: string; user_metadata?: Record<string, string> } = {};
-    if (typeof input.email === "string" && input.email.trim()) attributes.email = input.email.trim();
-    if (typeof input.password === "string" && input.password) {
-      if (input.password.length < 8) return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
-      attributes.password = input.password;
-    }
-    const nickname = typeof input.nickname === "string" ? input.nickname.trim() : undefined;
-    if (nickname !== undefined && nickname !== "" && (nickname.length < 2 || nickname.length > 24)) {
-      return NextResponse.json({ error: "Nickname must be between 2 and 24 characters, or blank to clear it." }, { status: 400 });
-    }
-    if (nickname !== undefined) attributes.user_metadata = { nickname };
-    if (!attributes.email && !attributes.password && !attributes.user_metadata) return NextResponse.json({ error: "Provide an email, nickname, or password to update." }, { status: 400 });
-    if (nickname !== undefined) {
-      const { error: profileError } = await auth.adminClient.from("user_profiles").upsert({ user_id: input.userId, nickname: nickname || null }, { onConflict: "user_id" });
-      if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 });
-    }
-    const { data, error } = await auth.adminClient.auth.admin.updateUserById(input.userId, attributes);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ user: { id: data.user.id, email: data.user.email } });
-  }
-  return NextResponse.json({ error: "Unsupported action." }, { status: 400 });
+  return handleAdminUserMutation(
+    auth.adminClient,
+    auth.user.id,
+    body as AdminUserMutationInput,
+  );
 }
