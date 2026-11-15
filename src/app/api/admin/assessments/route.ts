@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin } from "@/lib/assessments/server";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
-import { toVietnamDateKey } from "@/lib/formatDate";
+import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
 
 export async function GET() {
   const { client, user } = await getRequestUser();
@@ -24,11 +24,10 @@ export async function POST(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
   let input: unknown;
   try { input = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
-  if (!input || typeof input !== "object") return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const validation = validateAssessmentAssignmentInput(input);
+  if (!validation.ok) return NextResponse.json({ error: validation.message }, { status: 400 });
   const body = input as { title?: unknown; difficulty?: unknown; recipientIds?: unknown; allUsers?: unknown; dueAt?: unknown };
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  const difficulty = body.difficulty;
-  if (!title || title.length > 120 || !["easy", "medium", "hard"].includes(String(difficulty))) return NextResponse.json({ error: "Enter a title and select a difficulty." }, { status: 400 });
+  const { title, difficulty, dueAt } = validation.value;
 
   const [{ data: defaultKeys, error: keyError }, { data: wordsData, error: wordError }, { data: sharedData, error: sharedError }, { data: sentencesData, error: sentenceError }] = await Promise.all([
     admin.from("default_vocabulary_keys").select("normalized_word"),
@@ -60,22 +59,6 @@ export async function POST(request: NextRequest) {
   } else if (Array.isArray(body.recipientIds)) recipientIds = [...new Set(body.recipientIds.filter((id): id is string => typeof id === "string"))];
   if (!recipientIds.length) return NextResponse.json({ error: "Select at least one learner (your own account is excluded)." }, { status: 400 });
 
-  const dueAtValue = typeof body.dueAt === "string" && body.dueAt ? body.dueAt : null;
-  let dueAt: Date | null = null;
-  if (dueAtValue) {
-    const dueDateOnly = dueAtValue.slice(0, 10);
-    const dateParts = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dueDateOnly);
-    if (!dateParts) return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
-    const [, year, month, day] = dateParts;
-    const checkDate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
-    if (checkDate.getUTCFullYear() !== Number(year) || checkDate.getUTCMonth() + 1 !== Number(month) || checkDate.getUTCDate() !== Number(day)) {
-      return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
-    }
-    const todayInVietnam = toVietnamDateKey(new Date());
-    if (dueDateOnly < todayInVietnam) return NextResponse.json({ error: "Due date must be today or a future date." }, { status: 400 });
-    // Keep the assignment available through the selected date in Vietnam time (UTC+7).
-    dueAt = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 16, 59, 59, 999));
-  }
   const { data: assessment, error: createError } = await admin.from("assessments").insert({ title, difficulty, questions, due_at: dueAt?.toISOString() ?? null, created_by: user.id }).select("id,title,difficulty,due_at").single();
   if (createError || !assessment) return NextResponse.json({ error: createError?.message ?? "Could not create assignment." }, { status: 400 });
   const recipientRows = recipientIds.map((userId) => ({ assessment_id: assessment.id, user_id: userId }));
