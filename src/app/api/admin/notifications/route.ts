@@ -1,16 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/supabase/admin-access";
-
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function createAdminClient() {
-  if (!serviceKey) return null;
-  return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
