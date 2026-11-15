@@ -1,4 +1,4 @@
-import { parseCsvRows } from "@/lib/csv-rows";
+import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
 import { createClient } from "@/lib/supabase/client";
 
 export type SentenceDifficulty = "easy" | "medium" | "hard";
@@ -59,13 +59,11 @@ export function parseSentenceBuilderCsv(csv: string): SentenceQuestionInput[] {
   });
 }
 
-function csvCell(value: string) { return `"${value.replaceAll('"', '""')}"`; }
-
 export function exportSentenceBuilderCsv(questions: SentenceBuilderQuestion[]) {
   const header = ["question_id", "level", "category", "prompt_vi", "answer_sentence", "answer_tokens_json", "distractor_tokens_json", "image_keyword", "vocabulary_words"];
   const level: Record<SentenceDifficulty, string> = { easy: "1", medium: "2", hard: "3" };
   const lines = questions.map((question) => [question.question_id, level[question.difficulty], question.category, question.prompt_vi,
     question.answer_sentence, JSON.stringify(question.answer_tokens), JSON.stringify(question.distractor_tokens), question.image_keyword,
-    question.vocabulary_words.join("|")].map(csvCell).join(","));
-  return [header.map(csvCell).join(","), ...lines].join("\r\n");
+    question.vocabulary_words.join("|")].map(escapeCsvCell).join(","));
+  return [header.map(escapeCsvCell).join(","), ...lines].join("\r\n");
 }

@@ -42,3 +42,7 @@ export function parseCsvRows(
   if (rows.length < 2) throw new Error(messages.missingContent);
   return rows;
 }
+
+export function escapeCsvCell(value: string | number | null | undefined): string {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
