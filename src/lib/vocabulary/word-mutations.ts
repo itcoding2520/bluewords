@@ -1,23 +1,20 @@
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyMeaningRow, VocabularyWordRow } from "@/types/database";
 import { mapVocabularyMeaning } from "@/lib/vocabulary/shared-vocabulary";
-
-function normalizeDuplicateKey(value: string): string {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 export function hasDuplicateVocabularyWord(
   words: VocabularyWord[],
   candidate: Pick<VocabularyWord, "word" | "category">,
   excludeId?: string
 ): boolean {
-  const categoryKey = normalizeDuplicateKey(candidate.category);
-  const wordKey = normalizeDuplicateKey(candidate.word);
+  const categoryKey = normalizeVocabularyText(candidate.category);
+  const wordKey = normalizeVocabularyText(candidate.word);
 
   return words.some((current) =>
     current.id !== excludeId
-    && normalizeDuplicateKey(current.category) === categoryKey
-    && normalizeDuplicateKey(current.word) === wordKey
+    && normalizeVocabularyText(current.category) === categoryKey
+    && normalizeVocabularyText(current.word) === wordKey
   );
 }
 

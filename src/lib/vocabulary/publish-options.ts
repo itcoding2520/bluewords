@@ -1,6 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 export interface CommunityCategoryRequest {
   id: string;
@@ -22,7 +23,7 @@ export interface CommunityWordRequest {
 }
 
 export function normalize(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  return normalizeVocabularyText(value);
 }
 
 export function getPublishVocabularyOptions(input: {
