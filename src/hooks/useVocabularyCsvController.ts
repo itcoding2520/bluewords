@@ -55,10 +55,12 @@ export function useVocabularyCsvController({
   }
 
   return {
-    isExporting,
-    exportOpen,
-    setExportOpen,
-    exportCsv,
-    ...importController,
+    import: importController,
+    export: {
+      isExporting,
+      open: exportOpen,
+      setOpen: setExportOpen,
+      download: exportCsv,
+    },
   };
 }
