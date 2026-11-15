@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { useCommunicationCatalogPreferences } from "@/hooks/useCommunicationCatalogPreferences";
 import {
   getCachedCommunicationCatalogSnapshot,
   getCommunicationCatalogCache,
-  invalidateCommunicationCatalogCache,
 } from "@/lib/supabase/communication-catalog-cache";
 
 export type Goal = "games" | "conversation";
@@ -45,7 +44,12 @@ export function useSituationalEnglishCatalogData() {
   const [dueItems, setDueItems] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [savingPreference, setSavingPreference] = useState(false);
+  const preferences = useCommunicationCatalogPreferences({
+    supabase,
+    authenticated,
+    setGoal,
+    setDailyGoal,
+  });
 
   useEffect(() => {
     let active = true;
@@ -141,26 +145,6 @@ export function useSituationalEnglishCatalogData() {
     return () => { active = false; };
   }, [supabase]);
 
-  async function saveGoal(nextGoal: Goal) {
-    if (!authenticated) { toast.error("Sign in to save your learning goal."); return; }
-    setSavingPreference(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSavingPreference(false); return; }
-    const { error } = await supabase.from("communication_learning_preferences").upsert({ user_id: user.id, learning_goal: nextGoal, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-    if (error) toast.error(error.message);
-    else { invalidateCommunicationCatalogCache(user.id); setGoal(nextGoal); toast.success("Learning goal saved."); }
-    setSavingPreference(false);
-  }
-
-  async function saveDailyGoal(value: number) {
-    setDailyGoal(value);
-    if (!authenticated) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { error } = await supabase.from("communication_daily_goals").upsert({ user_id: user.id, lessons_per_day: value, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-    if (error) toast.error(error.message); else { invalidateCommunicationCatalogCache(user.id); toast.success("Daily goal saved."); }
-  }
-
   return {
     topics,
     lessons,
@@ -172,8 +156,6 @@ export function useSituationalEnglishCatalogData() {
     dueItems,
     loading,
     authenticated,
-    savingPreference,
-    saveGoal,
-    saveDailyGoal,
+    ...preferences,
   };
 }
