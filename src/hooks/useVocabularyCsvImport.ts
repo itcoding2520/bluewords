@@ -1,14 +1,13 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { validateVocabularyImage } from "@/lib/supabase/vocabulary-images";
-import { matchVocabularyImportImages } from "@/lib/vocabulary-image-matching";
 import {
   MAX_VOCABULARY_IMPORT_WORDS,
   previewVocabularyCsvImport,
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
+import { useVocabularyCsvImageSelection } from "@/hooks/useVocabularyCsvImageSelection";
 
 export function useVocabularyCsvImport({
   categories,
@@ -22,20 +21,15 @@ export function useVocabularyCsvImport({
     loadCategories: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<VocabularyCsvPreview | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-
-  const imageMatch = useMemo(() => matchVocabularyImportImages(
-    imageFiles,
-    (preview?.items ?? []).map((item) => item.word),
-    allWords,
-    (file) => validateVocabularyImage(file) === null
-  ), [allWords, imageFiles, preview]);
+  const imageSelection = useVocabularyCsvImageSelection({
+    words: allWords,
+    preview,
+  });
 
   async function openImport() {
     await refreshWords();
@@ -66,20 +60,12 @@ export function useVocabularyCsvImport({
     }
   }
 
-  function selectImageFiles(event: ChangeEvent<HTMLInputElement>) {
-    const selectedImages = Array.from(event.target.files ?? []).filter((file) =>
-      file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(file.name)
-    );
-    setImageFiles(selectedImages);
-    event.currentTarget.value = "";
-  }
-
   async function importCsv() {
     if (!preview || preview.items.length === 0 || isImporting) return;
 
     setIsImporting(true);
     try {
-      const result = await importWords(preview.items, imageMatch.imageFilesByWord);
+      const result = await importWords(preview.items, imageSelection.imageMatch.imageFilesByWord);
       if (result.limitExceeded) {
         toast.error(`Import is limited to ${MAX_VOCABULARY_IMPORT_WORDS} words at a time.`);
         return;
@@ -94,8 +80,7 @@ export function useVocabularyCsvImport({
 
       setPreview(null);
       setFileName("");
-      setImageFiles([]);
-      if (imageInputRef.current) imageInputRef.current.value = "";
+      imageSelection.clearImageFiles();
       if (result.failed === 0) setOpen(false);
       if (result.imported > 0 || result.imagesUploaded > 0) onImportComplete();
     } finally {
@@ -105,18 +90,18 @@ export function useVocabularyCsvImport({
 
   return {
     fileInputRef,
-    imageInputRef,
     open,
     setOpen,
     fileName,
-    imageFiles,
+    imageInputRef: imageSelection.imageInputRef,
+    imageFiles: imageSelection.imageFiles,
     preview,
     isReading,
     isImporting,
-    imageMatch,
+    imageMatch: imageSelection.imageMatch,
     openImport,
     readCsvFile,
-    selectImageFiles,
+    selectImageFiles: imageSelection.selectImageFiles,
     importCsv,
   };
 }
