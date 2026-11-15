@@ -2,6 +2,11 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import {
+  createCommunityCategoryRequest,
+  findCommunityCategoryRequest,
+  resubmitCommunityCategoryRequest,
+} from "@/lib/supabase/publish-category-request";
 
 const REQUEST_SENT_MESSAGE = "Your selected vocabulary has been sent to the admin for review.";
 
@@ -18,8 +23,7 @@ export function usePublishCategoryRequest(
 
     const category = categories.find((item) => item.name === categoryName);
     const normalizedCategory = categoryName.trim().replace(/\s+/g, " ").toLowerCase();
-    const found = await supabase.from("community_categories")
-      .select("id, status").eq("normalized_name", normalizedCategory).maybeSingle();
+    const found = await findCommunityCategoryRequest(supabase, normalizedCategory);
     if (found.error) {
       toast.error(found.error.message);
       return;
@@ -27,10 +31,11 @@ export function usePublishCategoryRequest(
 
     if (found.data) {
       if (found.data.status === "rejected") {
-        const { data: updated, error } = await supabase.from("community_categories")
-          .update({ status: "pending", image_path: category?.image_path ?? null })
-          .eq("id", found.data.id).eq("owner_id", user.id).eq("status", "rejected")
-          .select("id").maybeSingle();
+        const { data: updated, error } = await resubmitCommunityCategoryRequest(supabase, {
+          id: found.data.id,
+          ownerId: user.id,
+          imagePath: category?.image_path ?? null,
+        });
         if (error) toast.error(error.message);
         else if (!updated) toast.info("This category is no longer available to resubmit. Refresh the page and try again.");
         else {
@@ -47,12 +52,11 @@ export function usePublishCategoryRequest(
       return;
     }
 
-    const { error } = await supabase.from("community_categories").insert({
-      owner_id: user.id,
+    const { error } = await createCommunityCategoryRequest(supabase, {
+      ownerId: user.id,
       name: categoryName,
       color: category?.color ?? "blue",
-      image_path: category?.image_path ?? null,
-      status: "pending",
+      imagePath: category?.image_path ?? null,
     });
     if (error) toast.error(error.code === "23505" ? "A request for this category already exists." : error.message);
     else {
