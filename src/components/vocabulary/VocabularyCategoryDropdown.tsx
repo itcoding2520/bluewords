@@ -4,6 +4,7 @@ import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supab
 import type { VocabularyWord } from "@/data/vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { useVocabularyCategoryDropdownController } from "@/hooks/useVocabularyCategoryDropdownController";
+export { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 
 const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-700",
@@ -49,32 +50,6 @@ interface CategoryDropdownProps {
     color?: VocabularyCategoryColor | null;
   }>;
   fullWidth?: boolean;
-}
-
-export function getVocabularyDropdownCategories(
-  categories: VocabularyCategoryRow[],
-  words: VocabularyWord[],
-  includeUncategorized = false,
-): VocabularyCategoryRow[] {
-  const byName = new Map(categories.map((category) => [category.name.trim().toLocaleLowerCase(), category]));
-  const namesByKey = new Map<string, string>();
-  for (const rawName of [...categories.map((item) => item.name), ...words.map((word) => word.category)]) {
-    const name = rawName.trim();
-    const key = name.toLocaleLowerCase();
-    if (name && (includeUncategorized || key !== "uncategorized") && !namesByKey.has(key)) namesByKey.set(key, name);
-  }
-  const names = [...namesByKey.values()].sort((left, right) => left.localeCompare(right));
-
-  return names.map((name) => byName.get(name.toLocaleLowerCase()) ?? {
-    id: `category-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    user_id: "",
-    name,
-    color: "slate",
-    image_path: null,
-    is_default: false,
-    created_at: "",
-    updated_at: "",
-  });
 }
 
 export function CategoryDropdown({
