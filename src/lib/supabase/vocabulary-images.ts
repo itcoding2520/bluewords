@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
+import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 
 export const VOCABULARY_IMAGES_BUCKET = "vocabulary-images";
 export const MAX_VOCABULARY_IMAGE_SIZE = MAX_STANDARD_IMAGE_SIZE;
@@ -37,7 +37,7 @@ export async function uploadVocabularyImage(
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw new Error("You must be logged in to upload an image.");
 
-  const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice(6);
+  const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${wordId}/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage
     .from(VOCABULARY_IMAGES_BUCKET)

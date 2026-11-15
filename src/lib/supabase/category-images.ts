@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { validateStandardImage } from "@/lib/image-validation";
+import { getStandardImageExtension, validateStandardImage } from "@/lib/image-validation";
 
 export const CATEGORY_IMAGES_BUCKET = "category-images";
 const supabase = createClient();
@@ -13,7 +13,7 @@ export async function uploadCategoryImage(categoryId: string, file: File) {
   if (validationError) throw new Error(validationError);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw new Error("You must be logged in to upload a category image.");
-  const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice(6);
+  const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${categoryId}/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage.from(CATEGORY_IMAGES_BUCKET).upload(path, file, {
     cacheControl: "3600",

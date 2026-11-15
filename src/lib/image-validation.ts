@@ -17,3 +17,7 @@ export function validateStandardImage(file: Pick<File, "type" | "size">): string
 
   return null;
 }
+
+export function getStandardImageExtension(contentType: string): string {
+  return contentType === "image/jpeg" ? "jpg" : contentType.slice("image/".length);
+}

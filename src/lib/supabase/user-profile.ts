@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
+import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 import {
   getCachedUserProfile as readCachedUserProfile,
   setCachedUserProfile,
@@ -63,7 +63,7 @@ export async function uploadUserAvatar(file: File): Promise<string> {
   const { data: { user }, error: authError } = await getSupabase().auth.getUser();
   if (authError || !user) throw new Error("You must be logged in to upload an avatar.");
 
-  const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice("image/".length);
+  const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
   const { error } = await getSupabase().storage.from(USER_AVATARS_BUCKET).upload(path, file, {
     // Every upload gets a unique path, so it is safe for browsers/CDNs to cache it for a year.
