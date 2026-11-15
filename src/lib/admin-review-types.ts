@@ -1,3 +1,6 @@
+export type AdminReviewTable = "community_categories" | "community_words";
+export type AdminReviewDecision = "published" | "rejected";
+
 export interface AdminReviewSubmission {
   id: string;
   owner_id: string;

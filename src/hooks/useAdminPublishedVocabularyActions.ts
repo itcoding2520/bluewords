@@ -8,7 +8,7 @@ import {
   editPublishedCategory as editPublishedCategoryRecord,
   editPublishedWord as editPublishedWordRecord,
   removePublishedAdminReview,
-} from "@/lib/admin-review-api";
+} from "@/lib/admin-published-vocabulary-api";
 
 
 export function useAdminPublishedVocabularyActions(
