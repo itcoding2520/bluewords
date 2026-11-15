@@ -3,62 +3,22 @@ import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { mapLatestReviewRows, type LatestReviewRpcRow, type VocabularyReviewWithWord } from "@/lib/supabase/review-history-mapping";
+import {
+  cacheLatestVocabularyReviewCounts,
+  cacheLatestVocabularyReviewHistory,
+  cacheLatestVocabularyReviews,
+  getCachedLatestVocabularyReviewCounts,
+  getCachedLatestVocabularyReviewHistory,
+  getCachedLatestVocabularyReviews,
+  type LatestVocabularyReviewCounts,
+  type LatestVocabularyReviewsPage,
+} from "@/lib/supabase/review-history-cache";
 export type { VocabularyReviewWithWord } from "@/lib/supabase/review-history-mapping";
+export { getCachedLatestVocabularyReviewCounts, getCachedLatestVocabularyReviewHistory, getCachedLatestVocabularyReviews, invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/review-history-cache";
+export type { LatestVocabularyReviewCounts, LatestVocabularyReviewsPage } from "@/lib/supabase/review-history-cache";
 
 const supabase = createClient();
-const latestReviewsByPage = new Map<string, LatestVocabularyReviewsPage>();
-const latestReviewCountsByUser = new Map<string, LatestVocabularyReviewCounts>();
-const latestReviewHistoryByUser = new Map<string, VocabularyReviewWithWord[]>();
-
 const REVIEW_HISTORY_PAGE_SIZE = 20;
-
-export interface LatestVocabularyReviewsPage {
-  reviews: VocabularyReviewWithWord[];
-  total: number;
-}
-
-export interface LatestVocabularyReviewCounts {
-  learning: number;
-  mastered: number;
-}
-
-function reviewPageCacheKey(
-  userId: string,
-  status: VocabularyStatus,
-  page: number,
-  pageSize: number
-): string {
-  return `${userId}:${status}:${page}:${pageSize}`;
-}
-
-export function getCachedLatestVocabularyReviews(
-  userId: string,
-  status: VocabularyStatus,
-  page = 1,
-  pageSize = REVIEW_HISTORY_PAGE_SIZE
-): LatestVocabularyReviewsPage | null {
-  return latestReviewsByPage.get(
-    reviewPageCacheKey(userId, status, page, pageSize)
-  ) ?? null;
-}
-
-export function getCachedLatestVocabularyReviewCounts(
-  userId: string
-): LatestVocabularyReviewCounts | null {
-  return latestReviewCountsByUser.get(userId) ?? null;
-}
-
-export function invalidateLatestVocabularyReviewsCache(): void {
-  latestReviewsByPage.clear();
-  latestReviewCountsByUser.clear();
-  latestReviewHistoryByUser.clear();
-}
-
-export function getCachedLatestVocabularyReviewHistory(
-  userId: string
-): VocabularyReviewWithWord[] | null {
-  return latestReviewHistoryByUser.get(userId) ?? null;
-}
 
 export async function getLatestVocabularyReviewHistory(
   expectedUserId: string
@@ -67,7 +27,7 @@ export async function getLatestVocabularyReviewHistory(
   const user = await requireAuthenticatedUser(supabase, errorMessage);
   if (user.id !== expectedUserId) throw new Error(errorMessage);
 
-  const cached = latestReviewHistoryByUser.get(user.id);
+  const cached = getCachedLatestVocabularyReviewHistory(user.id);
   if (cached) return cached;
 
   const rows = await fetchAllPages<LatestReviewRpcRow>(async (from, to) => {
@@ -79,7 +39,7 @@ export async function getLatestVocabularyReviewHistory(
     return { data: (data ?? []) as LatestReviewRpcRow[], error };
   });
   const reviews = await mapLatestReviewRows(rows);
-  latestReviewHistoryByUser.set(user.id, reviews);
+  cacheLatestVocabularyReviewHistory(user.id, reviews);
   return reviews;
 }
 
@@ -98,8 +58,7 @@ export async function getLatestVocabularyReviews(input: {
     throw new RangeError("Review history page size must be a positive integer.");
   }
 
-  const cacheKey = reviewPageCacheKey(user.id, input.status, input.page, pageSize);
-  const cachedPage = latestReviewsByPage.get(cacheKey);
+  const cachedPage = getCachedLatestVocabularyReviews(user.id, input.status, input.page, pageSize);
   if (cachedPage) return cachedPage;
 
   const from = (input.page - 1) * pageSize;
@@ -115,14 +74,14 @@ export async function getLatestVocabularyReviews(input: {
 
   const mappedReviews = await mapLatestReviewRows((data ?? []) as LatestReviewRpcRow[]);
   const result = { reviews: mappedReviews, total: count ?? 0 };
-  latestReviewsByPage.set(cacheKey, result);
+  cacheLatestVocabularyReviews(user.id, input.status, input.page, pageSize, result);
   return result;
 }
 
 export async function getLatestVocabularyReviewCounts(): Promise<LatestVocabularyReviewCounts> {
   const user = await requireAuthenticatedUser(supabase, "You must be logged in to view review history.");
 
-  const cachedCounts = latestReviewCountsByUser.get(user.id);
+  const cachedCounts = getCachedLatestVocabularyReviewCounts(user.id);
   if (cachedCounts) return cachedCounts;
 
   const { data, error } = await supabase.rpc("get_latest_vocabulary_review_counts");
@@ -134,6 +93,6 @@ export async function getLatestVocabularyReviewCounts(): Promise<LatestVocabular
     else if (row.status === "learning") counts.learning = Number(row.review_count);
   }
 
-  latestReviewCountsByUser.set(user.id, counts);
+  cacheLatestVocabularyReviewCounts(user.id, counts);
   return counts;
 }
