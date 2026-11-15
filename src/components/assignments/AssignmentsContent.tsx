@@ -1,39 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpenCheck, CalendarDays, CheckCircle2, History, Timer, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { formatDuration } from "@/lib/assignments/format-duration";
+import { useAssignmentsController } from "@/hooks/useAssignmentsController";
 
-type Attempt = { id: string; attempt_number: number; score: number | null; correct_count: number | null; elapsed_seconds: number | null; result: string | null; started_at: string; completed_at: string | null };
-type Assignment = { id: string; status: string; assignedAt: string; assessment: { id: string; title: string; difficulty: string; dueAt: string | null; questions: Array<{ type: string }> } | null; attempts: Attempt[] };
 const vietnamDateKey = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 
 export function AssignmentsContent() {
-  const router = useRouter();
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [tab, setTab] = useState<"todo" | "history">("todo");
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try { const response = await fetch("/api/assessments", { cache: "no-store" }); const data = await response.json(); if (!response.ok) throw new Error(data.error ?? "Could not load assignments."); setAssignments(data.assignments); setError(""); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load assignments."); }
-    finally { setLoading(false); }
-  }, []);
-  useEffect(() => { const timer = window.setTimeout(() => { void refresh(); }, 0); return () => window.clearTimeout(timer); }, [refresh]);
-  const outstanding = assignments.filter((item) => item.status !== "completed");
-  const history = assignments.flatMap((item) => item.attempts.filter((attempt) => attempt.completed_at).map((attempt) => ({ assignment: item, attempt }))).sort((a, b) => new Date(b.attempt.completed_at!).getTime() - new Date(a.attempt.completed_at!).getTime());
-
-  async function start(assignmentId: string) {
-    setStarting(assignmentId); setError("");
-    try { const response = await fetch(`/api/assessments/${assignmentId}/start`, { method: "POST" }); const data = await response.json(); if (!response.ok) throw new Error(data.error ?? "Could not start this test."); router.push(`/assignments/take/${data.attempt.id}`); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Could not start this test."); setStarting(null); }
-  }
+  const { outstanding, history, loading, starting, error, tab, setTab, start } = useAssignmentsController();
 
   return <div className="assignments-page">
     <header className="assignments-hero"><div className="assignments-hero-copy"><span>Keep learning!</span><h1 className="page-title">My assignments</h1><p className="page-intro-description">Practice your vocabulary and see your progress.</p></div><BookOpenCheck size={58} aria-hidden="true" /></header>
