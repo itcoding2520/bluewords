@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, signQuestionImages, type AssessmentQuestion } from "@/lib/assessments/server";
+import { createAssessmentAdminClient, getRequestUser, signQuestionImages } from "@/lib/assessments/server";
+import type { AssessmentQuestion } from "@/lib/assessments/types";
 
 const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+([.,!?])/g, "$1").replace(/\s+/g, " ");
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, shuffled, type AssessmentQuestion } from "@/lib/assessments/server";
+import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, shuffled } from "@/lib/assessments/server";
+import type { AssessmentQuestion } from "@/lib/assessments/types";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { user } = await getRequestUser();

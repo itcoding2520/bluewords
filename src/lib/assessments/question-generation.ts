@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/random";
-import type { AssessmentQuestion } from "@/lib/assessments/server";
+import type { AssessmentQuestion } from "@/lib/assessments/types";
 
 type AssessmentDifficulty = "easy" | "medium" | "hard";
 type DefaultVocabularyKey = { normalized_word: string };

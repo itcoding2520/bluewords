@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import type { AssessmentQuestion } from "@/lib/assessments/types";
 export { shuffle as shuffled } from "@/lib/random";
 
 export function createAssessmentAdminClient() {
@@ -19,10 +20,6 @@ export async function getRequestUser() {
 export async function isAssessmentAdmin(client: Awaited<ReturnType<typeof createClient>>, userId: string) {
   return isAdminUser(client, userId);
 }
-
-export type AssessmentQuestion =
-  | { type: "vocabulary"; prompt: string; word: string; meaning: string; category: string; imagePath: string | null; imageUrl?: string | null; choices: string[]; answer: string }
-  | { type: "sentence"; prompt: string; category: string; imageKeyword: string; tiles: string[]; answer: string };
 
 export async function signQuestionImages(admin: NonNullable<ReturnType<typeof createAssessmentAdminClient>>, questions: AssessmentQuestion[]) {
   return Promise.all(questions.map(async (question) => {

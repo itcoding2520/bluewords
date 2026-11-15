@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
 
-type AssessmentQuestion = { type: "vocabulary" | "sentence"; prompt: string; word?: string; meaning?: string; category: string; imagePath?: string | null; imageUrl?: string | null; choices?: string[]; tiles?: string[] };
-type AssessmentAttempt = { id: string; attempt_number: number; started_at: string; title: string; difficulty: string; questions: AssessmentQuestion[]; completed_at: string | null; answers: string[] };
+type AssessmentAttempt = { id: string; attempt_number: number; started_at: string; title: string; difficulty: string; questions: AssessmentQuestionForLearner[]; completed_at: string | null; answers: string[] };
 
 export function useAssessmentRunnerController(attemptId: string) {
   const router = useRouter();
