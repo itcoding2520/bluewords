@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Trash2 } from "lucide-react";
-import {
-  previewVocabularyImport,
-  importLegacyVocabulary,
-} from "@/lib/vocabulary-import";
 import { toast } from "sonner";
 import {
   type VocabularyWord,
@@ -24,12 +20,13 @@ import type {
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Button } from "@/components/ui/Button";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { getVocabularyWords, getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
+import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { useVocabularySelection } from "@/hooks/useVocabularySelection";
 import { useVocabularyPageData } from "@/hooks/useVocabularyPageData";
 import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters";
 import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
+import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 
 const LEGACY_IMPORT_NOTICE_ENABLED = false;
 
@@ -73,27 +70,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [legacyCloudWords, setLegacyCloudWords] = useState<VocabularyWord[]>([]);
-  const [hasLegacyData, setHasLegacyData] = useState(false);
-  const [showImportPreview, setShowImportPreview] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setHasLegacyData(previewVocabularyImport([]).total > 0);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const importPreview = useMemo(() => {
-    if (!hasLegacyData) return null;
-    return previewVocabularyImport(legacyCloudWords);
-  }, [hasLegacyData, legacyCloudWords]);
-
-  const hasPendingImport = isAdmin &&
-  importPreview !== null &&
-  importPreview.ready.length > 0;
-
   const { pageWords, setPageWords, loadedAuthVersion, totalWords, isPageLoading, setIsPageLoading, refreshPage } = useVocabularyPageData({
     authVersion,
     categories,
@@ -117,52 +93,14 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     pageWordCount: pageWords.length,
     selectedCategory,
   });
-
-  async function handleImportVocabulary() {
-    if (isImporting || !importPreview || importPreview.ready.length === 0) {
-      return;
-    }
-
-    const confirmed = await confirmDialog({
-      title: "Import vocabulary?",
-      description: `Import ${importPreview.ready.length} words into your account? Your old localStorage data will be kept.`,
-      confirmLabel: "Import words",
-      destructive: false,
-    });
-
-    if (!confirmed) return;
-
-    setIsImporting(true);
-
-    try {
-      const result = await importLegacyVocabulary(legacyCloudWords);
-
-      // Đọc lại dữ liệu cloud để Dashboard và Vocabulary cập nhật.
-      await refreshWords();
-      refreshPage();
-
-      if (result.failed === 0) {
-        setShowImportPreview(false);
-      }
-
-      if (result.imported > 0) {
-        toast.success(`Imported ${result.imported} words successfully!`);
-      }
-
-      if (result.duplicates > 0) {
-        toast.info(`Skipped ${result.duplicates} duplicate words.`);
-      }
-
-      if (result.failed > 0) {
-        toast.error(`${result.failed} words could not be imported.`);
-      }
-    } catch (error) {
-      console.error("Vocabulary import error:", error);
-      toast.error("Failed to import vocabulary.");
-    } finally {
-      setIsImporting(false);
-    }
-  }
+  const {
+    hasPendingImport,
+    importPreview,
+    isImporting,
+    showImportPreview,
+    togglePreview: handleLegacyPreviewToggle,
+    importVocabulary: handleImportVocabulary,
+  } = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage });
 
   const visibleTotalWords = loadedAuthVersion === authVersion ? totalWords : 0;
   const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
@@ -315,20 +253,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     return success;
   }
 
-
-  async function handleLegacyPreviewToggle() {
-    if (showImportPreview) {
-      setShowImportPreview(false);
-      return;
-    }
-    setShowImportPreview(true);
-    try {
-      const allWords = await getVocabularyWords();
-      setLegacyCloudWords(allWords.map(mapVocabularyWordRow));
-    } catch {
-      toast.error("Failed to prepare the legacy vocabulary preview.");
-    }
-  }
 
   if (!categoriesLoaded) {
     return (
