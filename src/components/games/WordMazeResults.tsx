@@ -2,6 +2,7 @@ import { Clock3, RotateCcw, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
 import { formatGameDuration } from "@/lib/game-duration";
+import type { GameSaveState } from "@/types/game";
 
 export function WordMazeResults({
   won, score, solvedCount, roundLength, lives, elapsedSeconds, isAuthenticated, saveState, saveError, onRetry, onPlayAgain,
@@ -13,7 +14,7 @@ export function WordMazeResults({
   lives: number;
   elapsedSeconds: number;
   isAuthenticated: boolean;
-  saveState: "idle" | "saving" | "saved" | "error";
+  saveState: GameSaveState;
   saveError: string;
   onRetry: () => void;
   onPlayAgain: () => void;

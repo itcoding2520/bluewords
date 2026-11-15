@@ -2,6 +2,7 @@ import { RotateCcw, Trophy } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
+import type { GameSaveState } from "@/types/game";
 
 export function WordScrambleResults({
   score,
@@ -19,7 +20,7 @@ export function WordScrambleResults({
   bestStreak: number;
   timeLabel: string;
   isAuthenticated: boolean;
-  saveState: "idle" | "saving" | "saved" | "error";
+  saveState: GameSaveState;
   saveError: string;
   onRetry: () => void;
   onPlayAgain: () => void;

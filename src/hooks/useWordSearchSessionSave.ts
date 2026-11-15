@@ -1,6 +1,6 @@
 "use client";
 
-import type { GamePhase } from "@/types/game";
+import type { GamePhase, GameSaveState } from "@/types/game";
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -29,7 +29,7 @@ export function useWordSearchSessionSave({
   category: string;
   onSaved: (durationSeconds: number) => void;
 }) {
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveState, setSaveState] = useState<GameSaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [saveRetryCount, setSaveRetryCount] = useState(0);
   const saveStartedRef = useRef<number | null>(null);

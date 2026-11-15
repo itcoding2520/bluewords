@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
+import type { GameSaveState } from "@/types/game";
 
 type GameType = "word-match" | "word-scramble" | "word-maze";
-type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function useGameSessionTracking({
   isAuthenticated,
@@ -31,7 +31,7 @@ export function useGameSessionTracking({
   startedAt: number | null;
 }) {
   const { elapsedSeconds, setElapsedSeconds, reset: resetElapsedSeconds } = useElapsedTimer(startedAt, isPlaying);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveState, setSaveState] = useState<GameSaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
   const submittedSessionRef = useRef<number | null>(null);

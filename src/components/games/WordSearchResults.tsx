@@ -4,13 +4,12 @@ import { Check, History, RotateCcw } from "lucide-react";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-
-type SaveState = "idle" | "saving" | "saved" | "error";
+import type { GameSaveState } from "@/types/game";
 
 type WordSearchResultsProps = {
   wordCount: number;
   duration: string;
-  saveState: SaveState;
+  saveState: GameSaveState;
   saveError: string;
   onRetrySave: () => void;
   onPlayAgain: () => void;

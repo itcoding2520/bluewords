@@ -3,6 +3,7 @@ import { RotateCcw, Trophy } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
 import { formatGameDuration } from "@/lib/game-duration";
+import type { GameSaveState } from "@/types/game";
 
 export function WordMatchResults({
   pairCount,
@@ -21,7 +22,7 @@ export function WordMatchResults({
   moves: number;
   elapsedSeconds: number;
   isAuthenticated: boolean;
-  saveState: "idle" | "saving" | "saved" | "error";
+  saveState: GameSaveState;
   saveError: string;
   onRetry: () => void;
   onPlayAgain: () => void;

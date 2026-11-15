@@ -1,6 +1,6 @@
 "use client";
 
-type SaveState = "idle" | "saving" | "saved" | "error";
+import type { GameSaveState } from "@/types/game";
 
 export function GameLeaderboardSaveStatus({
   isAuthenticated,
@@ -9,7 +9,7 @@ export function GameLeaderboardSaveStatus({
   onRetry,
 }: {
   isAuthenticated: boolean;
-  saveState: SaveState;
+  saveState: GameSaveState;
   saveError: string;
   onRetry: () => void;
 }) {
