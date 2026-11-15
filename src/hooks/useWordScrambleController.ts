@@ -58,13 +58,40 @@ export function useWordScrambleController(input: {
   }
 
   return {
-    category, setCategory, questionCount, setQuestionCount, phase,
-    ...gameplay,
-    candidates, categoryDropdownCategories, timeLabel,
-    saveState: session.saveState,
-    saveError: session.saveError,
-    retrySave: session.retrySave,
-    startRound,
-    nextQuestion,
+    setup: {
+      category,
+      setCategory,
+      questionCount,
+      setQuestionCount,
+      candidates,
+      categoryDropdownCategories,
+      startRound,
+    },
+    game: {
+      phase,
+      round: gameplay.round,
+      questionIndex: gameplay.questionIndex,
+      letterTiles: gameplay.letterTiles,
+      answerTileIds: gameplay.answerTileIds,
+      score: gameplay.score,
+      streak: gameplay.streak,
+      bestStreak: gameplay.bestStreak,
+      hintsLeft: gameplay.hintsLeft,
+      hintUsed: gameplay.hintUsed,
+      feedback: gameplay.feedback,
+      isCorrect: gameplay.isCorrect,
+      currentWord: gameplay.currentWord,
+      usedTileIds: gameplay.usedTileIds,
+      chooseLetter: gameplay.chooseLetter,
+      removeLetter: gameplay.removeLetter,
+      useHint: gameplay.useHint,
+      nextQuestion,
+    },
+    session: {
+      timeLabel,
+      saveState: session.saveState,
+      saveError: session.saveError,
+      retrySave: session.retrySave,
+    },
   };
 }

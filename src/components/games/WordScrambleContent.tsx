@@ -12,11 +12,16 @@ import { WordScrambleResults } from "@/components/games/WordScrambleResults";
 export function WordScrambleContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
   const {
-    category, setCategory, questionCount, setQuestionCount, phase, round,
-    questionIndex, letterTiles, answerTileIds, score, streak, bestStreak,
-    hintsLeft, hintUsed, feedback, isCorrect, candidates, categoryDropdownCategories,
-    currentWord, usedTileIds, timeLabel, saveState, saveError, retrySave,
-    startRound, chooseLetter, removeLetter, useHint, nextQuestion,
+    setup: {
+      category, setCategory, questionCount, setQuestionCount, candidates,
+      categoryDropdownCategories, startRound,
+    },
+    game: {
+      phase, round, questionIndex, letterTiles, answerTileIds, score, streak,
+      bestStreak, hintsLeft, hintUsed, feedback, isCorrect, currentWord,
+      usedTileIds, chooseLetter, removeLetter, useHint, nextQuestion,
+    },
+    session: { timeLabel, saveState, saveError, retrySave },
   } = useWordScrambleController({ words, categories, isAuthenticated });
 
   if (!isLoaded) return <p className="py-16 text-center text-sm text-slate-500">Loading your vocabulary…</p>;
