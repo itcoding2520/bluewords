@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { invalidateLearningAnalyticsCache } from "@/lib/supabase/learning-analytics";
 import type {
   VocabularyReviewRow,
@@ -37,14 +38,7 @@ export function invalidateVocabularyReviewScheduleCache(userId?: string): void {
 export async function getVocabularyReviewSchedules(): Promise<
   VocabularyReviewScheduleRow[]
 > {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to view review schedules.");
-  }
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to view review schedules.");
 
   const cachedSchedules = schedulesByUser.get(user.id);
   if (cachedSchedules) return cachedSchedules;
@@ -72,14 +66,7 @@ export async function recordVocabularyReview(
   review: VocabularyReviewRow;
   schedule: VocabularyReviewScheduleRow;
 }> {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to save a review.");
-  }
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to save a review.");
 
   const { data, error } = await supabase.rpc("record_vocabulary_review", {
     p_vocabulary_word_id: vocabularyWordId,

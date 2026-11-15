@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import type { WordSearchDifficulty, WordSearchSessionRow } from "@/types/database";
 import {
   getCachedWordSearchHistory,
@@ -21,8 +22,7 @@ export async function saveWordSearchSession(input: {
   startedAt: string;
   completedAt: string;
 }): Promise<void> {
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to save game history.");
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to save game history.");
 
   const { error } = await supabase.rpc("save_word_search_session", {
     p_grid_size: input.gridSize,
@@ -43,8 +43,7 @@ export async function getWordSearchSessions(input: {
   pageSize: number;
   forceRefresh?: boolean;
 }): Promise<{ rows: WordSearchSessionRow[]; total: number }> {
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to view game history.");
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to view game history.");
 
   const cached = getCachedWordSearchHistory(user.id, input.page, input.pageSize) as { rows: WordSearchSessionRow[]; total: number } | null;
   if (cached && !input.forceRefresh) return cached;

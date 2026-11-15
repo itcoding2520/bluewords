@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
@@ -50,8 +51,7 @@ export async function saveVocabularyGameSession(input: {
   startedAt: string;
   completedAt: string;
 }): Promise<void> {
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to save game results.");
+  await requireAuthenticatedUser(getSupabase(), "You must be logged in to save game results.");
 
   const { error } = await getSupabase().rpc("save_vocabulary_game_session", {
     p_game_type: input.gameType,

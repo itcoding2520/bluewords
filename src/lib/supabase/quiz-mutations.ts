@@ -1,6 +1,7 @@
 import type { VocabularyQuizMode } from "@/types/database";
 import { invalidateQuizHistoryCache } from "@/lib/supabase/quiz-history-cache.mjs";
 import { quizSupabase } from "@/lib/supabase/quiz-client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 
 export interface SaveVocabularyQuizAnswer {
   vocabulary_word_id: string | null;
@@ -26,14 +27,7 @@ export interface SaveVocabularyQuizSession {
 }
 
 export async function saveVocabularyQuizSession(session: SaveVocabularyQuizSession): Promise<string> {
-  const {
-    data: { user },
-    error: authError,
-  } = await quizSupabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to save quiz history.");
-  }
+  const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to save quiz history.");
 
   const { data, error } = await quizSupabase.rpc("save_vocabulary_quiz_session", {
     p_mode: session.mode,

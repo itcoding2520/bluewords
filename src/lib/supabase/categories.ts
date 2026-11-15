@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 
 const supabase = createClient();
 
@@ -30,16 +31,7 @@ export type VocabularyCategoryUpdate = Partial<
 >;
 
 async function getAuthenticatedUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    throw new Error("You must be logged in to manage categories.");
-  }
-
-  return user;
+  return requireAuthenticatedUser(supabase, "You must be logged in to manage categories.");
 }
 
 export async function getVocabularyCategoriesForUser(

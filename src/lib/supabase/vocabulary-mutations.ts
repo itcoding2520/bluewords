@@ -5,6 +5,7 @@ import type {
 } from "@/types/database";
 import type { VocabularyType } from "@/config/vocabulary";
 import { vocabularySupabase } from "@/lib/supabase/vocabulary-client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 
 type VocabularyWordInput = Pick<
   VocabularyWordRow,
@@ -15,14 +16,7 @@ type VocabularyWordInput = Pick<
   };
 
 export async function addVocabularyWord(input: VocabularyWordInput): Promise<VocabularyWordRow> {
-  const {
-    data: { user },
-    error: authError,
-  } = await vocabularySupabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to add words.");
-  }
+  const user = await requireAuthenticatedUser(vocabularySupabase, "You must be logged in to add words.");
 
   const { data, error } = await vocabularySupabase
     .from("vocabulary_words")
