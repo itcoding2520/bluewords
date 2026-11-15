@@ -46,18 +46,24 @@ export function AdminCategoryManagement() {
 
       <AdminCategoryDetailPanel
         activeTab={selection.activeTab}
-        selectedCategory={view.selectedCategory}
-        selectedSharedCategory={view.selectedSharedCategory}
-        selectedFallbackImage={view.selectedFallbackImage}
-        emails={data.emails}
-        defaultWords={view.defaultWords}
-        words={data.words}
-        wordEmails={data.wordEmails}
-        wordsLoading={data.wordsLoading}
-        onEditCategory={(category) => void actions.editSharedCategory(category)}
-        onRemoveCategory={(category) => void actions.removeSharedCategory(category)}
-        onEditWord={(word) => void actions.editSharedWord(word)}
-        onRemoveWord={(word) => void actions.removeSharedWord(word)}
+        category={{
+          selected: view.selectedCategory,
+          shared: view.selectedSharedCategory,
+          fallbackImage: view.selectedFallbackImage,
+        }}
+        owners={data.emails}
+        words={{
+          defaults: view.defaultWords,
+          community: data.words,
+          ownerEmails: data.wordEmails,
+          loading: data.wordsLoading,
+        }}
+        actions={{
+          editCategory: (category) => void actions.editSharedCategory(category),
+          removeCategory: (category) => void actions.removeSharedCategory(category),
+          editWord: (word) => void actions.editSharedWord(word),
+          removeWord: (word) => void actions.removeSharedWord(word),
+        }}
       />
     </div>
   </div>;

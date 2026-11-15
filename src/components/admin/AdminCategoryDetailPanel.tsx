@@ -12,34 +12,46 @@ type AdminCategory = VocabularyCategoryRow | CommunityCategory;
 
 interface AdminCategoryDetailPanelProps {
   activeTab: CategoryTab;
-  selectedCategory: AdminCategory | null;
-  selectedSharedCategory: CommunityCategory | null;
-  selectedFallbackImage: string | null;
-  emails: Record<string, string>;
-  defaultWords: VocabularyWord[];
-  words: CommunityWord[];
-  wordEmails: Record<string, string>;
-  wordsLoading: boolean;
-  onEditCategory: (category: CommunityCategory) => void;
-  onRemoveCategory: (category: CommunityCategory) => void;
-  onEditWord: (word: CommunityWord) => void;
-  onRemoveWord: (word: CommunityWord) => void;
+  category: {
+    selected: AdminCategory | null;
+    shared: CommunityCategory | null;
+    fallbackImage: string | null;
+  };
+  owners: Record<string, string>;
+  words: {
+    defaults: VocabularyWord[];
+    community: CommunityWord[];
+    ownerEmails: Record<string, string>;
+    loading: boolean;
+  };
+  actions: {
+    editCategory: (category: CommunityCategory) => void;
+    removeCategory: (category: CommunityCategory) => void;
+    editWord: (word: CommunityWord) => void;
+    removeWord: (word: CommunityWord) => void;
+  };
 }
 
 export function AdminCategoryDetailPanel({
   activeTab,
-  selectedCategory,
-  selectedSharedCategory,
-  selectedFallbackImage,
-  emails,
-  defaultWords,
-  words,
-  wordEmails,
-  wordsLoading,
-  onEditCategory,
-  onRemoveCategory,
-  onEditWord,
-  onRemoveWord,
+  category: {
+    selected: selectedCategory,
+    shared: selectedSharedCategory,
+    fallbackImage: selectedFallbackImage,
+  },
+  owners: emails,
+  words: {
+    defaults: defaultWords,
+    community: communityWords,
+    ownerEmails: wordEmails,
+    loading: wordsLoading,
+  },
+  actions: {
+    editCategory: onEditCategory,
+    removeCategory: onRemoveCategory,
+    editWord: onEditWord,
+    removeWord: onRemoveWord,
+  },
 }: AdminCategoryDetailPanelProps) {
   return (
     <section className="admin-category-detail min-h-72 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
@@ -89,7 +101,7 @@ export function AdminCategoryDetailPanel({
           <AdminCategoryWordsList
             activeTab={activeTab}
             defaultWords={defaultWords}
-            words={words}
+            words={communityWords}
             wordEmails={wordEmails}
             wordsLoading={wordsLoading}
             onEditWord={onEditWord}
