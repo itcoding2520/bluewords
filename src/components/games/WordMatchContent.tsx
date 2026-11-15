@@ -1,67 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Clock3, RotateCcw, Shuffle, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, RotateCcw, Shuffle, Sparkles, Trophy } from "lucide-react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { useWordMatchController, type MatchCardData, type MatchPair } from "@/hooks/useWordMatchController";
+import { useWordMatchController } from "@/hooks/useWordMatchController";
+import { WordMatchCard } from "@/components/games/WordMatchCard";
 import { formatGameDuration } from "@/lib/game-duration";
 
 type PairCount = 6 | 8 | 10;
 
 const PAIR_COUNTS: PairCount[] = [6, 8, 10];
 
-
-function MatchCard({
-  card,
-  pair,
-  isRevealed,
-  isMatched,
-  isWrong,
-  locked,
-  onClick,
-}: {
-  card: MatchCardData;
-  pair: MatchPair;
-  isRevealed: boolean;
-  isMatched: boolean;
-  isWrong: boolean;
-  locked: boolean;
-  onClick: () => void;
-}) {
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const signedImageUrl = useVocabularyImageUrl(pair.imagePath);
-  const imageUrl = pair.imageUrl ?? signedImageUrl;
-  const isImage = card.kind === "match" && Boolean(imageUrl) && imageUrl !== failedImageUrl;
-  const label = card.kind === "word" ? pair.word : isImage ? `Picture matching ${pair.word}` : pair.meaning;
-
-  return (
-    <button
-      type="button"
-      aria-label={isRevealed || isMatched ? label : "Reveal a matching card"}
-      aria-pressed={isRevealed || isMatched}
-      disabled={isMatched || locked}
-      onClick={onClick}
-      className={`word-match-flip-card ${isRevealed || isMatched ? "is-revealed" : ""} ${isMatched ? "is-matched" : ""} ${isWrong ? "is-wrong" : ""}`}
-    >
-      <span className="word-match-flip-inner">
-        <span className="word-match-card-back" aria-hidden={isRevealed || isMatched}>
-          <span className="word-match-card-question">?</span>
-          <Sparkles size={18} className="word-match-card-sparkle" aria-hidden="true" />
-        </span>
-        <span className="word-match-card-front" aria-hidden={!isRevealed && !isMatched}>
-          {isImage ? <Image src={imageUrl!} alt="" width={112} height={112} unoptimized onError={() => setFailedImageUrl(imageUrl!)} className="word-match-card-image" /> : <span className={card.kind === "word" ? "word-match-card-word" : "word-match-card-meaning"}>{card.kind === "word" ? pair.word : pair.meaning}</span>}
-          {isMatched && <span className="word-match-card-check"><Check size={17} aria-hidden="true" /></span>}
-        </span>
-      </span>
-    </button>
-  );
-}
 
 export function WordMatchContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
@@ -133,7 +85,7 @@ export function WordMatchContent() {
             {cards.map((card) => {
               const pair = pairById.get(card.pairId);
               if (!pair) return null;
-              return <MatchCard key={card.id} card={card} pair={pair} isRevealed={selectedCardIds.includes(card.id)} isMatched={matchedIds.has(card.pairId)} isWrong={wrongCardIds.includes(card.id)} locked={isResolving} onClick={() => selectCard(card, Date.now())} />;
+              return <WordMatchCard key={card.id} card={card} pair={pair} isRevealed={selectedCardIds.includes(card.id)} isMatched={matchedIds.has(card.pairId)} isWrong={wrongCardIds.includes(card.id)} locked={isResolving} onClick={() => selectCard(card, Date.now())} />;
             })}
           </div>
           <button type="button" onClick={() => setPhase("setup")} className="word-match-exit"><ArrowLeft size={16} /> Exit round</button>
