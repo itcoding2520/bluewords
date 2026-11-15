@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { VideoCard } from "@/components/videos/VideoCard";
 import { VIDEOS_PAGE_SIZE } from "@/lib/videos";
-import { getPageCount } from "@/lib/pagination";
 import { useVideosController } from "@/hooks/useVideosController";
 import { VideoAdminForm } from "@/components/videos/VideoAdminForm";
 
@@ -15,7 +14,9 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
     videos,
     total,
     page,
-    setPage,
+    pageCount,
+    previousPage,
+    nextPage,
     isLoading,
     isSaving,
     editingId,
@@ -30,8 +31,6 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
     saveVideo,
     deleteVideo,
   } = controller;
-  const pageCount = getPageCount(total, VIDEOS_PAGE_SIZE);
-
   return (
     <div>
       <header className="mb-6">
@@ -82,11 +81,11 @@ export function VideosContent({ isAdmin }: { isAdmin: boolean }) {
 
       {pageCount > 1 && (
         <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Video pages">
-          <Button type="button" variant="secondary" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || isLoading}>
+          <Button type="button" variant="secondary" onClick={previousPage} disabled={page <= 1 || isLoading}>
             Previous
           </Button>
           <span className="text-sm text-slate-600">Page {page} of {pageCount}</span>
-          <Button type="button" variant="secondary" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={page >= pageCount || isLoading}>
+          <Button type="button" variant="secondary" onClick={nextPage} disabled={page >= pageCount || isLoading}>
             Next
           </Button>
         </nav>
