@@ -1,12 +1,9 @@
 import { type FormEvent, useState } from "react";
-import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
-import {
-  PARTS_OF_SPEECH,
-  type VocabularyCategory,
-  type VocabularyType,
-} from "@/config/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyCategory, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useWordFormImage } from "@/hooks/useWordFormImage";
+import { useVocabularyDetailedMeanings } from "@/hooks/useVocabularyDetailedMeanings";
 import { validateVocabularyWordForm, type WordFormErrors } from "@/lib/vocabulary/word-form";
 
 export type { WordFormErrors } from "@/lib/vocabulary/word-form";
@@ -33,39 +30,14 @@ export function useWordFormController({
       categories[0]?.name ??
       "Uncategorized"
   );
-  const [detailedMeanings, setDetailedMeanings] = useState<VocabularyMeaning[]>(
-    editingWord?.detailedMeanings ?? []
-  );
+  const { detailedMeanings, updateDetailedMeaning, addDetailedMeaning, removeDetailedMeaning } =
+    useVocabularyDetailedMeanings(editingWord?.detailedMeanings ?? []);
   const [errors, setErrors] = useState<WordFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const image = useWordFormImage(setErrors);
 
   function clearError(field: keyof WordFormErrors) {
     setErrors((current) => ({ ...current, [field]: undefined }));
-  }
-
-  function updateDetailedMeaning(
-    index: number,
-    updates: Partial<VocabularyMeaning>
-  ) {
-    setDetailedMeanings((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...updates } : item
-      )
-    );
-  }
-
-  function addDetailedMeaning() {
-    setDetailedMeanings((current) => [
-      ...current,
-      { partOfSpeech: PARTS_OF_SPEECH[0], meaning: "" },
-    ]);
-  }
-
-  function removeDetailedMeaning(index: number) {
-    setDetailedMeanings((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index)
-    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
