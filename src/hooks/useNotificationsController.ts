@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { getCachedNotifications, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
-import { NOTIFICATION_LOOKBACK_MS, recentNotifications, type NotificationRow } from "@/lib/notifications";
+import { recentNotifications, type NotificationRow } from "@/lib/notifications";
+import { loadRecentNotifications, peekRecentNotifications } from "@/lib/notifications-data";
 import { useNotificationActions } from "@/hooks/useNotificationActions";
 
 export type { NotificationRow } from "@/lib/notifications";
@@ -20,19 +20,13 @@ export function useNotificationsController() {
       setLoading(false);
       return;
     }
-    const cachedRows = peekCachedNotifications(user.id) as NotificationRow[] | null;
+    const cachedRows = peekRecentNotifications(user.id);
     if (cachedRows) {
-      setNotifications(recentNotifications(cachedRows));
+      setNotifications(cachedRows);
       setLoading(false);
     } else setLoading(true);
     try {
-      const now = new Date();
-      const cutoff = new Date(now.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
-      const rows = await getCachedNotifications(user.id, async () => {
-        const { data, error: queryError } = await supabase.from("notifications").select("id, title, body, kind, entity_type, entity_id, read_at, created_at").neq("kind", "assessment_assigned").gte("created_at", cutoff).lte("created_at", now.toISOString()).order("created_at", { ascending: false }).limit(100);
-        if (queryError) throw queryError;
-        return (data ?? []) as NotificationRow[];
-      }, { force });
+      const rows = await loadRecentNotifications(supabase, user.id, force);
       setError("");
       setNotifications(recentNotifications(rows));
       setLoading(false);
