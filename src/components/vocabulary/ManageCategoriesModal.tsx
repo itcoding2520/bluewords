@@ -5,29 +5,12 @@ import { Check, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import type {
-  VocabularyCategoryColor,
-} from "@/lib/supabase/categories";
 import { ManageCategoryRow } from "@/components/vocabulary/ManageCategoryRow";
 import { useManageCategoriesController } from "@/hooks/useManageCategoriesController";
-
-const colorOptions: Array<{
-  value: VocabularyCategoryColor;
-  label: string;
-  className: string;
-}> = [
-  { value: "blue", label: "Blue", className: "bg-blue-500" },
-  { value: "violet", label: "Violet", className: "bg-[#bf00ff]" },
-  { value: "orange", label: "Orange", className: "bg-[#ff990a]" },
-  { value: "green", label: "Green", className: "bg-emerald-500" },
-  { value: "rose", label: "Rose", className: "bg-rose-500" },
-  { value: "indigo", label: "Indigo", className: "bg-indigo-500" },
-  { value: "teal", label: "Teal", className: "bg-teal-500" },
-  { value: "amber", label: "Amber", className: "bg-amber-500" },
-  { value: "pink", label: "Pink", className: "bg-pink-500" },
-  { value: "slate", label: "Slate", className: "bg-slate-500" },
-];
+import {
+  VocabularyCategoryColorSelect,
+  vocabularyCategoryColorOptions,
+} from "@/components/vocabulary/VocabularyCategoryColorSelect";
 
 interface ManageCategoriesModalProps {
   open: boolean;
@@ -100,19 +83,11 @@ export function ManageCategoriesModal({
               placeholder="New category"
               maxLength={50}
             />
-            <Select
-              aria-label="New category color"
+            <VocabularyCategoryColorSelect
+              ariaLabel="New category color"
               value={newColor}
-              onChange={(event) =>
-                setNewColor(event.target.value as VocabularyCategoryColor)
-              }
-            >
-              {colorOptions.map((color) => (
-                <option key={color.value} value={color.value}>
-                  {color.label}
-                </option>
-              ))}
-            </Select>
+              onChange={setNewColor}
+            />
             <Button type="submit" disabled={!newName.trim() || isSaving}>
               <Plus size={16} />
               Add
@@ -121,7 +96,7 @@ export function ManageCategoriesModal({
 
           <div className="mt-5 space-y-2">
             {categories.map((category) => {
-              const color = colorOptions.find(
+              const color = vocabularyCategoryColorOptions.find(
                 (option) => option.value === category.color
               );
 
@@ -142,21 +117,11 @@ export function ManageCategoriesModal({
                         disabled={category.is_default}
                         maxLength={50}
                       />
-                      <Select
-                        aria-label="Category color"
+                      <VocabularyCategoryColorSelect
+                        ariaLabel="Category color"
                         value={editColor}
-                        onChange={(event) =>
-                          setEditColor(
-                            event.target.value as VocabularyCategoryColor
-                          )
-                        }
-                      >
-                        {colorOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </Select>
+                        onChange={setEditColor}
+                      />
                       <div className="flex gap-2">
                         <Button
                           type="submit"
