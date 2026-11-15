@@ -1,14 +1,13 @@
 "use client";
 
-import { Download, Pencil, RefreshCw, Search, Trash2, UserPlus, X } from "lucide-react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { Download, Pencil, RefreshCw, Search, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { formatShortDate } from "@/lib/formatDate";
-import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useAdminUsersController } from "@/hooks/useAdminUsersController";
+import { AdminAddUserForm, AdminEditUserDialog } from "@/components/admin/AdminUserForms";
 
 export function AdminUsersManagement() {
   const {
@@ -35,32 +34,29 @@ export function AdminUsersManagement() {
     {error && <AutoDismissMessage key={error} variant="error" className="mb-4 whitespace-pre-line">{error}</AutoDismissMessage>}
     {notice && <AutoDismissMessage key={notice} variant="success" className="mb-4">{notice}</AutoDismissMessage>}
 
-    {showAddForm && <form onSubmit={(event) => void addUser(event)} className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
-        <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" aria-label="New user email" className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-        <input value={nickname} onChange={(event) => setNickname(event.target.value)} maxLength={60} placeholder="Nickname (optional)" aria-label="New user nickname" className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-        <PasswordInput required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Temporary password (8+ chars)" aria-label="New user password" className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-        <Button type="submit" disabled={busy === "create"}>Create user</Button>
-      </div>
-    </form>}
+    {showAddForm && <AdminAddUserForm
+      email={email}
+      onEmailChange={setEmail}
+      nickname={nickname}
+      onNicknameChange={setNickname}
+      password={password}
+      onPasswordChange={setPassword}
+      busy={busy}
+      onSubmit={(event) => void addUser(event)}
+    />}
 
-    <Dialog.Root open={editingUser !== null} onOpenChange={(open) => { if (!open && !busy) setEditingUser(null); }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm" />
-        <Dialog.Content aria-describedby="edit-user-description" className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div><Dialog.Title className="text-lg font-semibold text-slate-950">Edit user</Dialog.Title><Dialog.Description id="edit-user-description" className="mt-1 text-sm text-slate-500">Update account details for {editingUser?.email}.</Dialog.Description></div>
-            <Dialog.Close asChild><button type="button" aria-label="Close edit user dialog" disabled={busy !== null} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-50"><X size={18} /></button></Dialog.Close>
-          </div>
-          <form onSubmit={(event) => void editUser(event)} className="mt-5 space-y-4">
-            <label className="block text-sm font-medium text-slate-700">Email<input type="email" required value={editEmail} onChange={(event) => setEditEmail(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /></label>
-            <label className="block text-sm font-medium text-slate-700">Nickname<input value={editNickname} maxLength={24} onChange={(event) => setEditNickname(event.target.value)} placeholder="Leave blank to clear nickname" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /><span className="mt-1 block text-xs font-normal text-slate-500">Use 2–24 characters, or leave blank.</span></label>
-            <label className="block text-sm font-medium text-slate-700">New password<PasswordInput minLength={8} value={editPassword} onChange={(event) => setEditPassword(event.target.value)} placeholder="Leave blank to keep current password" className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" /><span className="mt-1 block text-xs font-normal text-slate-500">At least 8 characters when changing.</span></label>
-            <div className="flex justify-end gap-2 pt-2"><Dialog.Close asChild><Button type="button" variant="secondary" disabled={busy !== null}>Cancel</Button></Dialog.Close><Button type="submit" disabled={busy === editingUser?.id}>{busy === editingUser?.id ? "Saving…" : "Save changes"}</Button></div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <AdminEditUserDialog
+      editingUser={editingUser}
+      onEditingUserChange={setEditingUser}
+      email={editEmail}
+      onEmailChange={setEditEmail}
+      nickname={editNickname}
+      onNicknameChange={setEditNickname}
+      password={editPassword}
+      onPasswordChange={setEditPassword}
+      busy={busy}
+      onSubmit={(event) => void editUser(event)}
+    />
 
     <section className="admin-users-card overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="admin-users-toolbar flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
