@@ -7,6 +7,7 @@ import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { formatDuration } from "@/lib/assignments/format-duration";
 import { useAssessmentRunnerController } from "@/hooks/useAssessmentRunnerController";
 import { AssessmentQuestionCard } from "@/components/assignments/AssessmentQuestionCard";
+import { AssessmentProgressNavigation } from "@/components/assignments/AssessmentProgressNavigation";
 
 export function AssessmentRunner({ attemptId }: { attemptId: string }) {
   const {
@@ -21,7 +22,12 @@ export function AssessmentRunner({ attemptId }: { attemptId: string }) {
   return <div className="assessment-runner-page">
     <Link className="assessment-back-link" href="/assignments"><ArrowLeft size={17} /> My assignments</Link>
     <header className="assessment-test-header"><div><span>Assigned test · {attempt.difficulty}</span><h1>{attempt.title}</h1><p>Each correct answer is worth 10 points. You need more than 50 points to pass.</p></div><div className="assessment-live-stats"><span><Clock3 />{formatDuration(seconds)}</span><span><CheckCircle2 />{answered}/10 answered</span></div></header>
-    <div className="assessment-progress"><div><span>Question {current + 1} of 10</span><b>{current + 1} / 10</b></div><div className="assessment-progress-track"><i style={{ width: `${(current + 1) * 10}%` }} /></div><div className="assessment-question-dots">{attempt.questions.map((item, index) => <button key={index} aria-label={`Go to question ${index + 1}`} className={`${index === current ? "active" : ""} ${answers[index] ? "answered" : ""}`} onClick={() => setCurrent(index)}>{index + 1}</button>)}</div></div>
+    <AssessmentProgressNavigation
+      questions={attempt.questions}
+      answers={answers}
+      current={current}
+      onQuestionSelect={setCurrent}
+    />
     <AssessmentQuestionCard
       question={question}
       answer={answers[current]}
