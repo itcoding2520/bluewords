@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { WordSearchSessionRow } from "@/types/database";
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { useWordSearchTimer } from "@/hooks/useWordSearchTimer";
-import { createWordSearchPuzzle, findWordSearchSelectionPrefix, normalizeWordSearchWord } from "@/lib/word-search.mjs";
-import { WORD_TARGETS, selectableWords, buildWordSearchCategoryOptions, type Difficulty, type GridSize } from "@/lib/word-search-config";
+import { createWordSearchPuzzle, findWordSearchSelectionPrefix } from "@/lib/word-search.mjs";
+import { type Difficulty, type GridSize } from "@/lib/word-search-config";
+import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
 
 type Phase = "setup" | "playing" | "results";
 type Tab = "play" | "history";
@@ -52,15 +53,14 @@ export function useWordSearchController(userId: string | null) {
     averageWordsPerRound,
   } = useWordSearchHistory(userId);
 
-  const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
-  const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
-  const vocabularyByWord = useMemo(() => new Map(words.map((word) => [normalizeWordSearchWord(word.word), word] as const)), [words]);
-  const categoryOptions = useMemo(
-    () => buildWordSearchCategoryOptions(categories, words),
-    [categories, words]
-  );
-  const targetCount = Math.min(WORD_TARGETS[gridSize][difficulty], candidates.length);
-  const showStickyStart = phase === "setup" && tab === "play";
+  const {
+    candidates,
+    vocabularyById,
+    vocabularyByWord,
+    categoryOptions,
+    targetCount,
+    showStickyStart,
+  } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab });
 
   const {
     selectedCells,
