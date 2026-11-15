@@ -39,40 +39,39 @@ export function useVocabularyStoreData() {
 
     const currentRequest = ++requestIdRef.current;
     pendingRequestIdRef.current = currentRequest;
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
 
-      if (authError || !user) {
-        ownerIdRef.current = null;
-        setWords(defaultVocabularyWords);
-        setCategories(defaultVocabularyCategories);
-        setIsAuthenticated(false);
-        setCategoriesLoaded(true);
-        setIsLoaded(true);
-        try {
-          const shared = await loadPublicSharedVocabulary();
-          if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
-          setWords([...defaultVocabularyWords, ...mapPublicWords(shared)]);
-          setCategories(mapPublicCategories(shared));
-        } catch (error) {
-          console.error("Could not load guest shared vocabulary:", error);
-        }
-        return;
+    const isCurrentRequest = () =>
+      mountedRef.current && currentRequest === requestIdRef.current;
+
+    async function loadGuestWords() {
+      ownerIdRef.current = null;
+      setWords(defaultVocabularyWords);
+      setCategories(defaultVocabularyCategories);
+      setIsAuthenticated(false);
+      setCategoriesLoaded(true);
+      setIsLoaded(true);
+      try {
+        const shared = await loadPublicSharedVocabulary();
+        if (!isCurrentRequest()) return;
+        setWords([...defaultVocabularyWords, ...mapPublicWords(shared)]);
+        setCategories(mapPublicCategories(shared));
+      } catch (error) {
+        console.error("Could not load guest shared vocabulary:", error);
       }
+    }
 
+    async function loadMemberWords(userId: string) {
       setIsAuthenticated(true);
-      if (ownerIdRef.current !== user.id) {
-        ownerIdRef.current = user.id;
+      if (ownerIdRef.current !== userId) {
+        ownerIdRef.current = userId;
         setWords([]);
         setCategories([]);
         setCategoriesLoaded(false);
         setIsLoaded(false);
       }
 
-      const result = await loadAuthenticatedVocabularySnapshot(supabase, user.id);
-
-      if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
+      const result = await loadAuthenticatedVocabularySnapshot(supabase, userId);
+      if (!isCurrentRequest()) return;
       if (result.communityCategoriesError || result.communityWordsError) {
         console.error("Could not load published community vocabulary:", result.communityCategoriesError ?? result.communityWordsError);
       }
@@ -81,6 +80,18 @@ export function useVocabularyStoreData() {
       setCategories(mappedVocabulary.categories);
       setCategoriesLoaded(true);
       setIsLoaded(true);
+    }
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!isCurrentRequest()) return;
+
+      if (authError || !user) {
+        await loadGuestWords();
+        return;
+      }
+
+      await loadMemberWords(user.id);
     } catch (error) {
       if (!mountedRef.current || currentRequest !== requestIdRef.current) return;
       console.error("Failed to refresh vocabulary:", error);
