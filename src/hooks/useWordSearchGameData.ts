@@ -3,7 +3,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import { WORD_TARGETS, selectableWords, buildWordSearchCategoryOptions, type Difficulty, type GridSize } from "@/lib/word-search-config";
-import type { GamePhase } from "@/types/game";
+import type { GamePhase, GameTab } from "@/types/game";
 
 export function useWordSearchGameData({
   words,
@@ -20,7 +20,7 @@ export function useWordSearchGameData({
   difficulty: Difficulty;
   gridSize: GridSize;
   phase: GamePhase;
-  tab: "play" | "history";
+  tab: GameTab;
 }) {
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
   const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);

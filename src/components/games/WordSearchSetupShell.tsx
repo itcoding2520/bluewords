@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import type { GameTab } from "@/types/game";
 
 export function WordSearchSetupShell({
   userId,
@@ -15,7 +16,7 @@ export function WordSearchSetupShell({
   children,
 }: {
   userId: string | null;
-  tab: "play" | "history";
+  tab: GameTab;
   showStickyStart: boolean;
   targetCount: number;
   onStart: () => void;
