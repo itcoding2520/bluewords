@@ -1,8 +1,9 @@
 import { shuffle } from "@/lib/random";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
+import type { DifficultyLevel } from "@/types/difficulty";
 
-type AssessmentDifficulty = "easy" | "medium" | "hard";
+type AssessmentDifficulty = DifficultyLevel;
 type DefaultVocabularyKey = { normalized_word: string };
 type VocabularySource = { word: string; meaning: string; category: string; image_path: string | null; type: string };
 type CommunityCategory = { name: string };

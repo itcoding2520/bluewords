@@ -1,7 +1,9 @@
+import type { DifficultyLevel } from "@/types/difficulty";
+
 type Lesson = {
   id: string;
   topic_id: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: DifficultyLevel;
 };
 
 type Progress = {
@@ -34,7 +36,7 @@ export function getCatalogRecommendation({
   const incompleteLesson = lessons.find((lesson) =>
     !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"),
   );
-  const difficultyRank = { easy: 0, medium: 1, hard: 2 };
+  const difficultyRank: Record<DifficultyLevel, number> = { easy: 0, medium: 1, hard: 2 };
   const reviewedLessons = lessons.flatMap((lesson) => {
     const stats = lessonAccuracy[lesson.id];
     return stats && stats.attempts >= 3 ? [{ lesson, accuracy: stats.correct / stats.attempts }] : [];

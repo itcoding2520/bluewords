@@ -1,4 +1,5 @@
 import type { PartOfSpeech, VocabularyCategoryColor } from "@/config/vocabulary";
+import type { DifficultyLevel } from "@/types/difficulty";
 
 export type VocabularyCategoryRow = {
   id: string;
@@ -127,7 +128,7 @@ export type VocabularyQuizAnswerInsert = Omit<
   "id" | "session_id" | "user_id" | "created_at" | "prompt_type"
 >;
 
-export type WordSearchDifficulty = "easy" | "medium" | "hard";
+export type WordSearchDifficulty = DifficultyLevel;
 
 export type WordSearchSessionRow = {
   id: string;

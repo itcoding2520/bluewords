@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import type { WordSearchDifficulty } from "@/types/database";
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
@@ -94,7 +95,7 @@ export async function getQuizLeaderboard(input: {
 
 export async function getWordSearchLeaderboard(input: {
   gridSize: 10 | 15 | 20;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: WordSearchDifficulty;
 }): Promise<WordSearchLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_word_search_leaderboard", {
     p_grid_size: input.gridSize,

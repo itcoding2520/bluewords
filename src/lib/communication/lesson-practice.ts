@@ -1,6 +1,7 @@
 import { shuffle } from "@/lib/random";
+import type { DifficultyLevel } from "@/types/difficulty";
 
-export type LessonDifficulty = "easy" | "medium" | "hard";
+export type LessonDifficulty = DifficultyLevel;
 
 export type SentenceDrillItem = {
   id: string;

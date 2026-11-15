@@ -1,6 +1,7 @@
 import { toVietnamDateKey } from "@/lib/formatDate";
+import type { DifficultyLevel } from "@/types/difficulty";
 
-export type AssessmentDifficulty = "easy" | "medium" | "hard";
+export type AssessmentDifficulty = DifficultyLevel;
 
 type ValidatedAssignmentInput = {
   title: string;

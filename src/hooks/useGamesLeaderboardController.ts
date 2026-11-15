@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { DifficultyLevel } from "@/types/difficulty";
 import {
   getQuizLeaderboard,
   getVocabularyGameLeaderboard,
@@ -10,7 +11,7 @@ import {
 
 export type LeaderboardGame = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
 export type LeaderboardQuizMode = "choose-meaning" | "type-word";
-export type LeaderboardDifficulty = "easy" | "medium" | "hard";
+export type LeaderboardDifficulty = DifficultyLevel;
 export type LeaderboardQuestionCount = 10 | 20 | 30;
 export type LeaderboardGridSize = 10 | 15 | 20;
 export type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;

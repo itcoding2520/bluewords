@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin } from "@/lib/assessments/server";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
 import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
+import type { AssessmentDifficulty } from "@/lib/assessments/assignment-input";
 
 export async function GET() {
   const { client, user } = await getRequestUser();
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     vocabularyRows: wordsData,
     communityWords: sharedData,
     sentenceQuestions: sentencesData,
-    difficulty: difficulty as "easy" | "medium" | "hard",
+    difficulty: difficulty as AssessmentDifficulty,
   });
   if (!questions) return NextResponse.json({ error: "This difficulty needs at least 5 public vocabulary words and 5 active sentence questions." }, { status: 422 });
 

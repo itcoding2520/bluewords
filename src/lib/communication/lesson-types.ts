@@ -1,9 +1,11 @@
+import type { DifficultyLevel } from "@/types/difficulty";
+
 export type Lesson = {
   id: string;
   topic_id: string;
   title_en: string;
   title_vi: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: DifficultyLevel;
   status: string;
 };
 

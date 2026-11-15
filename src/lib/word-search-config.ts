@@ -1,11 +1,12 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import type { DifficultyLevel } from "@/types/difficulty";
 import { buildVocabularyGameCategoryOptions, type VocabularyGameCategoryOption } from "@/lib/vocabulary/game-category-options";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 
 export type GridSize = 10 | 15 | 20;
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = DifficultyLevel;
 export type WordSearchCategoryOption = VocabularyGameCategoryOption;
 
 export const GRID_SIZES: GridSize[] = [10, 15, 20];

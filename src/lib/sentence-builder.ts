@@ -1,4 +1,6 @@
-export type SentenceDifficulty = "easy" | "medium" | "hard";
+import type { DifficultyLevel } from "@/types/difficulty";
+
+export type SentenceDifficulty = DifficultyLevel;
 
 export type SentenceBuilderQuestion = {
   id: string;

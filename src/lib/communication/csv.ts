@@ -1,8 +1,9 @@
 import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
 import { validateCommunicationCsvConsistency } from "@/lib/communication/csv-consistency";
 import { parseCommunicationCsvRecord } from "@/lib/communication/csv-record";
+import type { DifficultyLevel } from "@/types/difficulty";
 
-export type CommunicationDifficulty = "easy" | "medium" | "hard";
+export type CommunicationDifficulty = DifficultyLevel;
 export type ContentStatus = "draft" | "published" | "archived";
 export type CommunicationRecordType = "item" | "dialogue_turn";
 
