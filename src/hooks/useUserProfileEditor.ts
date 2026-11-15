@@ -7,16 +7,13 @@ import {
   getUserProfile,
   saveUserProfile,
   uploadUserAvatar,
-  validateUserAvatar,
   type UserProfile,
 } from "@/lib/supabase/user-profile";
+import { useUserProfileAvatar } from "@/hooks/useUserProfileAvatar";
 
 export function useUserProfileEditor(userId: string) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [removeAvatar, setRemoveAvatar] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -36,23 +33,10 @@ export function useUserProfileEditor(userId: string) {
     return () => { active = false; };
   }, [userId]);
 
-  useEffect(() => {
-    if (!avatarFile) return;
-    let active = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (active && typeof reader.result === "string") setPreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(avatarFile);
-    return () => {
-      active = false;
-      reader.abort();
-    };
-  }, [avatarFile]);
+  const avatar = useUserProfileAvatar({ profile, setError, setNotice });
 
   const normalizedNickname = nickname.trim();
-  const hasChanges = normalizedNickname !== (profile?.nickname ?? "") || Boolean(avatarFile) || removeAvatar;
-  const previewPath = removeAvatar ? null : profile?.avatar_path;
+  const hasChanges = normalizedNickname !== (profile?.nickname ?? "") || Boolean(avatar.avatarFile) || avatar.removeAvatar;
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,17 +47,15 @@ export function useUserProfileEditor(userId: string) {
     let uploadedPath: string | null = null;
     try {
       const previousAvatarPath = profile?.avatar_path ?? null;
-      if (avatarFile) uploadedPath = await uploadUserAvatar(avatarFile);
+      if (avatar.avatarFile) uploadedPath = await uploadUserAvatar(avatar.avatarFile);
       const updatedProfile = await saveUserProfile({
         nickname: normalizedNickname || null,
-        avatarPath: uploadedPath ?? previewPath ?? null,
+        avatarPath: uploadedPath ?? avatar.previewPath ?? null,
       });
 
       setProfile(updatedProfile);
       setNickname(updatedProfile.nickname ?? "");
-      setAvatarFile(null);
-      setPreviewUrl(null);
-      setRemoveAvatar(false);
+      avatar.resetAvatarSelection();
       setNotice("Profile updated.");
 
       if (previousAvatarPath && previousAvatarPath !== updatedProfile.avatar_path) {
@@ -105,32 +87,6 @@ export function useUserProfileEditor(userId: string) {
     }
   }
 
-  function selectAvatar(file: File | undefined) {
-    setError("");
-    setNotice("");
-    if (!file) return;
-    const validationError = validateUserAvatar(file);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setAvatarFile(file);
-    setPreviewUrl(null);
-    setRemoveAvatar(false);
-  }
-
-  function removeSelectedAvatar() {
-    setAvatarFile(null);
-    setPreviewUrl(null);
-    setRemoveAvatar(Boolean(profile?.avatar_path));
-    setError("");
-    setNotice("");
-  }
-
-  function undoAvatarRemoval() {
-    setRemoveAvatar(false);
-  }
-
   function changeNickname(value: string) {
     setNickname(value);
     setError("");
@@ -140,20 +96,20 @@ export function useUserProfileEditor(userId: string) {
   return {
     profile,
     nickname,
-    avatarFile,
-    removeAvatar,
-    previewUrl,
+    avatarFile: avatar.avatarFile,
+    removeAvatar: avatar.removeAvatar,
+    previewUrl: avatar.previewUrl,
+    previewPath: avatar.previewPath,
     loading,
     saving,
     error,
     notice,
     normalizedNickname,
     hasChanges,
-    previewPath,
     saveProfile,
-    selectAvatar,
-    removeSelectedAvatar,
-    undoAvatarRemoval,
+    selectAvatar: avatar.selectAvatar,
+    removeSelectedAvatar: avatar.removeSelectedAvatar,
+    undoAvatarRemoval: avatar.undoAvatarRemoval,
     changeNickname,
   };
 }
