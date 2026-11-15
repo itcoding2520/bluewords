@@ -7,6 +7,11 @@ export function getPageItems<T>(items: T[], page: number, pageSize: number): T[]
   return items.slice(start, start + pageSize);
 }
 
+export function getInclusivePageRange(page: number, pageSize: number): { from: number; to: number } {
+  const from = (page - 1) * pageSize;
+  return { from, to: from + pageSize - 1 };
+}
+
 export function getPageRange(total: number, page: number, pageSize: number) {
   return {
     first: total > 0 ? (page - 1) * pageSize + 1 : 0,

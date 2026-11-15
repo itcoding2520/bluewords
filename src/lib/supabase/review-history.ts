@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { getInclusivePageRange } from "@/lib/pagination";
 import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
@@ -61,8 +62,7 @@ export async function getLatestVocabularyReviews(input: {
   const cachedPage = getCachedLatestVocabularyReviews(user.id, input.status, input.page, pageSize);
   if (cachedPage) return cachedPage;
 
-  const from = (input.page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const { from, to } = getInclusivePageRange(input.page, pageSize);
   const { data, error, count } = await supabase
     .rpc("get_latest_vocabulary_reviews", {}, { count: "exact" })
     .eq("status", input.status)

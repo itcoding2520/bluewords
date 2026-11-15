@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import { getInclusivePageRange } from "@/lib/pagination";
 import type { WordSearchDifficulty, WordSearchSessionRow } from "@/types/database";
 import {
   getCachedWordSearchHistory,
@@ -48,8 +49,7 @@ export async function getWordSearchSessions(input: {
   const cached = getCachedWordSearchHistory(user.id, input.page, input.pageSize) as { rows: WordSearchSessionRow[]; total: number } | null;
   if (cached && !input.forceRefresh) return cached;
 
-  const from = (input.page - 1) * input.pageSize;
-  const to = from + input.pageSize - 1;
+  const { from, to } = getInclusivePageRange(input.page, input.pageSize);
   const { data, error, count } = await supabase
     .from("word_search_sessions")
     .select("id, user_id, grid_size, difficulty, category, word_count, duration_seconds, words, started_at, completed_at, created_at", { count: "exact" })
