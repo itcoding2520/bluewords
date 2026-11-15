@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -8,7 +9,7 @@ import { useWordMazeGameplay } from "@/hooks/useWordMazeGameplay";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 export type { MazeWord } from "@/lib/word-maze";
 
 export function useWordMazeController(input: {

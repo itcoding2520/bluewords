@@ -1,8 +1,9 @@
+import type { GamePhase } from "@/types/game";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizMode } from "@/types/quiz";
 
 export type { QuizMode };
-export type QuizPhase = "setup" | "playing" | "results";
+export type QuizPhase = GamePhase;
 export type QuizTab = "play" | "history";
 export type QuizSaveState = "idle" | "saving" | "saved" | "error";
 export const QUIZ_QUESTION_COUNTS = [10, 20, 30] as const;

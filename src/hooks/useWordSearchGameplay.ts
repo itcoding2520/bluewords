@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import type { Dispatch, SetStateAction } from "react";
 
 import { useWordSearchSelection, type CellPosition } from "@/hooks/useWordSearchSelection";
@@ -5,7 +6,7 @@ import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 import { findWordSearchSelectionPrefix } from "@/lib/word-search-selection.mjs";
 import type { GridSize } from "@/lib/word-search-config";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 type Puzzle = ReturnType<typeof createWordSearchPuzzle>;
 type Candidate = { id: string; word: string };
 

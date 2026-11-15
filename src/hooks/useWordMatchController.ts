@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -7,7 +8,7 @@ import { buildWordMatchPairs, type MatchCardData } from "@/lib/word-match";
 import { useWordMatchGameplay } from "@/hooks/useWordMatchGameplay";
 import { shuffle } from "@/lib/quiz-random";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 type PairCount = 6 | 8 | 10;
 export type { MatchPair } from "@/lib/word-match";
 export type { MatchCardData } from "@/lib/word-match";

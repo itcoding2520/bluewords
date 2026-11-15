@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { type CellPosition } from "@/hooks/useWordSearchSelection";
@@ -10,7 +11,7 @@ import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
 import { useWordSearchGameplay } from "@/hooks/useWordSearchGameplay";
 import { useWordSearchNavigation } from "@/hooks/useWordSearchNavigation";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();

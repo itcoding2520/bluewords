@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { shuffle } from "@/lib/quiz-random";
 import type { MatchCardData, MatchPair } from "@/lib/word-match";
+import type { GamePhase } from "@/types/game";
 
-export function useWordMatchGameplay(phase: "setup" | "playing" | "results") {
+export function useWordMatchGameplay(phase: GamePhase) {
   const [pairs, setPairs] = useState<MatchPair[]>([]);
   const [cards, setCards] = useState<MatchCardData[]>([]);
   const [matchedIds, setMatchedIds] = useState<Set<string>>(() => new Set());

@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -10,7 +11,7 @@ import type { SentenceBuilderQuestion, SentenceDifficulty } from "@/lib/sentence
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSentenceBuilderGameplay } from "@/hooks/useSentenceBuilderGameplay";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 export type { SentenceBuilderTile } from "@/hooks/useSentenceBuilderGameplay";
 export const sentenceBuilderQuestionCounts = [5, 10] as const;
 

@@ -1,7 +1,8 @@
+import type { GamePhase } from "@/types/game";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { WordSearchSessionRow } from "@/types/database";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 type Tab = "play" | "history";
 
 export function useWordSearchNavigation({

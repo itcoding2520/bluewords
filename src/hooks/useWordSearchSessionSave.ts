@@ -1,5 +1,6 @@
 "use client";
 
+import type { GamePhase } from "@/types/game";
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -8,7 +9,6 @@ import { saveWordSearchSession } from "@/lib/supabase/word-search-history";
 import type { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 
 type Puzzle = ReturnType<typeof createWordSearchPuzzle>;
-type GamePhase = "setup" | "playing" | "results";
 
 export function useWordSearchSessionSave({
   userId,

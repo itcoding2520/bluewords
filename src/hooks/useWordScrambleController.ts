@@ -1,3 +1,4 @@
+import type { GamePhase } from "@/types/game";
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -10,7 +11,7 @@ import { buildWordScrambleCandidates } from "@/lib/word-scramble";
 
 export type { ScrambleWord, LetterTile } from "@/lib/word-scramble";
 
-type Phase = "setup" | "playing" | "results";
+type Phase = GamePhase;
 type QuestionCount = 5 | 10;
 
 export function useWordScrambleController(input: {
