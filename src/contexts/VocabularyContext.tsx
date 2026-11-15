@@ -25,7 +25,10 @@ import {
   mapPublicCategories,
   mapPublicWords,
   mapVocabularyWordRow,
-  sortCategories,
+  mergeVocabularyCategories,
+  mapCommunityWords,
+  type PublishedCommunityCategory,
+  type PublishedCommunityWord,
 } from "@/lib/vocabulary/shared-vocabulary";
 import { type VocabularyCsvWord } from "@/lib/vocabulary-csv";
 import { importVocabularyWords } from "@/lib/vocabulary/bulk-import";
@@ -137,31 +140,8 @@ function VocabularyStoreProvider({
       if (sharedResult.error) {
         console.error("Could not load published community categories:", sharedResult.error);
       }
-      const publishedRows = (sharedResult.data ?? []) as Array<{ name: string; image_path: string | null }>;
-      const categoriesWithSharedImages = rows.map((category) => ({
-        ...category,
-        image_path: publishedRows.find((item) => item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())?.image_path ?? category.image_path ?? null,
-      }));
-      const existingNames = new Set(categoriesWithSharedImages.map((item) => item.name.trim().toLocaleLowerCase()));
-      const sharedCategories = ((sharedResult.data ?? []) as Array<{
-        id: string;
-        owner_id: string;
-        name: string;
-        color: VocabularyCategoryColor;
-        image_path: string | null;
-        created_at: string;
-        updated_at: string;
-      }>).filter((item) => !existingNames.has(item.name.trim().toLocaleLowerCase())).map((item) => ({
-        id: `community-category-${item.id}`,
-        user_id: item.owner_id,
-        name: item.name,
-        color: item.color,
-        is_default: false,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        image_path: item.image_path,
-      }));
-      setCategories(sortCategories([...categoriesWithSharedImages, ...sharedCategories]));
+      const publishedRows = (sharedResult.data ?? []) as PublishedCommunityCategory[];
+      setCategories(mergeVocabularyCategories(rows, publishedRows));
       setCategoriesLoaded(true);
     } catch (error) {
       if (requestId !== categoriesRequestIdRef.current) return;
@@ -251,44 +231,9 @@ function VocabularyStoreProvider({
         console.error("Could not load published community vocabulary:", communityCategoriesError ?? communityWordsError);
       }
 
-      type CommunityCategory = { id: string; owner_id: string; name: string; color: VocabularyCategoryColor; image_path: string | null; status: string; created_at: string; updated_at: string };
-      type CommunityWord = { id: string; word: string; meaning: string; ipa: string | null; community_categories: { id: string; name: string; color: VocabularyCategoryColor; status: string } };
-      const publishedCategoryRows = (communityCategories ?? []) as CommunityCategory[];
-      const categoryNames = new Set(categoryRows.map((item) => item.name.trim().toLocaleLowerCase()));
-      const categoriesWithSharedImages = categoryRows.map((category) => ({
-        ...category,
-        image_path: publishedCategoryRows.find((item) => item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())?.image_path ?? category.image_path ?? null,
-      }));
-      const mergedCategories: VocabularyCategoryRow[] = [
-        ...categoriesWithSharedImages,
-        ...publishedCategoryRows.filter((item) => !categoryNames.has(item.name.trim().toLocaleLowerCase())).map((item) => ({
-          id: `community-category-${item.id}`,
-          user_id: item.owner_id,
-          name: item.name,
-          color: item.color,
-          is_default: false,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          image_path: item.image_path,
-        })),
-      ];
-      const personalKeys = new Set(personalWords.map((item) => `${item.category.trim().toLocaleLowerCase()}\u0000${item.word.trim().toLocaleLowerCase()}`));
-      const sharedWords = ((communityWords ?? []) as unknown as CommunityWord[]).flatMap((item) => {
-        const key = `${item.community_categories.name.trim().toLocaleLowerCase()}\u0000${item.word.trim().toLocaleLowerCase()}`;
-        if (personalKeys.has(key)) return [];
-        return [{
-          id: `community-${item.id}`,
-          word: item.word,
-          meaning: item.meaning,
-          category: item.community_categories.name,
-          status: "learning" as const,
-          type: "word" as const,
-          ipa: item.ipa,
-          imagePath: null,
-          detailedMeanings: [],
-          isCustom: true,
-        }];
-      });
+      const publishedCategoryRows = (communityCategories ?? []) as PublishedCommunityCategory[];
+      const mergedCategories = mergeVocabularyCategories(categoryRows, publishedCategoryRows);
+      const sharedWords = mapCommunityWords((communityWords ?? []) as unknown as PublishedCommunityWord[], personalWords);
 
       setWords([...personalWords, ...sharedWords]);
       setCategories(mergedCategories);
