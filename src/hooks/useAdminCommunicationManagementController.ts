@@ -11,9 +11,7 @@ import { useAdminCommunicationSelection } from "@/hooks/useAdminCommunicationSel
 import { useAdminCommunicationTopicView } from "@/hooks/useAdminCommunicationTopicView";
 import { createCommunicationItemDraft, createCommunicationLessonDraft, createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
-import type { CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
-import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
-import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import type { CommunicationTopicDraft, CommunicationLessonDraft, CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 
 export function useAdminCommunicationManagementController() {
   const supabase = useSupabaseClient();

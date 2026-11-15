@@ -1,8 +1,9 @@
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
+import { downloadCsvFile } from "@/lib/download-csv";
 
 import type { createClient } from "@/lib/supabase/client";
-import { exportCommunicationCsv } from "@/lib/supabase/situational-english";
+import { exportCommunicationCsv } from "@/lib/communication/csv";
 import { importCommunicationCsv } from "@/lib/supabase/import-communication-csv";
 import { loadCommunicationSituationExport } from "@/lib/supabase/export-communication-situation";
 
@@ -51,13 +52,11 @@ export function useAdminCommunicationCsvActions({ supabase, selectedTopicId, set
     setBusy(true);
     try {
       const { topicSlug, records } = await loadCommunicationSituationExport(supabase, selectedTopicId);
-      const blob = new Blob(["\uFEFF", exportCommunicationCsv(records)], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `BlueWords_Situational_English_${topicSlug}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadCsvFile(
+        `BlueWords_Situational_English_${topicSlug}.csv`,
+        exportCommunicationCsv(records),
+        { includeUtf8Bom: true }
+      );
       toast.success(`Exported ${records.length} content rows.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not export communication content.");

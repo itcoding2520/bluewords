@@ -1,33 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyCategoryDropdown";
+import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
+import { shuffle } from "@/lib/quiz-random";
+import { buildWordMatchPairs, type MatchPair } from "@/lib/word-match";
 
 type Phase = "setup" | "playing" | "results";
 type PairCount = 6 | 8 | 10;
-export type MatchPair = {
-  id: string;
-  word: string;
-  meaning: string;
-  imagePath: string | null;
-  imageUrl: string | null;
-};
+export type { MatchPair } from "@/lib/word-match";
 export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
-
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
-
-function getWordMeaning(word: VocabularyWord): string {
-  return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-    || word.meaning.trim();
-}
 
 export function useWordMatchController(input: {
   words: VocabularyWord[];
@@ -62,35 +44,9 @@ export function useWordMatchController(input: {
     startedAt,
   });
 
-  const availablePairs = useMemo(() => {
-    const eligibleWords = category === "all"
-      ? words
-      : words.filter((word) => word.category === category);
-    const usedWords = new Set<string>();
-    const usedMatches = new Set<string>();
-    return eligibleWords.flatMap((word) => {
-      const text = word.word.trim();
-      const meaning = getWordMeaning(word);
-      const matchKey = word.imagePath || word.imageUrl
-        ? `image:${word.id}`
-        : `meaning:${meaning.toLocaleLowerCase()}`;
-      if (!text || !meaning || usedWords.has(text.toLocaleLowerCase()) || usedMatches.has(matchKey)) return [];
-      usedWords.add(text.toLocaleLowerCase());
-      usedMatches.add(matchKey);
-      return [{
-        id: word.id,
-        word: text,
-        meaning,
-        imagePath: word.imagePath ?? null,
-        imageUrl: word.imageUrl ?? null,
-      }];
-    });
-  }, [category, words]);
+  const availablePairs = useMemo(() => buildWordMatchPairs(words, category), [category, words]);
 
-  const categoryDropdownCategories = useMemo(
-    () => getVocabularyDropdownCategories(categories, words),
-    [categories, words]
-  );
+  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
 
   useEffect(() => () => {
     if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);

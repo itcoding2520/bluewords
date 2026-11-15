@@ -1,0 +1,74 @@
+/* Administration category browser */
+.admin-category-page,.admin-review-page { min-width: 0; }
+.app-content > .admin-category-page > header.admin-category-hero,.app-content > .admin-review-page .admin-review-hero {
+  position: relative;
+  display: flex;
+  min-height: 9.75rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border: 1px solid #d7eaff;
+  border-radius: 1.5rem;
+  padding: 1.45rem 1.75rem;
+  background-color: #f1fbff;
+  background-image: linear-gradient(90deg,#fff 0%,#f7fcfff0 48%,#dcf8ff57 100%),url('/images/ui/illustrations/hero-book-mascot.svg'),url('/images/ui/backgrounds/hero.svg');
+  background-position: center,right 10rem center,center;
+  background-repeat: no-repeat;
+  background-size: cover,auto 95%,cover;
+  box-shadow: 0 12px 30px rgb(50 116 188 / .08);
+}
+.admin-category-hero-copy,.admin-review-hero-copy { position: relative; z-index: 1; flex: 1 1 34rem; min-width: 0; max-width: 52rem; }
+.app-content:has(.admin-category-page) .admin-category-hero-copy h1,
+.app-content:has(.admin-category-page) .admin-category-hero-copy p,
+.app-content:has(.admin-review-page) .admin-review-hero-copy h1,
+.app-content:has(.admin-review-page) .admin-review-hero-copy p { max-width: 100%; }
+.admin-category-hero-copy h1,.admin-review-hero-copy h1 { color: #10245d; letter-spacing: -.035em; }
+.admin-category-hero-copy > p:last-child,.admin-review-hero-copy > p:last-child { max-width: 42rem; color: #617b9f; }
+.admin-category-hero > button,.admin-review-hero > button { position: relative; z-index: 1; flex: 0 0 auto; min-height: 3rem; border-radius: 1rem !important; padding-inline: 1.1rem; box-shadow: 0 5px 14px rgb(30 104 191 / .1); }
+.admin-category-tabs { gap: .7rem; }
+.admin-category-tab { min-height: 5.2rem; border-radius: 1.35rem !important; background: linear-gradient(135deg,#fff,#f8fcff); box-shadow: 0 7px 18px rgb(48 104 158 / .07); }
+.admin-category-tab.is-selected { border-color: #297bff !important; background: linear-gradient(115deg,#edf6ff,#fff); box-shadow: 0 0 0 1px #297bff,0 8px 20px rgb(35 117 239 / .12); }
+.admin-category-tab[aria-selected="true"] > span:first-child { border-radius: 50%; background: linear-gradient(145deg,#2791ff,#075df1) !important; box-shadow: 0 5px 12px rgb(18 103 233 / .2); }
+.admin-category-tab:nth-child(2) > span:first-child { background: linear-gradient(145deg,#19c8a0,#059b81); color: white; }
+.admin-category-tab:nth-child(3) > span:first-child { background: linear-gradient(145deg,#ffc045,#f49a13); color: white; }
+.admin-category-tab:nth-child(2) > span:last-child { background: #e1faf1; color: #078e6d; }
+.admin-category-tab:nth-child(3) > span:last-child { background: #fff2d9; color: #d47d00; }
+.admin-category-layout { grid-template-columns: minmax(17rem,.78fr) minmax(0,1.5fr); gap: .8rem; }
+.admin-category-list-panel,.admin-category-detail { border-color: #e1edf8; border-radius: 1.3rem; background: linear-gradient(145deg,#fff,#fbfdff); box-shadow: 0 9px 24px rgb(49 106 162 / .07); }
+.admin-category-list-heading { padding: .85rem 1rem .6rem; }
+.admin-category-list-heading h2 { display: flex; align-items: center; gap: .55rem; color: #13275f; font-size: 1rem; font-weight: 850; }
+.admin-category-list-heading svg { color: #1673f6; }
+.admin-category-search { position: relative; display: block; margin: 0 .85rem .55rem; }
+.admin-category-search > svg { position: absolute; top: 50%; left: .75rem; color: #7890ad; transform: translateY(-50%); }
+.admin-category-search input { width: 100%; height: 2.45rem; border: 1px solid #dce8f5; border-radius: .85rem; background: #f8fbff; padding: 0 .75rem 0 2.25rem; color: #233b60; font-size: .8rem; outline: none; }
+.admin-category-search input:focus { border-color: #74acff; box-shadow: 0 0 0 3px #e7f1ff; }
+.admin-category-list { max-height: 66vh; padding: 0 .55rem .55rem; }
+.admin-category-list-item { position: relative; align-items: center !important; gap: .65rem !important; border-radius: .9rem; padding: .55rem .65rem !important; }
+.admin-category-list-item.is-selected { background: linear-gradient(105deg,#eaf5ff,#f5faff) !important; box-shadow: inset 0 0 0 1px #c6e0ff; }
+.admin-category-list-item.is-selected::before { position: absolute; top: .3rem; bottom: .3rem; left: -.55rem; width: .25rem; border-radius: 999px; background: #1975fb; content: ''; }
+.admin-category-list-item > img,.admin-category-list-item > span:first-child { width: 3rem; height: 3rem; border-radius: .85rem; }
+.admin-category-list-item > span:nth-last-child(1) { max-width: 30%; text-align: right; }
+.admin-category-detail { padding: 1.2rem; }
+.admin-category-detail-header { align-items: center !important; gap: .75rem !important; }
+.admin-category-detail-header > div:first-child { flex: 1 1 18rem; }
+.admin-category-detail-header h2 { color: #12255f; font-size: 1.25rem; font-weight: 850; }
+.admin-category-word-row { display: flex; min-height: 3.65rem; align-items: center; gap: .7rem; border: 1px solid #e4eef8; border-radius: 1rem; background: linear-gradient(105deg,#fff,#fbfdff); margin-top: .45rem; padding: .45rem .65rem; }
+.admin-category-word-image { width: 2.75rem; height: 2.75rem; flex: 0 0 auto; border-radius: .8rem; background: #eef7ff; object-fit: cover; }
+.admin-category-word-fallback { display: grid; place-items: center; color: #196be8; font-weight: 800; }
+.admin-category-word-status { flex: 0 0 auto; border-radius: 999px; background: #eef4ff; padding: .35rem .7rem; color: #617ca4; font-size: .72rem; }
+.admin-category-word-status.is-pending { background: #fff5dc; color: #ab7100; }
+.admin-category-word-chevron { color: #6e89ad; font-size: 1.4rem; line-height: 1; }
+@media (max-width: 760px) {
+  .app-content > .admin-category-page > header.admin-category-hero,.app-content > .admin-review-page .admin-review-hero { min-height: 9rem; align-items: flex-start; flex-direction: column; padding: 1.15rem; background-position: center,right .25rem bottom,center; background-size: cover,auto 60%,cover; }
+  .admin-category-hero-copy,.admin-review-hero-copy { flex: 0 0 auto; width: 100%; padding-right: 3rem; }
+  .admin-category-hero-copy h1,.admin-review-hero-copy h1 { font-size: 1.65rem; }
+  .admin-category-hero-copy > p:last-child,.admin-review-hero-copy > p:last-child { font-size: .8rem; }
+  .admin-category-hero > button,.admin-review-hero > button { align-self: flex-start; min-height: 2.5rem; }
+  .admin-category-layout { grid-template-columns: minmax(0,1fr); }
+  .admin-category-list { max-height: 18rem; }
+  .admin-category-detail { padding: .9rem; }
+  .admin-category-detail-header > div:first-child { flex-basis: 100%; }
+}
+

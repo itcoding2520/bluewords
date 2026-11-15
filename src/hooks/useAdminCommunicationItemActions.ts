@@ -1,9 +1,10 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
+import { removeCommunicationItem, saveCommunicationItem } from "@/lib/communication/admin-actions";
 import type { createClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
 
@@ -63,10 +64,7 @@ export function useAdminCommunicationItemActions({
     }
 
     setBusy(true);
-    const query = editingId
-      ? supabase.from("communication_lesson_items").update(payload).eq("id", editingId)
-      : supabase.from("communication_lesson_items").insert(payload);
-    const { error } = await query;
+    const { error } = await saveCommunicationItem(supabase, editingId, payload);
     setBusy(false);
     if (error) return toast.error(error.message);
 
@@ -99,7 +97,7 @@ export function useAdminCommunicationItemActions({
       confirmLabel: "Remove",
     })) return;
 
-    const { error } = await supabase.from("communication_lesson_items").delete().eq("id", item.id);
+    const { error } = await removeCommunicationItem(supabase, item.id);
     if (error) {
       toast.error(error.message);
       return;

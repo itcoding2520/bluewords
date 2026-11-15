@@ -1,0 +1,69 @@
+import { useMemo } from "react";
+import { defaultVocabularyCategories } from "@/data/default-vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+
+export type CategoryManagementSort = "name" | "newest" | "oldest";
+export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
+
+const defaultCategoryNames = new Set(
+  defaultVocabularyCategories.map((category) =>
+    category.name.trim().toLocaleLowerCase()
+  )
+);
+
+function isDefaultCategory(category: VocabularyCategoryRow) {
+  return category.is_default || defaultCategoryNames.has(category.name.trim().toLocaleLowerCase());
+}
+
+function isPublishedSharedCategory(category: VocabularyCategoryRow) {
+  return category.id.startsWith("community-category-") || category.user_id === "community";
+}
+
+export function useCategoryManagementView({
+  categories,
+  filterBy,
+  sortBy,
+  page,
+  pageSize,
+}: {
+  categories: VocabularyCategoryRow[];
+  filterBy: CategoryManagementFilter;
+  sortBy: CategoryManagementSort;
+  page: number;
+  pageSize: number;
+}) {
+  const managedCategories = useMemo(() => {
+    const filteredCategories = categories.filter((category) => {
+      if (filterBy === "mine") return !isDefaultCategory(category) && !isPublishedSharedCategory(category);
+      if (filterBy === "default") return isDefaultCategory(category);
+      if (filterBy === "community") return isPublishedSharedCategory(category) && !isDefaultCategory(category);
+      return true;
+    });
+
+    return [...filteredCategories].sort((left, right) => {
+      if (sortBy === "name") return left.name.localeCompare(right.name);
+      if (!left.created_at || !right.created_at) {
+        if (!left.created_at && !right.created_at) return left.name.localeCompare(right.name);
+        return left.created_at ? -1 : 1;
+      }
+      const byDate = new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+      return (sortBy === "newest" ? -byDate : byDate) || left.name.localeCompare(right.name);
+    });
+  }, [categories, filterBy, sortBy]);
+
+  const pageCount = Math.max(1, Math.ceil(managedCategories.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageCategories = managedCategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const firstVisibleCategory = managedCategories.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const lastVisibleCategory = Math.min(currentPage * pageSize, managedCategories.length);
+
+  return {
+    isDefaultCategory,
+    managedCategories,
+    pageCount,
+    currentPage,
+    pageCategories,
+    firstVisibleCategory,
+    lastVisibleCategory,
+  };
+}

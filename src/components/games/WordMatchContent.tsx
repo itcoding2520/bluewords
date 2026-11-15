@@ -1,69 +1,20 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Clock3, RotateCcw, Shuffle, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock3, RotateCcw, Shuffle, Sparkles, Trophy } from "lucide-react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { useWordMatchController, type MatchCardData, type MatchPair } from "@/hooks/useWordMatchController";
+import { useWordMatchController } from "@/hooks/useWordMatchController";
+import { WordMatchCard } from "@/components/games/WordMatchCard";
+import { GameLeaderboardSaveStatus } from "@/components/games/GameLeaderboardSaveStatus";
+import { formatGameDuration } from "@/lib/game-duration";
 
 type PairCount = 6 | 8 | 10;
 
 const PAIR_COUNTS: PairCount[] = [6, 8, 10];
 
-function formatTime(totalSeconds: number): string {
-  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
-}
-
-function MatchCard({
-  card,
-  pair,
-  isRevealed,
-  isMatched,
-  isWrong,
-  locked,
-  onClick,
-}: {
-  card: MatchCardData;
-  pair: MatchPair;
-  isRevealed: boolean;
-  isMatched: boolean;
-  isWrong: boolean;
-  locked: boolean;
-  onClick: () => void;
-}) {
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const signedImageUrl = useVocabularyImageUrl(pair.imagePath);
-  const imageUrl = pair.imageUrl ?? signedImageUrl;
-  const isImage = card.kind === "match" && Boolean(imageUrl) && imageUrl !== failedImageUrl;
-  const label = card.kind === "word" ? pair.word : isImage ? `Picture matching ${pair.word}` : pair.meaning;
-
-  return (
-    <button
-      type="button"
-      aria-label={isRevealed || isMatched ? label : "Reveal a matching card"}
-      aria-pressed={isRevealed || isMatched}
-      disabled={isMatched || locked}
-      onClick={onClick}
-      className={`word-match-flip-card ${isRevealed || isMatched ? "is-revealed" : ""} ${isMatched ? "is-matched" : ""} ${isWrong ? "is-wrong" : ""}`}
-    >
-      <span className="word-match-flip-inner">
-        <span className="word-match-card-back" aria-hidden={isRevealed || isMatched}>
-          <span className="word-match-card-question">?</span>
-          <Sparkles size={18} className="word-match-card-sparkle" aria-hidden="true" />
-        </span>
-        <span className="word-match-card-front" aria-hidden={!isRevealed && !isMatched}>
-          {isImage ? <Image src={imageUrl!} alt="" width={112} height={112} unoptimized onError={() => setFailedImageUrl(imageUrl!)} className="word-match-card-image" /> : <span className={card.kind === "word" ? "word-match-card-word" : "word-match-card-meaning"}>{card.kind === "word" ? pair.word : pair.meaning}</span>}
-          {isMatched && <span className="word-match-card-check"><Check size={17} aria-hidden="true" /></span>}
-        </span>
-      </span>
-    </button>
-  );
-}
 
 export function WordMatchContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
@@ -127,7 +78,7 @@ export function WordMatchContent() {
               <span className="word-match-score-stat"><Trophy size={18} /> <small>Score</small> {score}</span>
               <span><Shuffle size={17} /> <small>Moves</small> {moves}</span>
               <span className="word-match-level-stat"><small>Level 1</small><strong>{matchedIds.size} / {pairs.length} pairs</strong><i><b style={{ width: `${progressPercent}%` }} /></i></span>
-              <span><Clock3 size={17} /> {formatTime(elapsedSeconds)}</span>
+              <span><Clock3 size={17} /> {formatGameDuration(elapsedSeconds)}</span>
             </div>
           </div>
           <p className={`word-match-instruction ${feedback.startsWith("Great match") ? "is-success" : feedback.startsWith("Those cards") ? "is-error" : ""}`} aria-live="polite">{feedback}</p>
@@ -135,7 +86,7 @@ export function WordMatchContent() {
             {cards.map((card) => {
               const pair = pairById.get(card.pairId);
               if (!pair) return null;
-              return <MatchCard key={card.id} card={card} pair={pair} isRevealed={selectedCardIds.includes(card.id)} isMatched={matchedIds.has(card.pairId)} isWrong={wrongCardIds.includes(card.id)} locked={isResolving} onClick={() => selectCard(card, Date.now())} />;
+              return <WordMatchCard key={card.id} card={card} pair={pair} isRevealed={selectedCardIds.includes(card.id)} isMatched={matchedIds.has(card.pairId)} isWrong={wrongCardIds.includes(card.id)} locked={isResolving} onClick={() => selectCard(card, Date.now())} />;
             })}
           </div>
           <button type="button" onClick={() => setPhase("setup")} className="word-match-exit"><ArrowLeft size={16} /> Exit round</button>
@@ -146,8 +97,8 @@ export function WordMatchContent() {
           <p className="word-match-eyebrow">ROUND COMPLETE</p>
           <h2>Great matching!</h2>
           <p className="word-match-results-copy">You matched all {pairs.length} pairs and scored {score} points.</p>
-          <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatTime(elapsedSeconds)}</strong><small>time</small></span></div>
-          {isAuthenticated && <p className={`word-match-save-state ${saveState}`} role="status">{saveState === "saving" ? "Saving your leaderboard result…" : saveState === "saved" ? "Result saved to the leaderboard." : saveState === "error" ? saveError : ""}{saveState === "error" && <button type="button" onClick={retrySave}>Try again</button>}</p>}
+          <div className="word-match-result-stats"><span><strong>{score}</strong><small>score</small></span><span><strong>{moves}</strong><small>moves</small></span><span><strong>{formatGameDuration(elapsedSeconds)}</strong><small>time</small></span></div>
+          <GameLeaderboardSaveStatus isAuthenticated={isAuthenticated} saveState={saveState} saveError={saveError} onRetry={retrySave} />
           <div className="word-match-result-actions"><button type="button" onClick={startRound} className="word-match-start"><RotateCcw size={18} /> Play again</button><button type="button" onClick={() => setPhase("setup")} className="word-match-secondary">Change settings</button></div>
         </Card>
       )}

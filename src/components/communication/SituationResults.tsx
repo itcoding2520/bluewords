@@ -1,7 +1,7 @@
 import { BookOpen, BriefcaseBusiness, BusFront, CalendarDays, GraduationCap, Headphones, HeartPulse, House, Luggage, Landmark, PartyPopper, ShieldAlert, ShoppingBag, Smartphone, Utensils, UsersRound, Volleyball, CloudSun, type LucideIcon } from "lucide-react";
 
 import { SituationCard } from "@/components/communication/SituationCard";
-import type { Lesson, Progress, Topic } from "@/hooks/useSituationalEnglishCatalogData";
+import type { Lesson, Progress, Topic } from "@/lib/communication/catalog-types";
 
 const topicIcons: Record<string, LucideIcon> = {
   "greetings-introductions": UsersRound, "family-friends": UsersRound, "daily-routines": CalendarDays,

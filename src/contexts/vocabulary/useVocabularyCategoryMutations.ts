@@ -9,8 +9,7 @@ import {
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
 import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
-import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
-import { invalidateLatestVocabularyReviewsCache } from "@/lib/supabase/reviews";
+import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { sortCategories } from "@/lib/vocabulary/shared-vocabulary";
 import { toast } from "sonner";
 
@@ -59,15 +58,12 @@ export function useVocabularyCategoryMutations({
       setCategories((current) => sortCategories(
         current.map((category) => category.id === row.id ? row : category)
       ));
-      invalidateVocabularyPageCache();
-
       if (previous.name !== row.name) {
         setWords((current) => current.map((word) =>
           word.category === previous.name ? { ...word, category: row.name } : word
         ));
       }
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });
 
       if (!options?.silent) toast.success(`Category "${row.name}" updated.`);
       return row;
@@ -90,9 +86,7 @@ export function useVocabularyCategoryMutations({
       setWords((current) => current.map((word) =>
         word.category === category.name ? { ...word, category: "Uncategorized" } : word
       ));
-      invalidateVocabularyPageCache();
-      invalidateDashboardVocabularyOverviewCache(ownerIdRef.current ?? undefined);
-      invalidateLatestVocabularyReviewsCache();
+      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });
       toast.success(`Category "${category.name}" deleted.`);
       return true;
     } catch (error) {

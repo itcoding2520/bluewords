@@ -10,10 +10,8 @@ import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
+import { formatGameDuration } from "@/lib/game-duration";
 
-function formatDuration(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
 
 function HistoryWordCard({ word, meaning }: { word: VocabularyWord | undefined; meaning: string }) {
   const imageUrlFromPath = useVocabularyImageUrl(word?.imagePath);
@@ -49,7 +47,7 @@ export function WordSearchHistoryDetail({
             <p className="text-xs font-bold uppercase tracking-[.14em] text-blue-600">Round complete</p>
             <h2 className="mt-2 flex flex-wrap items-center gap-2 text-3xl font-extrabold text-indigo-950 sm:text-5xl"><Trophy className="size-9 fill-amber-400 text-amber-500" /><span className="text-blue-600">{session.word_count}</span> words found</h2>
             <div className="word-search-history-detail-stats">
-              <span className="word-search-history-detail-stat word-search-detail-time"><Clock3 /><span><small>Time</small><strong>{formatDuration(session.duration_seconds)}</strong></span></span>
+              <span className="word-search-history-detail-stat word-search-detail-time"><Clock3 /><span><small>Time</small><strong>{formatGameDuration(session.duration_seconds)}</strong></span></span>
               <span className="word-search-history-detail-stat word-search-detail-grid"><Grid3X3 /><span><small>Grid size</small><strong>{session.grid_size} × {session.grid_size}</strong></span></span>
               <span className="word-search-history-detail-stat word-search-detail-level"><BarChart3 /><span><small>Level</small><strong className="capitalize">{session.difficulty}</strong></span></span>
               <span className="word-search-history-detail-stat word-search-detail-category"><Tag /><span><small>Category</small><strong>{session.category === "all" ? "All categories" : session.category}</strong></span></span>

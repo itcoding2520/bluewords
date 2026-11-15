@@ -1,7 +1,7 @@
 import { Check, Gamepad2, Headphones, Target } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
-import type { Goal } from "@/hooks/useSituationalEnglishCatalogData";
+import type { Goal } from "@/lib/communication/catalog-types";
 
 type LearningGoalPanelProps = {
   goal: Goal | null;

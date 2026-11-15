@@ -1,6 +1,4 @@
-import type { CommunicationTopicDraft } from "@/components/admin/AdminCommunicationTopicForm";
-import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
-import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import type { CommunicationTopicDraft, CommunicationLessonDraft, CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 
 export function createCommunicationTopicDraft(sortOrder = 1): CommunicationTopicDraft {
   return {

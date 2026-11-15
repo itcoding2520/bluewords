@@ -1,24 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { ChevronDown, Clock3, Crown, RefreshCw, Trophy } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { UserAvatar } from "@/components/user/UserAvatar";
-import {
-  getQuizLeaderboard,
-  getVocabularyGameLeaderboard,
-  getWordSearchLeaderboard,
-  type QuizLeaderboardRow,
-  type VocabularyGameLeaderboardRow,
-  type WordSearchLeaderboardRow,
-} from "@/lib/supabase/game-leaderboard";
-
-type GameTab = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
-type QuizMode = "choose-meaning" | "type-word";
-type Difficulty = "easy" | "medium" | "hard";
-type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
+import { useGamesLeaderboardController } from "@/hooks/useGamesLeaderboardController";
 
 function formatTime(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -49,50 +37,12 @@ function LeaderboardSelect(props: ComponentProps<"select">) {
 }
 
 export function GamesLeaderboard() {
-  const [game, setGame] = useState<GameTab>("quiz");
-  const [quizMode, setQuizMode] = useState<QuizMode>("choose-meaning");
-  const [questionCount, setQuestionCount] = useState<10 | 20 | 30>(10);
-  const [gridSize, setGridSize] = useState<10 | 15 | 20>(10);
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [rows, setRows] = useState<LeaderboardRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    const request = game === "quiz"
-      ? getQuizLeaderboard({ mode: quizMode, questionCount })
-      : game === "word-search"
-        ? getWordSearchLeaderboard({ gridSize, difficulty })
-        : getVocabularyGameLeaderboard({ gameType: game, roundSize: null });
-
-    void request.then((result) => {
-      if (active) setRows(result);
-    }).catch(() => {
-      if (active) {
-        setRows([]);
-        setError("Could not load the leaderboard. Please try again.");
-      }
-    }).finally(() => {
-      if (active) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    });
-
-    return () => { active = false; };
-  }, [game, quizMode, questionCount, gridSize, difficulty, reloadKey]);
-
-  function refresh() {
-    setLoading(true);
-    setError("");
-    setRefreshing(true);
-    setReloadKey((key) => key + 1);
-  }
+  const {
+    game, quizMode, questionCount, gridSize, difficulty, rows,
+    loading, refreshing, error, expanded, setExpanded,
+    refresh, selectGame, selectQuizMode, selectQuestionCount,
+    selectGridSize, selectDifficulty,
+  } = useGamesLeaderboardController();
 
   return (
     <section className="games-leaderboard" aria-labelledby="game-leaderboard-title">
@@ -120,32 +70,32 @@ export function GamesLeaderboard() {
 
         <div id="games-leaderboard-content" className={`games-leaderboard-content space-y-4 p-5 sm:p-6 ${expanded ? "is-expanded" : ""}`}>
           <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Choose leaderboard game">
-            <button type="button" role="tab" aria-selected={game === "quiz"} onClick={() => { if (game !== "quiz") { setLoading(true); setError(""); setGame("quiz"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "quiz" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Vocabulary Quiz</button>
-            <button type="button" role="tab" aria-selected={game === "word-search"} onClick={() => { if (game !== "word-search") { setLoading(true); setError(""); setGame("word-search"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-search" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Search</button>
-            <button type="button" role="tab" aria-selected={game === "word-match"} onClick={() => { if (game !== "word-match") { setLoading(true); setError(""); setGame("word-match"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-match" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Match</button>
-            <button type="button" role="tab" aria-selected={game === "word-scramble"} onClick={() => { if (game !== "word-scramble") { setLoading(true); setError(""); setGame("word-scramble"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-scramble" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Scramble</button>
-            <button type="button" role="tab" aria-selected={game === "word-maze"} onClick={() => { if (game !== "word-maze") { setLoading(true); setError(""); setGame("word-maze"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-maze" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Maze</button>
-            <button type="button" role="tab" aria-selected={game === "sentence-builder"} onClick={() => { if (game !== "sentence-builder") { setLoading(true); setError(""); setGame("sentence-builder"); } }} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "sentence-builder" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Sentence Builder</button>
+            <button type="button" role="tab" aria-selected={game === "quiz"} onClick={() => selectGame("quiz")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "quiz" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Vocabulary Quiz</button>
+            <button type="button" role="tab" aria-selected={game === "word-search"} onClick={() => selectGame("word-search")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-search" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Search</button>
+            <button type="button" role="tab" aria-selected={game === "word-match"} onClick={() => selectGame("word-match")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-match" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Match</button>
+            <button type="button" role="tab" aria-selected={game === "word-scramble"} onClick={() => selectGame("word-scramble")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-scramble" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Scramble</button>
+            <button type="button" role="tab" aria-selected={game === "word-maze"} onClick={() => selectGame("word-maze")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-maze" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Maze</button>
+            <button type="button" role="tab" aria-selected={game === "sentence-builder"} onClick={() => selectGame("sentence-builder")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "sentence-builder" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Sentence Builder</button>
           </div>
 
           <div className="flex flex-wrap gap-2" aria-label="Leaderboard filters">
             {game === "quiz" ? <>
               <label className="sr-only" htmlFor="leaderboard-quiz-mode">Quiz mode</label>
-              <LeaderboardSelect id="leaderboard-quiz-mode" value={quizMode} onChange={(event) => { setLoading(true); setError(""); setQuizMode(event.target.value as QuizMode); }}>
+              <LeaderboardSelect id="leaderboard-quiz-mode" value={quizMode} onChange={(event) => selectQuizMode(event.target.value as typeof quizMode)}>
                 <option value="choose-meaning">Choose the meaning</option>
                 <option value="type-word">Type the word</option>
               </LeaderboardSelect>
               <label className="sr-only" htmlFor="leaderboard-question-count">Number of questions</label>
-              <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => { setLoading(true); setError(""); setQuestionCount(Number(event.target.value) as 10 | 20 | 30); }}>
+              <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => selectQuestionCount(Number(event.target.value) as 10 | 20 | 30)}>
                 <option value={10}>10 questions</option><option value={20}>20 questions</option><option value={30}>30 questions</option>
               </LeaderboardSelect>
             </> : game === "word-search" ? <>
               <label className="sr-only" htmlFor="leaderboard-grid-size">Grid size</label>
-              <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => { setLoading(true); setError(""); setGridSize(Number(event.target.value) as 10 | 15 | 20); }}>
+              <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => selectGridSize(Number(event.target.value) as 10 | 15 | 20)}>
                 <option value={10}>10 × 10 grid</option><option value={15}>15 × 15 grid</option><option value={20}>20 × 20 grid</option>
               </LeaderboardSelect>
               <label className="sr-only" htmlFor="leaderboard-difficulty">Difficulty</label>
-              <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => { setLoading(true); setError(""); setDifficulty(event.target.value as Difficulty); }}>
+              <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => selectDifficulty(event.target.value as typeof difficulty)}>
                 <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
               </LeaderboardSelect>
             </> : null}

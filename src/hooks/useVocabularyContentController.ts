@@ -1,8 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
-import { toast } from "sonner";
-import type { CategoryFilter, VocabularyStatusFilter } from "@/components/vocabulary/VocabularyToolbar";
+import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
+import { useVocabularyContentMutations } from "@/hooks/useVocabularyContentMutations";
 
 interface VocabularyContentControllerOptions {
   selectedIds: Set<string>;
@@ -39,13 +38,10 @@ export function useVocabularyContentController({
   deleteWords,
   toggleMastered,
 }: VocabularyContentControllerOptions) {
-  const confirmDialog = useConfirmDialog();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<VocabularyWord | null>(null);
   const [deletingWord, setDeletingWord] = useState<VocabularyWord | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   function handleOpenAdd() {
     setEditingWord(null);
@@ -91,80 +87,11 @@ export function useVocabularyContentController({
     setSelectedIds(new Set());
   }
 
-  async function handleBulkDelete() {
-    if (selectedIds.size === 0 || isBulkDeleting) return;
-    const count = selectedIds.size;
-    const confirmed = await confirmDialog({
-      title: `Delete ${count} ${count === 1 ? "word" : "words"}?`,
-      description: "This action cannot be undone.",
-      confirmLabel: "Delete",
-    });
-    if (!confirmed) return;
-
-    setIsBulkDeleting(true);
-    try {
-      const deletedCount = await deleteWords([...selectedIds]);
-      if (deletedCount > 0) {
-        setSelectedIds(new Set());
-        setIsPageLoading(true);
-        refreshPage();
-        toast.success(`Deleted ${deletedCount} ${deletedCount === 1 ? "word" : "words"}.`);
-      }
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  }
-
-  async function handleConfirmDelete() {
-    if (!deletingWord || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const success = await deleteWord(deletingWord.id);
-      if (success) {
-        setIsPageLoading(true);
-        setPageWords([]);
-        refreshPage();
-        setSelectedIds((current) => {
-          const next = new Set(current);
-          next.delete(deletingWord.id);
-          return next;
-        });
-        setDeletingWord(null);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleSubmitWord(submittedWord: VocabularyWord): Promise<boolean> {
-    if (isSubmitting) return false;
-    setIsSubmitting(true);
-    try {
-      const success = editingWord
-        ? await updateWord(submittedWord)
-        : await addWord(submittedWord);
-      if (success) {
-        setPage(1);
-        setIsPageLoading(true);
-        setPageWords([]);
-        refreshPage();
-        handleCloseForm();
-      }
-      return success;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleToggleMastered(id: string, status: VocabularyWord["status"]) {
-    const success = await toggleMastered(id, status);
-    if (success) {
-      setIsPageLoading(true);
-      setPageWords([]);
-      refreshPage();
-    }
-    return success;
-  }
+  const mutations = useVocabularyContentMutations({
+    selectedIds, setSelectedIds, setPageWords, setIsPageLoading, setPage, refreshPage,
+    editingWord, deletingWord, setDeletingWord, handleCloseForm,
+    addWord, updateWord, deleteWord, deleteWords, toggleMastered,
+  });
 
   return {
     isFormOpen,
@@ -174,8 +101,6 @@ export function useVocabularyContentController({
     editingWord,
     deletingWord,
     setDeletingWord,
-    isSubmitting,
-    isBulkDeleting,
     handleOpenAdd,
     handleEditWord,
     handleCloseForm,
@@ -183,9 +108,6 @@ export function useVocabularyContentController({
     handleSearchChange,
     handleCategoryChange,
     handleStatusChange,
-    handleBulkDelete,
-    handleConfirmDelete,
-    handleSubmitWord,
-    handleToggleMastered,
+    ...mutations,
   };
 }

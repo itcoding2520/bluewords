@@ -1,32 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useMemo, useState } from "react";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
-import { loadAdminUserEmails } from "@/lib/admin-users";
+import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
+import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
+import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
+import {
+  removeAdminSharedCategory,
+  removeAdminSharedWord,
+  updateAdminSharedCategory,
+  updateAdminSharedWord,
+} from "@/lib/admin-category-api";
+import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 
-export type CategoryTab = "default" | "published" | "pending";
-
-export interface CommunityCategory {
-  id: string;
-  owner_id: string;
-  name: string;
-  color: string;
-  status: "pending" | "published";
-  created_at: string;
-  image_path: string | null;
-}
-
-interface CommunityWord {
-  id: string;
-  owner_id: string;
-  category_id: string;
-  word: string;
-  meaning: string;
-  status: string;
-  created_at: string;
-  image_path: string | null;
-}
+export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
 export function useAdminCategoryManagementController() {
   const confirmDialog = useConfirmDialog();
@@ -34,13 +21,14 @@ export function useAdminCategoryManagementController() {
   const [activeTab, setActiveTab] = useState<CategoryTab>("default");
   const [selectedId, setSelectedId] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
-  const [communityCategories, setCommunityCategories] = useState<CommunityCategory[]>([]);
-  const [emails, setEmails] = useState<Record<string, string>>({});
-  const [words, setWords] = useState<CommunityWord[]>([]);
-  const [wordEmails, setWordEmails] = useState<Record<string, string>>({});
-  const [wordsLoading, setWordsLoading] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    communityCategories,
+    emails,
+    loading,
+    error,
+    setError,
+    refresh,
+  } = useAdminCategoryListData(supabase);
 
   const customCategories = useMemo(
     () => communityCategories.filter((category) =>
@@ -58,89 +46,33 @@ export function useAdminCategoryManagementController() {
   const selectedCategory = currentCategories.find((category) => category.id === selectedId)
     ?? currentCategories[0]
     ?? null;
+  const {
+    words,
+    setWords,
+    wordEmails,
+    wordsLoading,
+  } = useAdminCategoryWordsData(supabase, activeTab, selectedCategory, communityCategories, setError);
 
-  const refresh = useCallback(async (force = true) => {
-    setLoading(true);
-    setError("");
-    if (force) invalidateAdminDataCache();
-    try {
-      const result = await getAdminCachedData("admin:categories:list", async () => {
-        const { data, error: loadError } = await supabase.from("community_categories")
-          .select("id, owner_id, name, color, status, created_at, image_path")
-          .in("status", ["published", "pending"]).order("name");
-        if (loadError) throw loadError;
-        const loadedCategories = (data ?? []) as CommunityCategory[];
-        const ownerIds = loadedCategories.map((category) => category.owner_id);
-        const usersById = await loadAdminUserEmails(ownerIds, "Could not load category owners.");
-        return { categories: loadedCategories, emails: usersById };
-      }, { force });
-      setCommunityCategories(result.categories);
-      setEmails(result.emails);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load categories.");
-      setCommunityCategories([]);
-      setEmails({});
-    }
-    setLoading(false);
-  }, [supabase]);
+  const visibleCategoryRows = visibleCategories.map((category) => {
+    const shared = activeTab === "default"
+      ? communityCategories.find((item) => item.status === "published"
+        && item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())
+      : "owner_id" in category ? category : null;
+    const fallbackImage = activeTab === "default"
+      ? defaultVocabularyWords.find((word) => word.category === category.name && word.imagePath)?.imagePath
+      : words.find((word) => word.image_path)?.image_path;
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void refresh(false); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!selectedCategory) return;
-    const sharedCategory = activeTab === "default"
-      ? communityCategories.find((category) => category.status === "published"
-        && category.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase())
-      : selectedCategory;
-    if (!sharedCategory) {
-      const timer = window.setTimeout(() => {
-        setWords([]);
-        setWordEmails({});
-        setWordsLoading(false);
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
-
-    let cancelled = false;
-    const loadWords = async () => {
-      setWordsLoading(true);
-      setError("");
-      try {
-        const result = await getAdminCachedData(
-          `admin:categories:words:${sharedCategory.id}:${activeTab}`,
-          async () => {
-            const { data, error: loadError } = await supabase.from("community_words")
-              .select("id, owner_id, category_id, word, meaning, status, created_at, image_path")
-              .eq("category_id", sharedCategory.id)
-              .eq("status", activeTab === "pending" ? "pending" : "published")
-              .order("word");
-            if (loadError) throw loadError;
-            const loadedWords = (data ?? []) as CommunityWord[];
-            const ownerIds = loadedWords.map((word) => word.owner_id);
-            const ownerEmails = await loadAdminUserEmails(ownerIds, "Could not load word authors.");
-            return { words: loadedWords, emails: ownerEmails };
-          }
-        );
-        if (cancelled) return;
-        setWords(result.words);
-        setWordEmails(result.emails);
-      } catch (cause) {
-        if (cancelled) return;
-        setError(cause instanceof Error ? cause.message : "Could not load words.");
-        setWords([]);
-        setWordEmails({});
-      }
-      setWordsLoading(false);
+    return {
+      category,
+      shared,
+      owner: shared ? emails[shared.owner_id] ?? "Loading owner…" : null,
+      fallbackImage,
+      defaultWordCount: activeTab === "default"
+        ? defaultVocabularyWords.filter((word) => word.category === category.name).length
+        : null,
+      createdAt: "owner_id" in category ? category.created_at : null,
     };
-    const timer = window.setTimeout(() => { void loadWords(); }, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [activeTab, communityCategories, selectedCategory, supabase]);
+  });
 
   const defaultWords = activeTab === "default" && selectedCategory
     ? defaultVocabularyWords.filter((word) => word.category === selectedCategory.name)
@@ -158,8 +90,7 @@ export function useAdminCategoryManagementController() {
   async function editSharedCategory(category: CommunityCategory) {
     const name = window.prompt("Category name", category.name)?.trim();
     if (!name || name === category.name) return;
-    const { error: updateError } = await supabase.from("community_categories")
-      .update({ name }).eq("id", category.id);
+    const updateError = await updateAdminSharedCategory(supabase, category.id, name);
     if (updateError) setError(updateError.message);
     else await refresh();
   }
@@ -171,8 +102,7 @@ export function useAdminCategoryManagementController() {
       confirmLabel: "Remove",
     });
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("community_categories")
-      .delete().eq("id", category.id);
+    const deleteError = await removeAdminSharedCategory(supabase, category.id);
     if (deleteError) setError(deleteError.message);
     else {
       setSelectedId("");
@@ -185,8 +115,7 @@ export function useAdminCategoryManagementController() {
     if (!nextWord) return;
     const meaning = window.prompt("Meaning", word.meaning)?.trim();
     if (meaning == null || (nextWord === word.word && meaning === word.meaning)) return;
-    const { error: updateError } = await supabase.from("community_words")
-      .update({ word: nextWord, meaning }).eq("id", word.id);
+    const updateError = await updateAdminSharedWord(supabase, word.id, nextWord, meaning);
     if (updateError) setError(updateError.message);
     else {
       invalidateAdminDataCache();
@@ -203,8 +132,7 @@ export function useAdminCategoryManagementController() {
       confirmLabel: "Remove",
     });
     if (!confirmed) return;
-    const { error: deleteError } = await supabase.from("community_words")
-      .delete().eq("id", word.id);
+    const deleteError = await removeAdminSharedWord(supabase, word.id);
     if (deleteError) setError(deleteError.message);
     else {
       invalidateAdminDataCache();
@@ -228,6 +156,7 @@ export function useAdminCategoryManagementController() {
     customCategories,
     currentCategories,
     visibleCategories,
+    visibleCategoryRows,
     selectedCategory,
     defaultWords,
     selectedSharedCategory,

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock3 } from "lucide-react";
 
-import type { ReviewItem } from "@/hooks/useSituationalEnglishCatalogData";
+import type { ReviewItem } from "@/lib/communication/catalog-types";
 
 export function DueReviewPanel({ items }: { items: ReviewItem[] }) {
   if (items.length === 0) return null;

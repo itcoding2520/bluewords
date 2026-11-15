@@ -1,0 +1,10 @@
+/* Word Maze Adventure */
+.game-feature-maze { background:radial-gradient(ellipse at 10% 16%,#effdff 0%,#dff6ff 48%,#bcefff 100%); }
+.game-feature-maze .game-feature-icon { background:#d8f2ff; color:#167ce8; }
+.game-feature-maze .game-play-button { background:linear-gradient(105deg,#35b4f4,#1471ed); }
+.game-feature-sentence { background:radial-gradient(ellipse at 10% 16%,#fffbe0 0%,#fff2c3 48%,#ffe19b 100%); }
+.game-feature-sentence .game-feature-icon { background:#fff0bd; color:#e69a00; }
+.game-feature-sentence .game-play-button { background:linear-gradient(105deg,#ffc82f,#f59a13); }
+.game-art-sentence { display:flex; align-items:center; justify-content:center; gap:.25rem; }
+.game-art-sentence > span { display:grid; min-width:2.5rem; min-height:3rem; place-items:center; border:2px solid #fff; border-radius:.75rem; background:linear-gradient(145deg,#fff,#fff7dc); padding:.3rem; color:#17498e; font-size:clamp(.8rem,1.4vw,1.2rem); font-weight:950; box-shadow:0 5px 0 #f3cf6c,0 8px 14px #b8863126; }
+

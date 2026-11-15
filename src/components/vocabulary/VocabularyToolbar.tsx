@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { Search, X } from "lucide-react";
-import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
-
-export type CategoryFilter = "All" | VocabularyCategory;
-export type VocabularyStatusFilter = "all" | VocabularyStatus;
+import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
+export type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
 
 interface VocabularyToolbarProps {
   search: string;

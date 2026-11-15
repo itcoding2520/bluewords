@@ -1,7 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 
-import type { CommunicationLessonDraft } from "@/components/admin/AdminCommunicationLessonForm";
-import type { CommunicationItemDraft } from "@/components/admin/AdminCommunicationItemForm";
+import type { CommunicationLessonDraft, CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft, createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import type {
   CommunicationLesson,

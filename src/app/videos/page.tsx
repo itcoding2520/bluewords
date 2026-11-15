@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VideosContent } from "@/components/videos/VideosContent";
+import { isAdminUser } from "@/lib/supabase/admin-access";
 
 export default async function VideosPage() {
   const supabase = await createClient();
@@ -18,11 +19,5 @@ export default async function VideosPage() {
     );
   }
 
-  const { data: admin } = await supabase
-    .from("app_admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  return <VideosContent isAdmin={Boolean(admin)} />;
+  return <VideosContent isAdmin={await isAdminUser(supabase, user.id)} />;
 }

@@ -1,0 +1,68 @@
+/* Vocabulary dashboard */
+.app-content > header.vocabulary-page-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 10.25rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / .92);
+  border-radius: 1.75rem;
+  padding: 1.5rem 2rem;
+  background-color: #dff5ff;
+  background-image: linear-gradient(90deg,#e8faff 0%,#dff7ffb8 48%,#d6f4ff1a 100%), var(--page-art), url('/images/ui/backgrounds/hero.svg');
+  background-position: center,78% 50%,center;
+  background-repeat: no-repeat;
+  background-size: cover,13rem 11rem,cover;
+  box-shadow: 0 12px 28px rgb(29 119 178 / .13);
+}
+.app-content > header.vocabulary-page-hero > div { position: relative; z-index: 1; }
+.app-content > header.vocabulary-page-hero > div:first-child { z-index: 2; max-width: calc(100% - 15rem); }
+.vocabulary-page-title { text-shadow: 0 2px 0 #fff9; }
+.vocabulary-page-hero > div:first-child > p { color: #44658e; font-size: 1.05rem; font-weight: 600; }
+.vocabulary-add-button { min-height: 3.4rem; border-radius: 999px !important; padding-inline: 1.7rem !important; background: linear-gradient(110deg,#1684ff,#0757ef) !important; box-shadow: 0 8px 18px rgb(0 87 239 / .25); font-size: 1rem; font-weight: 800 !important; }
+.vocabulary-page-tabs { position: relative; z-index: 1; margin: -1rem 1.25rem 0 !important; padding-inline: .5rem; border-color: rgb(57 161 218 / .28) !important; }
+.vocabulary-page-tabs button { min-width: 6.25rem; padding: .8rem .9rem .75rem; border-bottom-width: 3px; font-size: .95rem; font-weight: 800; }
+.vocabulary-page-tabs button[aria-current="page"] { border-color: #0867f7; color: #075df0; }
+.vocabulary-words-section { border: 1px solid rgb(255 255 255 / .95) !important; background: linear-gradient(145deg,#ffffffed,#f4fbffed) !important; box-shadow: 0 16px 35px rgb(36 119 176 / .12) !important; backdrop-filter: blur(12px); }
+.vocabulary-toolbar-row { min-height: 3.25rem; }
+.vocabulary-csv-tools { order: 0; }
+.vocabulary-filter-toolbar { order: 1; }
+.vocabulary-toolbar-row input[aria-label="Search vocabulary"] { border-color: #d5e6f6; box-shadow: 0 2px 7px rgb(48 104 158 / .06); }
+.vocabulary-words-section > div > div[role="group"] button[aria-pressed="true"] { background: linear-gradient(110deg,#123c70,#082956); box-shadow: 0 5px 12px rgb(13 51 95 / .18); }
+.vocabulary-words-section > div > div[role="group"] button[aria-haspopup="listbox"] { min-height: 2.7rem; border-radius: 999px; border-color: #d6e5f4; }
+.vocabulary-words-section > .rounded-xl { border-color: #e0edf8; border-radius: 1.3rem; box-shadow: 0 5px 16px rgb(36 89 140 / .06); }
+.vocabulary-words-section > .rounded-xl > div:first-child { background: linear-gradient(100deg,#f0f8ff,#fbfdff) !important; }
+.vocabulary-words-section > .rounded-xl > div:nth-child(n+2) { border-color: #edf2f8; }
+.vocabulary-words-section > .rounded-xl > div:nth-child(n+2):hover { background: #f7fbff; }
+.vocabulary-words-section > .rounded-xl img { border-radius: .7rem; box-shadow: 0 2px 5px rgb(31 61 91 / .08); }
+.vocabulary-word-row { min-height: 4rem; }
+.vocabulary-word-thumbnail { width: 2.75rem; height: 2.75rem; }
+.vocabulary-word-fallback { display: grid; width: 2.75rem; height: 2.75rem; flex: 0 0 auto; place-items: center; border: 1px solid #d9eaff; border-radius: .75rem; background: linear-gradient(145deg,#e7f5ff,#f2edff); font-size: 1.55rem; box-shadow: 0 3px 8px rgb(31 84 137 / .1); }
+.vocabulary-page-tabs { margin-top: .25rem !important; }
+.community-vocabulary-section { border-color: #e5d9ff !important; background: radial-gradient(ellipse at 95% 0%,#eee8ff 0%,transparent 34%),linear-gradient(125deg,#f7f2ff 0%,#fff 48%,#eff8ff 100%) !important; box-shadow: 0 12px 30px rgb(92 66 168 / .1) !important; }
+.community-vocabulary-section > div:first-child h2 { color: #241374; font-size: 1.3rem; font-weight: 850; }
+.community-category-select { position: relative; min-width: 0; }
+.community-category-select-input { width: 100%; min-height: 2.75rem; appearance: none; padding-right: 2.9rem !important; }
+.community-category-chevron { position: absolute; top: 50%; right: 1rem; color: #617797; transform: translateY(-50%); pointer-events: none; }
+.community-vocabulary-count { flex: 0 0 auto; white-space: nowrap; }
+.community-vocabulary-section > ul > li { border-color: #e5def7; border-radius: 1rem; box-shadow: 0 4px 12px rgb(73 53 135 / .06); transition: transform .18s,box-shadow .18s; }
+.community-vocabulary-section > ul > li:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgb(73 53 135 / .11); }
+.app-content > header.vocabulary-page-hero + nav + .vocabulary-words-section { margin-top: 1rem; }
+@media (max-width: 767px) {
+  .app-content > header.vocabulary-page-hero { min-height: 9rem; gap: 1rem; padding: 1.2rem 1.25rem; background-position: center,right -1rem bottom,center; background-size: cover,8.5rem 8rem,cover; }
+  .app-content > header.vocabulary-page-hero > div:first-child { max-width: calc(100% - 7rem); }
+  .app-content > header.vocabulary-page-hero > div:first-child > p { font-size: .9rem; }
+  .vocabulary-add-button { width: auto !important; min-height: 2.75rem; padding-inline: 1rem !important; font-size: .85rem; }
+  .vocabulary-page-tabs { margin: .25rem .25rem 0 !important; }
+  .vocabulary-toolbar-row { display: flex; flex-direction: column; align-items: stretch; }
+  .vocabulary-filter-toolbar { order: 0; width: 100%; flex: none; }
+  .vocabulary-csv-tools { order: 1; display: grid; width: 100%; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .vocabulary-csv-tools > button { width: 100%; min-width: 0; min-height: 2.75rem; justify-content: center; border-radius: 1rem; padding-inline: .5rem; font-size: .78rem; white-space: nowrap; }
+  .vocabulary-filter-toolbar > div:last-child > div[role="group"] { flex-wrap: nowrap; }
+}
+@media (max-width: 420px) {
+  .app-content > header.vocabulary-page-hero { align-items: flex-start; flex-direction: column; background-position: center,right -1.6rem top,center; background-size: cover,7rem 6.5rem,cover; }
+  .app-content > header.vocabulary-page-hero > div:first-child { max-width: calc(100% - 6rem); }
+  .vocabulary-add-button { position: relative; z-index: 1; }
+}
+

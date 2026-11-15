@@ -1,0 +1,51 @@
+/* Shared emphasis for short page introductions and learning prompts. */
+.app-content .page-title {
+  color: #10245f !important;
+  font-size: clamp(2rem,3.2vw,2.75rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.04em !important;
+  line-height: 1.08 !important;
+  text-shadow: 0 2px 0 rgb(255 255 255 / .55);
+}
+.page-intro-description {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgb(147 197 253 / .65);
+  border-radius: .85rem;
+  background: linear-gradient(100deg,rgb(255 255 255 / .92),rgb(239 248 255 / .92));
+  padding: .45rem .75rem;
+  color: #334b70;
+  font-size: .94rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 3px 10px rgb(42 112 181 / .07);
+}
+.page-intro-slogan {
+  border-color: rgb(252 211 77 / .7);
+  background: linear-gradient(100deg,rgb(255 251 235 / .98),rgb(255 255 255 / .92));
+  color: #3f3d36;
+}
+@media (max-width: 639px) {
+  .app-content .page-title { font-size: clamp(1.75rem,7vw,2.2rem) !important; }
+  .page-intro-description { padding: .4rem .65rem; font-size: .875rem; }
+}
+
+@media (min-width: 761px) and (max-width: 1440px) {
+  .quiz-history-attempt {
+    min-width: 0;
+    grid-template-columns: minmax(7rem,.9fr) minmax(5rem,.7fr) minmax(7rem,1fr) 2.75rem;
+    grid-template-areas: "score stars date open" "score mode duration open";
+    gap: .65rem;
+    padding: .9rem;
+  }
+  .quiz-history-score { grid-area: score; min-width: 0; gap: .55rem; }
+  .quiz-history-medal { width: 3.75rem; height: 3.75rem; }
+  .quiz-history-score strong { font-size: 1.45rem; }
+  .quiz-history-stars { grid-area: stars; gap: .05rem; }
+  .quiz-history-stars svg { width: 1.2rem; height: 1.2rem; }
+  .quiz-history-date { grid-area: date; min-width: 0; font-size: .8rem; }
+  .quiz-history-mode { grid-area: mode; justify-self: start; min-width: 0; min-height: 2.5rem; white-space: normal; padding: .45rem .65rem; font-size: .75rem; }
+  .quiz-history-duration { grid-area: duration; justify-self: start; min-height: 2.5rem; padding: .4rem .65rem; font-size: .9rem; }
+  .quiz-history-open { grid-area: open; width: 2.75rem; height: 2.75rem; }
+}
+

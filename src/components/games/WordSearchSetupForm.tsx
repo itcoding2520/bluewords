@@ -10,19 +10,12 @@ import { Card } from "@/components/ui/Card";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
 import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
-import { DIFFICULTIES, GRID_SIZES, WORD_TARGETS, type Difficulty, type GridSize } from "@/lib/word-search-config";
+import { DIFFICULTIES, GRID_SIZES, WORD_TARGETS, type Difficulty, type GridSize, type WordSearchCategoryOption } from "@/lib/word-search-config";
+export type { WordSearchCategoryOption } from "@/lib/word-search-config";
 
 const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-500", violet: "bg-violet-500", orange: "bg-orange-500", green: "bg-emerald-500", rose: "bg-rose-500",
   indigo: "bg-indigo-500", teal: "bg-teal-500", amber: "bg-amber-500", pink: "bg-pink-500", slate: "bg-slate-500",
-};
-
-export type WordSearchCategoryOption = {
-  id: string;
-  name: string;
-  value: string;
-  color: VocabularyCategoryColor;
-  imagePath: string | null;
 };
 
 function CategoryChip({

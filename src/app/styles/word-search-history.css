@@ -1,0 +1,39 @@
+/* Word Search history dashboard */
+.word-search-history-page { width: 100%; }
+.word-search-history-dashboard { border-color: white; box-shadow: 0 12px 32px rgb(39 90 150 / .1); }
+.word-search-history-welcome { position: relative; display: flex; min-height: 11rem; align-items: center; justify-content: space-between; overflow: hidden; padding: 1.5rem 2rem; background: linear-gradient(110deg,#fff 0%,#f8fbff 48%,#eff8ff 100%); }
+.word-search-history-welcome > div { position: relative; z-index: 1; }
+.word-search-history-welcome::after { position: absolute; right: 19%; bottom: -4rem; width: 16rem; height: 10rem; border-radius: 50%; background: radial-gradient(ellipse,#dbeafe99,transparent 70%); content: ""; }
+.word-search-history-mascot { position: relative; z-index: 1; width: clamp(9rem,20vw,16rem); height: 10rem; object-fit: contain; }
+.word-search-history-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .75rem; padding: 0 1rem 1rem; }
+.word-search-history-stat { display: flex; min-width: 0; min-height: 6.25rem; align-items: center; gap: 1rem; border: 1px solid rgb(255 255 255 / .85); border-radius: 1.5rem; padding: 1rem; }
+.word-search-history-stat-games { background: linear-gradient(120deg,#e0f2fe,#edf7ff); }
+.word-search-history-stat-time { background: linear-gradient(120deg,#dcfce7,#ecfdf5); }
+.word-search-history-stat-words { background: linear-gradient(120deg,#f3e8ff,#f5f0ff); }
+.word-search-history-stat-icon { display: grid; width: 3.5rem; height: 3.5rem; flex-shrink: 0; place-items: center; border-radius: 1.15rem; background: rgb(255 255 255 / .75); color: #1479ef; }
+.word-search-history-stat-time .word-search-history-stat-icon { color: #10a77b; }
+.word-search-history-stat-words .word-search-history-stat-icon { color: #8b5cf6; }
+.word-search-history-stat strong { display: block; margin-top: .15rem; color: #101f4b; font-size: 1.75rem; font-weight: 900; line-height: 1.1; }
+.word-search-history-list { margin: 0 1rem 1rem; border: 1px solid #e5eef9; border-radius: 1.75rem; padding: 1.25rem; background: linear-gradient(145deg,#fff,#fbfdff); box-shadow: 0 4px 16px rgb(39 90 150 / .06); }
+.word-search-history-entry { border: 1px solid #dbeafe; border-radius: 1.35rem; background: linear-gradient(110deg,#eff8ff,#fff 65%,#f7f6ff); box-shadow: 0 4px 12px rgb(39 90 150 / .05); }
+.word-search-history-entry-1 { background: linear-gradient(110deg,#ecfdf5,#fff 65%,#f7fbff); }
+.word-search-history-entry-2 { background: linear-gradient(110deg,#f5f3ff,#fff 65%,#fffbeb); }
+.word-search-history-medal { display: grid; width: 3.5rem; height: 3.5rem; flex-shrink: 0; place-items: center; border-radius: 1.2rem; background: linear-gradient(145deg,#fff7c2,#ffdf65); color: #e89a00; filter: drop-shadow(0 4px 3px rgb(245 158 11 / .15)); }
+.word-search-history-entry-1 .word-search-history-medal { background: linear-gradient(145deg,#d1fae5,#6ee7b7); color: #059669; }
+.word-search-history-entry-2 .word-search-history-medal { background: linear-gradient(145deg,#ede9fe,#c4b5fd); color: #7c3aed; }
+.word-search-history-detail { border: 1px solid white; box-shadow: 0 12px 32px rgb(39 90 150 / .1); }
+@media (max-width: 639px) {
+  .word-search-history-welcome { min-height: 9rem; padding: 1.25rem; }
+  .word-search-history-welcome h2 { font-size: 1.7rem; }
+  .word-search-history-welcome p { max-width: 70%; font-size: .8rem; line-height: 1.3rem; }
+  .word-search-history-mascot { position: absolute; right: .25rem; bottom: .25rem; width: 7rem; height: 6rem; opacity: .85; }
+  .word-search-history-stats { grid-template-columns: 1fr; gap: .5rem; padding-inline: .65rem; }
+  .word-search-history-stat { min-height: 4.5rem; border-radius: 1.1rem; padding: .65rem .8rem; }
+  .word-search-history-stat-icon { width: 2.8rem; height: 2.8rem; border-radius: .9rem; }
+  .word-search-history-stat strong { font-size: 1.4rem; }
+  .word-search-history-list { margin: 0 .65rem .65rem; border-radius: 1.2rem; padding: .85rem; }
+  .word-search-history-entry { gap: .65rem; border-radius: 1rem; padding: .75rem; }
+  .word-search-history-medal { width: 2.7rem; height: 2.7rem; border-radius: .9rem; }
+  .word-search-history-entry > span:last-child { width: 100%; justify-content: flex-end; }
+}
+

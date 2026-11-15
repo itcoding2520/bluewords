@@ -5,7 +5,7 @@ import { BookOpen, CheckCircle2, Clock3, Pencil, RefreshCw, Search, Trash2 } fro
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
+import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
@@ -22,7 +22,7 @@ export function AdminCategoryManagement() {
   const {
     activeTab, setActiveTab, setSelectedId, categorySearch, setCategorySearch,
     communityCategories, emails, words, wordEmails, wordsLoading, loading, error,
-    currentCategories, visibleCategories, selectedCategory,
+    currentCategories, visibleCategories, visibleCategoryRows, selectedCategory,
     defaultWords, selectedSharedCategory, selectedFallbackImage, refresh,
     editSharedCategory, removeSharedCategory, editSharedWord, removeSharedWord,
   } = useAdminCategoryManagementController();
@@ -57,20 +57,13 @@ export function AdminCategoryManagement() {
         <div className="admin-category-list-heading"><h2><BookOpen size={19} />{tabs.find((tab) => tab.id === activeTab)?.label} categories</h2></div>
         <label className="admin-category-search"><Search size={17} /><input value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} placeholder="Search categories…" aria-label="Search categories" /></label>
         {loading ? <p className="p-5 text-sm text-slate-500">Loading categories…</p> : visibleCategories.length === 0 ? <p className="p-5 text-sm text-slate-500">{currentCategories.length ? "No categories match your search." : "No categories in this tab yet."}</p> : <ul className="admin-category-list max-h-[65vh] divide-y divide-slate-100 overflow-y-auto">
-          {visibleCategories.map((category) => {
+          {visibleCategoryRows.map(({ category, shared, owner, fallbackImage, defaultWordCount, createdAt }) => {
             const active = category.id === selectedCategory?.id;
-            const shared = activeTab === "default"
-              ? communityCategories.find((item) => item.status === "published" && item.name.trim().toLocaleLowerCase() === category.name.trim().toLocaleLowerCase())
-              : "owner_id" in category ? category : null;
-            const owner = shared ? emails[shared.owner_id] ?? "Loading owner…" : null;
-            const fallbackImage = activeTab === "default"
-              ? defaultVocabularyWords.find((word) => word.category === category.name && word.imagePath)?.imagePath
-              : words.find((word) => word.image_path)?.image_path;
             return <li key={category.id}>
               <button onClick={() => setSelectedId(category.id)} aria-current={active ? "true" : undefined} className={`admin-category-list-item flex w-full items-start gap-3 px-4 py-3 text-left transition ${active ? "is-selected bg-blue-50" : "hover:bg-slate-50"}`}>
                 <CategoryAvatar name={category.name} imagePath={shared?.image_path} fallbackWordImagePath={fallbackImage} colorClass={active ? "bg-blue-100" : "bg-slate-200"} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{category.name}</span>{owner && <span className="mt-1 block truncate text-xs text-slate-500">{owner}</span>}</span>
-                <span className="mt-1 text-xs text-slate-400">{activeTab === "default" ? defaultVocabularyWords.filter((word) => word.category === category.name).length : "owner_id" in category ? formatShortDate(category.created_at, "Date unavailable") : ""}</span>
+                <span className="mt-1 text-xs text-slate-400">{defaultWordCount ?? (createdAt ? formatShortDate(createdAt, "Date unavailable") : "")}</span>
               </button>
             </li>;
           })}

@@ -1,50 +1,21 @@
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getVocabularyDropdownCategories } from "@/components/vocabulary/VocabularyCategoryDropdown";
+import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
+import { shuffle } from "@/lib/quiz-random";
+import { formatGameDuration } from "@/lib/game-duration";
+import {
+  buildWordScrambleCandidates,
+  createScrambledTiles,
+  type LetterTile,
+  type ScrambleWord,
+} from "@/lib/word-scramble";
+
+export type { ScrambleWord, LetterTile } from "@/lib/word-scramble";
 
 type Phase = "setup" | "playing" | "results";
 type QuestionCount = 5 | 10;
-export type ScrambleWord = {
-  id: string;
-  word: string;
-  answer: string;
-  meaning: string;
-  category: string;
-  imagePath: string | null;
-  imageUrl: string | null;
-};
-export type LetterTile = { id: number; letter: string };
-
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
-
-function scramble(answer: string): LetterTile[] {
-  const letters = [...answer].map((letter, id) => ({ id, letter }));
-  let shuffled = shuffle(letters);
-  let attempts = 0;
-  while (shuffled.map(({ letter }) => letter).join("") === answer && attempts < 8) {
-    shuffled = shuffle(letters);
-    attempts += 1;
-  }
-  if (shuffled.map(({ letter }) => letter).join("") === answer && shuffled.length > 1) {
-    const swapIndex = shuffled.findIndex((tile, index) => tile.letter !== shuffled[0].letter && index > 0);
-    if (swapIndex > 0) [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
-  }
-  return shuffled;
-}
-
-function getMeaning(word: VocabularyWord) {
-  return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
-    || word.meaning.trim();
-}
 
 export function useWordScrambleController(input: {
   words: VocabularyWord[];
@@ -80,39 +51,18 @@ export function useWordScrambleController(input: {
     startedAt,
   });
 
-  const candidates = useMemo(() => {
-    const seen = new Set<string>();
-    return words.flatMap((word) => {
-      const answer = word.word.trim().toLocaleLowerCase().replace(/[^a-z]/g, "");
-      const meaning = getMeaning(word);
-      if ((category !== "all" && word.category !== category)
-        || answer.length < 3 || answer.length > 10 || !meaning || seen.has(answer)) return [];
-      seen.add(answer);
-      return [{
-        id: word.id,
-        word: word.word.trim(),
-        answer,
-        meaning,
-        category: word.category,
-        imagePath: word.imagePath ?? null,
-        imageUrl: word.imageUrl ?? null,
-      }];
-    });
-  }, [category, words]);
-  const categoryDropdownCategories = useMemo(
-    () => getVocabularyDropdownCategories(categories, words),
-    [categories, words]
-  );
+  const candidates = useMemo(() => buildWordScrambleCandidates(words, category), [category, words]);
+  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
   const currentWord = round[questionIndex];
   const usedTileIds = new Set(answerTileIds);
-  const timeLabel = `${Math.floor(session.elapsedSeconds / 60)}:${String(session.elapsedSeconds % 60).padStart(2, "0")}`;
+  const timeLabel = formatGameDuration(session.elapsedSeconds);
 
   function startRound() {
     if (candidates.length < questionCount) return;
     const nextRound = shuffle(candidates).slice(0, questionCount);
     setRound(nextRound);
     setQuestionIndex(0);
-    setLetterTiles(scramble(nextRound[0].answer));
+    setLetterTiles(createScrambledTiles(nextRound[0].answer));
     setAnswerTileIds([]);
     setScore(0);
     setStreak(0);
@@ -185,7 +135,7 @@ export function useWordScrambleController(input: {
     }
     const nextIndex = questionIndex + 1;
     setQuestionIndex(nextIndex);
-    setLetterTiles(scramble(round[nextIndex].answer));
+    setLetterTiles(createScrambledTiles(round[nextIndex].answer));
     setAnswerTileIds([]);
     setHintUsed(false);
     setFeedback("");

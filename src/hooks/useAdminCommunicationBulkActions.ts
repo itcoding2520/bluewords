@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
+import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { createClient } from "@/lib/supabase/client";
 
 type SupabaseClient = ReturnType<typeof createClient>;

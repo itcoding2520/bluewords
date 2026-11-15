@@ -1,6 +1,6 @@
 import type { createClient } from "@/lib/supabase/client";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
-import { parseCommunicationCsvDetailed, type ContentStatus } from "@/lib/supabase/situational-english";
+import { parseCommunicationCsvDetailed, type ContentStatus } from "@/lib/communication/csv";
 
 type SupabaseClient = ReturnType<typeof createClient>;
 

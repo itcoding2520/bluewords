@@ -1,11 +1,11 @@
 "use client";
 
-import { Camera, Check, ImagePlus, KeyRound, LockKeyhole, Mail, ShieldCheck, Star, Trash2, UserRound } from "lucide-react";
+import { Camera, Check, LockKeyhole, Mail, ShieldCheck, Star, UserRound } from "lucide-react";
 
-import { UserAvatar } from "@/components/user/UserAvatar";
 import { Button } from "@/components/ui/Button";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { PasswordInput } from "@/components/ui/PasswordInput";
+import { ProfilePasswordSection } from "@/components/profile/ProfilePasswordSection";
+import { ProfileAvatarSection } from "@/components/profile/ProfileAvatarSection";
 import { useUserProfileEditor } from "@/hooks/useUserProfileEditor";
 import { useProfilePasswordChange } from "@/hooks/useProfilePasswordChange";
 
@@ -56,43 +56,20 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
       </header>
 
       <form onSubmit={saveProfile} className="profile-form rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="profile-avatar-section flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="profile-avatar-display flex justify-center sm:justify-start">
-            {previewUrl ? (
-              <span role="img" aria-label="New avatar preview" className="profile-avatar-preview size-40 rounded-full bg-cover bg-center ring-4 ring-blue-50" style={{ backgroundImage: `url(${JSON.stringify(previewUrl)})` }} />
-            ) : (
-              <UserAvatar
-                nickname={normalizedNickname || profile?.nickname}
-                email={email}
-                fallbackName="User"
-                avatarPath={previewPath}
-                sizeClassName="profile-avatar-preview size-40 text-5xl ring-4 ring-white"
-              />
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <h2 className="text-xl font-extrabold text-slate-900">Profile picture</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">If you skip the image, we’ll use the first letter of your nickname or email.</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <label className="profile-avatar-change inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-700 transition hover:bg-slate-50">
-                <ImagePlus size={16} /> {avatarFile || profile?.avatar_path ? "Change image" : "Upload image"}
-                <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={loading || saving} onChange={(event) => { selectAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} />
-              </label>
-              {(avatarFile || (profile?.avatar_path && !removeAvatar)) && (
-                <button type="button" onClick={removeSelectedAvatar} className="profile-avatar-remove inline-flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-bold text-red-600 transition hover:bg-red-50">
-                  <Trash2 size={15} /> Remove image
-                </button>
-              )}
-              {removeAvatar && profile?.avatar_path && !avatarFile && (
-                <button type="button" onClick={undoAvatarRemoval} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
-                  Undo
-                </button>
-              )}
-            </div>
-            <p className="mt-2 text-xs text-slate-400">JPEG, PNG, or WebP · maximum 5 MB · shown publicly on leaderboards.</p>
-          </div>
-        </div>
+        <ProfileAvatarSection
+          nickname={normalizedNickname}
+          savedNickname={profile?.nickname}
+          email={email}
+          previewUrl={previewUrl}
+          previewPath={previewPath}
+          hasSelectedImage={Boolean(avatarFile)}
+          hasSavedImage={Boolean(profile?.avatar_path)}
+          isRemovingImage={removeAvatar}
+          disabled={loading || saving}
+          onSelectImage={selectAvatar}
+          onRemoveImage={removeSelectedAvatar}
+          onUndoRemoval={undoAvatarRemoval}
+        />
 
         <div className="profile-divider my-6 border-t border-slate-100" />
 
@@ -133,32 +110,16 @@ export function UserProfileContent({ userId, email }: UserProfileContentProps) {
         </div>
       </form>
 
-      <section className="profile-password-section mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex items-start gap-3">
-          <span className="profile-field-icon profile-email-icon"><KeyRound size={20} /></span>
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900">Change password</h2>
-            <p className="mt-1 text-sm text-slate-500">Choose a new password with at least 8 characters.</p>
-          </div>
-        </div>
-        <form onSubmit={changePassword} className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-bold text-slate-700" htmlFor="profile-new-password">
-            New password
-            <PasswordInput id="profile-new-password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => changeNewPassword(event.target.value)} placeholder="Enter new password" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-          </label>
-          <label className="block text-sm font-bold text-slate-700" htmlFor="profile-confirm-password">
-            Confirm new password
-            <PasswordInput id="profile-confirm-password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => changeConfirmPassword(event.target.value)} placeholder="Enter it again" disabled={passwordSaving} className="mt-1.5 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-50" />
-          </label>
-          <div className="sm:col-span-2">
-            {passwordError && <AutoDismissMessage key={passwordError} variant="error" className="mb-3">{passwordError}</AutoDismissMessage>}
-            {passwordNotice && <AutoDismissMessage key={passwordNotice} variant="success" className="mb-3 inline-flex items-center gap-2"><Check size={16} /> {passwordNotice}</AutoDismissMessage>}
-            <Button type="submit" disabled={passwordSaving || newPassword.length < 8 || confirmPassword.length < 8}>
-              <KeyRound size={16} /> {passwordSaving ? "Updating password…" : "Update password"}
-            </Button>
-          </div>
-        </form>
-      </section>
+      <ProfilePasswordSection
+        newPassword={newPassword}
+        confirmPassword={confirmPassword}
+        isSaving={passwordSaving}
+        error={passwordError}
+        notice={passwordNotice}
+        onSubmit={changePassword}
+        onNewPasswordChange={changeNewPassword}
+        onConfirmPasswordChange={changeConfirmPassword}
+      />
     </div>
   );
 }
