@@ -4,10 +4,12 @@ import { SearchX } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { VocabularyRow } from "./VocabularyRow";
 
 interface VocabularyListProps {
   words: VocabularyWord[];
+  categories: VocabularyCategoryRow[];
   isLoading: boolean;
   selectedIds: Set<string>;
   selectPageRef: RefObject<HTMLInputElement | null>;
@@ -23,6 +25,7 @@ interface VocabularyListProps {
 
 export function VocabularyList({
   words,
+  categories,
   isLoading,
   selectedIds,
   selectPageRef,
@@ -93,6 +96,7 @@ export function VocabularyList({
           <VocabularyRow
             key={item.id}
             item={item}
+            categories={categories}
             selected={selectedIds.has(item.id)}
             onToggleSelected={onToggleSelected}
             onToggleMastered={onToggleMastered}

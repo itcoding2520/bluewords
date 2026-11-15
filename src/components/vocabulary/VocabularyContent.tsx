@@ -212,6 +212,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
 
       <VocabularyList
         words={currentPageWords}
+        categories={categories}
         isLoading={isPageLoading || loadedAuthVersion !== authVersion}
         selectedIds={selectedIds}
         selectPageRef={selectPageRef}

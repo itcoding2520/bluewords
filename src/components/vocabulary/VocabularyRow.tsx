@@ -13,8 +13,8 @@ import {
   categorySolidStyles,
   type VocabularyWord,
 } from "@/data/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { cn } from "@/lib/cn";
-import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "./PronunciationButton";
@@ -22,6 +22,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
+  categories: VocabularyCategoryRow[];
   selected: boolean;
   onToggleSelected: (id: string) => void;
   onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
@@ -66,13 +67,13 @@ function GridMeanings({
 
 export function VocabularyRow({
   item,
+  categories,
   selected,
   onToggleSelected,
   onToggleMastered,
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const { categories } = useVocabulary({ loadWords: false, loadCategories: false });
   const [isToggling, setIsToggling] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const togglingRef = useRef(false);
