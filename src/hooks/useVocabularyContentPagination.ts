@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { getPageCount, getPageRange } from "@/lib/pagination";
+import { getPageMetadata } from "@/lib/pagination";
 
 export function useVocabularyContentPagination({
   page,
@@ -28,9 +28,7 @@ export function useVocabularyContentPagination({
   refreshPage: () => void;
 }) {
   const visibleTotalWords = loadedAuthVersion === authVersion ? totalWords : 0;
-  const pageCount = getPageCount(visibleTotalWords, pageSize);
-  const currentPage = Math.min(page, pageCount);
-  const pageRange = getPageRange(visibleTotalWords, currentPage, pageSize);
+  const pageMetadata = getPageMetadata(visibleTotalWords, page, pageSize);
   const currentPageWords = loadedAuthVersion === authVersion ? pageWords : [];
 
   function changePageSize(size: number) {
@@ -49,7 +47,7 @@ export function useVocabularyContentPagination({
   function goToNextPage() {
     setIsPageLoading(true);
     setPageWords([]);
-    setPage((current) => Math.min(pageCount, current + 1));
+    setPage((current) => Math.min(pageMetadata.pageCount, current + 1));
   }
 
   function handleImportComplete() {
@@ -60,11 +58,11 @@ export function useVocabularyContentPagination({
 
   return {
     visibleTotalWords,
-    pageCount,
-    currentPage,
+    pageCount: pageMetadata.pageCount,
+    currentPage: pageMetadata.currentPage,
     currentPageWords,
-    firstVisibleWord: pageRange.first,
-    lastVisibleWord: pageRange.last,
+    firstVisibleWord: pageMetadata.first,
+    lastVisibleWord: pageMetadata.last,
     changePageSize,
     goToPreviousPage,
     goToNextPage,

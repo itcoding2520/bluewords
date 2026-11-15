@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAdminUsersActions } from "@/hooks/useAdminUsersActions";
 import { useAdminUsersData } from "@/hooks/useAdminUsersData";
 import { useAdminUsersExport } from "@/hooks/useAdminUsersExport";
-import { getPageCount, getPageRange } from "@/lib/pagination";
+import { getPageMetadata } from "@/lib/pagination";
 
 export function useAdminUsersController() {
   const [page, setPage] = useState(1);
@@ -21,14 +21,14 @@ export function useAdminUsersController() {
     setNotice: actions.setNotice,
   });
 
-  const pageCount = getPageCount(total, pageSize);
-  const currentPage = Math.min(page, pageCount);
-  const pageRange = getPageRange(total, currentPage, pageSize);
+  const pageMetadata = getPageMetadata(total, page, pageSize);
 
   return {
     users, total, page, setPage, pageSize, setPageSize, search, setSearch,
-    loading, error, exporting, pageCount, currentPage,
-    firstVisible: pageRange.first, lastVisible: pageRange.last,
+    loading, error, exporting,
+    pageCount: pageMetadata.pageCount,
+    currentPage: pageMetadata.currentPage,
+    firstVisible: pageMetadata.first, lastVisible: pageMetadata.last,
     exportUsers, refreshUsers,
     ...actions,
   };

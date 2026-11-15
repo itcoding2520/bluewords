@@ -13,3 +13,10 @@ export function getPageRange(total: number, page: number, pageSize: number) {
     last: Math.min(page * pageSize, total),
   };
 }
+
+export function getPageMetadata(total: number, page: number, pageSize: number) {
+  const pageCount = getPageCount(total, pageSize);
+  const currentPage = Math.min(page, pageCount);
+  const range = getPageRange(total, currentPage, pageSize);
+  return { pageCount, currentPage, first: range.first, last: range.last };
+}

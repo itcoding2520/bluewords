@@ -5,7 +5,7 @@ import {
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
 import { getLocalReviewDay, groupReviewsByLocalDay } from "@/lib/review-history-view";
-import { getPageCount, getPageItems, getPageRange } from "@/lib/pagination";
+import { getPageItems, getPageMetadata } from "@/lib/pagination";
 
 const PAGE_SIZE = 20;
 
@@ -55,16 +55,10 @@ export function useReviewHistoryController(userId: string) {
   const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
   const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;
   const latestDay = dailyGroups[0]?.day;
-  const pageCount = getPageCount(selectedGroup?.reviews.length ?? 0, PAGE_SIZE);
-  const currentPage = Math.min(page, pageCount);
+  const pageMetadata = getPageMetadata(selectedGroup?.reviews.length ?? 0, page, PAGE_SIZE);
   const pageReviews = selectedGroup
-    ? getPageItems(selectedGroup.reviews, currentPage, PAGE_SIZE)
+    ? getPageItems(selectedGroup.reviews, pageMetadata.currentPage, PAGE_SIZE)
     : [];
-  const pageRange = getPageRange(
-    selectedGroup?.reviews.length ?? 0,
-    currentPage,
-    PAGE_SIZE
-  );
 
   return {
     isLoading,
@@ -77,10 +71,10 @@ export function useReviewHistoryController(userId: string) {
     earliestDay,
     latestDay,
     pageReviews,
-    firstVisible: pageRange.first,
-    lastVisible: pageRange.last,
-    pageCount,
-    currentPage,
+    firstVisible: pageMetadata.first,
+    lastVisible: pageMetadata.last,
+    pageCount: pageMetadata.pageCount,
+    currentPage: pageMetadata.currentPage,
     pageSize: PAGE_SIZE,
   };
 }

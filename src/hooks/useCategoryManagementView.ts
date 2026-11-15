@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { getPageCount, getPageItems, getPageRange } from "@/lib/pagination";
+import { getPageItems, getPageMetadata } from "@/lib/pagination";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
@@ -53,18 +53,16 @@ export function useCategoryManagementView({
     });
   }, [categories, filterBy, sortBy]);
 
-  const pageCount = getPageCount(managedCategories.length, pageSize);
-  const currentPage = Math.min(page, pageCount);
-  const pageCategories = getPageItems(managedCategories, currentPage, pageSize);
-  const pageRange = getPageRange(managedCategories.length, currentPage, pageSize);
+  const pageMetadata = getPageMetadata(managedCategories.length, page, pageSize);
+  const pageCategories = getPageItems(managedCategories, pageMetadata.currentPage, pageSize);
 
   return {
     isDefaultCategory,
     managedCategories,
-    pageCount,
-    currentPage,
+    pageCount: pageMetadata.pageCount,
+    currentPage: pageMetadata.currentPage,
     pageCategories,
-    firstVisibleCategory: pageRange.first,
-    lastVisibleCategory: pageRange.last,
+    firstVisibleCategory: pageMetadata.first,
+    lastVisibleCategory: pageMetadata.last,
   };
 }
