@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { normalize } from "@/lib/vocabulary/publish-options";
 import {
   createCommunityCategoryRequest,
   findCommunityCategoryRequest,
@@ -22,7 +23,7 @@ export function usePublishCategoryRequest(
     if (!user) return;
 
     const category = categories.find((item) => item.name === categoryName);
-    const normalizedCategory = categoryName.trim().replace(/\s+/g, " ").toLowerCase();
+    const normalizedCategory = normalize(categoryName);
     const found = await findCommunityCategoryRequest(supabase, normalizedCategory);
     if (found.error) {
       toast.error(found.error.message);
