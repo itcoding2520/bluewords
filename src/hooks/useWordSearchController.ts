@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import type { WordSearchSessionRow } from "@/types/database";
 import { type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
@@ -9,9 +8,9 @@ import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 import { type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
 import { useWordSearchGameplay } from "@/hooks/useWordSearchGameplay";
+import { useWordSearchNavigation } from "@/hooks/useWordSearchNavigation";
 
 type Phase = "setup" | "playing" | "results";
-type Tab = "play" | "history";
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -20,13 +19,11 @@ export function useWordSearchController(userId: string | null) {
   const [category, setCategory] = useState("all");
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [phase, setPhase] = useState<Phase>("setup");
-  const [tab, setTab] = useState<Tab>("play");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
   const [foundWordPaths, setFoundWordPaths] = useState<Record<string, CellPosition[]>>({});
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
-  const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const { elapsedSeconds, setElapsedSeconds, reset: resetTimer } = useWordSearchTimer(phase, startedAt);
   const { saveState, saveError, reset: resetSave, retry: retrySave } = useWordSearchSessionSave({
     userId,
@@ -49,6 +46,7 @@ export function useWordSearchController(userId: string | null) {
     fastestSeconds: fastestHistorySeconds,
     averageWordsPerRound,
   } = useWordSearchHistory(userId);
+  const navigation = useWordSearchNavigation({ setPhase, setHistoryPage, loadHistory });
 
   const {
     candidates,
@@ -57,7 +55,7 @@ export function useWordSearchController(userId: string | null) {
     categoryOptions,
     targetCount,
     showStickyStart,
-  } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab });
+  } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab: navigation.tab });
 
   const gameplay = useWordSearchGameplay({
     phase,
@@ -76,30 +74,6 @@ export function useWordSearchController(userId: string | null) {
     resetSave,
   });
 
-  function openPlayTab() {
-    setTab("play");
-    setSelectedHistory(null);
-  }
-
-  function openHistoryTab() {
-    setTab("history");
-    setSelectedHistory(null);
-    void loadHistory();
-  }
-
-  function viewHistory() {
-    setPhase("setup");
-    setTab("history");
-    setHistoryPage(1);
-    setSelectedHistory(null);
-    void loadHistory(true, 1);
-  }
-
-  function changeHistoryPage(page: number) {
-    setHistoryPage(page);
-    void loadHistory(false, page);
-  }
-
   return {
     words,
     categories,
@@ -113,12 +87,12 @@ export function useWordSearchController(userId: string | null) {
     categoriesExpanded,
     setCategoriesExpanded,
     phase,
-    tab,
+    tab: navigation.tab,
     puzzle,
     foundIds,
     foundWordPaths,
-    selectedHistory,
-    setSelectedHistory,
+    selectedHistory: navigation.selectedHistory,
+    setSelectedHistory: navigation.setSelectedHistory,
     elapsedSeconds,
     saveState,
     saveError,
@@ -146,9 +120,9 @@ export function useWordSearchController(userId: string | null) {
     handleGridPointerCancel: gameplay.handleGridPointerCancel,
     handleStartGame: gameplay.handleStartGame,
     backToSetup: gameplay.backToSetup,
-    openPlayTab,
-    openHistoryTab,
-    viewHistory,
-    changeHistoryPage,
+    openPlayTab: navigation.openPlayTab,
+    openHistoryTab: navigation.openHistoryTab,
+    viewHistory: navigation.viewHistory,
+    changeHistoryPage: navigation.changeHistoryPage,
   };
 }
