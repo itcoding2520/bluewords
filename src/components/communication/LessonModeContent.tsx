@@ -4,8 +4,7 @@ import { ListeningPracticeView } from "@/components/communication/ListeningPract
 import { QuickPracticeView } from "@/components/communication/QuickPracticeView";
 import { SentenceDrillView } from "@/components/communication/SentenceDrillView";
 import { StudyCardView } from "@/components/communication/StudyCardView";
-
-type LessonMode = "study" | "practice" | "drills" | "listening";
+import type { LessonMode } from "@/lib/communication/lesson-types";
 
 type LessonModeContentProps = {
   mode: LessonMode;

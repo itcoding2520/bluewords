@@ -1,9 +1,9 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 
-import type { Item } from "@/lib/communication/lesson-types";
+import type { Item, LessonMode } from "@/lib/communication/lesson-types";
 import { shuffled } from "@/lib/communication/lesson-practice";
 
-export type LessonMode = "study" | "practice" | "drills" | "listening";
+export type { LessonMode };
 type OrderedTile = { id: number; text: string };
 
 export function useSituationalEnglishLessonSession({

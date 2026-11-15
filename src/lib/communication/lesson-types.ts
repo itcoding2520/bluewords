@@ -1,5 +1,7 @@
 import type { DifficultyLevel } from "@/types/difficulty";
 
+export type LessonMode = "study" | "practice" | "drills" | "listening";
+
 export type Lesson = {
   id: string;
   topic_id: string;
