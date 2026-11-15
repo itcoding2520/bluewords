@@ -77,6 +77,25 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     return rows.map(mapVocabularyWordRow);
   }
 
+  function changePageSize(size: number) {
+    filters.setPageSize(size);
+    setPage(1);
+    pageData.setIsPageLoading(true);
+    pageData.setPageWords([]);
+  }
+
+  function goToPreviousPage() {
+    pageData.setIsPageLoading(true);
+    pageData.setPageWords([]);
+    setPage((current) => Math.max(1, current - 1));
+  }
+
+  function goToNextPage() {
+    pageData.setIsPageLoading(true);
+    pageData.setPageWords([]);
+    setPage((current) => Math.min(pageCount, current + 1));
+  }
+
   function handleImportComplete() {
     setPage(1);
     pageData.setIsPageLoading(true);
@@ -96,6 +115,9 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     ...controller,
     loadExportWords,
     handleImportComplete,
+    changePageSize,
+    goToPreviousPage,
+    goToNextPage,
     visibleTotalWords,
     pageCount,
     currentPage,

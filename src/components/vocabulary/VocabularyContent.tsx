@@ -26,9 +26,7 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     authVersion,
     search,
     status,
-    setPage,
     pageSize,
-    setPageSize,
     selectedCategory,
     count: categoryExportCount,
     isLoading: isExportCountLoading,
@@ -52,8 +50,6 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     firstVisibleWord,
     lastVisibleWord,
     isPageLoading,
-    setIsPageLoading,
-    setPageWords,
     isFormOpen,
     isCategoriesOpen,
     setIsCategoriesOpen,
@@ -75,6 +71,9 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
     handleToggleMastered,
     loadExportWords,
     handleImportComplete,
+    changePageSize,
+    goToPreviousPage,
+    goToNextPage,
   } = useVocabularyContentExperience(isAdmin);
 
 
@@ -159,22 +158,9 @@ export function VocabularyContent({ isAdmin }: { isAdmin: boolean }) {
         page={currentPage}
         pageCount={pageCount}
         pageSize={pageSize}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(1);
-          setIsPageLoading(true);
-          setPageWords([]);
-        }}
-        onPrevious={() => {
-          setIsPageLoading(true);
-          setPageWords([]);
-          setPage((current) => Math.max(1, current - 1));
-        }}
-        onNext={() => {
-          setIsPageLoading(true);
-          setPageWords([]);
-          setPage((current) => Math.min(pageCount, current + 1));
-        }}
+        onPageSizeChange={changePageSize}
+        onPrevious={goToPreviousPage}
+        onNext={goToNextPage}
       />
       </section>
 
