@@ -1,37 +1,32 @@
-import type { Dispatch, FormEvent, RefObject, SetStateAction } from "react";
+import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { downloadCsvFile } from "@/lib/download-csv";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import {
-  importSentenceBuilderQuestions,
-  loadSentenceBuilderQuestions,
   removeSentenceBuilderQuestion,
   saveSentenceBuilderQuestion,
 } from "@/lib/supabase/sentence-builder";
-import { exportSentenceBuilderCsv, parseSentenceBuilderCsv } from "@/lib/sentence-builder-csv";
 import type { SentenceBuilderQuestion, SentenceQuestionInput } from "@/lib/sentence-builder";
 
 export function useAdminSentenceBuilderActions({
+  supabase,
   draft,
   editing,
   busy,
   setBusy,
   resetDraft,
   setEditing,
-  fileRef,
   refresh,
 }: {
+  supabase: SupabaseClient;
   draft: SentenceQuestionInput;
   editing: string | null;
   busy: boolean;
   setBusy: Dispatch<SetStateAction<boolean>>;
   resetDraft: () => void;
   setEditing: Dispatch<SetStateAction<string | null>>;
-  fileRef: RefObject<HTMLInputElement | null>;
   refresh: () => Promise<void>;
 }) {
-  const supabase = useSupabaseClient();
   const confirm = useConfirmDialog();
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -79,35 +74,5 @@ export function useAdminSentenceBuilderActions({
     }
   }
 
-  async function importCsv(file?: File) {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const rows = parseSentenceBuilderCsv(await file.text());
-      const { error } = await importSentenceBuilderQuestions(supabase, rows);
-      if (error) throw error;
-      toast.success(`Imported ${rows.length} questions.`);
-      await refresh();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "CSV import failed.");
-    } finally {
-      setBusy(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
-  async function exportCsv() {
-    try {
-      const rows = await loadSentenceBuilderQuestions(false);
-      downloadCsvFile(
-        "BlueWords_Sentence_Builder_Questions.csv",
-        exportSentenceBuilderCsv(rows),
-        { includeUtf8Bom: true }
-      );
-    } catch {
-      toast.error("Could not export questions.");
-    }
-  }
-
-  return { save, removeQuestion, importCsv, exportCsv };
+  return { save, removeQuestion };
 }
