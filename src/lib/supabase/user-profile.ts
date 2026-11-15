@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 import {
   getCachedUserProfile as readCachedUserProfile,
@@ -60,8 +61,7 @@ export async function uploadUserAvatar(file: File): Promise<string> {
   const validationError = validateUserAvatar(file);
   if (validationError) throw new Error(validationError);
 
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to upload an avatar.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to upload an avatar.");
 
   const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
@@ -85,8 +85,7 @@ export async function saveUserProfile(input: {
     throw new Error("Nickname must be between 2 and 24 characters.");
   }
 
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to update your profile.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to update your profile.");
   if (input.avatarPath && !input.avatarPath.startsWith(`${user.id}/`)) {
     throw new Error("This avatar does not belong to your account.");
   }
@@ -107,8 +106,7 @@ export async function saveUserProfile(input: {
 }
 
 export async function deleteUserAvatar(path: string): Promise<void> {
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to delete an avatar.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to delete an avatar.");
   if (!path.startsWith(`${user.id}/`)) throw new Error("This avatar does not belong to your account.");
 
   const { error } = await getSupabase().storage.from(USER_AVATARS_BUCKET).remove([path]);

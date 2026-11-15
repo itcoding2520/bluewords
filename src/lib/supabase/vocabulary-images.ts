@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 
 export const VOCABULARY_IMAGES_BUCKET = "vocabulary-images";
@@ -34,8 +35,7 @@ export async function uploadVocabularyImage(
   const validationError = validateVocabularyImage(file);
   if (validationError) throw new Error(validationError);
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to upload an image.");
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to upload an image.");
 
   const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${wordId}/${crypto.randomUUID()}.${extension}`;
@@ -55,8 +55,7 @@ export async function deleteVocabularyImages(paths: Array<string | null | undefi
   const safePaths = [...new Set(paths.filter((path): path is string => Boolean(path)))];
   if (safePaths.length === 0) return;
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to delete images.");
+  const user = await requireAuthenticatedUser(supabase, "You must be logged in to delete images.");
 
   // Starter images are shared assets and must never be removed by a user's
   // vocabulary edits or deletes.
