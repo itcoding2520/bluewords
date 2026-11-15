@@ -4,7 +4,7 @@ import { Check, ChevronLeft, ChevronRight, ImagePlus, Pencil, Plus, Trash2, X } 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useCategoryManagementController } from "@/hooks/useCategoryManagementController";

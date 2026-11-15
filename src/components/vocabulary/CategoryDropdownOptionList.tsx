@@ -2,7 +2,8 @@ import type { KeyboardEvent, MutableRefObject } from "react";
 import { Check, ListFilter } from "lucide-react";
 
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 

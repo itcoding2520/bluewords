@@ -1,4 +1,4 @@
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 export const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-700",

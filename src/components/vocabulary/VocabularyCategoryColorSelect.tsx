@@ -1,5 +1,5 @@
 import { Select } from "@/components/ui/Select";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 export const vocabularyCategoryColorOptions: Array<{
   value: VocabularyCategoryColor;

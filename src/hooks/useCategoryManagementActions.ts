@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { useVocabulary } from "@/contexts/VocabularyContext";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@/lib/supabase/client";

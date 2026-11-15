@@ -6,6 +6,18 @@ export const VOCABULARY_CATEGORIES = [
 
 export type VocabularyCategory = string;
 
+export type VocabularyCategoryColor =
+  | "blue"
+  | "violet"
+  | "orange"
+  | "green"
+  | "rose"
+  | "indigo"
+  | "teal"
+  | "amber"
+  | "pink"
+  | "slate";
+
 export const VOCABULARY_TYPES = [
   "word",
   "expression",

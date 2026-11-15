@@ -4,10 +4,10 @@ import {
   addVocabularyCategory,
   deleteVocabularyCategory,
   updateVocabularyCategory,
-  type VocabularyCategoryColor,
   type VocabularyCategoryRow,
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { sortCategories } from "@/lib/vocabulary/shared-vocabulary";

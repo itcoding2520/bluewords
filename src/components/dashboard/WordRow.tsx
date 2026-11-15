@@ -5,7 +5,7 @@ import {
   categoryColorStyles,
   categoryStyles,
 } from "@/data/vocabulary";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";

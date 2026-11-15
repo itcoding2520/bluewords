@@ -1,19 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+export type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 const supabase = createClient();
-
-export type VocabularyCategoryColor =
-  | "blue"
-  | "violet"
-  | "orange"
-  | "green"
-  | "rose"
-  | "indigo"
-  | "teal"
-  | "amber"
-  | "pink"
-  | "slate";
 
 export interface VocabularyCategoryRow {
   id: string;

@@ -1,10 +1,10 @@
 import { createContext } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type {
-  VocabularyCategoryColor,
   VocabularyCategoryRow,
   VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
 
 export interface VocabularyContextValue {

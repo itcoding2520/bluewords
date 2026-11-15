@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { isUncategorizedVocabularyCategory } from "@/lib/vocabulary/category-visibility";
 
 export type VocabularyGameCategoryOption = {

@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type {
-  VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 
 export function useManageCategoriesController() {

@@ -1,7 +1,7 @@
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
+import type { VocabularyCategory, VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyMeaningRow } from "@/types/database";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 

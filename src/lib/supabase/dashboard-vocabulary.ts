@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { createInvalidatableAsyncCache } from "@/lib/supabase/invalidatable-async-cache.mjs";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 export interface DashboardRecentWord {
   id: string;
   word: string;

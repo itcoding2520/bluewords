@@ -1,7 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
-import type { VocabularyCategoryRow, VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategory, VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 export type PublicSharedVocabulary = {

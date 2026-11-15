@@ -1,9 +1,9 @@
 import type {
   PartOfSpeech,
   VocabularyCategory,
+  VocabularyCategoryColor,
   VocabularyType,
 } from "@/config/vocabulary";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
 
 export type VocabularyStatus = "learning" | "mastered";
 

@@ -10,7 +10,7 @@ import { Search, Sparkles, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useGuestVocabularyController } from "@/hooks/useGuestVocabularyController";
 const categoryColors: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-100 text-blue-800", violet: "bg-violet-100 text-violet-800",

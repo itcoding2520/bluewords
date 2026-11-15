@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { getCategoryImageUrl } from "@/lib/supabase/category-images";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { DIFFICULTIES, GRID_SIZES, WORD_TARGETS, type Difficulty, type GridSize, type WordSearchCategoryOption } from "@/lib/word-search-config";
 export type { WordSearchCategoryOption } from "@/lib/word-search-config";
 

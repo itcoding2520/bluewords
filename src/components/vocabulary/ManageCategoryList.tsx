@@ -9,9 +9,9 @@ import {
 } from "@/components/vocabulary/VocabularyCategoryColorSelect";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type {
-  VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 interface ManageCategoryListProps {
