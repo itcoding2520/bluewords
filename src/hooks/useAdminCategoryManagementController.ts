@@ -60,7 +60,9 @@ export function useAdminCategoryManagementController() {
       : "owner_id" in category ? category : null;
     const fallbackImage = activeTab === "default"
       ? defaultVocabularyWords.find((word) => word.category === category.name && word.imagePath)?.imagePath
-      : words.find((word) => word.image_path)?.image_path;
+      : category.id === selectedCategory?.id
+        ? words.find((word) => word.image_path)?.image_path
+        : undefined;
 
     return {
       category,
