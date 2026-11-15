@@ -8,7 +8,13 @@ import { toast } from "sonner";
 import { useCategoryManagementView } from "@/hooks/useCategoryManagementView";
 export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
-import { loadAdminUserEmails } from "@/lib/admin-users";
+import {
+  checkCurrentUserIsAdmin,
+  loadPublishedCategoryAuthors,
+  updatePublishedCategoryImageByName,
+  updateSharedCategoryDetails,
+  updateSharedCategoryImage,
+} from "@/lib/category-management-api";
 
 export function useCategoryManagementController() {
   const confirmDialog = useConfirmDialog();
@@ -36,11 +42,8 @@ export function useCategoryManagementController() {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase.from("app_admins")
-          .select("user_id").eq("user_id", user.id).maybeSingle();
-        if (!cancelled) setIsAdmin(Boolean(data));
+        const isAdmin = await checkCurrentUserIsAdmin(supabase);
+        if (!cancelled) setIsAdmin(isAdmin);
       })();
     }, 0);
     return () => {
@@ -54,19 +57,9 @@ export function useCategoryManagementController() {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
-        const { data } = await supabase.from("community_categories")
-          .select("name, owner_id").eq("status", "published");
-        const owners = (data ?? []) as Array<{ name: string; owner_id: string }>;
-        const ownerIds = [...new Set(owners.map((item) => item.owner_id))];
-        const emails = await loadAdminUserEmails(
-          ownerIds,
-          "Could not load category authors."
-        ).catch((): Record<string, string> => ({}));
+        const authors = await loadPublishedCategoryAuthors(supabase);
         if (!cancelled) {
-          setCategoryAuthors(Object.fromEntries(owners.map((item) => [
-            item.name.trim().toLocaleLowerCase(),
-            emails[item.owner_id] ?? "Loading author…",
-          ])));
+          setCategoryAuthors(authors);
         }
       })();
     }, 0);
@@ -99,8 +92,7 @@ export function useCategoryManagementController() {
       ? category.id.slice("community-category-".length)
       : null;
     if (communityId) {
-      const { error } = await supabase.from("community_categories")
-        .update({ image_path: path }).eq("id", communityId);
+      const error = await updateSharedCategoryImage(supabase, communityId, path);
       if (error) { await deleteCategoryImage(path); throw error; }
     } else {
       const updated = await updateCategory(category.id, { image_path: path }, { silent: true });
@@ -109,9 +101,7 @@ export function useCategoryManagementController() {
         throw new Error("Could not save the category image.");
       }
       if (isAdmin) {
-        const normalizedName = category.name.trim().replace(/\s+/g, " ").toLocaleLowerCase();
-        const { error } = await supabase.from("community_categories")
-          .update({ image_path: path }).eq("normalized_name", normalizedName).eq("status", "published");
+        const error = await updatePublishedCategoryImageByName(supabase, category.name, path);
         if (error) { await deleteCategoryImage(path); throw error; }
       }
     }
@@ -160,8 +150,7 @@ export function useCategoryManagementController() {
       let updated = true;
       if (isSharedCategory) {
         const id = editing.id.slice("community-category-".length);
-        const { error } = await supabase.from("community_categories")
-          .update({ name: editName, color: editColor }).eq("id", id);
+        const error = await updateSharedCategoryDetails(supabase, id, { name: editName, color: editColor });
         if (error) throw error;
       } else {
         updated = Boolean(await updateCategory(
