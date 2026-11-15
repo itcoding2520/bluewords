@@ -36,7 +36,23 @@ export function useAdminNotificationComposerController(currentUserId: string) {
   }
 
   return {
-    ...recipientState,
-    title, setTitle, message, setMessage, sending, error, notice, sendNotification,
+    recipients: {
+      recipients: recipientState.recipients,
+      loading: recipientState.loading,
+      filteredRecipients: recipientState.filteredRecipients,
+      selectedRecipients: recipientState.selectedRecipients,
+    },
+    selection: {
+      selected: recipientState.selected,
+      setSelected: recipientState.setSelected,
+      allUsers: recipientState.allUsers,
+      setAllUsers: recipientState.setAllUsers,
+      search: recipientState.search,
+      setSearch: recipientState.setSearch,
+      toggleRecipient: recipientState.toggleRecipient,
+    },
+    message: { title, setTitle, message, setMessage },
+    status: { sending, error, notice },
+    actions: { sendNotification },
   };
 }

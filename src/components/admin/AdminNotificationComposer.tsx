@@ -10,8 +10,13 @@ import { AdminNotificationPreview } from "@/components/admin/AdminNotificationPr
 
 export function AdminNotificationComposer({ currentUserId }: { currentUserId: string }) {
   const {
-    recipients, selected, allUsers, setAllUsers, search, setSearch, title, setTitle, message, setMessage,
-    loading, sending, error, notice, filteredRecipients, selectedRecipients, toggleRecipient, sendNotification,
+    recipients: { recipients, loading, filteredRecipients, selectedRecipients },
+    selection: {
+      selected, allUsers, setAllUsers, search, setSearch, toggleRecipient,
+    },
+    message: { title, setTitle, message, setMessage },
+    status: { sending, error, notice },
+    actions: { sendNotification },
   } = useAdminNotificationComposerController(currentUserId);
 
   return <div className="admin-notification-page">
