@@ -20,6 +20,77 @@ function validateAudioUrl(value: string, row: number, label: string) {
   }
 }
 
+function parseResponseOptions(value: string, row: number): string[] {
+  let options: unknown = [];
+  if (value) {
+    try {
+      options = JSON.parse(value);
+    } catch {
+      throw new Error(`Row ${row}: response_options_json must contain a valid JSON array.`);
+    }
+  }
+  if (!Array.isArray(options) || options.some((option) => typeof option !== "string")) {
+    throw new Error(`Row ${row}: response_options_json must be an array of strings.`);
+  }
+
+  const normalizedOptions = (options as string[]).map((option) => option.trim());
+  if (normalizedOptions.some((option) => !option)) {
+    throw new Error(`Row ${row}: response_options_json cannot contain empty choices.`);
+  }
+  if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) {
+    throw new Error(`Row ${row}: response_options_json cannot contain duplicate choices.`);
+  }
+  return normalizedOptions;
+}
+
+function validateCommonFields(record: CommunicationCsvRecord, row: number) {
+  const commonRequired: Array<keyof CommunicationCsvRecord> = [
+    "topic_slug", "topic_title_en", "topic_title_vi", "lesson_key", "lesson_title_en", "lesson_title_vi", "record_key",
+  ];
+  const missingCommon = commonRequired.filter((key) => !String(record[key] ?? "").trim());
+  if (missingCommon.length) {
+    throw new Error(`Row ${row}: required fields missing: ${missingCommon.join(", ")}.`);
+  }
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.topic_slug)) {
+    throw new Error(`Row ${row}: topic_slug must use lowercase letters, numbers, and hyphens.`);
+  }
+  if (record.lesson_key.length < 2 || record.lesson_key.length > 80) {
+    throw new Error(`Row ${row}: lesson_key must be between 2 and 80 characters.`);
+  }
+  if (record.record_key.length < 2 || record.record_key.length > (record.record_type === "item" ? 100 : 120)) {
+    throw new Error(`Row ${row}: record_key is outside the database length limit.`);
+  }
+  validateAudioUrl(record.audio_url, row, "audio_url");
+  validateAudioUrl(record.turn_audio_url, row, "turn_audio_url");
+}
+
+function validateItemFields(record: CommunicationCsvRecord, row: number) {
+  if (!record.content_en || !record.meaning_vi) {
+    throw new Error(`Row ${row}: item rows need content_en and meaning_vi.`);
+  }
+  if (Boolean(record.example_en) !== Boolean(record.example_vi)) {
+    throw new Error(`Row ${row}: provide both example_en and example_vi, or leave both blank.`);
+  }
+  if (record.item_type === "sentence_pattern" && (!record.example_en || !record.example_vi)) {
+    throw new Error(`Row ${row}: sentence_pattern rows need a complete English and Vietnamese example.`);
+  }
+}
+
+function validateDialogueFields(record: CommunicationCsvRecord, row: number) {
+  if (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en) {
+    throw new Error(`Row ${row}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
+  }
+  if (record.dialogue_key.length < 2 || record.dialogue_key.length > 100) {
+    throw new Error(`Row ${row}: dialogue_key must be between 2 and 100 characters.`);
+  }
+  if (record.response_options.length > 0 && (record.response_options.length < 2 || !record.expected_response)) {
+    throw new Error(`Row ${row}: response choices need at least two options and an expected_response.`);
+  }
+  if (record.expected_response && !record.response_options.includes(record.expected_response)) {
+    throw new Error(`Row ${row}: expected_response must match one of response_options_json.`);
+  }
+}
+
 export function parseCommunicationCsvRecord(
   cells: string[],
   columnNames: string[],
@@ -39,24 +110,7 @@ export function parseCommunicationCsvRecord(
     throw new Error(`Row ${line}: lesson_status must be draft, published, or archived.`);
   }
 
-  let responseOptions: unknown = [];
-  if (get("response_options_json")) {
-    try {
-      responseOptions = JSON.parse(get("response_options_json"));
-    } catch {
-      throw new Error(`Row ${line}: response_options_json must contain a valid JSON array.`);
-    }
-  }
-  if (!Array.isArray(responseOptions) || responseOptions.some((option) => typeof option !== "string")) {
-    throw new Error(`Row ${line}: response_options_json must be an array of strings.`);
-  }
-  const normalizedOptions = (responseOptions as string[]).map((option) => option.trim());
-  if (normalizedOptions.some((option) => !option)) {
-    throw new Error(`Row ${line}: response_options_json cannot contain empty choices.`);
-  }
-  if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) {
-    throw new Error(`Row ${line}: response_options_json cannot contain duplicate choices.`);
-  }
+  const normalizedOptions = parseResponseOptions(get("response_options_json"), line);
 
   const itemType = get("item_type");
   if (recordType === "item" && !["word", "phrase", "sentence_pattern"].includes(itemType)) {
@@ -79,50 +133,9 @@ export function parseCommunicationCsvRecord(
     response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: normalizedOptions,
   };
 
-  const commonRequired: Array<keyof CommunicationCsvRecord> = [
-    "topic_slug", "topic_title_en", "topic_title_vi", "lesson_key", "lesson_title_en", "lesson_title_vi", "record_key",
-  ];
-  const missingCommon = commonRequired.filter((key) => !String(record[key] ?? "").trim());
-  if (missingCommon.length) {
-    throw new Error(`Row ${line}: required fields missing: ${missingCommon.join(", ")}.`);
-  }
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.topic_slug)) {
-    throw new Error(`Row ${line}: topic_slug must use lowercase letters, numbers, and hyphens.`);
-  }
-  if (record.lesson_key.length < 2 || record.lesson_key.length > 80) {
-    throw new Error(`Row ${line}: lesson_key must be between 2 and 80 characters.`);
-  }
-  if (record.record_key.length < 2 || record.record_key.length > (record.record_type === "item" ? 100 : 120)) {
-    throw new Error(`Row ${line}: record_key is outside the database length limit.`);
-  }
-  validateAudioUrl(record.audio_url, line, "audio_url");
-  validateAudioUrl(record.turn_audio_url, line, "turn_audio_url");
-
-  if (record.record_type === "item") {
-    if (!record.content_en || !record.meaning_vi) {
-      throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
-    }
-    if (Boolean(record.example_en) !== Boolean(record.example_vi)) {
-      throw new Error(`Row ${line}: provide both example_en and example_vi, or leave both blank.`);
-    }
-    if (record.item_type === "sentence_pattern" && (!record.example_en || !record.example_vi)) {
-      throw new Error(`Row ${line}: sentence_pattern rows need a complete English and Vietnamese example.`);
-    }
-  }
-  if (record.record_type === "dialogue_turn") {
-    if (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en) {
-      throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
-    }
-    if (record.dialogue_key.length < 2 || record.dialogue_key.length > 100) {
-      throw new Error(`Row ${line}: dialogue_key must be between 2 and 100 characters.`);
-    }
-    if (record.response_options.length > 0 && (record.response_options.length < 2 || !record.expected_response)) {
-      throw new Error(`Row ${line}: response choices need at least two options and an expected_response.`);
-    }
-    if (record.expected_response && !record.response_options.includes(record.expected_response)) {
-      throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
-    }
-  }
+  validateCommonFields(record, line);
+  if (record.record_type === "item") validateItemFields(record, line);
+  else validateDialogueFields(record, line);
 
   return record;
 }
