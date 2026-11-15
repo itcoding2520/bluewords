@@ -7,12 +7,11 @@ import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from 
 import { toast } from "sonner";
 import { useCategoryManagementView } from "@/hooks/useCategoryManagementView";
 import { useCategoryManagementAccess } from "@/hooks/useCategoryManagementAccess";
+import { useCategoryImageActions } from "@/hooks/useCategoryImageActions";
 export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
 import {
-  updatePublishedCategoryImageByName,
   updateSharedCategoryDetails,
-  updateSharedCategoryImage,
 } from "@/lib/category-management-api";
 
 export function useCategoryManagementController() {
@@ -23,6 +22,12 @@ export function useCategoryManagementController() {
   });
   const supabase = useSupabaseClient();
   const { isAdmin, categoryAuthors } = useCategoryManagementAccess(supabase);
+  const { saveImage } = useCategoryImageActions({
+    supabase,
+    isAdmin,
+    updateCategory,
+    refreshCategories,
+  });
   const [name, setName] = useState("");
   const [color, setColor] = useState<VocabularyCategoryColor>("blue");
   const [newImage, setNewImage] = useState<File | null>(null);
@@ -51,29 +56,6 @@ export function useCategoryManagementController() {
     setEditName(category.name);
     setEditColor(category.color);
     setEditImage(null);
-  }
-
-  async function saveImage(category: VocabularyCategoryRow, file: File) {
-    const path = await uploadCategoryImage(category.id, file);
-    const communityId = category.id.startsWith("community-category-")
-      ? category.id.slice("community-category-".length)
-      : null;
-    if (communityId) {
-      const error = await updateSharedCategoryImage(supabase, communityId, path);
-      if (error) { await deleteCategoryImage(path); throw error; }
-    } else {
-      const updated = await updateCategory(category.id, { image_path: path }, { silent: true });
-      if (!updated) {
-        await deleteCategoryImage(path);
-        throw new Error("Could not save the category image.");
-      }
-      if (isAdmin) {
-        const error = await updatePublishedCategoryImageByName(supabase, category.name, path);
-        if (error) { await deleteCategoryImage(path); throw error; }
-      }
-    }
-    await refreshCategories();
-    // Existing images can be shared by published category avatars, so replaced files stay in storage.
   }
 
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
