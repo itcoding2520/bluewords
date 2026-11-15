@@ -61,20 +61,16 @@ export function useReviewHistoryController(userId: string) {
     : [];
 
   return {
-    isLoading,
-    loadFailed,
-    dailyGroups,
-    selectedGroup,
-    selectedDay,
-    setSelectedDay,
-    setPage,
-    earliestDay,
-    latestDay,
-    pageReviews,
-    firstVisible: pageMetadata.first,
-    lastVisible: pageMetadata.last,
-    pageCount: pageMetadata.pageCount,
-    currentPage: pageMetadata.currentPage,
-    pageSize: PAGE_SIZE,
+    loading: { isLoading, loadFailed },
+    data: { dailyGroups, selectedGroup, earliestDay, latestDay, pageReviews },
+    selection: { selectedDay, setSelectedDay },
+    pagination: {
+      setPage,
+      firstVisible: pageMetadata.first,
+      lastVisible: pageMetadata.last,
+      pageCount: pageMetadata.pageCount,
+      currentPage: pageMetadata.currentPage,
+      pageSize: PAGE_SIZE,
+    },
   };
 }

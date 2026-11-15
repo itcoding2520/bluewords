@@ -10,21 +10,12 @@ import { ReviewHistoryDayPanel } from "@/components/reviews/ReviewHistoryDayPane
 
 export function ReviewHistoryContent({ userId }: { userId: string }) {
   const {
-    isLoading,
-    loadFailed,
-    dailyGroups,
-    selectedGroup,
-    selectedDay,
-    setSelectedDay,
-    setPage,
-    earliestDay,
-    latestDay,
-    pageReviews,
-    firstVisible,
-    lastVisible,
-    pageCount,
-    currentPage,
-    pageSize,
+    loading: { isLoading, loadFailed },
+    data: { dailyGroups, selectedGroup, earliestDay, latestDay, pageReviews },
+    selection: { selectedDay, setSelectedDay },
+    pagination: {
+      setPage, firstVisible, lastVisible, pageCount, currentPage, pageSize,
+    },
   } = useReviewHistoryController(userId);
 
   return (
