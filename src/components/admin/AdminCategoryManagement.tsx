@@ -1,22 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { BookOpen, CheckCircle2, Clock3, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminNavigation } from "@/components/admin/AdminNavigation";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { formatShortDate } from "@/lib/formatDate";
-import { useAdminCategoryManagementController, type CategoryTab } from "@/hooks/useAdminCategoryManagementController";
-
-const tabs: Array<{ id: CategoryTab; label: string; description: string; icon: typeof BookOpen }> = [
-  { id: "default", label: "Default", description: "Starter categories and words", icon: BookOpen },
-  { id: "published", label: "Custom published", description: "Visible to signed-in users", icon: CheckCircle2 },
-  { id: "pending", label: "Custom waiting publish", description: "Awaiting admin approval", icon: Clock3 },
-];
+import { useAdminCategoryManagementController } from "@/hooks/useAdminCategoryManagementController";
+import { AdminCategoryTabs } from "@/components/admin/AdminCategoryTabs";
 
 export function AdminCategoryManagement() {
   const {
@@ -40,21 +34,19 @@ export function AdminCategoryManagement() {
 
     {error && <AutoDismissMessage key={error} variant="error" className="mb-4">{error}</AutoDismissMessage>}
 
-    <div role="tablist" aria-label="Category type" className="admin-category-tabs mb-5 grid gap-2 sm:grid-cols-3">
-      {tabs.map(({ id, label, description, icon: Icon }) => {
-        const count = id === "default" ? defaultVocabularyCategories.length : communityCategories.filter((category) => category.status === (id === "pending" ? "pending" : "published")).length;
-        const active = activeTab === id;
-        return <button key={id} role="tab" aria-selected={active} onClick={() => { setActiveTab(id); setSelectedId(""); setCategorySearch(""); }} className={`admin-category-tab flex min-w-0 items-center gap-3 rounded-2xl border p-4 text-left transition ${active ? "is-selected border-blue-300 bg-blue-50 ring-1 ring-blue-200" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"}`}>
-          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}><Icon size={19} /></span>
-          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{label}</span><span className="mt-0.5 block text-xs text-slate-500">{description}</span></span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${active ? "bg-white text-blue-700" : "bg-slate-100 text-slate-600"}`}>{count}</span>
-        </button>;
-      })}
-    </div>
+    <AdminCategoryTabs
+      activeTab={activeTab}
+      communityCategories={communityCategories}
+      onChange={(tab) => {
+        setActiveTab(tab);
+        setSelectedId("");
+        setCategorySearch("");
+      }}
+    />
 
     <div className="admin-category-layout grid items-start gap-5 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.65fr)]">
       <section className="admin-category-list-panel overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="admin-category-list-heading"><h2><BookOpen size={19} />{tabs.find((tab) => tab.id === activeTab)?.label} categories</h2></div>
+        <div className="admin-category-list-heading"><h2><BookOpen size={19} />{activeTab === "default" ? "Default" : activeTab === "pending" ? "Custom waiting publish" : "Custom published"} categories</h2></div>
         <label className="admin-category-search"><Search size={17} /><input value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} placeholder="Search categories…" aria-label="Search categories" /></label>
         {loading ? <p className="p-5 text-sm text-slate-500">Loading categories…</p> : visibleCategories.length === 0 ? <p className="p-5 text-sm text-slate-500">{currentCategories.length ? "No categories match your search." : "No categories in this tab yet."}</p> : <ul className="admin-category-list max-h-[65vh] divide-y divide-slate-100 overflow-y-auto">
           {visibleCategoryRows.map(({ category, shared, owner, fallbackImage, defaultWordCount, createdAt }) => {
