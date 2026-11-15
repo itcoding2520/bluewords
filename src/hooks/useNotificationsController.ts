@@ -63,5 +63,9 @@ export function useNotificationsController() {
 
   const unreadCount = notifications.filter((item) => !item.read_at).length;
 
-  return { notifications, loading, error, refresh, markAllRead, markAsRead, reviewRequest, unreadCount };
+  return {
+    data: { notifications, unreadCount },
+    status: { loading, error },
+    actions: { refresh, markAllRead, markAsRead, reviewRequest },
+  };
 }
