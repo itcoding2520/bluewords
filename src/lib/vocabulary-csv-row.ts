@@ -1,16 +1,11 @@
-import {
-  PARTS_OF_SPEECH,
-  type PartOfSpeech,
-  type VocabularyType,
-} from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { restoreSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
 import type { CsvRecord } from "@/lib/vocabulary-csv-parser";
 import {
   normalizeVocabularyCsvValue,
-  VOCABULARY_CSV_HEADERS,
   type VocabularyCsvIssue,
 } from "@/lib/vocabulary-csv-shared";
+import { readVocabularyCsvRow, validateVocabularyCsvRow } from "@/lib/vocabulary-csv-row-validation";
 
 export interface VocabularyCsvWordGroup {
   word: string;
@@ -46,34 +41,21 @@ export function processVocabularyCsvRow({
   fallbackWords: Set<string>;
   errors: VocabularyCsvIssue[];
 }) {
-  if (record.fields.length !== headerLength) {
-    errors.push({
-      line: record.line,
-      message: `Expected ${headerLength} columns, found ${record.fields.length}.`,
-    });
+  const { values, errors: rowErrors } = readVocabularyCsvRow(
+    record,
+    headerLength,
+    columnIndex
+  );
+  if (!values) {
+    rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     return;
   }
 
-  const value = (name: (typeof VOCABULARY_CSV_HEADERS)[number]) =>
-    restoreSpreadsheetCell(record.fields[columnIndex.get(name)!] ?? "").trim();
-  const word = value("word");
-  const typeValue = normalizeVocabularyCsvValue(value("type"));
-  const partOfSpeechValue = normalizeVocabularyCsvValue(value("part_of_speech"));
-  const meaning = value("meaning");
-  // Older CSVs used `meaning` for the part-of-speech meaning. Continue to
-  // accept them when the new, explicit `detailed_meaning` column is absent.
-  const detailedMeaning = columnIndex.has("detailed_meaning")
-    ? value("detailed_meaning")
-    : partOfSpeechValue
-      ? meaning
-      : "";
-  const rawCategory = value("category");
-  const statusValue = normalizeVocabularyCsvValue(value("status"));
-  const ipa = columnIndex.has("ipa") ? value("ipa") || null : null;
+  const { word, typeValue, meaning, category: rawCategory, statusValue, detailedMeaning, partOfSpeech, ipa } = values;
   const key = normalizeVocabularyCsvValue(word);
 
   if (!word) {
-    errors.push({ line: record.line, message: "Word is required." });
+    rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     return;
   }
 
@@ -82,42 +64,15 @@ export function processVocabularyCsvRow({
     return;
   }
 
-  const rowErrors: string[] = [];
-  if (typeValue !== "word" && typeValue !== "expression") {
-    rowErrors.push('Type must be "word" or "expression".');
-  }
-  if (!meaning) rowErrors.push("Meaning is required.");
-  if (statusValue !== "learning" && statusValue !== "mastered") {
-    rowErrors.push('Status must be "learning" or "mastered".');
-  }
-
-  const partOfSpeech = PARTS_OF_SPEECH.find(
-    (option) => normalizeVocabularyCsvValue(option) === partOfSpeechValue
-  );
-  if (partOfSpeechValue && !partOfSpeech) {
-    rowErrors.push(
-      `Part of speech must be one of: ${PARTS_OF_SPEECH.join(", ")}.`
-    );
-  }
-  if (typeValue === "expression" && partOfSpeechValue) {
-    rowErrors.push("Expressions must leave part_of_speech blank.");
-  }
-  if (detailedMeaning && !partOfSpeech) {
-    rowErrors.push("Detailed meaning requires a valid part_of_speech.");
-  }
-  if (partOfSpeech && !detailedMeaning) {
-    rowErrors.push("Detailed meaning is required when part_of_speech is provided.");
-  }
-
-  const category = categoriesByName.get(normalizeVocabularyCsvValue(rawCategory));
-  if (!category) fallbackWords.add(key);
-
+  rowErrors.push(...validateVocabularyCsvRow(values));
   if (rowErrors.length) {
     rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     invalidGroups.add(key);
     return;
   }
 
+  const category = categoriesByName.get(normalizeVocabularyCsvValue(rawCategory));
+  if (!category) fallbackWords.add(key);
   const type = typeValue as VocabularyType;
   const status = statusValue as VocabularyWord["status"];
   const resolvedCategory = category ?? "Uncategorized";
