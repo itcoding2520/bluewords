@@ -2,19 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, RotateCcw, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, RotateCcw, Star } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import { useReviewHistoryController } from "@/hooks/useReviewHistoryController";
-import { ReviewHistoryEntry } from "@/components/reviews/ReviewHistoryEntry";
-
-function formatDay(day: string): string {
-  const date = new Date(`${day}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return day;
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "full",
-  }).format(date);
-}
+import { ReviewHistoryDayPanel } from "@/components/reviews/ReviewHistoryDayPanel";
 
 export function ReviewHistoryContent({ userId }: { userId: string }) {
   const {
@@ -84,36 +76,16 @@ export function ReviewHistoryContent({ userId }: { userId: string }) {
             <p className="mt-2 text-xs text-slate-500">Select a date to view its Learning and Mastered review totals.</p>
           </section>
 
-          {selectedGroup ? (
-            <Card className="overflow-hidden p-0">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
-                <div>
-                  <h2 className="font-semibold text-slate-900">Reviews on {formatDay(selectedGroup.day)}</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {selectedGroup.reviews.length} reviews · {selectedGroup.learning} Learning · {selectedGroup.mastered} Mastered
-                  </p>
-                </div>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {pageReviews.map((review) => <ReviewHistoryEntry key={review.id} review={review} />)}
-              </div>
-              {selectedGroup.reviews.length > pageSize && (
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-4 text-sm text-slate-500 sm:px-6">
-                  <span>Showing {firstVisible}–{lastVisible} of {selectedGroup.reviews.length} words</span>
-                  <div className="flex items-center gap-2">
-                    <span>Page {currentPage} of {pageCount}</span>
-                    <button type="button" aria-label="Previous review history page" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={18} /></button>
-                    <button type="button" aria-label="Next review history page" disabled={currentPage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={18} /></button>
-                  </div>
-                </div>
-              )}
-            </Card>
-          ) : (
-            <Card className="px-5 py-10 text-center">
-              <h2 className="font-semibold text-slate-900">No reviews on this date</h2>
-              <p className="mt-2 text-sm text-slate-500">Choose another date with review activity to see its words and totals.</p>
-            </Card>
-          )}
+          <ReviewHistoryDayPanel
+            selectedGroup={selectedGroup}
+            pageReviews={pageReviews}
+            pageSize={pageSize}
+            firstVisible={firstVisible}
+            lastVisible={lastVisible}
+            currentPage={currentPage}
+            pageCount={pageCount}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>
