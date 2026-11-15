@@ -1,12 +1,4 @@
-/** Return a shuffled copy, leaving the input array untouched. */
-export function shuffle<T>(items: T[]): T[] {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
-  }
-  return shuffled;
-}
+export { shuffle } from "@/lib/random";
 
 /** Pick up to `count` unique entries from a copied pool. */
 export function sampleRandom<T>(items: T[], count: number): T[] {

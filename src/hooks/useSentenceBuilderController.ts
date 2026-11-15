@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
+import { shuffle } from "@/lib/random";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import { loadSentenceBuilderQuestions, type SentenceBuilderQuestion, type SentenceDifficulty } from "@/lib/supabase/sentence-builder";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -9,15 +10,6 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 type Phase = "setup" | "playing" | "results";
 export type SentenceBuilderTile = { id: number; text: string };
 export const sentenceBuilderQuestionCounts = [5, 10] as const;
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 export function useSentenceBuilderController() {
   const { isAuthenticated, categories: vocabularyCategories, words } = useVocabulary();
