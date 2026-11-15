@@ -61,34 +61,34 @@ export function useGamesLeaderboardController() {
     setReloadKey((key) => key + 1);
   }
 
-  function selectGame(nextGame: LeaderboardGame) {
-    if (game === nextGame) return;
+  function prepareFilterChange() {
     setLoading(true);
     setError("");
+  }
+
+  function selectGame(nextGame: LeaderboardGame) {
+    if (game === nextGame) return;
+    prepareFilterChange();
     setGame(nextGame);
   }
 
   function selectQuizMode(nextMode: LeaderboardQuizMode) {
-    setLoading(true);
-    setError("");
+    prepareFilterChange();
     setQuizMode(nextMode);
   }
 
   function selectQuestionCount(nextCount: LeaderboardQuestionCount) {
-    setLoading(true);
-    setError("");
+    prepareFilterChange();
     setQuestionCount(nextCount);
   }
 
   function selectGridSize(nextGridSize: LeaderboardGridSize) {
-    setLoading(true);
-    setError("");
+    prepareFilterChange();
     setGridSize(nextGridSize);
   }
 
   function selectDifficulty(nextDifficulty: LeaderboardDifficulty) {
-    setLoading(true);
-    setError("");
+    prepareFilterChange();
     setDifficulty(nextDifficulty);
   }
 
