@@ -3,6 +3,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
+import { shuffle } from "@/lib/quiz-random";
 
 type Phase = "setup" | "playing" | "results";
 type PairCount = 6 | 8 | 10;
@@ -14,15 +15,6 @@ export type MatchPair = {
   imageUrl: string | null;
 };
 export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
-
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
 
 function getWordMeaning(word: VocabularyWord): string {
   return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()

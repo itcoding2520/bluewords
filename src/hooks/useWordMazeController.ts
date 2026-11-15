@@ -3,19 +3,11 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
+import { shuffle } from "@/lib/quiz-random";
 
 type Phase = "setup" | "playing" | "results";
 export type MazeWord = { id: string; word: string; meaning: string; category: string; choices: string[] };
 type Feedback = "correct" | "wrong" | null;
-
-function shuffle<T>(items: T[]) {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
 
 function getMeaning(word: VocabularyWord) {
   return word.detailedMeanings?.find((item) => item.meaning.trim())?.meaning.trim()
