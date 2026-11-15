@@ -11,26 +11,26 @@ import { formatQuizTime } from "@/lib/quiz-format";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const quiz = useQuizExperience(userId);
-  const { configuration, setup, history, navigation } = quiz;
-  const showStickyStart = quiz.tab === "play" && quiz.phase === "setup";
+  const { configuration, setup, history, navigation, session } = quiz;
+  const showStickyStart = quiz.tab === "play" && session.phase === "setup";
   const showStickyGameAction = quiz.tab === "play"
-    && quiz.phase === "playing"
-    && Boolean(quiz.currentQuestion)
-    && (configuration.mode === "type-word" || Boolean(quiz.currentAnswer));
+    && session.phase === "playing"
+    && Boolean(session.currentQuestion)
+    && (configuration.mode === "type-word" || Boolean(session.currentAnswer));
 
   if (!quiz.isLoaded) return <p className="py-16 text-sm text-slate-500">Loading quiz vocabulary…</p>;
 
   return (
     <div className={`quiz-page ${showStickyStart || showStickyGameAction ? "pb-24 sm:pb-0" : ""}`}>
       <QuizPageHeader
-        isPlaying={quiz.phase === "playing"}
+        isPlaying={session.phase === "playing"}
         activeTab={quiz.tab}
-        showHistory={userId !== null && quiz.phase !== "playing"}
-        onPlay={quiz.phase === "playing" ? navigation.backToSetup : navigation.showPlayTab}
+        showHistory={userId !== null && session.phase !== "playing"}
+        onPlay={session.phase === "playing" ? navigation.backToSetup : navigation.showPlayTab}
         onHistory={navigation.showHistoryTab}
       />
 
-      {quiz.tab === "history" && quiz.phase !== "playing" && (
+      {quiz.tab === "history" && session.phase !== "playing" && (
         <QuizHistoryPanel
           selected={history.selectedHistory}
           answers={history.historyAnswers}
@@ -50,7 +50,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
         />
       )}
 
-      {quiz.tab === "play" && quiz.phase === "setup" && (
+      {quiz.tab === "play" && session.phase === "setup" && (
         <QuizSetupPanel
           mode={configuration.mode}
           onModeChange={configuration.setMode}
@@ -75,38 +75,38 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
         showGameAction={showStickyGameAction}
         canStart={setup.maximumQuestions >= configuration.questionCount}
         mode={configuration.mode}
-        input={quiz.input}
-        answer={quiz.currentAnswer}
-        questionIndex={quiz.questionIndex}
-        questionCount={quiz.questions.length}
+        input={session.input}
+        answer={session.currentAnswer}
+        questionIndex={session.questionIndex}
+        questionCount={session.questions.length}
         onStart={quiz.round.startQuiz}
         onNext={quiz.round.goToNextQuestion}
       />
 
-      {quiz.phase === "playing" && quiz.currentQuestion && (
+      {session.phase === "playing" && session.currentQuestion && (
         <QuizGamePanel
-          question={quiz.currentQuestion}
+          question={session.currentQuestion}
           mode={configuration.mode}
-          questionIndex={quiz.questionIndex}
-          questionCount={quiz.questions.length}
-          startedAt={quiz.startedAt}
-          answer={quiz.currentAnswer}
-          input={quiz.input}
-          elapsedSeconds={quiz.elapsedSeconds}
+          questionIndex={session.questionIndex}
+          questionCount={session.questions.length}
+          startedAt={session.startedAt}
+          answer={session.currentAnswer}
+          input={session.input}
+          elapsedSeconds={session.elapsedSeconds}
           onExit={navigation.backToSetup}
-          onInputChange={quiz.setInput}
+          onInputChange={session.setInput}
           onSubmitAnswer={quiz.round.submitAnswer}
           onNext={quiz.round.goToNextQuestion}
         />
       )}
 
-      {quiz.tab === "play" && quiz.phase === "results" && (
+      {quiz.tab === "play" && session.phase === "results" && (
         <QuizResultsPanel
-          questions={quiz.questions}
-          answers={quiz.answers}
+          questions={session.questions}
+          answers={session.answers}
           mode={configuration.mode}
-          correctCount={quiz.correctCount}
-          elapsedSeconds={quiz.elapsedSeconds}
+          correctCount={session.correctCount}
+          elapsedSeconds={session.elapsedSeconds}
           saveState={quiz.save.saveState}
           saveError={quiz.save.saveError}
           onSetup={navigation.backToSetup}
