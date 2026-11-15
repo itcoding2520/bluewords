@@ -73,8 +73,39 @@ export function useSentenceBuilderController() {
   }
 
   return {
-    isAuthenticated, words, loading, difficulty, setDifficulty, category, setCategory, questionCount, setQuestionCount,
-    phase, setPhase, ...gameplay,
-    saveState, eligible, categories, elapsed, start, nextQuestion, exit,
+    session: { isAuthenticated, loading, saveState, elapsed },
+    setup: {
+      words,
+      difficulty,
+      setDifficulty,
+      category,
+      setCategory,
+      questionCount,
+      setQuestionCount,
+      eligible,
+      categories,
+      start,
+    },
+    game: {
+      phase,
+      setPhase,
+      round: gameplay.round,
+      index: gameplay.index,
+      tiles: gameplay.tiles,
+      chosen: gameplay.chosen,
+      score: gameplay.score,
+      correctCount: gameplay.correctCount,
+      hints: gameplay.hints,
+      feedback: gameplay.feedback,
+      solved: gameplay.solved,
+      current: gameplay.current,
+      choose: gameplay.choose,
+      removeTile: gameplay.removeTile,
+      removeLastTile: gameplay.removeLastTile,
+      submit: gameplay.submit,
+      useHint: gameplay.useHint,
+      nextQuestion,
+      exit,
+    },
   };
 }

@@ -9,9 +9,16 @@ import { SentenceBuilderRoundCard } from "@/components/games/SentenceBuilderRoun
 
 export function SentenceBuilderContent() {
   const {
-    isAuthenticated, words, loading, difficulty, setDifficulty, category, setCategory, questionCount, setQuestionCount,
-    phase, setPhase, round, index, tiles, chosen, score, correctCount, hints, feedback, solved,
-    saveState, eligible, categories, current, elapsed, start, choose, removeTile, removeLastTile, submit, useHint, nextQuestion, exit,
+    session: { isAuthenticated, loading, saveState, elapsed },
+    setup: {
+      words, difficulty, setDifficulty, category, setCategory, questionCount,
+      setQuestionCount, eligible, categories, start,
+    },
+    game: {
+      phase, setPhase, round, index, tiles, chosen, score, correctCount,
+      hints, feedback, solved, current, choose, removeTile, removeLastTile,
+      submit, useHint, nextQuestion, exit,
+    },
   } = useSentenceBuilderController();
 
   if (loading) return <p className="py-16 text-center text-slate-500">Loading Sentence Builder…</p>;
