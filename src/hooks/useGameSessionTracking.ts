@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
+import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 
 type GameType = "word-match" | "word-scramble" | "word-maze";
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -28,19 +29,11 @@ export function useGameSessionTracking({
   moves: number;
   startedAt: number | null;
 }) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const { elapsedSeconds, setElapsedSeconds, reset: resetElapsedSeconds } = useElapsedTimer(startedAt, isPlaying);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
   const submittedSessionRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!isPlaying || startedAt === null) return;
-    const updateClock = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    updateClock();
-    const interval = window.setInterval(updateClock, 1000);
-    return () => window.clearInterval(interval);
-  }, [isPlaying, startedAt]);
 
   useEffect(() => {
     if (!isAuthenticated || !shouldSubmit || startedAt === null || submittedSessionRef.current === startedAt) return;
@@ -65,11 +58,11 @@ export function useGameSessionTracking({
       setSaveState("error");
       setSaveError(error instanceof Error ? error.message : "Could not save this result.");
     });
-  }, [correctCount, gameType, isAuthenticated, moves, retryCount, roundSize, score, shouldSubmit, startedAt]);
+  }, [correctCount, gameType, isAuthenticated, moves, retryCount, roundSize, score, shouldSubmit, startedAt, setElapsedSeconds]);
 
   function resetSession() {
     submittedSessionRef.current = null;
-    setElapsedSeconds(0);
+    resetElapsedSeconds();
     setSaveState("idle");
     setSaveError("");
   }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
@@ -31,7 +32,7 @@ export function useSentenceBuilderController() {
   const [feedback, setFeedback] = useState("");
   const [solved, setSolved] = useState(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [seconds, setSeconds] = useState(0);
+  const { elapsedSeconds: seconds, setElapsedSeconds: setSeconds } = useElapsedTimer(startedAt, phase === "playing");
   const [saveState, setSaveState] = useState("");
   const saveOnce = useRef(false);
 
@@ -53,14 +54,6 @@ export function useSentenceBuilderController() {
     void loadSentenceBuilderQuestions().then((data) => { if (active) setQuestions(data); }).catch(() => { if (active) setQuestions([]); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
-
-  useEffect(() => {
-    if (phase !== "playing" || startedAt === null) return;
-    const tick = () => setSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    tick();
-    const timer = window.setInterval(tick, 1000);
-    return () => window.clearInterval(timer);
-  }, [phase, startedAt]);
 
   useEffect(() => {
     if (!isAuthenticated || phase !== "results" || startedAt === null || saveOnce.current) return;

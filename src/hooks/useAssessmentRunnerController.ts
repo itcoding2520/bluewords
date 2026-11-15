@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
+import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 
 type AssessmentAttempt = { id: string; attempt_number: number; started_at: string; title: string; difficulty: string; questions: AssessmentQuestionForLearner[]; completed_at: string | null; answers: string[] };
 
@@ -10,7 +11,11 @@ export function useAssessmentRunnerController(attemptId: string) {
   const [answers, setAnswers] = useState<string[]>(Array(10).fill(""));
   const [sentenceTiles, setSentenceTiles] = useState<number[][]>(Array.from({ length: 10 }, () => []));
   const [current, setCurrent] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const timerStartedAt = attempt ? new Date(attempt.started_at).getTime() : null;
+  const { elapsedSeconds: seconds, setElapsedSeconds: setSeconds } = useElapsedTimer(
+    timerStartedAt,
+    Boolean(attempt && !attempt.completed_at)
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -29,18 +34,12 @@ export function useAssessmentRunnerController(attemptId: string) {
     } finally {
       setLoading(false);
     }
-  }, [attemptId]);
+  }, [attemptId, setSeconds]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void load(); }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    if (!attempt || attempt.completed_at) return;
-    const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - new Date(attempt.started_at).getTime()) / 1000)), 1000);
-    return () => window.clearInterval(timer);
-  }, [attempt]);
 
   function setAnswer(index: number, value: string) {
     setAnswers((previous) => previous.map((answer, position) => position === index ? value : answer));
