@@ -4,8 +4,8 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalize, type CommunityWordRequest } from "@/lib/vocabulary/publish-options";
 import {
-  findOwnedVocabularyWord,
   findPublishedCommunityWord,
+  verifyPublishWordRequestOwnership,
 } from "@/lib/supabase/publish-word-request";
 import {
   resolveCommunityCategoryForWordRequest,
@@ -52,22 +52,20 @@ export function usePublishWordRequest({
     if (!word) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (wordId.startsWith("retry-word-")) {
-      const previousRequestId = wordId.slice("retry-word-".length);
-      const ownRejectedRequest = communityWordRequests.some((request) =>
-        request.id === previousRequestId && request.owner_id === user.id && request.status === "rejected"
-      );
-      if (!ownRejectedRequest) {
-        toast.error("You can only resubmit a rejected word request that you created.");
-        return;
-      }
-    } else {
-      const { data: ownWord, error: ownershipError } = await findOwnedVocabularyWord(supabase, word.id, user.id);
-      if (ownershipError) { toast.error(ownershipError.message); return; }
-      if (!ownWord) {
-        toast.error("You can only request words from your own vocabulary.");
-        return;
-      }
+    const ownership = await verifyPublishWordRequestOwnership(supabase, {
+      wordId,
+      ownerId: user.id,
+      requests: communityWordRequests,
+    });
+    if (ownership.status === "error") {
+      toast.error(ownership.message);
+      return;
+    }
+    if (ownership.status === "forbidden") {
+      toast.error(wordId.startsWith("retry-word-")
+        ? "You can only resubmit a rejected word request that you created."
+        : "You can only request words from your own vocabulary.");
+      return;
     }
     const normalizedCategory = normalize(word.category);
     const normalizedWord = normalize(word.word);

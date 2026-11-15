@@ -6,6 +6,29 @@ export function findOwnedVocabularyWord(supabase: SupabaseClient, wordId: string
     .select("id").eq("id", wordId).eq("user_id", userId).maybeSingle();
 }
 
+export async function verifyPublishWordRequestOwnership(
+  supabase: SupabaseClient,
+  input: {
+    wordId: string;
+    ownerId: string;
+    requests: Array<{ id: string; owner_id: string; status: string }>;
+  }
+): Promise<{ status: "allowed" } | { status: "forbidden" } | { status: "error"; message: string }> {
+  if (input.wordId.startsWith("retry-word-")) {
+    const previousRequestId = input.wordId.slice("retry-word-".length);
+    const isOwnRejectedRequest = input.requests.some((request) =>
+      request.id === previousRequestId
+      && request.owner_id === input.ownerId
+      && request.status === "rejected"
+    );
+    return isOwnRejectedRequest ? { status: "allowed" } : { status: "forbidden" };
+  }
+
+  const { data, error } = await findOwnedVocabularyWord(supabase, input.wordId, input.ownerId);
+  if (error) return { status: "error", message: error.message };
+  return data ? { status: "allowed" } : { status: "forbidden" };
+}
+
 export function findCommunityCategory(supabase: SupabaseClient, normalizedName: string) {
   return supabase.from("community_categories")
     .select("id, owner_id, status").eq("normalized_name", normalizedName).maybeSingle();
