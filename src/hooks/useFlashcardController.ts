@@ -8,6 +8,10 @@ import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules
 import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
 
+function isFlashcardDue(dueAt: string | undefined, now: number): boolean {
+  return !dueAt || new Date(dueAt).getTime() <= now;
+}
+
 export function useFlashcardController({
   words,
   isAuthenticated,
@@ -51,7 +55,7 @@ export function useFlashcardController({
       if (reviewMode === "all") return true;
       if (!areSchedulesLoaded) return false;
       const schedule = reviewSchedules.get(word.id);
-      return !schedule || new Date(schedule.due_at).getTime() <= now;
+      return isFlashcardDue(schedule?.due_at, now);
     });
     return shuffleDeck(buildFlashcardDeck(filteredWords), shuffleSeed);
   }, [areSchedulesLoaded, categoryWords, now, reviewMode, reviewSchedules, shuffleSeed, status]);
@@ -59,7 +63,7 @@ export function useFlashcardController({
   const dueCount = useMemo(() => categoryWords.filter((word) => {
     if (word.status !== status) return false;
     const schedule = reviewSchedules.get(word.id);
-    return !schedule || new Date(schedule.due_at).getTime() <= now;
+    return isFlashcardDue(schedule?.due_at, now);
   }).length, [categoryWords, now, reviewSchedules, status]);
 
   const card = deck.length > 0 ? deck[index % deck.length] : undefined;
