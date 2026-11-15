@@ -6,9 +6,8 @@ import { ArrowLeft, Gamepad2, History, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { WordSearchResults } from "@/components/games/WordSearchResults";
 import { WordSearchWordList } from "@/components/games/WordSearchWordList";
-import { WordSearchHistoryList } from "@/components/games/WordSearchHistoryList";
 import { WordSearchSetupForm } from "@/components/games/WordSearchSetupForm";
-import { WordSearchHistoryDetail } from "@/components/games/WordSearchHistoryDetail";
+import { WordSearchHistoryView } from "@/components/games/WordSearchHistoryView";
 import { WordSearchBoardPreview } from "@/components/games/WordSearchBoardPreview";
 import { WordSearchBoard } from "@/components/games/WordSearchBoard";
 import { WordSearchGameHeader } from "@/components/games/WordSearchGameHeader";
@@ -83,32 +82,22 @@ export function WordSearchContent({ userId }: { userId: string | null }) {
         </div>
 
         {tab === "history" ? (
-          <div className="word-search-history-page">
-            {selectedHistory ? (
-              <WordSearchHistoryDetail
-                session={selectedHistory}
-                vocabularyByWord={vocabularyByWord}
-                onBack={() => setSelectedHistory(null)}
-                onPlayAgain={() => { setSelectedHistory(null); setTab("play"); }}
-              />
-            ) : (
-              <Card className="word-search-history-dashboard overflow-hidden p-0">
-                <WordSearchHistoryList
-                  history={history}
-                  historyTotal={historyTotal}
-                  historyPage={historyPage}
-                  historyLoading={historyLoading}
-                  historyError={historyError}
-                  fastestSeconds={fastestHistorySeconds}
-                  averageWordsPerRound={averageWordsPerRound}
-                  onRefresh={() => void loadHistory(true)}
-                  onPlay={() => setTab("play")}
-                  onSelect={setSelectedHistory}
-                  onPageChange={(page) => { setHistoryPage(page); void loadHistory(false, page); }}
-                />
-              </Card>
-            )}
-          </div>
+          <WordSearchHistoryView
+            selectedHistory={selectedHistory}
+            history={history}
+            historyTotal={historyTotal}
+            historyPage={historyPage}
+            historyLoading={historyLoading}
+            historyError={historyError}
+            fastestSeconds={fastestHistorySeconds}
+            averageWordsPerRound={averageWordsPerRound}
+            vocabularyByWord={vocabularyByWord}
+            onBack={() => setSelectedHistory(null)}
+            onPlay={() => { setSelectedHistory(null); setTab("play"); }}
+            onSelect={setSelectedHistory}
+            onRefresh={() => void loadHistory(true)}
+            onPageChange={(page) => { setHistoryPage(page); void loadHistory(false, page); }}
+          />
         ) : (
         <WordSearchSetupForm
           gridSize={gridSize}
