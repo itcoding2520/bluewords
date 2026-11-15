@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin } from "@/lib/assessments/server";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
+import { toVietnamDateKey } from "@/lib/formatDate";
 
 export async function GET() {
   const { client, user } = await getRequestUser();
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (checkDate.getUTCFullYear() !== Number(year) || checkDate.getUTCMonth() + 1 !== Number(month) || checkDate.getUTCDate() !== Number(day)) {
       return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
     }
-    const todayInVietnam = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const todayInVietnam = toVietnamDateKey(new Date());
     if (dueDateOnly < todayInVietnam) return NextResponse.json({ error: "Due date must be today or a future date." }, { status: 400 });
     // Keep the assignment available through the selected date in Vietnam time (UTC+7).
     dueAt = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 16, 59, 59, 999));
