@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
+import { loadPublishedCommunityVocabulary, type CommunityWord } from "@/lib/supabase/community-vocabulary";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
-
-type CommunityWord = {
-  id: string;
-  word: string;
-  meaning: string;
-  ipa: string | null;
-  image_path: string | null;
-  community_categories: { name: string; image_path: string | null; color: string };
-};
 
 export function useCommunityVocabularyController() {
   const supabase = useSupabaseClient();
@@ -22,14 +14,10 @@ export function useCommunityVocabularyController() {
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
-      void supabase.from("community_words")
-        .select("id, word, meaning, ipa, image_path, community_categories!inner(name, status, image_path, color)")
-        .eq("status", "published")
-        .eq("community_categories.status", "published")
-        .order("word")
-        .then(({ data }) => {
+      void loadPublishedCommunityVocabulary(supabase)
+        .then((loadedWords) => {
           if (active) {
-            setWords((data ?? []) as unknown as CommunityWord[]);
+            setWords(loadedWords);
             setLoaded(true);
           }
         });
