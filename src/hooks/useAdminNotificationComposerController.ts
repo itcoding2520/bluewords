@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers } from "@/lib/admin-user-api";
+import { createAdminNotification } from "@/lib/admin-notifications-api";
 
 export type AdminNotificationRecipient = { id: string; email: string | null; nickname: string };
 
@@ -55,13 +56,7 @@ export function useAdminNotificationComposerController(currentUserId: string) {
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/admin/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, message, recipientIds }),
-      });
-      const payload = await response.json() as { sent?: number; error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "Could not send notification.");
+      const payload = await createAdminNotification({ title, message, recipientIds });
       setNotice(`Notification sent to ${payload.sent ?? 0} user(s).`);
       setTitle("");
       setMessage("");
