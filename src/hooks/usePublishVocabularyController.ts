@@ -76,21 +76,21 @@ export function usePublishVocabularyController() {
   }
 
   return {
-    isLoaded,
-    isAuthenticated,
-    selectedCategories: selection.selectedCategories,
-    selectedWordIds: selection.selectedWordIds,
-    setSelectedWordIds: selection.setSelectedWordIds,
-    busy,
-    status,
-    requestsLoaded,
-    communityCategoryRequests,
-    communityWordRequests,
-    communityCategoryNames,
-    requestableCategories,
-    userWords,
-    sendCategoryRequests,
-    sendWordRequests,
-    toggleCategoryRequest: selection.toggleCategoryRequest,
+    account: { isLoaded, isAuthenticated },
+    requests: {
+      requestsLoaded,
+      communityCategoryRequests,
+      communityWordRequests,
+      communityCategoryNames,
+    },
+    selection: {
+      selectedCategories: selection.selectedCategories,
+      selectedWordIds: selection.selectedWordIds,
+      setSelectedWordIds: selection.setSelectedWordIds,
+      toggleCategoryRequest: selection.toggleCategoryRequest,
+    },
+    view: { requestableCategories, userWords },
+    submission: { busy, status },
+    actions: { sendCategoryRequests, sendWordRequests },
   };
 }
