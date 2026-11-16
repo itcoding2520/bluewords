@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, signQuestionImages } from "@/lib/assessments/server";
+import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 
@@ -14,7 +14,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   if (!data.completed_at) {
     const questions = data.questions as AssessmentQuestion[];
     const questionsWithImages = await signQuestionImages(admin, questions);
-    return NextResponse.json({ attempt: { ...data, questions: questionsWithImages.map((question) => ({ ...question, answer: undefined })) } });
+    return NextResponse.json({ attempt: { ...data, questions: questionsWithImages.map(hideQuestionAnswers) } });
   }
   return NextResponse.json({ attempt: data });
 }
