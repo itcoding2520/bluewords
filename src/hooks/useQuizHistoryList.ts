@@ -7,13 +7,15 @@ import { getCachedVocabularyQuizHistory, getVocabularyQuizHistory } from "@/lib/
 
 /** Owns the paginated, cached list of the signed-in user's quiz attempts. */
 export function useQuizHistoryList(userId: string | null) {
-  const [history, setHistory] = useState<VocabularyQuizSessionRow[]>([]);
+  const [historyData, setHistoryData] = useState<{
+    ownerId: string | null;
+    rows: VocabularyQuizSessionRow[];
+    total: number;
+  }>({ ownerId: null, rows: [], total: 0 });
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState(10);
-  const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
-  const [historyOwnerId, setHistoryOwnerId] = useState<string | null>(null);
   const historyRequestId = useRef(0);
 
   useEffect(() => {
@@ -27,19 +29,15 @@ export function useQuizHistoryList(userId: string | null) {
   ) => {
     const requestId = ++historyRequestId.current;
     if (!userId) return;
-    const targetPage = historyOwnerId === userId ? page : 1;
+    const targetPage = historyData.ownerId === userId ? page : 1;
     if (targetPage !== page) setHistoryPage(targetPage);
-    if (historyOwnerId !== userId) {
-      setHistoryOwnerId(userId);
-      setHistory([]);
-      setHistoryTotal(0);
+    if (historyData.ownerId !== userId) {
+      setHistoryData({ ownerId: userId, rows: [], total: 0 });
       setHistoryError("");
     }
     const cachedHistory = getCachedVocabularyQuizHistory(userId, targetPage, pageSize);
     if (cachedHistory && !forceRefresh) {
-      setHistoryOwnerId(userId);
-      setHistory(cachedHistory.rows);
-      setHistoryTotal(cachedHistory.total);
+      setHistoryData({ ownerId: userId, rows: cachedHistory.rows, total: cachedHistory.total });
       setHistoryError("");
       setHistoryLoading(false);
       return;
@@ -50,16 +48,14 @@ export function useQuizHistoryList(userId: string | null) {
     try {
       const result = await getVocabularyQuizHistory({ page: targetPage, pageSize, forceRefresh });
       if (requestId !== historyRequestId.current) return;
-      setHistoryOwnerId(userId);
-      setHistory(result.rows);
-      setHistoryTotal(result.total);
+      setHistoryData({ ownerId: userId, rows: result.rows, total: result.total });
     } catch {
       if (requestId !== historyRequestId.current) return;
       setHistoryError("Could not load quiz history. Please try again.");
     } finally {
       if (requestId === historyRequestId.current) setHistoryLoading(false);
     }
-  }, [historyOwnerId, historyPage, historyPageSize, userId]);
+  }, [historyData.ownerId, historyPage, historyPageSize, userId]);
 
   const refreshHistory = useCallback(() => loadHistory(true), [loadHistory]);
 
@@ -75,14 +71,14 @@ export function useQuizHistoryList(userId: string | null) {
   }, [loadHistory]);
   const clearHistoryError = useCallback(() => setHistoryError(""), []);
 
-  const ownsHistory = userId !== null && historyOwnerId === userId;
+  const ownsHistory = userId !== null && historyData.ownerId === userId;
   return {
-    history: ownsHistory ? history : [],
+    history: ownsHistory ? historyData.rows : [],
     historyPage,
     setHistoryPage,
     historyPageSize,
     setHistoryPageSize,
-    historyTotal: ownsHistory ? historyTotal : 0,
+    historyTotal: ownsHistory ? historyData.total : 0,
     historyLoading: ownsHistory ? historyLoading : false,
     historyError: ownsHistory ? historyError : "",
     clearHistoryError,
