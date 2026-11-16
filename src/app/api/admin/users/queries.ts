@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
+import { getPageItems } from "@/lib/pagination";
 
 function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   return {
@@ -78,8 +79,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
       if (userPage >= data.lastPage || data.users.length === 0) break;
     }
     if (all) return NextResponse.json({ users: matches, total: matches.length });
-    const offset = (page - 1) * pageSize;
-    return NextResponse.json({ users: matches.slice(offset, offset + pageSize), total: matches.length, page, pageSize });
+    return NextResponse.json({ users: getPageItems(matches, page, pageSize), total: matches.length, page, pageSize });
   }
 
   const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: pageSize });
