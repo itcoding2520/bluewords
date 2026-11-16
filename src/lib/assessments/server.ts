@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 export type AssessmentUserResult = { user: User } | { response: NextResponse };
 
 export async function getRequestUser() {
   const client = await createClient();
-  const { data: { user } } = await client.auth.getUser();
-  return user;
+  return getCurrentUserOrNull(client);
 }
 
 export async function requireAssessmentUser(message: string): Promise<AssessmentUserResult> {
