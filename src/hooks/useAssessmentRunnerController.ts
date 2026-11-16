@@ -5,6 +5,7 @@ import type { AssessmentRunnerAttempt } from "@/lib/assessments/types";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useAssessmentRunnerAnswers } from "@/hooks/useAssessmentRunnerAnswers";
 import { fetchAssessmentAttempt, submitAssessmentAttempt } from "@/lib/assessments/api";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 export function useAssessmentRunnerController(attemptId: string) {
   const router = useRouter();
@@ -35,8 +36,7 @@ export function useAssessmentRunnerController(attemptId: string) {
   }, [attemptId, setAnswers, setSeconds]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void load(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void load(); });
   }, [load]);
 
   async function submit() {

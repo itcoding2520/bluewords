@@ -1,6 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { toLocalDateInputValue } from "@/lib/formatDate";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { createAssessmentAssignment, fetchAssessmentAdminSnapshot, type AssessmentAdminUser, type AssessmentAssignment, type AssessmentAttempt } from "@/lib/assessments/admin-api";
 
 export type AssessmentAdminTab = "tests" | "assignments" | "results";
@@ -31,8 +32,7 @@ export function useAdminAssessmentsController() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void refresh(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void refresh(); });
   }, [refresh]);
 
   const normalizedSearch = search.toLowerCase();

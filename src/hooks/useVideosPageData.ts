@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { loadVideosPage } from "@/lib/videos-api";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { toast } from "sonner";
 
 type VideosPage = { videos: VideoRow[]; total: number };
@@ -39,8 +40,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
   }, [page, supabase]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadVideos(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void loadVideos(); });
   }, [loadVideos]);
 
   return { videos, total, isLoading, loadVideos };
