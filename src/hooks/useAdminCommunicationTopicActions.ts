@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useAdminCommunicationRemoveAction } from "@/hooks/useAdminCommunicationRemoveAction";
 import type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationTopic, saveCommunicationTopic } from "@/lib/communication/admin-actions";
@@ -30,8 +30,6 @@ export function useAdminCommunicationTopicActions({
   setBusy,
   refresh,
 }: Props) {
-  const confirm = useConfirmDialog();
-
   async function saveTopic(event: FormEvent) {
     event.preventDefault();
     const payload = {
@@ -71,21 +69,13 @@ export function useAdminCommunicationTopicActions({
     });
   }
 
-  async function removeTopic(topic: CommunicationTopic) {
-    if (!await confirm({
-      title: "Remove situation?",
-      description: `Remove “${topic.title_en}” and all its lessons and content?`,
-      confirmLabel: "Remove",
-    })) return;
-
-    const { error } = await removeCommunicationTopic(supabase, topic.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Situation removed.");
-    await refresh();
-  }
+  const removeTopic = useAdminCommunicationRemoveAction({
+    title: "Remove situation?",
+    describe: (topic: CommunicationTopic) => `Remove “${topic.title_en}” and all its lessons and content?`,
+    remove: (topic: CommunicationTopic) => removeCommunicationTopic(supabase, topic.id),
+    successMessage: "Situation removed.",
+    refresh,
+  });
 
   return { saveTopic, editTopic, removeTopic };
 }

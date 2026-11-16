@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useAdminCommunicationRemoveAction } from "@/hooks/useAdminCommunicationRemoveAction";
 import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationItem, saveCommunicationItem } from "@/lib/communication/admin-actions";
@@ -35,8 +35,6 @@ export function useAdminCommunicationItemActions({
   setBusy,
   refresh,
 }: Props) {
-  const confirm = useConfirmDialog();
-
   async function saveItem(event: FormEvent) {
     event.preventDefault();
     const payload = {
@@ -90,21 +88,13 @@ export function useAdminCommunicationItemActions({
     });
   }
 
-  async function removeItem(item: CommunicationLessonItem) {
-    if (!await confirm({
-      title: "Remove learning item?",
-      description: `Remove “${item.content_en}” from this lesson?`,
-      confirmLabel: "Remove",
-    })) return;
-
-    const { error } = await removeCommunicationItem(supabase, item.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Learning item removed.");
-    await refresh();
-  }
+  const removeItem = useAdminCommunicationRemoveAction({
+    title: "Remove learning item?",
+    describe: (item: CommunicationLessonItem) => `Remove “${item.content_en}” from this lesson?`,
+    remove: (item: CommunicationLessonItem) => removeCommunicationItem(supabase, item.id),
+    successMessage: "Learning item removed.",
+    refresh,
+  });
 
   return { saveItem, editItem, removeItem };
 }

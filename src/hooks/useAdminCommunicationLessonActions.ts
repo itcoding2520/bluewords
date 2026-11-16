@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useAdminCommunicationRemoveAction } from "@/hooks/useAdminCommunicationRemoveAction";
 import type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationLesson, saveCommunicationLesson } from "@/lib/communication/admin-actions";
@@ -36,8 +36,6 @@ export function useAdminCommunicationLessonActions({
   setBusy,
   refresh,
 }: Props) {
-  const confirm = useConfirmDialog();
-
   async function saveLesson(event: FormEvent) {
     event.preventDefault();
     const payload = {
@@ -79,21 +77,13 @@ export function useAdminCommunicationLessonActions({
     });
   }
 
-  async function removeLesson(lesson: CommunicationLesson) {
-    if (!await confirm({
-      title: "Remove lesson?",
-      description: `Remove “${lesson.title_en}” and its items and dialogues?`,
-      confirmLabel: "Remove",
-    })) return;
-
-    const { error } = await removeCommunicationLesson(supabase, lesson.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Lesson removed.");
-    await refresh();
-  }
+  const removeLesson = useAdminCommunicationRemoveAction({
+    title: "Remove lesson?",
+    describe: (lesson: CommunicationLesson) => `Remove “${lesson.title_en}” and its items and dialogues?`,
+    remove: (lesson: CommunicationLesson) => removeCommunicationLesson(supabase, lesson.id),
+    successMessage: "Lesson removed.",
+    refresh,
+  });
 
   return { saveLesson, editLesson, removeLesson };
 }
