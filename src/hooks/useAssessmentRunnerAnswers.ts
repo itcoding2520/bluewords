@@ -1,5 +1,6 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
+import { resolveStateAction } from "@/lib/state-action";
 
 interface AssessmentAnswersState {
   answers: string[];
@@ -10,10 +11,6 @@ const initialState: AssessmentAnswersState = {
   answers: Array(10).fill(""),
   sentenceTiles: Array.from({ length: 10 }, () => []),
 };
-
-function resolveStateAction<T>(current: T, action: SetStateAction<T>): T {
-  return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
-}
 
 export function useAssessmentRunnerAnswers(questions: AssessmentQuestionForLearner[]) {
   const [state, setState] = useState(initialState);

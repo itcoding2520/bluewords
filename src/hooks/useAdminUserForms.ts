@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { AdminUserRecord } from "@/lib/admin-user-api";
+import { resolveStateAction } from "@/lib/state-action";
 
 interface AddUserFormState {
   email: string;
@@ -15,10 +16,6 @@ interface EditUserFormState {
   password: string;
 }
 
-function applyFieldAction<T>(current: T, action: SetStateAction<T>): T {
-  return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
-}
-
 function updateField<TState, TKey extends keyof TState>(
   setState: Dispatch<SetStateAction<TState>>,
   key: TKey,
@@ -26,7 +23,7 @@ function updateField<TState, TKey extends keyof TState>(
 ) {
   setState((current) => ({
     ...current,
-    [key]: applyFieldAction(current[key], action),
+    [key]: resolveStateAction(current[key], action),
   }));
 }
 
