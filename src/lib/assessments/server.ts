@@ -27,6 +27,5 @@ export async function signQuestionImages(admin: NonNullable<ReturnType<typeof cr
 }
 
 export function hideQuestionAnswers(question: AssessmentQuestion) {
-  if (question.type === "vocabulary") return { ...question, answer: undefined };
   return { ...question, answer: undefined };
 }
