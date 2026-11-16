@@ -3,44 +3,44 @@ import { toast } from "sonner";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import { getVocabularyReviewSchedules } from "@/lib/supabase/reviews";
 
+type ScheduleLoadState = "idle" | "loading" | "loaded" | "error";
+
 export function useFlashcardReviewSchedules(isAuthenticated: boolean) {
   const [reviewSchedules, setReviewSchedules] = useState(() => new Map<string, VocabularyReviewScheduleRow>());
-  const [areSchedulesLoaded, setAreSchedulesLoaded] = useState(false);
-  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
-  const [scheduleLoadFailed, setScheduleLoadFailed] = useState(false);
+  const [loadState, setLoadState] = useState<ScheduleLoadState>("idle");
   const scheduleRequestRef = useRef<Promise<void> | null>(null);
 
   async function loadReviewSchedules() {
     if (!isAuthenticated) return;
-    if (areSchedulesLoaded || scheduleRequestRef.current) return scheduleRequestRef.current;
+    if (loadState === "loaded" || scheduleRequestRef.current) return scheduleRequestRef.current;
 
-    setIsLoadingSchedules(true);
-    setScheduleLoadFailed(false);
+    setLoadState("loading");
     const request = getVocabularyReviewSchedules()
       .then((schedules) => {
         setReviewSchedules(new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule])));
-        setAreSchedulesLoaded(true);
+        setLoadState("loaded");
       })
       .catch((error) => {
         console.error("Failed to load review schedules:", error);
-        setScheduleLoadFailed(true);
+        setLoadState("error");
         toast.error("Could not load review schedule.");
       })
       .finally(() => {
         scheduleRequestRef.current = null;
-        setIsLoadingSchedules(false);
       });
 
     scheduleRequestRef.current = request;
     return request;
   }
 
+  const areSchedulesLoaded = loadState === "loaded";
+
   return {
     reviewSchedules,
     setReviewSchedules,
     areSchedulesLoaded,
-    isLoadingSchedules,
-    scheduleLoadFailed,
+    isLoadingSchedules: loadState === "loading",
+    scheduleLoadFailed: loadState === "error",
     loadReviewSchedules,
   };
 }
