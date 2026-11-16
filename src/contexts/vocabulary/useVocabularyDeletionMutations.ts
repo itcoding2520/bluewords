@@ -18,6 +18,16 @@ export function useVocabularyDeletionMutations({
   setWords,
   ownerIdRef,
 }: VocabularyDeletionMutationOptions) {
+  function applyDeletedWords(deletedIds: string[]) {
+    const deletedIdSet = new Set(deletedIds);
+    setWords((current) => current.filter((word) => !deletedIdSet.has(word.id)));
+    invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
+      reviewHistory: true,
+      learningAnalytics: true,
+      reviewSchedule: true,
+    });
+  }
+
   async function deleteWord(id: string): Promise<boolean> {
     if (id.startsWith("community-")) {
       toast.error("Published community words are read-only.");
@@ -28,12 +38,7 @@ export function useVocabularyDeletionMutations({
     try {
       const deletedWordName = await deleteVocabularyWordRecord(id, word);
 
-      setWords((current) => current.filter((item) => item.id !== id));
-      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
-        reviewHistory: true,
-        learningAnalytics: true,
-        reviewSchedule: true,
-      });
+      applyDeletedWords([id]);
 
       toast.success(`"${deletedWordName}" deleted successfully!`);
       return true;
@@ -49,14 +54,7 @@ export function useVocabularyDeletionMutations({
 
     try {
       const deletedIds = await deleteVocabularyWordRecords(uniqueIds);
-      const deletedSet = new Set(deletedIds);
-
-      setWords((current) => current.filter((word) => !deletedSet.has(word.id)));
-      invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
-        reviewHistory: true,
-        learningAnalytics: true,
-        reviewSchedule: true,
-      });
+      applyDeletedWords(deletedIds);
 
       return deletedIds.length;
     } catch (error) {
