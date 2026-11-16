@@ -1,7 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { sendAdminUserAction, type AdminUserRecord } from "@/lib/admin-user-api";
+import { sendAdminUserAction, type AdminUserActionInput, type AdminUserRecord } from "@/lib/admin-user-api";
 
 export type AdminUser = AdminUserRecord;
 
@@ -37,13 +37,13 @@ export function useAdminUsersActions({
     }
   }
 
-  async function performUserAction(action: string, values: Record<string, string>) {
-    setBusy(values.userId ?? action);
+  async function performUserAction(input: AdminUserActionInput) {
+    setBusy("userId" in input ? input.userId : input.action);
     setError("");
     setNotice("");
     try {
-      const payload = await sendAdminUserAction(action, values);
-      showMutationResult(payload, action === "delete" ? "User removed." : action === "create" ? "User created." : "User saved.");
+      const payload = await sendAdminUserAction(input);
+      showMutationResult(payload, input.action === "delete" ? "User removed." : input.action === "create" ? "User created." : "User saved.");
       return true;
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not complete this user action."));
@@ -55,7 +55,7 @@ export function useAdminUsersActions({
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (await performUserAction("create", { email: email.trim(), nickname: nickname.trim(), password })) {
+    if (await performUserAction({ action: "create", email: email.trim(), nickname: nickname.trim(), password })) {
       setEmail("");
       setNickname("");
       setPassword("");
@@ -76,13 +76,14 @@ export function useAdminUsersActions({
   async function editUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingUser) return;
-    const values: Record<string, string> = {
+    const values: Extract<AdminUserActionInput, { action: "update" }> = {
+      action: "update",
       userId: editingUser.id,
       email: editEmail.trim(),
       nickname: editNickname.trim(),
     };
     if (editPassword) values.password = editPassword;
-    if (await performUserAction("update", values)) {
+    if (await performUserAction(values)) {
       setEditingUser(null);
       setEditPassword("");
     }
@@ -91,7 +92,7 @@ export function useAdminUsersActions({
   async function removeUser(user: AdminUser) {
     const confirmed = await confirmDialog({ title: "Remove user?", description: `Remove ${user.email ?? user.id}? This permanently deletes their account, vocabulary, and history.`, confirmLabel: "Remove" });
     if (!confirmed) return;
-    await performUserAction("delete", { userId: user.id });
+    await performUserAction({ action: "delete", userId: user.id });
   }
 
   return {

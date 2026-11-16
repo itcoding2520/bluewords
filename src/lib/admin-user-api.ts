@@ -22,6 +22,11 @@ interface AdminUserActionResponse {
   error?: string;
 }
 
+export type AdminUserActionInput =
+  | { action: "create"; email: string; nickname: string; password: string }
+  | { action: "update"; userId: string; email: string; nickname: string; password?: string }
+  | { action: "delete"; userId: string };
+
 export async function fetchAdminUsers(
   query: URLSearchParams,
   fallbackError = "Could not load users."
@@ -33,12 +38,11 @@ export async function fetchAdminUsers(
 }
 
 export async function sendAdminUserAction(
-  action: string,
-  values: Record<string, string>
+  input: AdminUserActionInput,
 ): Promise<AdminUserActionResponse> {
   return postJson<AdminUserActionResponse>(
     "/api/admin/users",
-    { action, ...values },
+    input,
     "Could not complete this user action.",
   );
 }
