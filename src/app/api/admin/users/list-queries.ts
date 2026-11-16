@@ -3,10 +3,7 @@ import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
 import { getPageItems } from "@/lib/pagination";
-
-function getAdminUserNickname(user: AuthUser, profileNickname?: string | null) {
-  return profileNickname ?? (typeof user.user_metadata.nickname === "string" ? user.user_metadata.nickname : "");
-}
+import { getAdminUserNickname } from "@/lib/admin-user-mapping";
 
 function mapAdminUser(user: AuthUser, profileNicknames?: ReadonlyMap<string, string>) {
   return {
