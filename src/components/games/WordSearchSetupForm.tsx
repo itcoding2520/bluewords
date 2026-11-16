@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, Gamepad2, Grid3X3 } from "lucide-react";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { useVocabularyCategoryOptionImageUrl } from "@/hooks/useVocabularyCategoryOptionImageUrl";
+import { CategoryOptionChip } from "@/components/vocabulary/CategoryOptionChip";
 import { DIFFICULTIES, GRID_SIZES, WORD_TARGETS, type Difficulty, type GridSize, type WordSearchCategoryOption } from "@/lib/word-search-config";
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 export type { WordSearchCategoryOption } from "@/lib/word-search-config";
@@ -21,13 +21,15 @@ function CategoryChip({
   selected: boolean;
   onClick: () => void;
 }) {
-  const imageUrl = useVocabularyCategoryOptionImageUrl(option.imagePath);
-
   return (
-    <button type="button" aria-pressed={selected} onClick={onClick} title={option.name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
-      {option.name === "All categories" ? <Grid3X3 size={21} className="shrink-0 text-violet-600" aria-hidden="true" /> : imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${CATEGORY_DOT_STYLES[option.color]}`} aria-hidden="true" />}
-      <span className="min-w-0 truncate">{option.name}</span>
-    </button>
+    <CategoryOptionChip
+      name={option.name}
+      imagePath={option.imagePath}
+      dotClassName={CATEGORY_DOT_STYLES[option.color]}
+      selected={selected}
+      onClick={onClick}
+      fallbackIcon={option.name === "All categories" ? <Grid3X3 size={21} className="shrink-0 text-violet-600" aria-hidden="true" /> : undefined}
+    />
   );
 }
 
