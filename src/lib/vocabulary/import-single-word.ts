@@ -6,7 +6,7 @@ import {
   uploadVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
 import { createVocabularyWordRecord } from "@/lib/vocabulary/word-mutation-workflows";
-import { normalizeVocabularyImageKey } from "@/lib/vocabulary/bulk-import-existing-images";
+import { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
 
 export type SingleVocabularyImportResult =
   | { status: "duplicate" }

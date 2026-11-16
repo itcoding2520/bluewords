@@ -17,11 +17,16 @@ export async function importExistingVocabularyImages(
   existingWords: VocabularyWord[]
 ): Promise<ExistingVocabularyImageImportResult> {
   const importedWordKeys = new Set(importedWords.map((word) => normalizeVocabularyImageKey(word.word)));
+  const existingWordsWithoutImages = new Map<string, VocabularyWord>();
+  for (const word of existingWords) {
+    const key = normalizeVocabularyImageKey(word.word);
+    if (!word.imagePath && !existingWordsWithoutImages.has(key)) {
+      existingWordsWithoutImages.set(key, word);
+    }
+  }
   const existingImageCandidates = [...(imageFilesByWord ?? new Map<string, File>())].flatMap(([key, file]) => {
     if (importedWordKeys.has(key)) return [];
-    const existingWord = existingWords.find((word) =>
-      normalizeVocabularyImageKey(word.word) === key && !word.imagePath
-    );
+    const existingWord = existingWordsWithoutImages.get(key);
     return existingWord ? [{ word: existingWord, file }] : [];
   });
   const imageUpdates: ExistingVocabularyImageImportResult["imageUpdates"] = [];
