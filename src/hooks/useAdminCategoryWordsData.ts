@@ -13,7 +13,7 @@ export function useAdminCategoryWordsData(
   supabase: SupabaseClient,
   activeTab: CategoryTab,
   selectedCategory: SelectedCategory | null,
-  communityCategories: CommunityCategory[],
+  publishedCategoriesByName: Map<string, CommunityCategory>,
   setError: (error: string) => void
 ) {
   const [words, setWords] = useState<CommunityWord[]>([]);
@@ -23,8 +23,7 @@ export function useAdminCategoryWordsData(
   useEffect(() => {
     if (!selectedCategory) return;
     const sharedCategory = activeTab === "default"
-      ? communityCategories.find((category) => category.status === getCommunityContentStatus("published")
-        && normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(selectedCategory.name))
+      ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
       : "owner_id" in selectedCategory ? selectedCategory : null;
     if (!sharedCategory) {
       return scheduleDeferredTask(() => {
@@ -60,7 +59,7 @@ export function useAdminCategoryWordsData(
       cancelled = true;
       cancelScheduledLoad();
     };
-  }, [activeTab, communityCategories, selectedCategory, setError, supabase]);
+  }, [activeTab, publishedCategoriesByName, selectedCategory, setError, supabase]);
 
   return { words, setWords, wordEmails, wordsLoading };
 }

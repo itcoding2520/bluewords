@@ -62,7 +62,7 @@ export function useAdminCategoryManagementController() {
     setWords,
     wordEmails,
     wordsLoading,
-  } = useAdminCategoryWordsData(supabase, activeTab, selectedCategory, communityCategories, setError);
+  } = useAdminCategoryWordsData(supabase, activeTab, selectedCategory, publishedCategoriesByName, setError);
   const {
     editSharedCategory,
     removeSharedCategory,
