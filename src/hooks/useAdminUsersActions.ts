@@ -1,27 +1,10 @@
-import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { AdminUserActionInput, AdminUserRecord } from "@/lib/admin-user-api";
 import { useAdminUserMutation } from "@/hooks/useAdminUserMutation";
+import { useAdminUserForms } from "@/hooks/useAdminUserForms";
 
 export type AdminUser = AdminUserRecord;
-
-interface AddUserFormState {
-  email: string;
-  nickname: string;
-  password: string;
-  isOpen: boolean;
-}
-
-interface EditUserFormState {
-  user: AdminUser | null;
-  email: string;
-  nickname: string;
-  password: string;
-}
-
-function applyFieldAction<T>(current: T, action: SetStateAction<T>): T {
-  return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
-}
 
 export function useAdminUsersActions({
   setPage,
@@ -34,18 +17,8 @@ export function useAdminUsersActions({
 }) {
   const confirmDialog = useConfirmDialog();
   const { busy, notice, setNotice, performUserAction } = useAdminUserMutation({ setError, refreshUsers });
-  const [addForm, setAddForm] = useState<AddUserFormState>({
-    email: "",
-    nickname: "",
-    password: "",
-    isOpen: false,
-  });
-  const [editForm, setEditForm] = useState<EditUserFormState>({
-    user: null,
-    email: "",
-    nickname: "",
-    password: "",
-  });
+  const forms = useAdminUserForms();
+  const { addForm, setAddForm, editForm, setEditForm } = forms;
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,46 +64,22 @@ export function useAdminUsersActions({
     busy,
     notice,
     setNotice,
-    email: addForm.email,
-    setEmail: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
-    nickname: addForm.nickname,
-    setNickname: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
-    password: addForm.password,
-    setPassword: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
-    showAddForm: addForm.isOpen,
-    setShowAddForm: (action: SetStateAction<boolean>) => setAddForm((current) => ({
-      ...current,
-      isOpen: applyFieldAction(current.isOpen, action),
-    })),
-    editingUser: editForm.user,
-    setEditingUser: (action: SetStateAction<AdminUser | null>) => setEditForm((current) => ({
-      ...current,
-      user: applyFieldAction(current.user, action),
-    })),
-    editEmail: editForm.email,
-    setEditEmail: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
-    editNickname: editForm.nickname,
-    setEditNickname: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
-    editPassword: editForm.password,
-    setEditPassword: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
+    email: forms.email,
+    setEmail: forms.setEmail,
+    nickname: forms.nickname,
+    setNickname: forms.setNickname,
+    password: forms.password,
+    setPassword: forms.setPassword,
+    showAddForm: forms.showAddForm,
+    setShowAddForm: forms.setShowAddForm,
+    editingUser: forms.editingUser,
+    setEditingUser: forms.setEditingUser,
+    editEmail: forms.editEmail,
+    setEditEmail: forms.setEditEmail,
+    editNickname: forms.editNickname,
+    setEditNickname: forms.setEditNickname,
+    editPassword: forms.editPassword,
+    setEditPassword: forms.setEditPassword,
     addUser, editUser, openEditUser, removeUser,
   };
 }
