@@ -1,29 +1,39 @@
 import { useState } from "react";
 import type { VideoRow } from "@/lib/videos";
 
+interface VideosAdminFormState {
+  editingId: string | null;
+  title: string;
+  youtubeUrl: string;
+}
+
+const emptyForm: VideosAdminFormState = { editingId: null, title: "", youtubeUrl: "" };
+
 export function useVideosAdminForm() {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [form, setForm] = useState<VideosAdminFormState>(emptyForm);
+
+  function setTitle(title: string) {
+    setForm((current) => ({ ...current, title }));
+  }
+
+  function setYoutubeUrl(youtubeUrl: string) {
+    setForm((current) => ({ ...current, youtubeUrl }));
+  }
 
   function resetForm() {
-    setEditingId(null);
-    setTitle("");
-    setYoutubeUrl("");
+    setForm(emptyForm);
   }
 
   function startEditing(video: VideoRow) {
-    setEditingId(video.id);
-    setTitle(video.title);
-    setYoutubeUrl(video.youtube_url);
+    setForm({ editingId: video.id, title: video.title, youtubeUrl: video.youtube_url });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return {
-    editingId,
-    title,
+    editingId: form.editingId,
+    title: form.title,
     setTitle,
-    youtubeUrl,
+    youtubeUrl: form.youtubeUrl,
     setYoutubeUrl,
     resetForm,
     startEditing,
