@@ -14,7 +14,7 @@ import { VocabularyWordIdentity } from "./VocabularyWordIdentity";
 
 interface VocabularyRowProps {
   item: VocabularyWord;
-  categories: VocabularyCategoryRow[];
+  categoryColor?: VocabularyCategoryRow["color"];
   selected: boolean;
   onToggleSelected: (id: string) => void;
   onToggleMastered: (id: string, currentStatus: VocabularyWord["status"]) => Promise<boolean>;
@@ -24,16 +24,13 @@ interface VocabularyRowProps {
 
 export function VocabularyRow({
   item,
-  categories,
+  categoryColor,
   selected,
   onToggleSelected,
   onToggleMastered,
   onEdit,
   onDelete,
 }: VocabularyRowProps) {
-  const categoryColor = categories.find(
-    (category) => category.name === item.category
-  )?.color;
   return (
     <div className="vocabulary-word-row border-b border-slate-100 px-4 py-2 last:border-none sm:px-6 sm:py-2.5">
       <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 lg:grid-cols-[24px_minmax(0,1.2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_36px] lg:items-center lg:gap-5">
