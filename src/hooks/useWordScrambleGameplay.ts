@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   createScrambledTiles,
   type LetterTile,
@@ -20,7 +20,7 @@ export function useWordScrambleGameplay() {
   const [isCorrect, setIsCorrect] = useState(false);
 
   const currentWord = round[questionIndex];
-  const usedTileIds = new Set(answerTileIds);
+  const usedTileIds = useMemo(() => new Set(answerTileIds), [answerTileIds]);
 
   function startRound(nextRound: ScrambleWord[]) {
     setRound(nextRound);

@@ -58,7 +58,10 @@ export function useWordMatchController(input: {
     setPhase("results");
   }
 
-  const pairById = new Map(gameplay.pairs.map((pair) => [pair.id, pair]));
+  const pairById = useMemo(
+    () => new Map(gameplay.pairs.map((pair) => [pair.id, pair])),
+    [gameplay.pairs],
+  );
   const matchedLabel = `${gameplay.matchedIds.size} / ${gameplay.pairs.length} pairs matched`;
   const progressPercent = gameplay.pairs.length ? (gameplay.matchedIds.size / gameplay.pairs.length) * 100 : 0;
 
