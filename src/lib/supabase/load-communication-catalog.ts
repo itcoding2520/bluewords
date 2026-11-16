@@ -13,10 +13,7 @@ function localDayStart() {
   return day.toISOString();
 }
 
-export async function loadCommunicationCatalogSnapshot(
-  supabase: SupabaseClient,
-  userId: string | null,
-): Promise<SituationalEnglishCatalogSnapshot> {
+async function loadPublishedCatalog(supabase: SupabaseClient) {
   const [topicResult, lessonResult] = await Promise.all([
     supabase.from("communication_topics").select("id,slug,title_en,title_vi,description_en,description_vi,sort_order").eq("status", "published").order("sort_order"),
     supabase.from("communication_lessons").select("id,topic_id,title_en,title_vi,difficulty,sort_order,communication_topics!inner(status)").eq("status", "published").eq("communication_topics.status", "published").order("sort_order"),
@@ -24,19 +21,28 @@ export async function loadCommunicationCatalogSnapshot(
   if (topicResult.error) throw topicResult.error;
   if (lessonResult.error) throw lessonResult.error;
 
-  const data: SituationalEnglishCatalogSnapshot = {
+  return {
     topics: (topicResult.data ?? []) as Topic[],
     lessons: (lessonResult.data ?? []) as Lesson[],
+  };
+}
+
+async function loadLearnerSnapshot(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Pick<SituationalEnglishCatalogSnapshot,
+  "progress" | "lessonAccuracy" | "goal" | "dailyGoal" | "todayCompleted" | "dueItems"
+>> {
+  const data: Pick<SituationalEnglishCatalogSnapshot,
+    "progress" | "lessonAccuracy" | "goal" | "dailyGoal" | "todayCompleted" | "dueItems"
+  > = {
     progress: [],
     lessonAccuracy: {},
     goal: null,
     dailyGoal: 1,
     todayCompleted: 0,
     dueItems: [],
-    authenticated: Boolean(userId),
   };
-  if (!userId) return data;
-
   const [progressResult, preferenceResult, dailyGoalResult, completedResult, dueResult, accuracyResult] = await Promise.all([
     supabase.from("communication_lesson_progress").select("lesson_id,status,completed_items").eq("user_id", userId),
     supabase.from("communication_learning_preferences").select("learning_goal").eq("user_id", userId).maybeSingle(),
@@ -64,4 +70,24 @@ export async function loadCommunicationCatalogSnapshot(
   if (dueLessons.error) throw dueLessons.error;
   data.dueItems = mapDueCommunicationReviews(itemResult.data ?? [], dueLessons.data ?? [], dueResult.data);
   return data;
+}
+
+export async function loadCommunicationCatalogSnapshot(
+  supabase: SupabaseClient,
+  userId: string | null,
+): Promise<SituationalEnglishCatalogSnapshot> {
+  const catalog = await loadPublishedCatalog(supabase);
+
+  const data: SituationalEnglishCatalogSnapshot = {
+    ...catalog,
+    progress: [],
+    lessonAccuracy: {},
+    goal: null,
+    dailyGoal: 1,
+    todayCompleted: 0,
+    dueItems: [],
+    authenticated: Boolean(userId),
+  };
+  if (!userId) return data;
+  return { ...data, ...await loadLearnerSnapshot(supabase, userId) };
 }
