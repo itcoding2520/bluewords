@@ -1,4 +1,4 @@
-import { shuffle } from "@/lib/random";
+import { shuffle, shuffleAndTake } from "@/lib/random";
 import type { DifficultyLevel } from "@/types/difficulty";
 
 export type LessonDifficulty = DifficultyLevel;
@@ -37,7 +37,7 @@ function getSentenceDrillVocabulary(items: SentenceDrillItem[]): string[] {
 }
 
 export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
-  return shuffle([...new Set([correctAnswer, ...shuffle(distractors).slice(0, 3)])]);
+  return shuffle([...new Set([correctAnswer, ...shuffleAndTake(distractors, 3)])]);
 }
 
 export function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: LessonDifficulty) {
@@ -85,7 +85,8 @@ export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): S
     if (answer) {
       const pattern = exactPhrase ? new RegExp(escapeRegExp(answer), "i") : new RegExp(`\\b${escapeRegExp(answer)}\\b`, "i");
       const gapSentence = sentence.replace(pattern, "________");
-      const choices = shuffle([...new Set([answer, ...shuffle(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
+      const distractors = vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase());
+      const choices = createAnswerChoices(answer, distractors);
       if (choices.length >= 2) drills.push({ id: `${item.id}:complete`, item, kind: "complete", sentence, clue, answer, gapSentence, choices });
     }
   }

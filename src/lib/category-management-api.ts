@@ -2,11 +2,12 @@ import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 
 export async function checkCurrentUserIsAdmin(supabase: SupabaseClient): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUserOrNull(supabase);
   if (!user) return false;
   return isAdminUser(supabase, user.id);
 }

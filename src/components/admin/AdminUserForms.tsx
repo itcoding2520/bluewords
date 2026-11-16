@@ -3,7 +3,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import type { AdminUser } from "@/hooks/useAdminUsersActions";
+import type { AdminUserRecord } from "@/lib/admin-user-api";
 
 export function AdminAddUserForm({
   email,
@@ -48,8 +48,8 @@ export function AdminEditUserDialog({
   busy,
   onSubmit,
 }: {
-  editingUser: AdminUser | null;
-  onEditingUserChange: (user: AdminUser | null) => void;
+  editingUser: AdminUserRecord | null;
+  onEditingUserChange: (user: AdminUserRecord | null) => void;
   email: string;
   onEmailChange: (value: string) => void;
   nickname: string;

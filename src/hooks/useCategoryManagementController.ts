@@ -28,7 +28,6 @@ export function useCategoryManagementController() {
   const [filterBy, setFilterBy] = useState<CategoryManagementFilter>("all");
 
   const {
-    isDefaultCategory,
     managedCategories,
     pageCount,
     currentPage,
@@ -90,7 +89,6 @@ export function useCategoryManagementController() {
       setSortBy,
       filterBy,
       setFilterBy,
-      isDefaultCategory,
     },
     form: formState,
     actions: { ...actions, startEdit: form.startEdit },

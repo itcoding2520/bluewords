@@ -30,8 +30,7 @@ export function useWordSearchSessionSave({
   category: string;
   onSaved: (durationSeconds: number) => void;
 }) {
-  const [saveState, setSaveState] = useState<GameSaveState>("idle");
-  const [saveError, setSaveError] = useState("");
+  const [saveStatus, setSaveStatus] = useState<{ state: GameSaveState; error: string }>({ state: "idle", error: "" });
   const [saveRetryCount, setSaveRetryCount] = useState(0);
   const saveStartedRef = useRef<number | null>(null);
   const onSavedRef = useRef(onSaved);
@@ -42,8 +41,7 @@ export function useWordSearchSessionSave({
 
   const reset = useCallback(() => {
     saveStartedRef.current = null;
-    setSaveState("idle");
-    setSaveError("");
+    setSaveStatus({ state: "idle", error: "" });
   }, []);
 
   const retry = useCallback(() => {
@@ -57,8 +55,7 @@ export function useWordSearchSessionSave({
     const completedAt = Date.now();
     const durationSeconds = getDurationSeconds(startedAt, completedAt);
     onSavedRef.current(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
+    setSaveStatus({ state: "saving", error: "" });
 
     void saveWordSearchSession({
       gridSize,
@@ -69,13 +66,12 @@ export function useWordSearchSessionSave({
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
     }).then(() => {
-      setSaveState("saved");
+      setSaveStatus({ state: "saved", error: "" });
     }).catch((error: unknown) => {
       saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(getErrorMessage(error, "Could not save this game attempt."));
+      setSaveStatus({ state: "error", error: getErrorMessage(error, "Could not save this game attempt.") });
     });
   }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt, userId]);
 
-  return { saveState, saveError, reset, retry };
+  return { saveState: saveStatus.state, saveError: saveStatus.error, reset, retry };
 }

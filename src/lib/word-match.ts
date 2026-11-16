@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
+import { shuffle } from "@/lib/random";
 
 export type MatchPair = {
   id: string;
@@ -12,6 +13,13 @@ export type MatchPair = {
 };
 
 export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
+
+export function createWordMatchCards(pairs: MatchPair[]): MatchCardData[] {
+  return shuffle(pairs.flatMap((pair) => [
+    { id: `${pair.id}:word`, pairId: pair.id, kind: "word" as const },
+    { id: `${pair.id}:match`, pairId: pair.id, kind: "match" as const },
+  ]));
+}
 
 export function buildWordMatchPairs(words: VocabularyWord[], category: string): MatchPair[] {
   const usedWords = new Set<string>();

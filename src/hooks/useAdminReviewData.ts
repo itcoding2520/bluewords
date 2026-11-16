@@ -4,18 +4,27 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminReviewSnapshot } from "@/lib/admin-review-api";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
-import type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
+import { useStateField } from "@/hooks/useStateField";
 export type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
+
+type AdminReviewSnapshot = Awaited<ReturnType<typeof loadAdminReviewSnapshot>>;
 
 export function useAdminReviewData() {
   const supabase = useSupabaseClient();
-  const [categories, setCategories] = useState<AdminReviewSubmission[]>([]);
-  const [words, setWords] = useState<AdminReviewSubmission[]>([]);
+  const [snapshot, setSnapshot] = useState<AdminReviewSnapshot>({
+    categories: [],
+    words: [],
+    publishedCategories: [],
+    publishedWords: [],
+    ownerEmails: {},
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [publishedCategories, setPublishedCategories] = useState<PublishedCategory[]>([]);
-  const [publishedWords, setPublishedWords] = useState<PublishedWord[]>([]);
-  const [ownerEmails, setOwnerEmails] = useState<Record<string, string>>({});
+  const { categories, words, publishedCategories, publishedWords, ownerEmails } = snapshot;
+  const setCategories = useStateField(setSnapshot, "categories");
+  const setWords = useStateField(setSnapshot, "words");
+  const setPublishedCategories = useStateField(setSnapshot, "publishedCategories");
+  const setPublishedWords = useStateField(setSnapshot, "publishedWords");
 
   const refresh = useCallback(async (force = true) => {
     setLoading(true);
@@ -27,11 +36,7 @@ export function useAdminReviewData() {
         () => loadAdminReviewSnapshot(supabase),
         { force }
       );
-      setCategories(result.categories);
-      setWords(result.words);
-      setPublishedCategories(result.publishedCategories);
-      setPublishedWords(result.publishedWords);
-      setOwnerEmails(result.ownerEmails);
+      setSnapshot(result);
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not load requests."));
     } finally {

@@ -30,20 +30,21 @@ export function previewVocabularyCsvImport(
   }
 
   const header = parsed.records[0].fields.map(normalizeVocabularyKey);
-  const missingHeaders = REQUIRED_CSV_HEADERS.filter(
-    (name) => !header.includes(name)
-  );
-  const duplicateHeaders = header.filter(
-    (name, index) => header.indexOf(name) !== index
-  );
+  const columnIndex = new Map<string, number>();
+  const duplicateHeaders = new Set<string>();
+  for (const [index, name] of header.entries()) {
+    if (columnIndex.has(name)) duplicateHeaders.add(name);
+    else columnIndex.set(name, index);
+  }
+  const missingHeaders = REQUIRED_CSV_HEADERS.filter((name) => !columnIndex.has(name));
 
-  if (missingHeaders.length || duplicateHeaders.length) {
+  if (missingHeaders.length || duplicateHeaders.size) {
     const problems = [
       ...(missingHeaders.length
         ? [`Missing columns: ${missingHeaders.join(", ")}.`]
         : []),
-      ...(duplicateHeaders.length
-        ? [`Duplicate columns: ${[...new Set(duplicateHeaders)].join(", ")}.`]
+      ...(duplicateHeaders.size
+        ? [`Duplicate columns: ${[...duplicateHeaders].join(", ")}.`]
         : []),
     ];
 
@@ -59,11 +60,10 @@ export function previewVocabularyCsvImport(
     };
   }
 
-  const columnIndex = new Map(header.map((name, index) => [name, index]));
-  const categoriesByName = new Map(
-    categoryNames.map((name) => [normalizeVocabularyKey(name), name])
-  );
-  const existing = new Set(existingWords.map(normalizeVocabularyKey));
+  const categoriesByName = new Map<string, string>();
+  for (const name of categoryNames) categoriesByName.set(normalizeVocabularyKey(name), name);
+  const existing = new Set<string>();
+  for (const word of existingWords) existing.add(normalizeVocabularyKey(word));
   const groups = new Map<string, VocabularyCsvWordGroup>();
   const invalidGroups = new Set<string>();
   const duplicateWords = new Set<string>();

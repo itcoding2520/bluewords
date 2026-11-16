@@ -3,6 +3,7 @@ import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { shuffle } from "@/lib/random";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { firstRelation } from "@/lib/supabase/first-relation";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export async function startAssignedAssessment(admin: AdminClient, userId: string, recipientId: string) {
   const { data: recipient, error } = await admin.from("assessment_recipients")
@@ -37,7 +38,7 @@ export async function startAssignedAssessment(admin: AdminClient, userId: string
 
   const attemptNumber = (latest?.attempt_number ?? 0) + 1;
   const questions = assessment?.questions as AssessmentQuestion[] | undefined;
-  if (!questions || questions.length !== 10) return { status: "unavailable" as const };
+  if (!questions || questions.length !== ASSESSMENT_QUESTION_COUNT) return { status: "unavailable" as const };
   const randomizedQuestions = shuffle(questions.map((question) => question.type === "vocabulary"
     ? { ...question, choices: shuffle(question.choices) }
     : { ...question, tiles: shuffle(question.tiles) }));

@@ -2,27 +2,37 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import { getVocabularyReviewSchedules } from "@/lib/supabase/reviews";
+import { useStateField } from "@/hooks/useStateField";
 
 type ScheduleLoadState = "idle" | "loading" | "loaded" | "error";
+interface ReviewScheduleState {
+  schedules: Map<string, VocabularyReviewScheduleRow>;
+  loadState: ScheduleLoadState;
+}
 
 export function useFlashcardReviewSchedules(isAuthenticated: boolean) {
-  const [reviewSchedules, setReviewSchedules] = useState(() => new Map<string, VocabularyReviewScheduleRow>());
-  const [loadState, setLoadState] = useState<ScheduleLoadState>("idle");
+  const [state, setState] = useState<ReviewScheduleState>(() => ({
+    schedules: new Map<string, VocabularyReviewScheduleRow>(),
+    loadState: "idle",
+  }));
   const scheduleRequestRef = useRef<Promise<void> | null>(null);
+  const setReviewSchedules = useStateField(setState, "schedules");
 
   async function loadReviewSchedules() {
     if (!isAuthenticated) return;
-    if (loadState === "loaded" || scheduleRequestRef.current) return scheduleRequestRef.current;
+    if (state.loadState === "loaded" || scheduleRequestRef.current) return scheduleRequestRef.current;
 
-    setLoadState("loading");
+    setState((current) => ({ ...current, loadState: "loading" }));
     const request = getVocabularyReviewSchedules()
       .then((schedules) => {
-        setReviewSchedules(new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule])));
-        setLoadState("loaded");
+        setState({
+          schedules: new Map(schedules.map((schedule) => [schedule.vocabulary_word_id, schedule])),
+          loadState: "loaded",
+        });
       })
       .catch((error) => {
         console.error("Failed to load review schedules:", error);
-        setLoadState("error");
+        setState((current) => ({ ...current, loadState: "error" }));
         toast.error("Could not load review schedule.");
       })
       .finally(() => {
@@ -33,14 +43,14 @@ export function useFlashcardReviewSchedules(isAuthenticated: boolean) {
     return request;
   }
 
-  const areSchedulesLoaded = loadState === "loaded";
+  const areSchedulesLoaded = state.loadState === "loaded";
 
   return {
-    reviewSchedules,
+    reviewSchedules: state.schedules,
     setReviewSchedules,
     areSchedulesLoaded,
-    isLoadingSchedules: loadState === "loading",
-    scheduleLoadFailed: loadState === "error",
+    isLoadingSchedules: state.loadState === "loading",
+    scheduleLoadFailed: state.loadState === "error",
     loadReviewSchedules,
   };
 }

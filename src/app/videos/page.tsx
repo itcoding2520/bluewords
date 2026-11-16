@@ -2,10 +2,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VideosContent } from "@/components/videos/VideosContent";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 export default async function VideosPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUserOrNull(supabase);
 
   if (!user) {
     return (

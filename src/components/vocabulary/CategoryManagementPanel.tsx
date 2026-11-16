@@ -15,7 +15,7 @@ export function CategoryManagementPanel() {
       setPage, pageSize, setPageSize, pageCount, currentPage,
       firstVisibleCategory, lastVisibleCategory,
     },
-    filters: { sortBy, setSortBy, filterBy, setFilterBy, isDefaultCategory },
+    filters: { sortBy, setSortBy, filterBy, setFilterBy },
     form: {
       name, setName, color, setColor, setNewImage, editing, setEditing,
       editName, setEditName, editColor, setEditColor, setEditImage,
@@ -60,7 +60,6 @@ export function CategoryManagementPanel() {
         pageSize={pageSize}
         onPageChange={(update) => setPage(update)}
         onPageSizeChange={(value) => { setPageSize(value); setPage(1); }}
-        isDefaultCategory={isDefaultCategory}
         onStartEdit={startEdit}
         onUpdate={(event) => void handleUpdate(event)}
         onDelete={(category) => void handleDelete(category)}

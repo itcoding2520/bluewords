@@ -1,6 +1,7 @@
 import { CalendarDays, RefreshCw } from "lucide-react";
 import { formatLocalDate } from "@/lib/formatDate";
 import type { AssessmentAssignment } from "@/lib/assessments/admin-api";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function AdminAssessmentRecentAssignments({
   assignments,
@@ -31,7 +32,7 @@ export function AdminAssessmentRecentAssignments({
               <article key={item.id}>
                 <div>
                   <strong>{item.title}</strong>
-                  <span>{item.difficulty} · 10 questions · {done}/{recipientCount} complete</span>
+                  <span>{item.difficulty} · {ASSESSMENT_QUESTION_COUNT} questions · {done}/{recipientCount} complete</span>
                   <small>{item.due_at ? `Due ${formatLocalDate(item.due_at)}` : "No due date"}</small>
                 </div>
                 <span className="assessment-progress">{completionPercent}%</span>

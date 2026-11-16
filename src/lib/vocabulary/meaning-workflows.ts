@@ -13,7 +13,8 @@ export async function saveVocabularyMeanings(
   meanings: VocabularyMeaning[],
 ): Promise<VocabularyMeaning[]> {
   const existingMeanings = await getVocabularyMeanings(vocabularyWordId);
-  const existingById = new Map(existingMeanings.map((meaning) => [meaning.id, meaning]));
+  const existingById = new Map<string, VocabularyMeaningRow>();
+  for (const meaning of existingMeanings) existingById.set(meaning.id, meaning);
   const retainedIds = new Set<string>();
   const savedMeanings: VocabularyMeaningRow[] = [];
 

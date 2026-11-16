@@ -28,14 +28,14 @@ export interface LatestReviewRpcRow {
 export async function mapLatestReviewRows(
   rows: LatestReviewRpcRow[]
 ): Promise<VocabularyReviewWithWord[]> {
-  let imagePathByWordId = new Map<string, string | null>();
-  const wordIds = [...new Set(rows.map((review) => review.vocabulary_word_id))];
+  const wordIds = new Set<string>();
+  for (const review of rows) wordIds.add(review.vocabulary_word_id);
+  const imagePathByWordId = new Map<string, string | null>();
   try {
-    const imageRows = [];
-    for (const ids of chunkArray(wordIds, 100)) {
-      imageRows.push(...await getVocabularyWordImagePaths(ids));
+    for (const ids of chunkArray([...wordIds], 100)) {
+      const imageRows = await getVocabularyWordImagePaths(ids);
+      for (const row of imageRows) imagePathByWordId.set(row.id, row.image_path);
     }
-    imagePathByWordId = new Map(imageRows.map((row) => [row.id, row.image_path]));
   } catch {
     // Keep review history available if image metadata cannot be loaded.
   }

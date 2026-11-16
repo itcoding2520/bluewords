@@ -15,6 +15,14 @@ import {
 } from "@/lib/games/leaderboard-filters";
 
 const selectClassName = "min-h-10 rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-12 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+const leaderboardGames: Array<{ value: LeaderboardGame; label: string }> = [
+  { value: "quiz", label: "Vocabulary Quiz" },
+  { value: "word-search", label: "Word Search" },
+  { value: "word-match", label: "Word Match" },
+  { value: "word-scramble", label: "Word Scramble" },
+  { value: "word-maze", label: "Word Maze" },
+  { value: "sentence-builder", label: "Sentence Builder" },
+];
 
 function LeaderboardSelect(props: ComponentProps<"select">) {
   const { children, className = "", ...selectProps } = props;
@@ -54,12 +62,18 @@ export function GamesLeaderboardControls({
   return (
     <>
       <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Choose leaderboard game">
-        <button type="button" role="tab" aria-selected={game === "quiz"} onClick={() => onGameChange("quiz")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "quiz" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Vocabulary Quiz</button>
-        <button type="button" role="tab" aria-selected={game === "word-search"} onClick={() => onGameChange("word-search")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-search" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Search</button>
-        <button type="button" role="tab" aria-selected={game === "word-match"} onClick={() => onGameChange("word-match")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-match" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Match</button>
-        <button type="button" role="tab" aria-selected={game === "word-scramble"} onClick={() => onGameChange("word-scramble")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-scramble" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Scramble</button>
-        <button type="button" role="tab" aria-selected={game === "word-maze"} onClick={() => onGameChange("word-maze")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "word-maze" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Word Maze</button>
-        <button type="button" role="tab" aria-selected={game === "sentence-builder"} onClick={() => onGameChange("sentence-builder")} className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === "sentence-builder" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>Sentence Builder</button>
+        {leaderboardGames.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={game === value}
+            onClick={() => onGameChange(value)}
+            className={`min-h-10 rounded-xl px-4 text-sm font-semibold transition ${game === value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-2" aria-label="Leaderboard filters">

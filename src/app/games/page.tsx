@@ -1,9 +1,9 @@
 import { GamesContent } from "@/components/games/GamesContent";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserClaimsOrNull } from "@/lib/supabase/authenticated-user";
 
 export default async function GamesPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-
-  return <GamesContent isAuthenticated={!error && Boolean(data?.claims)} />;
+  const claims = await getCurrentUserClaimsOrNull(supabase);
+  return <GamesContent isAuthenticated={Boolean(claims)} />;
 }

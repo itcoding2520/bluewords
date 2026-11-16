@@ -2,6 +2,7 @@ import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { NotificationRow } from "@/lib/notifications";
+import { NOTIFICATIONS_UPDATED_EVENT } from "@/lib/notifications";
 import { markNotificationRead as updateNotificationRead, markRecentNotificationsRead } from "@/lib/notifications-data";
 import { invalidateNotificationsCache } from "@/lib/notifications-cache.mjs";
 
@@ -27,7 +28,7 @@ export function useNotificationActions({
   function invalidateAndAnnounceUpdate(userId: string, updateLocalState?: () => void) {
     invalidateNotificationsCache(userId);
     updateLocalState?.();
-    window.dispatchEvent(new Event("bluewords:notifications-updated"));
+    window.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT));
   }
 
   async function markAllRead() {

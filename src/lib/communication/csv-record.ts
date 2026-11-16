@@ -40,10 +40,13 @@ function parseResponseOptions(value: string, row: number): string[] {
 
 export function parseCommunicationCsvRecord(
   cells: string[],
-  columnNames: string[],
+  columnIndexes: ReadonlyMap<string, number>,
   line: number
 ): CommunicationCsvRecord {
-  const get = (name: string) => (cells[columnNames.indexOf(name)] ?? "").trim();
+  const get = (name: string) => {
+    const index = columnIndexes.get(name);
+    return (index === undefined ? "" : cells[index] ?? "").trim();
+  };
   const recordType = get("record_type").toLowerCase();
   if (recordType !== "item" && recordType !== "dialogue_turn") {
     throw new Error(`Row ${line}: record_type must be item or dialogue_turn.`);

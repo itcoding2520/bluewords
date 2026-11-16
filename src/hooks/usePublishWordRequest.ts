@@ -9,6 +9,7 @@ import {
   type PublishableWord,
 } from "@/lib/vocabulary/publish-word-request-submission";
 import { getPublishWordRequestFeedback } from "@/lib/vocabulary/publish-word-request-feedback";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 interface UsePublishWordRequestOptions {
   userWords: PublishableWord[];
@@ -40,7 +41,7 @@ export function usePublishWordRequest({
     }
     const word = requestableWords.find((item) => item.id === wordId);
     if (!word) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUserOrNull(supabase);
     if (!user) return;
     const ownership = await verifyPublishWordRequestOwnership(supabase, {
       wordId,

@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
 import type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationLessonDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationLesson, saveCommunicationLesson } from "@/lib/communication/admin-actions";
@@ -36,8 +36,6 @@ export function useAdminCommunicationLessonActions({
   setBusy,
   refresh,
 }: Props) {
-  const confirm = useConfirmDialog();
-
   async function saveLesson(event: FormEvent) {
     event.preventDefault();
     const payload = {
@@ -79,21 +77,19 @@ export function useAdminCommunicationLessonActions({
     });
   }
 
-  async function removeLesson(lesson: CommunicationLesson) {
-    if (!await confirm({
+  const removeLesson = useConfirmedAdminAction({
+    confirmation: (lesson: CommunicationLesson) => ({
       title: "Remove lesson?",
       description: `Remove “${lesson.title_en}” and its items and dialogues?`,
       confirmLabel: "Remove",
-    })) return;
-
-    const { error } = await removeCommunicationLesson(supabase, lesson.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Lesson removed.");
-    await refresh();
-  }
+    }),
+    run: (lesson: CommunicationLesson) => removeCommunicationLesson(supabase, lesson.id).then(({ error }) => error),
+    onError: (error) => toast.error(error.message),
+    onSuccess: async () => {
+      toast.success("Lesson removed.");
+      await refresh();
+    },
+  });
 
   return { saveLesson, editLesson, removeLesson };
 }

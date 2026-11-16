@@ -34,12 +34,12 @@ export function getYoutubeVideoId(value: string): string | null {
     const host = url.hostname.toLowerCase().replace(/^www\./, "");
     if (!YOUTUBE_HOSTS.has(host)) return null;
 
+    const pathSegments = url.pathname.split("/").filter(Boolean);
     let videoId: string | null = null;
-    if (host === "youtu.be") videoId = url.pathname.split("/").filter(Boolean)[0] ?? null;
+    if (host === "youtu.be") videoId = pathSegments[0] ?? null;
     else if (url.pathname === "/watch") videoId = url.searchParams.get("v");
     else {
-      const segments = url.pathname.split("/").filter(Boolean);
-      if (YOUTUBE_PATH_TYPES.has(segments[0] ?? "")) videoId = segments[1] ?? null;
+      if (YOUTUBE_PATH_TYPES.has(pathSegments[0] ?? "")) videoId = pathSegments[1] ?? null;
     }
 
     return videoId && /^[\w-]{11}$/.test(videoId) ? videoId : null;

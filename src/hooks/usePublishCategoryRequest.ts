@@ -4,6 +4,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 import { saveCommunityCategoryRequest } from "@/lib/vocabulary/publish-category-request-workflow";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 const REQUEST_SENT_MESSAGE = "Your selected vocabulary has been sent to the admin for review.";
 
@@ -15,7 +16,7 @@ export function usePublishCategoryRequest(
 
   async function publishCategory(categoryName: string) {
     if (!categoryName) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUserOrNull(supabase);
     if (!user) return;
 
     const category = categories.find((item) => item.name === categoryName);

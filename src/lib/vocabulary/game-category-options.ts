@@ -27,16 +27,16 @@ export function buildVocabularyGameCategoryOptions(
     }
   }
 
-  const visibleCategories = categories.filter((item) => !isUncategorizedVocabularyCategory(item.name));
-  return [
-    {
-      id: "all-categories",
-      name: "All categories",
-      value: "all",
-      color: "blue",
-      imagePath: options.useFirstWordImageForAll ? firstWordImage : null,
-    },
-    ...visibleCategories.map((item) => ({
+  const categoryOptions: VocabularyGameCategoryOption[] = [{
+    id: "all-categories",
+    name: "All categories",
+    value: "all",
+    color: "blue",
+    imagePath: options.useFirstWordImageForAll ? firstWordImage : null,
+  }];
+  for (const item of categories) {
+    if (isUncategorizedVocabularyCategory(item.name)) continue;
+    categoryOptions.push({
       id: item.id,
       name: item.name,
       value: item.name,
@@ -44,6 +44,7 @@ export function buildVocabularyGameCategoryOptions(
       imagePath: item.image_path
         ? `category:${item.image_path}`
         : wordImagesByCategory.get(item.name) ?? null,
-    })),
-  ];
+    });
+  }
+  return categoryOptions;
 }

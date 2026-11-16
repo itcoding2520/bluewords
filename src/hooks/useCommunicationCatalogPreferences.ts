@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { Goal } from "@/lib/communication/catalog-types";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 import {
   saveCommunicationDailyGoal,
   saveCommunicationLearningGoal,
@@ -25,7 +26,7 @@ export function useCommunicationCatalogPreferences({
   async function saveGoal(nextGoal: Goal) {
     if (!authenticated) { toast.error("Sign in to save your learning goal."); return; }
     setSavingPreference(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUserOrNull(supabase);
     if (!user) { setSavingPreference(false); return; }
     const { error } = await saveCommunicationLearningGoal(supabase, user.id, nextGoal);
     if (error) toast.error(error.message);
@@ -36,7 +37,7 @@ export function useCommunicationCatalogPreferences({
   async function saveDailyGoal(value: number) {
     setDailyGoal(value);
     if (!authenticated) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUserOrNull(supabase);
     if (!user) return;
     const { error } = await saveCommunicationDailyGoal(supabase, user.id, value);
     if (error) toast.error(error.message); else { invalidateCommunicationCatalogCache(user.id); toast.success("Daily goal saved."); }

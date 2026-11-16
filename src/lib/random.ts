@@ -8,6 +8,11 @@ export function shuffle<T>(items: T[]): T[] {
   return shuffled;
 }
 
+/** Shuffle a copy of the items and keep at most `count` entries. */
+export function shuffleAndTake<T>(items: T[], count: number): T[] {
+  return shuffle(items).slice(0, count);
+}
+
 /** Pick up to `count` unique entries from a copied pool. */
 export function sampleRandom<T>(items: T[], count: number): T[] {
   const pool = [...items];

@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import type {
-  LeaderboardDifficulty,
-  LeaderboardGame,
-  LeaderboardGridSize,
-  LeaderboardQuestionCount,
-  LeaderboardQuizMode,
-} from "@/lib/games/leaderboard-filters";
+import type { LeaderboardFilters } from "@/lib/games/leaderboard-filters";
 import {
   getQuizLeaderboard,
   getVocabularyGameLeaderboard,
@@ -20,12 +14,15 @@ export type GamesLeaderboardRow =
   | WordSearchLeaderboardRow
   | VocabularyGameLeaderboardRow;
 
-interface LeaderboardFilters {
-  game: LeaderboardGame;
-  quizMode: LeaderboardQuizMode;
-  questionCount: LeaderboardQuestionCount;
-  gridSize: LeaderboardGridSize;
-  difficulty: LeaderboardDifficulty;
+function getLeaderboardRequest(filters: LeaderboardFilters) {
+  switch (filters.game) {
+    case "quiz":
+      return getQuizLeaderboard({ mode: filters.quizMode, questionCount: filters.questionCount });
+    case "word-search":
+      return getWordSearchLeaderboard({ gridSize: filters.gridSize, difficulty: filters.difficulty });
+    default:
+      return getVocabularyGameLeaderboard({ gameType: filters.game, roundSize: null });
+  }
 }
 
 export function useGamesLeaderboardData(filters: LeaderboardFilters) {
@@ -38,13 +35,7 @@ export function useGamesLeaderboardData(filters: LeaderboardFilters) {
   useEffect(() => {
     let active = true;
 
-    const request = filters.game === "quiz"
-      ? getQuizLeaderboard({ mode: filters.quizMode, questionCount: filters.questionCount })
-      : filters.game === "word-search"
-        ? getWordSearchLeaderboard({ gridSize: filters.gridSize, difficulty: filters.difficulty })
-        : getVocabularyGameLeaderboard({ gameType: filters.game, roundSize: null });
-
-    void request.then((result) => {
+    void getLeaderboardRequest(filters).then((result) => {
       if (active) setRows(result);
     }).catch(() => {
       if (active) {

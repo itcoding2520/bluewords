@@ -41,7 +41,11 @@ export function useWordScrambleGameplay() {
   const currentWord = state.round[state.questionIndex];
   const usedTileIds = useMemo(() => new Set(state.answerTileIds), [state.answerTileIds]);
   const lettersByTileId = useMemo(
-    () => new Map(state.letterTiles.map((tile) => [tile.id, tile.letter])),
+    () => {
+      const letters = new Map<number, string>();
+      for (const tile of state.letterTiles) letters.set(tile.id, tile.letter);
+      return letters;
+    },
     [state.letterTiles],
   );
 
@@ -149,6 +153,7 @@ export function useWordScrambleGameplay() {
     isCorrect: state.isCorrect,
     currentWord,
     usedTileIds,
+    lettersByTileId,
     moves: state.moves,
     startRound,
     chooseLetter,

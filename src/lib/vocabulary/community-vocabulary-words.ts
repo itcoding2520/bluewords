@@ -18,15 +18,17 @@ export function mapCommunityVocabularyWords(
     includeImageUrl = false,
   }: { skipUncategorized?: boolean; includeImageUrl?: boolean } = {},
 ): VocabularyWord[] {
-  const existingKeys = new Set(existingWords.map((item) =>
-    `${normalizeVocabularyLabel(item.category)}\u0000${normalizeVocabularyLabel(item.word)}`
-  ));
+  const existingKeys = new Set<string>();
+  for (const item of existingWords) {
+    existingKeys.add(`${normalizeVocabularyLabel(item.category)}\u0000${normalizeVocabularyLabel(item.word)}`);
+  }
 
-  return words.flatMap((word) => {
+  const mappedWords: VocabularyWord[] = [];
+  for (const word of words) {
     const key = `${normalizeVocabularyLabel(word.category)}\u0000${normalizeVocabularyLabel(word.word)}`;
-    if ((skipUncategorized && !word.category) || existingKeys.has(key)) return [];
+    if ((skipUncategorized && !word.category) || existingKeys.has(key)) continue;
 
-    return [{
+    mappedWords.push({
       id: `community-${word.id}`,
       word: word.word,
       meaning: word.meaning,
@@ -38,6 +40,7 @@ export function mapCommunityVocabularyWords(
       ...(includeImageUrl ? { imageUrl: word.imageUrl ?? null } : {}),
       detailedMeanings: [],
       isCustom: true,
-    }];
-  });
+    });
+  }
+  return mappedWords;
 }

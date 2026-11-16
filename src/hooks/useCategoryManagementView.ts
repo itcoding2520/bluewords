@@ -1,17 +1,8 @@
 import { useMemo } from "react";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
-import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
-import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { isDefaultCategory, isPublishedSharedCategory } from "@/lib/vocabulary/category-management";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/lib/category-management-filters";
-
-function isDefaultCategory(category: VocabularyCategoryRow) {
-  return category.is_default || isDefaultVocabularyCategory(category.name);
-}
-
-function isPublishedSharedCategory(category: VocabularyCategoryRow) {
-  return isCommunityCategoryId(category.id) || category.user_id === "community";
-}
 
 export function useCategoryManagementView({
   categories,
@@ -33,14 +24,20 @@ export function useCategoryManagementView({
       if (filterBy === "community") return isPublishedSharedCategory(category) && !isDefaultCategory(category);
       return true;
     });
+    const createdAtByCategory = new Map<VocabularyCategoryRow, number>();
+    if (sortBy !== "name") {
+      for (const category of filteredCategories) {
+        if (category.created_at) createdAtByCategory.set(category, new Date(category.created_at).getTime());
+      }
+    }
 
-    return [...filteredCategories].sort((left, right) => {
+    return filteredCategories.sort((left, right) => {
       if (sortBy === "name") return left.name.localeCompare(right.name);
       if (!left.created_at || !right.created_at) {
         if (!left.created_at && !right.created_at) return left.name.localeCompare(right.name);
         return left.created_at ? -1 : 1;
       }
-      const byDate = new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+      const byDate = createdAtByCategory.get(left)! - createdAtByCategory.get(right)!;
       return (sortBy === "newest" ? -byDate : byDate) || left.name.localeCompare(right.name);
     });
   }, [categories, filterBy, sortBy]);
@@ -55,7 +52,6 @@ export function useCategoryManagementView({
   );
 
   return {
-    isDefaultCategory,
     managedCategories,
     pageCount: pageMetadata.pageCount,
     currentPage: pageMetadata.currentPage,

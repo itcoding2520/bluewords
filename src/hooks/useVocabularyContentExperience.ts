@@ -25,7 +25,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const { page, pageSize, debouncedSearch, selectedCategory, setPage } = filters;
   const pageData = useVocabularyPageData({
     authVersion,
-    categories,
     categoriesLoaded,
     query: {
       page,
@@ -39,7 +38,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const exportCount = useVocabularyCategoryExportCount({
     authVersion,
     categories,
-    pageWordCount: pageData.pageWords.length,
     selectedCategory,
   });
   const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });

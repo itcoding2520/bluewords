@@ -5,6 +5,7 @@ import { submitAssessmentAttempt } from "@/lib/assessments/submit-attempt";
 import { readRequestJsonOrResponse } from "@/lib/api/request-json";
 import { jsonErrorResponse } from "@/lib/api/json-error-response";
 import { isObjectRecord } from "@/lib/is-object-record";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const auth = await requireAssessmentUser("Sign in to view your results.");
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!parsedBody.ok) return parsedBody.response;
   const body = parsedBody.value;
   if (!isObjectRecord(body) || !Array.isArray(body.answers)) return jsonErrorResponse("Provide an answer for each question.", 400);
-  if (body.answers.length !== 10 || body.answers.some((answer) => typeof answer !== "string")) return jsonErrorResponse("All 10 answers are required.", 400);
+  if (body.answers.length !== ASSESSMENT_QUESTION_COUNT || body.answers.some((answer) => typeof answer !== "string")) return jsonErrorResponse(`All ${ASSESSMENT_QUESTION_COUNT} answers are required.`, 400);
   const admin = getAssessmentAdminClient();
   if (admin instanceof NextResponse) return admin;
   const result = await submitAssessmentAttempt(admin, id, user.id, body.answers as string[]);

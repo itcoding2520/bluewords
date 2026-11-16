@@ -16,7 +16,7 @@ export function WordMazeContent() {
     },
     game: {
       phase, round, questionIndex, score, lives, feedback, selectedChoice,
-      won, current, pathProgress, solvedCount, chooseAnswer, continuePath,
+      won, current, progress, chooseAnswer, continuePath,
     },
     session: { elapsedSeconds, saveState, saveError, retrySave },
   } = useWordMazeController({ words, categories, isAuthenticated });
@@ -51,7 +51,7 @@ export function WordMazeContent() {
           lives={lives}
           feedback={feedback}
           selectedChoice={selectedChoice}
-          pathProgress={pathProgress}
+          progress={progress}
           onChoose={chooseAnswer}
           onContinue={continuePath}
         />
@@ -59,7 +59,7 @@ export function WordMazeContent() {
         <WordMazeResults
           won={won}
           score={score}
-          solvedCount={solvedCount}
+          progress={progress}
           roundLength={round.length}
           lives={lives}
           elapsedSeconds={elapsedSeconds}

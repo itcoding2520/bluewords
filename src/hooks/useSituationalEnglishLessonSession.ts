@@ -2,9 +2,12 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 
 import type { Item, LessonMode } from "@/lib/communication/lesson-types";
 import { shuffle } from "@/lib/random";
+import { useStateField } from "@/hooks/useStateField";
 
 export type { LessonMode };
 type OrderedTile = { id: number; text: string };
+type PracticeState = { step: number; answer: string | null };
+type DrillState = { step: number; answer: string | null; orderedTiles: OrderedTile[] };
 
 export function useSituationalEnglishLessonSession({
   items,
@@ -15,74 +18,65 @@ export function useSituationalEnglishLessonSession({
 }) {
   const [revealed, setRevealed] = useState(false);
   const [mode, setMode] = useState<LessonMode>("study");
-  const [practiceStep, setPracticeStep] = useState(0);
-  const [practiceAnswer, setPracticeAnswer] = useState<string | null>(null);
+  const [practice, setPractice] = useState<PracticeState>({ step: 0, answer: null });
   const [listeningOrder, setListeningOrder] = useState<string[]>([]);
-  const [drillStep, setDrillStep] = useState(0);
-  const [drillAnswer, setDrillAnswer] = useState<string | null>(null);
-  const [orderedTiles, setOrderedTiles] = useState<OrderedTile[]>([]);
+  const [drills, setDrills] = useState<DrillState>({ step: 0, answer: null, orderedTiles: [] });
+
+  const setPracticeStep = useStateField(setPractice, "step");
+  const setPracticeAnswer = useStateField(setPractice, "answer");
+  const setDrillAnswer = useStateField(setDrills, "answer");
+  const setOrderedTiles = useStateField(setDrills, "orderedTiles");
 
   function selectMode(nextMode: LessonMode, listeningItemIds: string[]) {
     setMode(nextMode);
     if (nextMode === "practice") {
       setPracticeOrder(shuffle(items.map((item) => item.id)));
-      setPracticeStep(0);
-      setPracticeAnswer(null);
+      setPractice({ step: 0, answer: null });
     }
     if (nextMode === "drills") {
-      setDrillStep(0);
-      setDrillAnswer(null);
-      setOrderedTiles([]);
+      setDrills({ step: 0, answer: null, orderedTiles: [] });
     }
     if (nextMode === "listening") {
       setListeningOrder(shuffle(listeningItemIds));
-      setPracticeStep(0);
-      setPracticeAnswer(null);
+      setPractice({ step: 0, answer: null });
     }
   }
 
   function nextSentenceDrill() {
-    setDrillAnswer(null);
-    setOrderedTiles([]);
-    setDrillStep((step) => step + 1);
+    setDrills((current) => ({ ...current, step: current.step + 1, answer: null, orderedTiles: [] }));
   }
 
   function nextPracticeQuestion() {
-    setPracticeAnswer(null);
-    setPracticeStep((step) => step + 1);
+    setPractice((current) => ({ ...current, step: current.step + 1, answer: null }));
   }
 
   function restartPractice() {
     setPracticeOrder(shuffle(items.map((item) => item.id)));
-    setPracticeStep(0);
-    setPracticeAnswer(null);
+    setPractice({ step: 0, answer: null });
   }
 
   function restartListening(listeningItemIds: string[]) {
     setListeningOrder(shuffle(listeningItemIds));
-    setPracticeStep(0);
-    setPracticeAnswer(null);
+    setPractice({ step: 0, answer: null });
   }
 
   function restartDrills() {
-    setDrillStep(0);
-    setDrillAnswer(null);
-    setOrderedTiles([]);
+    setDrills({ step: 0, answer: null, orderedTiles: [] });
   }
 
   return {
     revealed,
     setRevealed,
     mode,
-    practiceStep,
+    practiceStep: practice.step,
     setPracticeStep,
-    practiceAnswer,
+    practiceAnswer: practice.answer,
     setPracticeAnswer,
     listeningOrder,
-    drillStep,
-    drillAnswer,
+    drillStep: drills.step,
+    drillAnswer: drills.answer,
     setDrillAnswer,
-    orderedTiles,
+    orderedTiles: drills.orderedTiles,
     setOrderedTiles,
     selectMode,
     nextSentenceDrill,

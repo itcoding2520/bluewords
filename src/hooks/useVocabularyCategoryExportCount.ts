@@ -8,12 +8,10 @@ import { getVocabularyWordPage } from "@/lib/supabase/vocabulary";
 export function useVocabularyCategoryExportCount({
   authVersion,
   categories,
-  pageWordCount,
   selectedCategory,
 }: {
   authVersion: number;
   categories: VocabularyCategoryRow[];
-  pageWordCount: number;
   selectedCategory: string;
 }) {
   const [count, setCount] = useState(0);
@@ -41,7 +39,7 @@ export function useVocabularyCategoryExportCount({
     });
 
     return () => { cancelled = true; };
-  }, [authVersion, categories, pageWordCount, selectedCategory]);
+  }, [authVersion, categories, selectedCategory]);
 
   return { count, isLoading, setIsLoading };
 }

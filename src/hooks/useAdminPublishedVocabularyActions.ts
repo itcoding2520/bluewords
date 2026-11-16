@@ -1,4 +1,4 @@
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 import {
@@ -13,22 +13,26 @@ export function useAdminPublishedVocabularyActions(
   setError: (error: string) => void,
   refresh: () => Promise<void>
 ) {
-  const confirmDialog = useConfirmDialog();
+  type PublishedItem = { table: "community_categories" | "community_words"; item: PublishedCategory | PublishedWord };
+  const removePublished = useConfirmedAdminAction<PublishedItem>({
+    confirmation: ({ item }) => {
+      const label = "name" in item ? item.name : item.word;
+      return {
+        title: "Remove published item?",
+        description: `Remove “${label}” from the published vocabulary?`,
+        confirmLabel: "Remove",
+      };
+    },
+    run: ({ table, item }) => removePublishedAdminReview(supabase, table, item.id),
+    onError: (error) => setError(error.message),
+    onSuccess: refresh,
+  });
 
-  async function removePublished(
-    table: "community_categories" | "community_words",
-    item: PublishedCategory | PublishedWord
+  function handleRemovePublished(
+    table: PublishedItem["table"],
+    item: PublishedItem["item"],
   ) {
-    const label = "name" in item ? item.name : item.word;
-    const confirmed = await confirmDialog({
-      title: "Remove published item?",
-      description: `Remove “${label}” from the published vocabulary?`,
-      confirmLabel: "Remove",
-    });
-    if (!confirmed) return;
-    const updateError = await removePublishedAdminReview(supabase, table, item.id);
-    if (updateError) setError(updateError.message);
-    else await refresh();
+    return removePublished({ table, item });
   }
 
   async function editPublishedWord(item: PublishedWord) {
@@ -59,7 +63,7 @@ export function useAdminPublishedVocabularyActions(
   }
 
   return {
-    removePublished,
+    removePublished: handleRemovePublished,
     editPublishedWord,
     editPublishedCategory,
   };

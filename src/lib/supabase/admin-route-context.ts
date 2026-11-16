@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 import { createClient } from "@/lib/supabase/server";
 
 export type AdminRouteContextResult =
@@ -15,7 +16,7 @@ export async function authorizeAdminRoute(
   },
 ): Promise<AdminRouteContextResult> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUserOrNull(supabase);
   if (!user) {
     const failure = options.authenticationFailure ?? { message: "Authentication required.", status: 401 };
     return { response: NextResponse.json({ error: failure.message }, { status: failure.status }) };

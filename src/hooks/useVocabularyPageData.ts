@@ -12,13 +12,11 @@ import {
 
 export function useVocabularyPageData({
   authVersion,
-  categories,
   categoriesLoaded,
   query,
   onPageOutOfRange,
 }: {
   authVersion: number;
-  categories: unknown[];
   categoriesLoaded: boolean;
   query: VocabularyPageQuery;
   onPageOutOfRange: (page: number) => void;
@@ -63,7 +61,7 @@ export function useVocabularyPageData({
     });
 
     return () => { cancelled = true; };
-  }, [authVersion, categories, categoriesLoaded, page, pageSize, search, category, status, requestVersion]);
+  }, [authVersion, categoriesLoaded, page, pageSize, search, category, status, requestVersion]);
 
   const refreshPage = useCallback(() => setRequestVersion((version) => version + 1), []);
 

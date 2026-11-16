@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { MazeWord } from "@/lib/word-maze";
+import { WORD_MAZE_LIVES, type MazeWord } from "@/lib/word-maze";
 
 type Feedback = "correct" | "wrong" | null;
 
@@ -18,7 +18,7 @@ const initialState: WordMazeState = {
   round: [],
   questionIndex: 0,
   score: 0,
-  lives: 3,
+  lives: WORD_MAZE_LIVES,
   feedback: null,
   selectedChoice: null,
   won: false,
@@ -82,8 +82,7 @@ export function useWordMazeGameplay() {
     won: state.won,
     moves: state.moves,
     current,
-    pathProgress: progress,
-    solvedCount: progress,
+    progress,
     startRound,
     chooseAnswer,
     continuePath,

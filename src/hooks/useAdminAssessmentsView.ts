@@ -18,7 +18,11 @@ export function useAdminAssessmentsView({
     () => users.filter((item) => `${item.nickname} ${item.email ?? ""}`.toLowerCase().includes(normalizedSearch)),
     [users, normalizedSearch],
   );
-  const userById = useMemo(() => new Map(users.map((item) => [item.id, item])), [users]);
+  const userById = useMemo(() => {
+    const usersById = new Map<string, AssessmentAdminUser>();
+    for (const user of users) usersById.set(user.id, user);
+    return usersById;
+  }, [users]);
   const assignmentByRecipientId = useMemo(() => {
     const assignmentsByRecipient = new Map<string, AssessmentAssignment>();
     for (const assignment of assignments) {

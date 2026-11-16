@@ -11,11 +11,11 @@ export interface LatestVocabularyReviewCounts {
   mastered: number;
 }
 
+export const REVIEW_HISTORY_PAGE_SIZE = 20;
+
 const latestReviewsByPage = new Map<string, LatestVocabularyReviewsPage>();
 const latestReviewCountsByUser = new Map<string, LatestVocabularyReviewCounts>();
 const latestReviewHistoryByUser = new Map<string, VocabularyReviewWithWord[]>();
-
-const REVIEW_HISTORY_PAGE_SIZE = 20;
 
 function reviewPageCacheKey(userId: string, status: VocabularyStatus, page: number, pageSize: number): string {
   return `${userId}:${status}:${page}:${pageSize}`;

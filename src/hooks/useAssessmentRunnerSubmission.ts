@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 
 import { getErrorMessage } from "@/lib/errors";
 import { submitAssessmentAttempt } from "@/lib/assessments/api";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function useAssessmentRunnerSubmission({
   attemptId,
@@ -18,7 +19,7 @@ export function useAssessmentRunnerSubmission({
 
   async function submit() {
     if (answers.some((answer) => !answer.trim())) {
-      setError("Answer all 10 questions before submitting.");
+      setError(`Answer all ${ASSESSMENT_QUESTION_COUNT} questions before submitting.`);
       return;
     }
     setSubmitting(true);

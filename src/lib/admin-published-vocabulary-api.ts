@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { AdminReviewTable } from "@/lib/admin-review-types";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 export async function createPublishedCategory(supabase: SupabaseClient, name: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUserOrNull(supabase);
   if (!user) return { authenticated: false as const, error: null };
 
   const { error } = await supabase.from("community_categories").insert({
@@ -18,7 +19,7 @@ export async function createPublishedWord(
   supabase: SupabaseClient,
   input: { categoryId: string; word: string; meaning: string }
 ) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUserOrNull(supabase);
   if (!user) return { authenticated: false as const, error: null };
 
   const { error } = await supabase.from("community_words").insert({

@@ -12,23 +12,34 @@ export async function getPublicVocabulary(adminClient: AdminClient) {
     };
   }
 
-  const categories = (categoryResult.data ?? []).map(({ id, name, color, image_path }) => ({ id, name, color, image_path }));
+  const categories = categoryResult.data ?? [];
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-  const publishedWords = (wordResult.data ?? []).filter((item) => categoryNames.has(item.category_id));
-  const imagePaths = [...new Set(publishedWords.flatMap((item) => item.image_path ? [item.image_path] : []))];
+  const publishedWords = [];
+  const imagePathSet = new Set<string>();
+  for (const item of wordResult.data ?? []) {
+    if (!categoryNames.has(item.category_id)) continue;
+    publishedWords.push(item);
+    if (item.image_path) imagePathSet.add(item.image_path);
+  }
+  const imagePaths = [...imagePathSet];
   const signedImages = imagePaths.length
     ? await adminClient.storage.from("vocabulary-images").createSignedUrls(imagePaths, 60 * 60)
     : { data: [] };
   const imageUrls = new Map((signedImages.data ?? []).map((image) => [image.path, image.signedUrl]));
-  const words = publishedWords.map((item) => ({
-    id: item.id,
-    word: item.word,
-    meaning: item.meaning,
-    ipa: item.ipa,
-    imageUrl: item.image_path ? imageUrls.get(item.image_path) ?? null : null,
-    categoryId: item.category_id,
-    category: categoryNames.get(item.category_id) ?? "",
-  })).filter((item) => item.category);
+  const words = [];
+  for (const item of publishedWords) {
+    const category = categoryNames.get(item.category_id) ?? "";
+    if (!category) continue;
+    words.push({
+      id: item.id,
+      word: item.word,
+      meaning: item.meaning,
+      ipa: item.ipa,
+      imageUrl: item.image_path ? imageUrls.get(item.image_path) ?? null : null,
+      categoryId: item.category_id,
+      category,
+    });
+  }
 
   return { status: "success" as const, categories, words };
 }

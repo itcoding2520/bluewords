@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
-import { buildWordMazeRound } from "@/lib/word-maze";
+import { buildWordMazeRound, WORD_MAZE_QUESTION_COUNT } from "@/lib/word-maze";
 import { useWordMazeGameplay } from "@/hooks/useWordMazeGameplay";
 import { useWordMazeSetupData } from "@/hooks/useWordMazeSetupData";
 
@@ -39,7 +39,7 @@ export function useWordMazeController(input: {
   });
   function startGame() {
     const nextRound = buildWordMazeRound(words, category);
-    if (nextRound.length < 5 || nextRound.some((question) => question.choices.length < 4)) return;
+    if (nextRound.length < WORD_MAZE_QUESTION_COUNT || nextRound.some((question) => question.choices.length < 4)) return;
     gameplay.startRound(nextRound);
     session.resetSession();
     setStartedAt(Date.now());
@@ -73,8 +73,7 @@ export function useWordMazeController(input: {
       selectedChoice: gameplay.selectedChoice,
       won: gameplay.won,
       current: gameplay.current,
-      pathProgress: gameplay.pathProgress,
-      solvedCount: gameplay.solvedCount,
+      progress: gameplay.progress,
       chooseAnswer,
       continuePath,
     },

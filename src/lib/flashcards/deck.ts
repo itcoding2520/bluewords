@@ -1,7 +1,19 @@
-import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export interface Flashcard {
   word: VocabularyWord;
+}
+
+export function filterFlashcardWords(
+  words: VocabularyWord[],
+  category: string,
+  status?: VocabularyStatus,
+): VocabularyWord[] {
+  return words.filter((word) =>
+    matchesVocabularyCategory(word.category, category)
+    && (status === undefined || word.status === status)
+  );
 }
 
 export function shuffleDeck(deck: Flashcard[], seed: number): Flashcard[] {

@@ -8,10 +8,13 @@ import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 
 export function useAdminCategoryListData(supabase: SupabaseClient) {
-  const [communityCategories, setCommunityCategories] = useState<CommunityCategory[]>([]);
-  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [snapshot, setSnapshot] = useState<{
+    categories: CommunityCategory[];
+    emails: Record<string, string>;
+  }>({ categories: [], emails: {} });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { categories: communityCategories, emails } = snapshot;
 
   const refresh = useCallback(async (force = true) => {
     setLoading(true);
@@ -19,12 +22,10 @@ export function useAdminCategoryListData(supabase: SupabaseClient) {
     if (force) invalidateAdminDataCache();
     try {
       const result = await loadAdminCategories(supabase, force);
-      setCommunityCategories(result.categories);
-      setEmails(result.emails);
+      setSnapshot(result);
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not load categories."));
-      setCommunityCategories([]);
-      setEmails({});
+      setSnapshot({ categories: [], emails: {} });
     }
     setLoading(false);
   }, [supabase]);

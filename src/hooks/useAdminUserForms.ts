@@ -1,7 +1,6 @@
-import { useState, type SetStateAction } from "react";
+import { useState } from "react";
 import type { AdminUserRecord } from "@/lib/admin-user-api";
-
-export type AdminUser = AdminUserRecord;
+import { useStateField } from "@/hooks/useStateField";
 
 interface AddUserFormState {
   email: string;
@@ -11,14 +10,10 @@ interface AddUserFormState {
 }
 
 interface EditUserFormState {
-  user: AdminUser | null;
+  user: AdminUserRecord | null;
   email: string;
   nickname: string;
   password: string;
-}
-
-function applyFieldAction<T>(current: T, action: SetStateAction<T>): T {
-  return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
 }
 
 export function useAdminUserForms() {
@@ -34,6 +29,14 @@ export function useAdminUserForms() {
     nickname: "",
     password: "",
   });
+  const setEmail = useStateField(setAddForm, "email");
+  const setNickname = useStateField(setAddForm, "nickname");
+  const setPassword = useStateField(setAddForm, "password");
+  const setShowAddForm = useStateField(setAddForm, "isOpen");
+  const setEditingUser = useStateField(setEditForm, "user");
+  const setEditEmail = useStateField(setEditForm, "email");
+  const setEditNickname = useStateField(setEditForm, "nickname");
+  const setEditPassword = useStateField(setEditForm, "password");
 
   return {
     addForm,
@@ -41,45 +44,21 @@ export function useAdminUserForms() {
     editForm,
     setEditForm,
     email: addForm.email,
-    setEmail: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
+    setEmail,
     nickname: addForm.nickname,
-    setNickname: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
+    setNickname,
     password: addForm.password,
-    setPassword: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
+    setPassword,
     showAddForm: addForm.isOpen,
-    setShowAddForm: (action: SetStateAction<boolean>) => setAddForm((current) => ({
-      ...current,
-      isOpen: applyFieldAction(current.isOpen, action),
-    })),
+    setShowAddForm,
     editingUser: editForm.user,
-    setEditingUser: (action: SetStateAction<AdminUser | null>) => setEditForm((current) => ({
-      ...current,
-      user: applyFieldAction(current.user, action),
-    })),
+    setEditingUser,
     editEmail: editForm.email,
-    setEditEmail: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
+    setEditEmail,
     editNickname: editForm.nickname,
-    setEditNickname: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
+    setEditNickname,
     editPassword: editForm.password,
-    setEditPassword: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
+    setEditPassword,
   };
 }
 

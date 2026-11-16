@@ -1,7 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import {
   removeSentenceBuilderQuestion,
@@ -28,8 +28,6 @@ export function useAdminSentenceBuilderActions({
   setEditing: Dispatch<SetStateAction<string | null>>;
   refresh: () => Promise<void>;
 }) {
-  const confirm = useConfirmDialog();
-
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -60,20 +58,19 @@ export function useAdminSentenceBuilderActions({
     }
   }
 
-  async function removeQuestion(question: SentenceBuilderQuestion) {
-    const confirmed = await confirm({
+  const removeQuestion = useConfirmedAdminAction({
+    confirmation: (question: SentenceBuilderQuestion) => ({
       title: "Remove sentence question?",
       description: `Remove ${question.question_id} (“${question.answer_sentence}”)?`,
       confirmLabel: "Remove",
-    });
-    if (!confirmed) return;
-    const { error } = await removeSentenceBuilderQuestion(supabase, question.id);
-    if (error) toast.error("Could not remove this question.");
-    else {
+    }),
+    run: (question: SentenceBuilderQuestion) => removeSentenceBuilderQuestion(supabase, question.id).then(({ error }) => error),
+    onError: () => toast.error("Could not remove this question."),
+    onSuccess: async () => {
       toast.success("Question removed.");
       await refresh();
-    }
-  }
+    },
+  });
 
   return { save, removeQuestion };
 }

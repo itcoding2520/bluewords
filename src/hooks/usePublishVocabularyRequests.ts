@@ -6,6 +6,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getCachedPublishRequests, invalidatePublishRequestCache } from "@/lib/supabase/publish-request-cache.mjs";
 import { loadPublishVocabularyRequests } from "@/lib/supabase/publish-vocabulary-requests";
 import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
+import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
 export function usePublishVocabularyRequests(isAuthenticated: boolean) {
   const supabase = useSupabaseClient();
@@ -18,7 +19,7 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
   }, [supabase]);
 
   const refreshRequests = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUserOrNull(supabase);
     if (!user) return;
     invalidatePublishRequestCache(user.id);
     try {
@@ -40,7 +41,7 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
         return;
       }
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getCurrentUserOrNull(supabase);
         if (!user) {
           setRequestsLoaded(true);
           return;

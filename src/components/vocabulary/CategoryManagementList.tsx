@@ -16,6 +16,19 @@ import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { getNextPage, getPreviousPage } from "@/lib/pagination";
 import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
 
+const categoryFilters: Array<{ value: CategoryManagementFilter; label: string }> = [
+  { value: "all", label: "All categories" },
+  { value: "mine", label: "By me" },
+  { value: "default", label: "Default" },
+  { value: "community", label: "Community" },
+];
+const categorySorts: Array<{ value: CategoryManagementSort; label: string }> = [
+  { value: "name", label: "A → Z" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+];
+const categoryPageSizes = [10, 20, 50];
+
 export function CategoryManagementList({
   words,
   isAdmin,
@@ -41,7 +54,6 @@ export function CategoryManagementList({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  isDefaultCategory,
   onStartEdit,
   onUpdate,
   onDelete,
@@ -70,7 +82,6 @@ export function CategoryManagementList({
   pageSize: number;
   onPageChange: (update: (page: number) => number) => void;
   onPageSizeChange: (size: number) => void;
-  isDefaultCategory: (category: VocabularyCategoryRow) => boolean;
   onStartEdit: (category: VocabularyCategoryRow) => void;
   onUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: (category: VocabularyCategoryRow) => void;
@@ -83,12 +94,12 @@ export function CategoryManagementList({
         <h2>{managedCategories.length} categories</h2>
         <label className="category-inline-filter">Filter by
           <Select aria-label="Filter categories" value={filterBy} onChange={(event) => { if (isCategoryManagementFilter(event.target.value)) onFilterChange(event.target.value); }}>
-            <option value="all">All categories</option><option value="mine">By me</option><option value="default">Default</option><option value="community">Community</option>
+            {categoryFilters.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </Select>
         </label>
         <label className="category-inline-filter">Sort by
           <Select aria-label="Sort categories" value={sortBy} onChange={(event) => { if (isCategoryManagementSort(event.target.value)) onSortChange(event.target.value); }}>
-            <option value="name">A → Z</option><option value="newest">Newest</option><option value="oldest">Oldest</option>
+            {categorySorts.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </Select>
         </label>
       </div>
@@ -103,7 +114,6 @@ export function CategoryManagementList({
               isAdmin={isAdmin}
               author={categoryAuthor}
               fallbackWordImagePath={fallbackImagesByCategory.get(normalizedCategoryName)}
-              isDefaultCategory={isDefaultCategory}
               editing={editing?.id === category.id}
               editName={editName}
               onEditNameChange={onEditNameChange}
@@ -124,7 +134,7 @@ export function CategoryManagementList({
         <footer className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p aria-live="polite">Showing {firstVisibleCategory}–{lastVisibleCategory} of {managedCategories.length} categories</p>
           <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-            <label className="flex items-center gap-2 whitespace-nowrap"><span>Rows per page</span><select aria-label="Categories per page" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))} className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50">{[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+            <label className="flex items-center gap-2 whitespace-nowrap"><span>Rows per page</span><select aria-label="Categories per page" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))} className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50">{categoryPageSizes.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
             <div className="flex items-center gap-2"><span className="whitespace-nowrap">Page {currentPage} of {pageCount}</span><Button type="button" variant="secondary" aria-label="Previous category page" onClick={() => onPageChange((value) => getPreviousPage(value))} disabled={currentPage <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button><Button type="button" variant="secondary" aria-label="Next category page" onClick={() => onPageChange((value) => getNextPage(value, pageCount))} disabled={currentPage >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button></div>
           </div>
         </footer>

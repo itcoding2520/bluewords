@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { loadUnreadNotificationCount } from "@/lib/notifications-data";
+import { NOTIFICATIONS_UPDATED_EVENT } from "@/lib/notifications";
 
 export function useSidebarNotificationCount(authUserId: string | null, isAuthenticated: boolean) {
   const supabase = useSupabaseClient();
@@ -20,12 +21,12 @@ export function useSidebarNotificationCount(authUserId: string | null, isAuthent
 
     const timer = window.setInterval(() => { void refreshUnreadCount(); }, 30_000);
     const handleNotificationsUpdated = () => { void refreshUnreadCount(); };
-    window.addEventListener("bluewords:notifications-updated", handleNotificationsUpdated);
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
     void refreshUnreadCount();
     return () => {
       active = false;
       window.clearInterval(timer);
-      window.removeEventListener("bluewords:notifications-updated", handleNotificationsUpdated);
+      window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
     };
   }, [authUserId, isAuthenticated, supabase]);
 
