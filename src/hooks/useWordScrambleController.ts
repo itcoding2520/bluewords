@@ -6,6 +6,7 @@ import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { useWordScrambleGameplay } from "@/hooks/useWordScrambleGameplay";
 import { shuffle } from "@/lib/random";
 import { formatGameDuration } from "@/lib/game-duration";
+import { getElapsedSeconds } from "@/lib/session-duration";
 import { useWordScrambleSetupData } from "@/hooks/useWordScrambleSetupData";
 
 export type { ScrambleWord, LetterTile } from "@/lib/word-scramble";
@@ -56,7 +57,7 @@ export function useWordScrambleController(input: {
     if (!gameplay.nextQuestion()) return;
     session.setElapsedSeconds(startedAt === null
       ? 0
-      : Math.floor((Date.now() - startedAt) / 1000));
+      : getElapsedSeconds(startedAt));
     setPhase("results");
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { getElapsedSeconds } from "@/lib/session-duration";
 
 export function useElapsedTimer(
   startedAt: number | null,
@@ -12,7 +13,7 @@ export function useElapsedTimer(
   useEffect(() => {
     if (startedAt === null || (!isRunning && !updateWhenStopped)) return;
 
-    const update = () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    const update = () => setElapsedSeconds(getElapsedSeconds(startedAt));
     update();
     if (!isRunning) return;
 
