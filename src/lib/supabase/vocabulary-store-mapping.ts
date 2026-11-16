@@ -35,9 +35,11 @@ type PublishedCommunityWordRow = Pick<PublishedCommunityWord, "id" | "word" | "m
 export function mapPublishedCommunityWordRows(
   rows: PublishedCommunityWordRow[],
 ): PublishedCommunityWord[] {
-  return rows.flatMap(({ community_categories, ...word }) => {
+  const mappedWords: PublishedCommunityWord[] = [];
+  for (const { community_categories, ...word } of rows) {
     const category = firstRelation(community_categories);
-    return category ? [{
+    if (!category) continue;
+    mappedWords.push({
       ...word,
       community_categories: {
         id: category.id,
@@ -45,8 +47,9 @@ export function mapPublishedCommunityWordRows(
         color: category.color as VocabularyCategoryColor,
         status: category.status,
       },
-    }] : [];
-  });
+    });
+  }
+  return mappedWords;
 }
 
 export function mapAuthenticatedVocabularySnapshot(snapshot: AuthenticatedVocabularySnapshot) {
