@@ -7,10 +7,16 @@ export function getVocabularyDropdownCategories(
   words: VocabularyWord[],
   includeUncategorized = false,
 ): VocabularyCategoryRow[] {
-  const byName = new Map(categories.map((category) => [normalizeVocabularyLabel(category.name), category]));
+  const byName = new Map<string, VocabularyCategoryRow>();
   const namesByKey = new Map<string, string>();
-  for (const rawName of [...categories.map((item) => item.name), ...words.map((word) => word.category)]) {
-    const name = rawName.trim();
+  for (const category of categories) {
+    const key = normalizeVocabularyLabel(category.name);
+    byName.set(key, category);
+    const name = category.name.trim();
+    if (name && (includeUncategorized || key !== "uncategorized") && !namesByKey.has(key)) namesByKey.set(key, name);
+  }
+  for (const word of words) {
+    const name = word.category.trim();
     const key = normalizeVocabularyLabel(name);
     if (name && (includeUncategorized || key !== "uncategorized") && !namesByKey.has(key)) namesByKey.set(key, name);
   }
