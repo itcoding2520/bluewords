@@ -2,7 +2,7 @@
 
 import { LoaderCircle } from "lucide-react";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
-import { formatQuizTime } from "@/lib/quiz-format";
+import { formatClockDuration } from "@/lib/clock-duration";
 import type { QuizSaveState } from "@/lib/quiz-model";
 
 export function QuizResultsSummary({
@@ -24,7 +24,7 @@ export function QuizResultsSummary({
     <div className="text-center">
       <p className="text-sm font-medium text-blue-600">Quiz complete</p>
       <h2 className="mt-2 text-3xl font-bold text-slate-950">{correctCount} / {questionCount}</h2>
-      <p className="mt-2 text-sm text-slate-500">Correct answers · {formatQuizTime(elapsedSeconds)} elapsed</p>
+      <p className="mt-2 text-sm text-slate-500">Correct answers · {formatClockDuration(elapsedSeconds)} elapsed</p>
       {saveState === "saving" && (
         <p role="status" className="mt-3 inline-flex items-center gap-2 text-sm text-slate-500">
           <LoaderCircle size={15} className="animate-spin" />Saving your quiz history…

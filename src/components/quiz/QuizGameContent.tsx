@@ -7,7 +7,7 @@ import { QuizResultsPanel } from "@/components/quiz/QuizResultsPanel";
 import { QuizSetupPanel } from "@/components/quiz/QuizSetupPanel";
 import { QuizStickyActions } from "@/components/quiz/QuizStickyActions";
 import { useQuizExperience } from "@/hooks/useQuizExperience";
-import { formatQuizTime } from "@/lib/quiz-format";
+import { formatClockDuration } from "@/lib/clock-duration";
 
 export function QuizGameContent({ userId }: { userId: string | null }) {
   const quiz = useQuizExperience(userId);
@@ -41,7 +41,7 @@ export function QuizGameContent({ userId }: { userId: string | null }) {
           total={history.historyTotal}
           page={history.historyPage}
           pageSize={history.historyPageSize}
-          formatTime={formatQuizTime}
+          formatTime={formatClockDuration}
           onBack={() => history.setSelectedHistory(null)}
           onRefresh={() => void history.refreshHistory()}
           onOpenReview={(session) => void history.openHistoryReview(session)}
