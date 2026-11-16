@@ -54,10 +54,14 @@ export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationC
     missingContent: "CSV needs a header and at least one content row.",
   });
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
-  const missing = COMMUNICATION_CSV_HEADERS.filter((name) => !columnNames.includes(name));
+  const columnIndexes = new Map<string, number>();
+  for (const [index, name] of columnNames.entries()) {
+    if (!columnIndexes.has(name)) columnIndexes.set(name, index);
+  }
+  const missing = COMMUNICATION_CSV_HEADERS.filter((name) => !columnIndexes.has(name));
   if (missing.length) throw new Error(`Missing CSV columns: ${missing.join(", ")}. Export a template from this page to get the expected columns.`);
   const mapped = rows.slice(1).map((cells, index) =>
-    parseCommunicationCsvRecord(cells, columnNames, index + 2)
+    parseCommunicationCsvRecord(cells, columnIndexes, index + 2)
   );
 
   return validateCommunicationCsvConsistency(mapped);
