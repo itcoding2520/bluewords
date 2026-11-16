@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
-import type { Goal, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
+import type { Goal, Lesson, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
 import { firstRelation } from "@/lib/supabase/first-relation";
 
 
@@ -21,8 +21,8 @@ export async function loadCommunicationCatalogSnapshot(
   if (lessonResult.error) throw lessonResult.error;
 
   const data: SituationalEnglishCatalogSnapshot = {
-    topics: (topicResult.data ?? []) as unknown as Topic[],
-    lessons: (lessonResult.data ?? []) as unknown as SituationalEnglishCatalogSnapshot["lessons"],
+    topics: (topicResult.data ?? []) as Topic[],
+    lessons: (lessonResult.data ?? []) as Lesson[],
     progress: [],
     lessonAccuracy: {},
     goal: null,
@@ -49,7 +49,7 @@ export async function loadCommunicationCatalogSnapshot(
   if (accuracyResult.error) console.error("Failed to load communication review accuracy", accuracyResult.error);
 
   type ReviewAccuracyRow = { review_count: number; correct_count: number; communication_lesson_items: { lesson_id: string } | { lesson_id: string }[] };
-  for (const row of (accuracyResult.data ?? []) as unknown as ReviewAccuracyRow[]) {
+  for (const row of (accuracyResult.data ?? []) as ReviewAccuracyRow[]) {
     const item = firstRelation(row.communication_lesson_items);
     if (!item) continue;
     const stats = data.lessonAccuracy[item.lesson_id] ?? { correct: 0, attempts: 0 };
