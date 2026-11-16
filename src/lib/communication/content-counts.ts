@@ -31,11 +31,14 @@ export function getCommunicationContentCounts(
     wordsByTopic.get(lesson.topic_id)?.[lesson.difficulty].add(item.content_en.trim().toLocaleLowerCase());
   }
 
-  const topicWordCounts = new Map<string, TopicWordCounts>([...wordsByTopic].map(([topicId, levels]) => [topicId, {
-    easy: levels.easy.size,
-    medium: levels.medium.size,
-    hard: levels.hard.size,
-  }]));
+  const topicWordCounts = new Map<string, TopicWordCounts>();
+  for (const [topicId, levels] of wordsByTopic) {
+    topicWordCounts.set(topicId, {
+      easy: levels.easy.size,
+      medium: levels.medium.size,
+      hard: levels.hard.size,
+    });
+  }
 
   return { lessonCountsByTopic, itemCountsByLesson, topicWordCounts };
 }
