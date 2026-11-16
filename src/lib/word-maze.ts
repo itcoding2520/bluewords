@@ -1,5 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { sampleRandomMatching, shuffle } from "@/lib/random";
+import { sampleRandomMatching, shuffle, shuffleAndTake } from "@/lib/random";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
@@ -29,7 +29,7 @@ export function buildWordMazeRound(words: VocabularyWord[], category: string): M
     seenMeanings.add(meaningKey);
     available.push({ id: word.id, word: text, meaning, meaningKey, category: word.category });
   }
-  const chosen = shuffle(available).slice(0, 5);
+  const chosen = shuffleAndTake(available, 5);
   return chosen.map((answer) => {
     const distractors = shuffle(sampleRandomMatching(
       available,
