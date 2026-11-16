@@ -16,7 +16,7 @@ export async function getVocabularyWords(): Promise<VocabularyWordWithMeaningsRo
       .range(from, to);
 
     return {
-      data: (data ?? []) as unknown as VocabularyWordWithMeaningsRow[],
+      data: (data ?? []) as VocabularyWordWithMeaningsRow[],
       error,
     };
   });
