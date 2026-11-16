@@ -19,20 +19,28 @@ export function mapCommunityVocabularyCategories<TCategory extends CommunityVoca
     updatedAt: string;
   },
 ): VocabularyCategoryRow[] {
-  const sharedByName = new Map(communityCategories.map((category) => [
-    normalizeVocabularyLabel(category.name),
+  const communityCategoryEntries = communityCategories.map((category) => ({
+    category,
+    normalizedName: normalizeVocabularyLabel(category.name),
+  }));
+  const sharedByName = new Map(communityCategoryEntries.map(({ category, normalizedName }) => [
+    normalizedName,
     category,
   ]));
-  const baseNames = new Set(baseCategories.map((category) => normalizeVocabularyLabel(category.name)));
-  const baseWithSharedImages = baseCategories.map((category) => ({
+  const baseCategoryEntries = baseCategories.map((category) => ({
+    category,
+    normalizedName: normalizeVocabularyLabel(category.name),
+  }));
+  const baseNames = new Set(baseCategoryEntries.map(({ normalizedName }) => normalizedName));
+  const baseWithSharedImages = baseCategoryEntries.map(({ category, normalizedName }) => ({
     ...category,
-    image_path: sharedByName.get(normalizeVocabularyLabel(category.name))?.image_path
+    image_path: sharedByName.get(normalizedName)?.image_path
       ?? category.image_path
       ?? null,
   }));
-  const sharedOnlyCategories = communityCategories
-    .filter((category) => !baseNames.has(normalizeVocabularyLabel(category.name)))
-    .map((category) => {
+  const sharedOnlyCategories = communityCategoryEntries
+    .filter(({ normalizedName }) => !baseNames.has(normalizedName))
+    .map(({ category }) => {
       const metadata = getCommunityMetadata(category);
       return {
         id: createCommunityCategoryId(category.id),
