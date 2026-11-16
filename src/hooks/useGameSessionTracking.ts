@@ -1,6 +1,7 @@
 "use client";
 
 import { getErrorMessage } from "@/lib/errors";
+import { getDurationSeconds } from "@/lib/session-duration";
 import { useEffect, useRef, useState } from "react";
 
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
@@ -40,7 +41,7 @@ export function useGameSessionTracking({
     if (!isAuthenticated || !shouldSubmit || startedAt === null || submittedSessionRef.current === startedAt) return;
     submittedSessionRef.current = startedAt;
     const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
+    const durationSeconds = getDurationSeconds(startedAt, completedAt);
     setElapsedSeconds(durationSeconds);
     setSaveState("saving");
     setSaveError("");
