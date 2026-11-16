@@ -6,10 +6,10 @@ import { getVocabularyWordPage } from "@/lib/supabase/vocabulary";
 import { getCachedVocabularyPage, setCachedVocabularyPage } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { toast } from "sonner";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, type PageResult } from "@/lib/pagination";
 
 type PageQuery = { page: number; pageSize: number; search: string; category: string | null; status: VocabularyStatus | null };
-type VocabularyPageResult = { rows: VocabularyWord[]; total: number };
+type VocabularyPageResult = PageResult<VocabularyWord>;
 
 export function useVocabularyPageData({
   authVersion,

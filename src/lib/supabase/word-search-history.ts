@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
-import { getInclusivePageRange } from "@/lib/pagination";
+import { getInclusivePageRange, type PageResult } from "@/lib/pagination";
 import type { WordSearchDifficulty, WordSearchSessionRow } from "@/types/database";
 import {
   getCachedWordSearchHistory,
@@ -10,7 +10,7 @@ import {
 
 const supabase = createClient();
 
-type WordSearchHistoryPage = { rows: WordSearchSessionRow[]; total: number };
+type WordSearchHistoryPage = PageResult<WordSearchSessionRow>;
 
 export function getCachedWordSearchSessions(userId: string, page = 1, pageSize = 10) {
   return getCachedWordSearchHistory<WordSearchHistoryPage>(userId, page, pageSize);
@@ -45,7 +45,7 @@ export async function getWordSearchSessions(input: {
   page: number;
   pageSize: number;
   forceRefresh?: boolean;
-}): Promise<{ rows: WordSearchSessionRow[]; total: number }> {
+}): Promise<PageResult<WordSearchSessionRow>> {
   const user = await requireAuthenticatedUser(supabase, "You must be logged in to view game history.");
 
   const cached = getCachedWordSearchHistory<WordSearchHistoryPage>(user.id, input.page, input.pageSize);

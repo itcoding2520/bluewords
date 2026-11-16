@@ -7,9 +7,9 @@ import {
 } from "@/lib/supabase/quiz-history-cache.mjs";
 import { quizSupabase } from "@/lib/supabase/quiz-client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
-import { getInclusivePageRange } from "@/lib/pagination";
+import { getInclusivePageRange, type PageResult } from "@/lib/pagination";
 
-type VocabularyQuizHistoryPage = { rows: VocabularyQuizSessionRow[]; total: number };
+type VocabularyQuizHistoryPage = PageResult<VocabularyQuizSessionRow>;
 
 export function getCachedVocabularyQuizHistory(userId: string, page = 1, pageSize = 10): VocabularyQuizHistoryPage | null {
   return getCachedQuizHistory<VocabularyQuizHistoryPage>(userId, page, pageSize);
@@ -23,7 +23,7 @@ export async function getVocabularyQuizHistory(input: {
   page: number;
   pageSize: number;
   forceRefresh?: boolean;
-}): Promise<{ rows: VocabularyQuizSessionRow[]; total: number }> {
+}): Promise<PageResult<VocabularyQuizSessionRow>> {
   const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to view quiz history.");
 
   const cached = getCachedQuizHistory<VocabularyQuizHistoryPage>(user.id, input.page, input.pageSize);
