@@ -10,8 +10,10 @@ import {
 
 const supabase = createClient();
 
+type WordSearchHistoryPage = { rows: WordSearchSessionRow[]; total: number };
+
 export function getCachedWordSearchSessions(userId: string, page = 1, pageSize = 10) {
-  return getCachedWordSearchHistory(userId, page, pageSize) as { rows: WordSearchSessionRow[]; total: number } | null;
+  return getCachedWordSearchHistory<WordSearchHistoryPage>(userId, page, pageSize);
 }
 
 export async function saveWordSearchSession(input: {
@@ -46,7 +48,7 @@ export async function getWordSearchSessions(input: {
 }): Promise<{ rows: WordSearchSessionRow[]; total: number }> {
   const user = await requireAuthenticatedUser(supabase, "You must be logged in to view game history.");
 
-  const cached = getCachedWordSearchHistory(user.id, input.page, input.pageSize) as { rows: WordSearchSessionRow[]; total: number } | null;
+  const cached = getCachedWordSearchHistory<WordSearchHistoryPage>(user.id, input.page, input.pageSize);
   if (cached && !input.forceRefresh) return cached;
 
   const { from, to } = getInclusivePageRange(input.page, input.pageSize);
