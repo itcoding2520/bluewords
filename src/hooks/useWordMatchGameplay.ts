@@ -3,16 +3,32 @@ import { shuffle } from "@/lib/random";
 import type { MatchCardData, MatchPair } from "@/lib/word-match";
 import type { GamePhase } from "@/types/game";
 
+interface WordMatchState {
+  pairs: MatchPair[];
+  cards: MatchCardData[];
+  matchedIds: Set<string>;
+  selectedCardIds: string[];
+  wrongCardIds: string[];
+  isResolving: boolean;
+  moves: number;
+  score: number;
+  feedback: string;
+}
+
+const initialState: WordMatchState = {
+  pairs: [],
+  cards: [],
+  matchedIds: new Set(),
+  selectedCardIds: [],
+  wrongCardIds: [],
+  isResolving: false,
+  moves: 0,
+  score: 0,
+  feedback: "",
+};
+
 export function useWordMatchGameplay(phase: GamePhase) {
-  const [pairs, setPairs] = useState<MatchPair[]>([]);
-  const [cards, setCards] = useState<MatchCardData[]>([]);
-  const [matchedIds, setMatchedIds] = useState<Set<string>>(() => new Set());
-  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const [wrongCardIds, setWrongCardIds] = useState<string[]>([]);
-  const [isResolving, setIsResolving] = useState(false);
-  const [moves, setMoves] = useState(0);
-  const [score, setScore] = useState(0);
-  const [feedback, setFeedback] = useState("");
+  const [state, setState] = useState(initialState);
   const mismatchTimerRef = useRef<number | null>(null);
   const resolvingRef = useRef(false);
 
@@ -26,65 +42,76 @@ export function useWordMatchGameplay(phase: GamePhase) {
       { id: `${pair.id}:word`, pairId: pair.id, kind: "word" as const },
       { id: `${pair.id}:match`, pairId: pair.id, kind: "match" as const },
     ]);
-    setPairs(nextPairs);
-    setCards(shuffle(nextCards));
-    setMatchedIds(new Set());
-    setSelectedCardIds([]);
-    setWrongCardIds([]);
-    setMoves(0);
-    setScore(0);
-    setFeedback("Flip two cards to find a matching word and picture or meaning.");
+    setState({
+      ...initialState,
+      pairs: nextPairs,
+      cards: shuffle(nextCards),
+      feedback: "Flip two cards to find a matching word and picture or meaning.",
+    });
     resolvingRef.current = false;
-    setIsResolving(false);
   }
 
   function selectCard(card: MatchCardData): boolean {
-    if (phase !== "playing" || matchedIds.has(card.pairId)
-      || selectedCardIds.includes(card.id) || resolvingRef.current) return false;
-    if (selectedCardIds.length === 0) {
-      setSelectedCardIds([card.id]);
-      setFeedback("Now flip one more card.");
+    if (phase !== "playing" || state.matchedIds.has(card.pairId)
+      || state.selectedCardIds.includes(card.id) || resolvingRef.current) return false;
+    if (state.selectedCardIds.length === 0) {
+      setState((current) => ({
+        ...current,
+        selectedCardIds: [card.id],
+        feedback: "Now flip one more card.",
+      }));
       return false;
     }
 
-    const firstCard = cards.find((item) => item.id === selectedCardIds[0]);
+    const firstCard = state.cards.find((item) => item.id === state.selectedCardIds[0]);
     if (!firstCard) return false;
-    setMoves((count) => count + 1);
-    setSelectedCardIds([firstCard.id, card.id]);
+    const selectedPair = [firstCard.id, card.id];
     if (firstCard.pairId === card.pairId && firstCard.kind !== card.kind) {
-      const nextMatchedIds = new Set(matchedIds).add(card.pairId);
-      setMatchedIds(nextMatchedIds);
-      setSelectedCardIds([]);
-      setScore((value) => value + 10);
-      setFeedback("Great match! +10 points");
-      return nextMatchedIds.size === pairs.length;
+      const nextMatchedIds = new Set(state.matchedIds).add(card.pairId);
+      setState((current) => ({
+        ...current,
+        matchedIds: nextMatchedIds,
+        selectedCardIds: [],
+        moves: current.moves + 1,
+        score: current.score + 10,
+        feedback: "Great match! +10 points",
+      }));
+      return nextMatchedIds.size === state.pairs.length;
     }
 
     resolvingRef.current = true;
-    setIsResolving(true);
-    setWrongCardIds([firstCard.id, card.id]);
-    setFeedback("Those cards do not match. Try again!");
+    setState((current) => ({
+      ...current,
+      selectedCardIds: selectedPair,
+      wrongCardIds: selectedPair,
+      isResolving: true,
+      moves: current.moves + 1,
+      feedback: "Those cards do not match. Try again!",
+    }));
     mismatchTimerRef.current = window.setTimeout(() => {
-      setWrongCardIds([]);
-      setSelectedCardIds([]);
-      setFeedback("Flip two cards to find a matching word and picture or meaning.");
+      setState((current) => ({
+        ...current,
+        wrongCardIds: [],
+        selectedCardIds: [],
+        feedback: "Flip two cards to find a matching word and picture or meaning.",
+        isResolving: false,
+      }));
       resolvingRef.current = false;
-      setIsResolving(false);
       mismatchTimerRef.current = null;
     }, 850);
     return false;
   }
 
   return {
-    pairs,
-    cards,
-    matchedIds,
-    selectedCardIds,
-    wrongCardIds,
-    isResolving,
-    moves,
-    score,
-    feedback,
+    pairs: state.pairs,
+    cards: state.cards,
+    matchedIds: state.matchedIds,
+    selectedCardIds: state.selectedCardIds,
+    wrongCardIds: state.wrongCardIds,
+    isResolving: state.isResolving,
+    moves: state.moves,
+    score: state.score,
+    feedback: state.feedback,
     startRound,
     selectCard,
   };
