@@ -14,10 +14,10 @@ export function getVocabularyDropdownCategories(
     const key = normalizeVocabularyLabel(name);
     if (name && (includeUncategorized || key !== "uncategorized") && !namesByKey.has(key)) namesByKey.set(key, name);
   }
-  const names = [...namesByKey.values()].sort((left, right) => left.localeCompare(right));
+  const names = [...namesByKey.entries()].sort(([, left], [, right]) => left.localeCompare(right));
 
-  return names.map((name) => byName.get(normalizeVocabularyLabel(name)) ?? {
-    id: `category-${normalizeVocabularyLabel(name).replace(/[^a-z0-9]+/g, "-")}`,
+  return names.map(([key, name]) => byName.get(key) ?? {
+    id: `category-${key.replace(/[^a-z0-9]+/g, "-")}`,
     user_id: "",
     name,
     color: "slate",
