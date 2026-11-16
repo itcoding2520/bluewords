@@ -39,7 +39,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const exportCount = useVocabularyCategoryExportCount({
     authVersion,
     categories,
-    pageWordCount: pageData.pageWords.length,
     selectedCategory,
   });
   const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });
