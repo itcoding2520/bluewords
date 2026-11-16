@@ -23,11 +23,11 @@ function parseResponseOptions(value: string, row: number): string[] {
       throw new Error(`Row ${row}: response_options_json must contain a valid JSON array.`);
     }
   }
-  if (!Array.isArray(options) || options.some((option) => typeof option !== "string")) {
+  if (!Array.isArray(options) || !options.every((option): option is string => typeof option === "string")) {
     throw new Error(`Row ${row}: response_options_json must be an array of strings.`);
   }
 
-  const normalizedOptions = (options as string[]).map((option) => option.trim());
+  const normalizedOptions = options.map((option) => option.trim());
   if (normalizedOptions.some((option) => !option)) {
     throw new Error(`Row ${row}: response_options_json cannot contain empty choices.`);
   }
