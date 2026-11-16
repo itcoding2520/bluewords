@@ -23,8 +23,15 @@ export function useWordSearchGameData({
   tab: GameTab;
 }) {
   const candidates = useMemo(() => selectableWords(words, category, difficulty, gridSize), [words, category, difficulty, gridSize]);
-  const vocabularyById = useMemo(() => new Map(words.map((word) => [word.id, word] as const)), [words]);
-  const vocabularyByWord = useMemo(() => new Map(words.map((word) => [normalizeWordSearchWord(word.word), word] as const)), [words]);
+  const { vocabularyById, vocabularyByWord } = useMemo(() => {
+    const byId = new Map<string, VocabularyWord>();
+    const byWord = new Map<string, VocabularyWord>();
+    for (const word of words) {
+      byId.set(word.id, word);
+      byWord.set(normalizeWordSearchWord(word.word), word);
+    }
+    return { vocabularyById: byId, vocabularyByWord: byWord };
+  }, [words]);
   const categoryOptions = useMemo(
     () => buildWordSearchCategoryOptions(categories, words),
     [categories, words]
