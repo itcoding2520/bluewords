@@ -25,7 +25,11 @@ async function getProfileNicknames(adminClient: AdminClient, users: AuthUser[]) 
     console.error("Could not load profiles for admin user list:", error.message);
     return new Map<string, string>();
   }
-  return new Map((data ?? []).flatMap((profile) => profile.nickname ? [[profile.user_id, profile.nickname] as const] : []));
+  const nicknames = new Map<string, string>();
+  for (const profile of data ?? []) {
+    if (profile.nickname) nicknames.set(profile.user_id, profile.nickname);
+  }
+  return nicknames;
 }
 
 export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]) {
