@@ -19,34 +19,42 @@ export function useNotificationActions({
 }) {
   const router = useRouter();
 
-  async function markAllRead() {
+  async function getCurrentUserId() {
     const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
+    return session?.user.id ?? null;
+  }
+
+  function invalidateAndAnnounceUpdate(userId: string, updateLocalState?: () => void) {
+    invalidateNotificationsCache(userId);
+    updateLocalState?.();
+    window.dispatchEvent(new Event("bluewords:notifications-updated"));
+  }
+
+  async function markAllRead() {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
     const now = new Date();
-    const { error: updateError } = await markRecentNotificationsRead(supabase, user.id, now);
+    const { error: updateError } = await markRecentNotificationsRead(supabase, userId, now);
     if (updateError) setError(updateError.message);
     else {
-      invalidateNotificationsCache(user.id);
-      window.dispatchEvent(new Event("bluewords:notifications-updated"));
+      invalidateAndAnnounceUpdate(userId);
       await refresh(true);
     }
   }
 
   async function markAsRead(item: NotificationRow) {
     if (item.read_at) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
+    const userId = await getCurrentUserId();
+    if (!userId) return;
     const readAt = new Date().toISOString();
-    const { error: updateError } = await updateNotificationRead(supabase, user.id, item.id, readAt);
+    const { error: updateError } = await updateNotificationRead(supabase, userId, item.id, readAt);
     if (updateError) {
       setError(updateError.message);
       return;
     }
-    invalidateNotificationsCache(user.id);
-    setNotifications((current) => current.map((notification) => notification.id === item.id ? { ...notification, read_at: readAt } : notification));
-    window.dispatchEvent(new Event("bluewords:notifications-updated"));
+    invalidateAndAnnounceUpdate(userId, () => {
+      setNotifications((current) => current.map((notification) => notification.id === item.id ? { ...notification, read_at: readAt } : notification));
+    });
   }
 
   async function reviewRequest(event: MouseEvent<HTMLAnchorElement>, item: NotificationRow) {
