@@ -11,20 +11,34 @@ export async function importNewCommunicationTurns(
   if (!dialogueRecords.length) return { turnCount: 0, skippedTurnKeys };
 
   const dialoguesByKey = new Map<string, string>();
-  const allDialogueRows = [...new Map(dialogueRecords.map((row) => [row.dialogue_key, {
-    dialogue_key: row.dialogue_key,
-    lesson_id: lessonsByKey.get(row.lesson_key),
-    title_en: row.dialogue_title_en,
-    title_vi: row.dialogue_title_vi,
-    prompt_vi: row.dialogue_prompt_vi,
-    sort_order: row.record_order,
-  }])).values()];
+  const dialogueRowsByKey = new Map<string, {
+    dialogue_key: string;
+    lesson_id: string | undefined;
+    title_en: string;
+    title_vi: string;
+    prompt_vi: string;
+    sort_order: number;
+  }>();
+  for (const row of dialogueRecords) {
+    dialogueRowsByKey.set(row.dialogue_key, {
+      dialogue_key: row.dialogue_key,
+      lesson_id: lessonsByKey.get(row.lesson_key),
+      title_en: row.dialogue_title_en,
+      title_vi: row.dialogue_title_vi,
+      prompt_vi: row.dialogue_prompt_vi,
+      sort_order: row.record_order,
+    });
+  }
+  const allDialogueRows = [...dialogueRowsByKey.values()];
   const dialogueKeys = allDialogueRows.map((row) => row.dialogue_key);
   const existingDialoguesResult = await supabase.from("communication_dialogues")
     .select("dialogue_key").in("dialogue_key", dialogueKeys);
   if (existingDialoguesResult.error) throw existingDialoguesResult.error;
   const existingDialogueKeys = new Set((existingDialoguesResult.data ?? []).map((row) => row.dialogue_key));
-  const dialogueRows = allDialogueRows.filter((row) => !existingDialogueKeys.has(row.dialogue_key));
+  const dialogueRows = [];
+  for (const row of allDialogueRows) {
+    if (!existingDialogueKeys.has(row.dialogue_key)) dialogueRows.push(row);
+  }
   if (dialogueRows.length) {
     const insertDialogues = await supabase.from("communication_dialogues").insert(dialogueRows);
     if (insertDialogues.error) throw insertDialogues.error;
@@ -34,21 +48,25 @@ export async function importNewCommunicationTurns(
     .select("id,dialogue_key").in("dialogue_key", dialogueKeys);
   if (dialogueLookup.error) throw dialogueLookup.error;
   for (const row of dialogueLookup.data ?? []) dialoguesByKey.set(row.dialogue_key, row.id);
-  const allTurnRows = dialogueRecords.map((row) => ({
-    turn_key: row.record_key,
-    dialogue_id: dialoguesByKey.get(row.dialogue_key),
-    turn_order: row.turn_order,
-    speaker: row.speaker,
-    text_en: row.turn_text_en,
-    meaning_vi: row.turn_meaning_vi,
-    audio_url: row.turn_audio_url,
-    response_prompt_vi: row.response_prompt_vi,
-    expected_response: row.expected_response,
-    response_options: row.response_options,
-  }));
-  const dialogueIds = [...new Set(dialogueRecords
-    .map((row) => dialoguesByKey.get(row.dialogue_key))
-    .filter((id): id is string => Boolean(id)))];
+  const allTurnRows = [];
+  const dialogueIdSet = new Set<string>();
+  for (const row of dialogueRecords) {
+    const dialogueId = dialoguesByKey.get(row.dialogue_key);
+    if (dialogueId) dialogueIdSet.add(dialogueId);
+    allTurnRows.push({
+      turn_key: row.record_key,
+      dialogue_id: dialogueId,
+      turn_order: row.turn_order,
+      speaker: row.speaker,
+      text_en: row.turn_text_en,
+      meaning_vi: row.turn_meaning_vi,
+      audio_url: row.turn_audio_url,
+      response_prompt_vi: row.response_prompt_vi,
+      expected_response: row.expected_response,
+      response_options: row.response_options,
+    });
+  }
+  const dialogueIds = [...dialogueIdSet];
   const existingTurns = dialogueIds.length
     ? await fetchAllPages<{ turn_key: string; dialogue_id: string; turn_order: number }>(async (from, to) => {
       const { data, error } = await supabase.from("communication_dialogue_turns")
@@ -57,8 +75,12 @@ export async function importNewCommunicationTurns(
       return { data: data ?? [], error };
     })
     : [];
-  const existingTurnKeys = new Set(existingTurns.map((row) => row.turn_key));
-  const existingTurnOrders = new Set(existingTurns.map((row) => `${row.dialogue_id}:${row.turn_order}`));
+  const existingTurnKeys = new Set<string>();
+  const existingTurnOrders = new Set<string>();
+  for (const row of existingTurns) {
+    existingTurnKeys.add(row.turn_key);
+    existingTurnOrders.add(`${row.dialogue_id}:${row.turn_order}`);
+  }
   for (const row of dialogueRecords) {
     const dialogueId = dialoguesByKey.get(row.dialogue_key);
     if (existingTurnKeys.has(row.record_key)
