@@ -59,5 +59,5 @@ export function buildWordSearchCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[]
 ): WordSearchCategoryOption[] {
-  return buildVocabularyGameCategoryOptions(categories, words, false);
+  return buildVocabularyGameCategoryOptions(categories, words, { useFirstWordImageForAll: false });
 }

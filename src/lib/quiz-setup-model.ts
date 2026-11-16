@@ -11,7 +11,7 @@ export function buildQuizCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[]
 ): QuizCategoryOption[] {
-  return buildVocabularyGameCategoryOptions(categories, words, true);
+  return buildVocabularyGameCategoryOptions(categories, words, { useFirstWordImageForAll: true });
 }
 
 export function buildQuizPreviewQuestion(questions: QuizQuestion[]): QuizQuestion | undefined {

@@ -14,7 +14,7 @@ export type VocabularyGameCategoryOption = {
 export function buildVocabularyGameCategoryOptions(
   categories: VocabularyCategoryRow[],
   words: VocabularyWord[],
-  useFirstWordImageForAll: boolean,
+  options: { useFirstWordImageForAll: boolean },
 ): VocabularyGameCategoryOption[] {
   let firstWordImage: string | null = null;
   const wordImagesByCategory = new Map<string, string>();
@@ -34,7 +34,7 @@ export function buildVocabularyGameCategoryOptions(
       name: "All categories",
       value: "all",
       color: "blue",
-      imagePath: useFirstWordImageForAll ? firstWordImage : null,
+      imagePath: options.useFirstWordImageForAll ? firstWordImage : null,
     },
     ...visibleCategories.map((item) => ({
       id: item.id,
