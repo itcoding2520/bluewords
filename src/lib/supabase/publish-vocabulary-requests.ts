@@ -1,8 +1,6 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
-import type {
-  CommunityCategoryRequest,
-  CommunityWordRequest,
-} from "@/lib/supabase/publish-vocabulary-request-types";
+import { firstRelation } from "@/lib/supabase/first-relation";
+import type { CommunityCategoryRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 
 export async function loadPublishVocabularyRequests(supabase: SupabaseClient) {
   const [categoryResult, wordResult] = await Promise.all([
@@ -17,11 +15,9 @@ export async function loadPublishVocabularyRequests(supabase: SupabaseClient) {
 
   return {
     categories: (categoryResult.data ?? []) as CommunityCategoryRequest[],
-    words: ((wordResult.data ?? []) as unknown as Array<CommunityWordRequest & {
-      community_categories: { name: string };
-    }>).map(({ community_categories, ...item }) => ({
-      ...item,
-      category_name: community_categories.name,
-    })),
+    words: (wordResult.data ?? []).flatMap(({ community_categories, ...item }) => {
+      const category = firstRelation(community_categories);
+      return category ? [{ ...item, category_name: category.name }] : [];
+    }),
   };
 }
