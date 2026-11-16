@@ -2,6 +2,7 @@ import { shuffle } from "@/lib/random";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 import type { DifficultyLevel } from "@/types/difficulty";
+import { firstRelation } from "@/lib/supabase/first-relation";
 
 type AssessmentDifficulty = DifficultyLevel;
 type DefaultVocabularyKey = { normalized_word: string };
@@ -46,9 +47,7 @@ export function generateAssessmentQuestions({
   }
   for (const row of communityWords ?? []) {
     const normalized = normalizeVocabularyText(row.word);
-    const category = Array.isArray(row.community_categories)
-      ? row.community_categories[0]?.name
-      : (row.community_categories as { name?: string } | null)?.name;
+    const category = firstRelation(row.community_categories)?.name;
     if (row.meaning.trim()) {
       wordMap.set(normalized, { word: row.word, meaning: row.meaning, category: category ?? "Community", imagePath: row.image_path });
     }
