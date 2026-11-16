@@ -107,6 +107,8 @@ export function CategoryManagementList({
       <div className="category-card-grid">
         {pageCategories.map((category) => {
           const selectedColor = CATEGORY_DOT_STYLES[category.color];
+          const normalizedCategoryName = normalizeVocabularyLabel(category.name);
+          const categoryAuthor = categoryAuthors[normalizedCategoryName];
           const isReadOnly = category.user_id === "community";
           const isProtectedDefault = isDefaultCategory(category);
           const isPublishedShared = isCommunityCategoryId(category.id);
@@ -123,8 +125,8 @@ export function CategoryManagementList({
                 </form>
               ) : (
                 <div className="category-item-content">
-                  <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={fallbackImagesByCategory.get(normalizeVocabularyLabel(category.name))} colorClass={selectedColor} sizeClass="size-20" shapeClass="rounded-2xl" />
-                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{category.name}</p><p className="mt-1 text-xs text-slate-500">{isAdmin && categoryAuthors[normalizeVocabularyLabel(category.name)] ? `By ${categoryAuthors[normalizeVocabularyLabel(category.name)]}` : isReadOnly ? "Published community category" : category.is_default ? "Default category" : category.image_path ? "Custom image" : "Uses the first word image in games"}</p></div>
+                  <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={fallbackImagesByCategory.get(normalizedCategoryName)} colorClass={selectedColor} sizeClass="size-20" shapeClass="rounded-2xl" />
+                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{category.name}</p><p className="mt-1 text-xs text-slate-500">{isAdmin && categoryAuthor ? `By ${categoryAuthor}` : isReadOnly ? "Published community category" : category.is_default ? "Default category" : category.image_path ? "Custom image" : "Uses the first word image in games"}</p></div>
                   {canManageCategory && <ActionMenu label={category.name} disabled={isSaving} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => onStartEdit(category) }, ...(!category.is_default ? [{ label: "Remove", icon: <Trash2 size={15} />, onSelect: () => onDelete(category), destructive: true }] : [])]} />}
                 </div>
               )}
