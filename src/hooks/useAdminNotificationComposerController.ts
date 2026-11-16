@@ -1,19 +1,18 @@
-import { useState } from "react";
+import { useFeedbackMessages } from "@/hooks/useFeedbackMessages";
 import { useAdminNotificationRecipients } from "@/hooks/useAdminNotificationRecipients";
 import { useAdminNotificationSend } from "@/hooks/useAdminNotificationSend";
 
 export function useAdminNotificationComposerController(currentUserId: string) {
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const recipientState = useAdminNotificationRecipients(currentUserId, setError);
+  const feedback = useFeedbackMessages();
+  const recipientState = useAdminNotificationRecipients(currentUserId, feedback.setError);
   const messageState = useAdminNotificationSend({
     recipients: recipientState.recipients,
     selected: recipientState.selected,
     allUsers: recipientState.allUsers,
     setSelected: recipientState.setSelected,
     setAllUsers: recipientState.setAllUsers,
-    setError,
-    setNotice,
+    setError: feedback.setError,
+    setNotice: feedback.setNotice,
   });
 
   return {
@@ -38,7 +37,7 @@ export function useAdminNotificationComposerController(currentUserId: string) {
       message: messageState.message,
       setMessage: messageState.setMessage,
     },
-    status: { sending: messageState.sending, error, notice },
+    status: { sending: messageState.sending, error: feedback.error, notice: feedback.notice },
     actions: { sendNotification: messageState.sendNotification },
   };
 }

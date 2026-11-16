@@ -7,19 +7,19 @@ import type { UserProfile } from "@/lib/supabase/user-profile";
 import { removeReplacedProfileAvatar, saveProfileWithAvatar } from "@/lib/supabase/user-profile-workflows";
 import { useEditableUserProfileData } from "@/hooks/useEditableUserProfileData";
 import { useUserProfileAvatar } from "@/hooks/useUserProfileAvatar";
+import { useFeedbackMessages } from "@/hooks/useFeedbackMessages";
 
 export function useUserProfileEditor(userId: string) {
   const [nickname, setNickname] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const feedback = useFeedbackMessages();
   const onProfileLoaded = useCallback((loadedProfile: UserProfile | null) => {
     setNickname(loadedProfile?.nickname ?? "");
   }, []);
-  const profileData = useEditableUserProfileData({ userId, onProfileLoaded, setError });
+  const profileData = useEditableUserProfileData({ userId, onProfileLoaded, setError: feedback.setError });
   const { profile, setProfile } = profileData;
 
-  const avatar = useUserProfileAvatar({ profile, setError, setNotice });
+  const avatar = useUserProfileAvatar({ profile, setError: feedback.setError, setNotice: feedback.setNotice });
 
   const normalizedNickname = nickname.trim();
   const hasChanges = normalizedNickname !== (profile?.nickname ?? "") || Boolean(avatar.avatarFile) || avatar.removeAvatar;
@@ -27,8 +27,8 @@ export function useUserProfileEditor(userId: string) {
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError("");
-    setNotice("");
+    feedback.setError("");
+    feedback.setNotice("");
 
     try {
       const previousAvatarPath = profile?.avatar_path ?? null;
@@ -42,13 +42,13 @@ export function useUserProfileEditor(userId: string) {
       setProfile(updatedProfile);
       setNickname(updatedProfile.nickname ?? "");
       avatar.resetAvatarSelection();
-      setNotice("Profile updated.");
+      feedback.setNotice("Profile updated.");
       await removeReplacedProfileAvatar(previousAvatarPath, updatedProfile.avatar_path);
     } catch (saveError) {
       const code = typeof saveError === "object" && saveError && "code" in saveError
         ? saveError.code
         : null;
-      setError(code === "23505"
+      feedback.setError(code === "23505"
         ? "That nickname is already in use. Choose another one."
         : getErrorMessage(saveError, "Could not save your profile. Please try again."));
     } finally {
@@ -58,8 +58,8 @@ export function useUserProfileEditor(userId: string) {
 
   function changeNickname(value: string) {
     setNickname(value);
-    setError("");
-    setNotice("");
+    feedback.setError("");
+    feedback.setNotice("");
   }
 
   return {
@@ -71,8 +71,8 @@ export function useUserProfileEditor(userId: string) {
     previewPath: avatar.previewPath,
     loading: profileData.loading,
     saving,
-    error,
-    notice,
+    error: feedback.error,
+    notice: feedback.notice,
     normalizedNickname,
     hasChanges,
     saveProfile,
