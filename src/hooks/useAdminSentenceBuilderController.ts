@@ -29,14 +29,16 @@ export function useAdminSentenceBuilderController() {
       visible: getPageItems(filteredQuestions, metadata.currentPage, pageSize),
     };
   }, [filteredQuestions, page, pageSize]);
-  const categoryOptions = useMemo(
-    () => [...new Set(
-      [...questions.map((question) => question.category), draft.category]
-        .map((name) => name.trim())
-        .filter(Boolean)
-    )].sort((left, right) => left.localeCompare(right)),
-    [draft.category, questions],
-  );
+  const categoryOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const question of questions) {
+      const name = question.category.trim();
+      if (name) names.add(name);
+    }
+    const draftCategory = draft.category.trim();
+    if (draftCategory) names.add(draftCategory);
+    return [...names].sort((left, right) => left.localeCompare(right));
+  }, [draft.category, questions]);
 
   const actions = useAdminSentenceBuilderActions({
     supabase,
