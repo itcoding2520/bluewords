@@ -66,11 +66,11 @@ function escapeRegExp(value: string) {
 
 export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): SentenceDrill<T>[] {
   const vocabulary = getSentenceDrillVocabulary(items);
-  return items.flatMap((item) => {
+  const drills: SentenceDrill<T>[] = [];
+  for (const item of items) {
     const sentence = item.example_en.trim();
-    if (!sentence) return [];
+    if (!sentence) continue;
     const clue = item.example_vi.trim() || item.meaning_vi;
-    const drills: SentenceDrill<T>[] = [];
     const sentenceWords = sentence.match(/[^\s]+/g) ?? [];
     if (sentenceWords.length >= 4) {
       const tiles = shuffle(sentenceWords.map((text, id) => ({ id, text })));
@@ -88,6 +88,6 @@ export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): S
       const choices = shuffle([...new Set([answer, ...shuffle(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
       if (choices.length >= 2) drills.push({ id: `${item.id}:complete`, item, kind: "complete", sentence, clue, answer, gapSentence, choices });
     }
-    return drills;
-  });
+  }
+  return drills;
 }
