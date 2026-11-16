@@ -3,17 +3,15 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { useWordSearchTimer } from "@/hooks/useWordSearchTimer";
-import { type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
 import { useWordSearchGameplay, type WordSearchGameplayState } from "@/hooks/useWordSearchGameplay";
 import { useWordSearchNavigation } from "@/hooks/useWordSearchNavigation";
+import { useWordSearchSetup } from "@/hooks/useWordSearchSetup";
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
-  const [gridSize, setGridSize] = useState<GridSize>(10);
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [category, setCategory] = useState("all");
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const setup = useWordSearchSetup();
+  const { gridSize, difficulty, category, categoriesExpanded } = setup;
   const [gameState, setGameState] = useState<WordSearchGameplayState>({
     phase: "setup",
     puzzle: null,
@@ -74,13 +72,13 @@ export function useWordSearchController(userId: string | null) {
     isLoaded,
     setup: {
       gridSize,
-      setGridSize,
+      setGridSize: setup.setGridSize,
       difficulty,
-      setDifficulty,
+      setDifficulty: setup.setDifficulty,
       category,
-      setCategory,
+      setCategory: setup.setCategory,
       categoriesExpanded,
-      toggleCategoriesExpanded: () => setCategoriesExpanded((expanded) => !expanded),
+      toggleCategoriesExpanded: setup.toggleCategoriesExpanded,
       tab: navigation.tab,
       categoryOptions,
       targetCount,
