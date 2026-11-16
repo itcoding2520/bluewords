@@ -1,4 +1,4 @@
-import { getUserAvatarUrl } from "@/lib/supabase/user-profile";
+import { getUserAvatarUrl } from "@/lib/supabase/user-profile-avatars";
 
 const avatarColors = [
   "bg-blue-600",

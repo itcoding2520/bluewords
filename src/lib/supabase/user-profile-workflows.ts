@@ -1,9 +1,5 @@
-import {
-  deleteUserAvatar,
-  saveUserProfile,
-  uploadUserAvatar,
-  type UserProfile,
-} from "@/lib/supabase/user-profile";
+import { deleteUserAvatar, uploadUserAvatar } from "@/lib/supabase/user-profile-avatars";
+import { saveUserProfile, type UserProfile } from "@/lib/supabase/user-profile";
 
 export async function saveProfileWithAvatar(input: {
   nickname: string | null;

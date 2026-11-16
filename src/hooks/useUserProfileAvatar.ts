@@ -1,5 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { validateUserAvatar, type UserProfile } from "@/lib/supabase/user-profile";
+import type { UserProfile } from "@/lib/supabase/user-profile";
+import { validateUserAvatar } from "@/lib/supabase/user-profile-avatars";
 
 export function useUserProfileAvatar({
   profile,
