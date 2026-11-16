@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, isAssessmentAdmin } from "@/lib/assessments/server";
+import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
 import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
 import type { AssessmentDifficulty } from "@/lib/assessments/assignment-input";
 
 export async function GET() {
-  const { client, user } = await getRequestUser();
-  if (!user || !(await isAssessmentAdmin(client, user.id))) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  const admin = createAssessmentAdminClient();
-  if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  const auth = await authorizeAdminRoute({
+    serviceUnavailableMessage: "Assessment service is not configured.",
+    authenticationFailure: { message: "Admin access required.", status: 403 },
+  });
+  if ("response" in auth) return auth.response;
+  const { adminClient: admin } = auth;
   const [{ data: assignments, error }, { data: attempts, error: attemptsError }, { data: users, error: usersError }] = await Promise.all([
     admin.from("assessments").select("id,title,difficulty,due_at,created_at,assessment_recipients(id,user_id,status,assigned_at)").order("created_at", { ascending: false }).limit(100),
     admin.from("assessment_attempts").select("id,user_id,recipient_id,score,correct_count,elapsed_seconds,result,completed_at,attempt_number").not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(100),
@@ -19,10 +21,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { client, user } = await getRequestUser();
-  if (!user || !(await isAssessmentAdmin(client, user.id))) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  const admin = createAssessmentAdminClient();
-  if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  const auth = await authorizeAdminRoute({
+    serviceUnavailableMessage: "Assessment service is not configured.",
+    authenticationFailure: { message: "Admin access required.", status: 403 },
+  });
+  if ("response" in auth) return auth.response;
+  const { adminClient: admin, user } = auth;
   let input: unknown;
   try { input = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
   const validation = validateAssessmentAssignmentInput(input);

@@ -3,7 +3,7 @@ import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { validateAdminNotificationInput } from "@/lib/admin-notification-input";
 
 export async function POST(request: NextRequest) {
-  const auth = await authorizeAdminRoute("Notification sending is not configured.");
+  const auth = await authorizeAdminRoute({ serviceUnavailableMessage: "Notification sending is not configured." });
   if ("response" in auth) return auth.response;
   const { user, adminClient } = auth;
 

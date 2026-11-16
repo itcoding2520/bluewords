@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { isAdminUser } from "@/lib/supabase/admin-access";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 export { shuffle as shuffled } from "@/lib/random";
@@ -12,10 +11,6 @@ export async function getRequestUser() {
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
   return { client, user };
-}
-
-export async function isAssessmentAdmin(client: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  return isAdminUser(client, userId);
 }
 
 export async function signQuestionImages(admin: NonNullable<ReturnType<typeof createAssessmentAdminClient>>, questions: AssessmentQuestion[]) {
