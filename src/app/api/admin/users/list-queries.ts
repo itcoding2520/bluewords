@@ -4,6 +4,7 @@ import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
 import { getPageItems } from "@/lib/pagination";
 import { getAdminUserNickname } from "@/lib/admin-user-mapping";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 function mapAdminUser(user: AuthUser, profileNicknames?: ReadonlyMap<string, string>) {
   return {
@@ -34,7 +35,7 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
   const matchedUsers = new Map<string, AuthUser>();
   for (let page = 1; matchedUsers.size < requestedIds.size; page += 1) {
     const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 100 });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return jsonErrorResponse(error.message, 400);
     for (const user of data.users) {
       if (requestedIds.has(user.id)) matchedUsers.set(user.id, user);
     }
@@ -48,7 +49,7 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
       users: users.map((user) => mapAdminUser(user, nicknames)),
     });
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error, "Could not load user profiles.") }, { status: 400 });
+    return jsonErrorResponse(getErrorMessage(error, "Could not load user profiles."), 400);
   }
 }
 
@@ -62,12 +63,12 @@ export async function searchAdminUsers(
   const matches = [];
   for (let userPage = 1; ; userPage += 1) {
     const { data, error } = await adminClient.auth.admin.listUsers({ page: userPage, perPage: 1000 });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return jsonErrorResponse(error.message, 400);
     let profileNicknames: Map<string, string>;
     try {
       profileNicknames = await getProfileNicknames(adminClient, data.users);
     } catch (profileError) {
-      return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
+      return jsonErrorResponse(getErrorMessage(profileError, "Could not load user profiles."), 400);
     }
     for (const user of data.users) {
       const mappedUser = mapAdminUser(user, profileNicknames);
@@ -83,7 +84,7 @@ export async function searchAdminUsers(
 
 export async function getAdminUsersPage(adminClient: AdminClient, page: number, pageSize: number) {
   const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: pageSize });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return jsonErrorResponse(error.message, 400);
   try {
     const nicknames = await getProfileNicknames(adminClient, data.users);
     return NextResponse.json({
@@ -93,6 +94,6 @@ export async function getAdminUsersPage(adminClient: AdminClient, page: number, 
       pageSize,
     });
   } catch (profileError) {
-    return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
+    return jsonErrorResponse(getErrorMessage(profileError, "Could not load user profiles."), 400);
   }
 }

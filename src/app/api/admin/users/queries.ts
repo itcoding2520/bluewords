@@ -1,14 +1,15 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { isUuid } from "@/lib/is-uuid";
 import { getAdminUsersByIds, getAdminUsersPage, searchAdminUsers } from "@/app/api/admin/users/list-queries";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 export async function getAdminUserList(adminClient: AdminClient, request: NextRequest) {
   const idsParameter = request.nextUrl.searchParams.get("ids");
   if (idsParameter) {
     const ids = [...new Set(idsParameter.split(",").filter(Boolean))];
     if (ids.length > 100 || ids.some((id) => !isUuid(id))) {
-      return NextResponse.json({ error: "Provide at most 100 valid user IDs." }, { status: 400 });
+      return jsonErrorResponse("Provide at most 100 valid user IDs.", 400);
     }
 
     return getAdminUsersByIds(adminClient, ids);
