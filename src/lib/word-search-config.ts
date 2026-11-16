@@ -42,17 +42,19 @@ export function selectableWords(
   size: GridSize
 ) {
   const seen = new Set<string>();
-  return words.flatMap((word) => {
+  const candidates: Array<{ id: string; word: string }> = [];
+  for (const word of words) {
     const normalized = normalizeWordSearchWord(word.word);
     if (
       !matchesVocabularyCategory(word.category, category) ||
       normalized.length < MIN_WORD_LENGTH[difficulty] ||
       normalized.length > size ||
       seen.has(normalized)
-    ) return [];
+    ) continue;
     seen.add(normalized);
-    return [{ id: word.id, word: word.word }];
-  });
+    candidates.push({ id: word.id, word: word.word });
+  }
+  return candidates;
 }
 
 export function buildWordSearchCategoryOptions(
