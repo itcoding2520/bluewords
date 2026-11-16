@@ -1,15 +1,13 @@
 import { useMemo } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { getFirstImageByKey } from "@/lib/vocabulary/first-image-by-key";
 
 export function useCategoryFallbackWordImages(words: VocabularyWord[]) {
   return useMemo(() => {
-    const images = new Map<string, string>();
-    for (const word of words) {
-      if (!word.imagePath) continue;
-      const key = normalizeVocabularyLabel(word.category);
-      if (!images.has(key)) images.set(key, word.imagePath);
-    }
-    return images;
+    return getFirstImageByKey(words.map((word) => ({
+      key: normalizeVocabularyLabel(word.category),
+      imagePath: word.imagePath,
+    })));
   }, [words]);
 }

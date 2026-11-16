@@ -1,6 +1,7 @@
 import type { CommunityWord } from "@/lib/supabase/community-vocabulary";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
+import { getFirstImageByKey } from "@/lib/vocabulary/first-image-by-key";
 
 export function getCommunityVocabularyCategories(words: CommunityWord[]): string[] {
   return [...new Set(words.map((item) => item.community_categories.name))]
@@ -22,12 +23,8 @@ export function filterCommunityVocabularyWords(
 export function getCommunityVocabularyFallbackImages(
   visibleWords: CommunityWord[],
 ): Map<string, string> {
-  const images = new Map<string, string>();
-  for (const item of visibleWords) {
-    const categoryName = item.community_categories.name;
-    if (item.image_path && !images.has(categoryName)) {
-      images.set(categoryName, item.image_path);
-    }
-  }
-  return images;
+  return getFirstImageByKey(visibleWords.map((item) => ({
+    key: item.community_categories.name,
+    imagePath: item.image_path,
+  })));
 }
