@@ -6,6 +6,7 @@ import { AdminAssessmentTestsPanel } from "@/components/admin/AdminAssessmentTes
 import { AdminAssessmentAssignmentsPanel } from "@/components/admin/AdminAssessmentAssignmentsPanel";
 import { AdminAssessmentResultsPanel } from "@/components/admin/AdminAssessmentResultsPanel";
 import { useAdminAssessmentsController } from "@/hooks/useAdminAssessmentsController";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function AdminAssessments() {
   const {
@@ -21,7 +22,7 @@ export function AdminAssessments() {
   } = useAdminAssessmentsController();
 
   return <div className="assessment-admin-page">
-    <header className="assessment-admin-hero"><div className="assessment-admin-hero-copy"><p>Administration</p><h1 className="page-title">Assessment management</h1><span>Create randomized 10-question tests, assign them, and review results.</span></div><ClipboardList size={54} aria-hidden="true" /></header>
+    <header className="assessment-admin-hero"><div className="assessment-admin-hero-copy"><p>Administration</p><h1 className="page-title">Assessment management</h1><span>Create randomized {ASSESSMENT_QUESTION_COUNT}-question tests, assign them, and review results.</span></div><ClipboardList size={54} aria-hidden="true" /></header>
     {error && <AutoDismissMessage variant="error" className="my-4">{error}</AutoDismissMessage>}{notice && <AutoDismissMessage variant="success" className="my-4">{notice}</AutoDismissMessage>}
     <nav className="assessment-admin-tabs" aria-label="Assessment management sections">
       {([ ["tests", "Tests"], ["assignments", "Assignments"], ["results", "Results"] ] as const).map(([id, label]) => <button type="button" key={id} className={activeTab === id ? "active" : ""} aria-current={activeTab === id ? "page" : undefined} onClick={() => setActiveTab(id)}>{label}</button>)}

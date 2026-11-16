@@ -1,0 +1,1 @@
+export const ASSESSMENT_QUESTION_COUNT = 10;

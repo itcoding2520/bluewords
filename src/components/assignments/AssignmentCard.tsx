@@ -3,6 +3,7 @@ import { ArrowRight, BookOpenCheck, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatLocalDate, toVietnamDateKey } from "@/lib/formatDate";
 import type { Assignment } from "@/lib/assignments/types";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function AssignmentCard({
   assignment,
@@ -26,7 +27,7 @@ export function AssignmentCard({
       <div className="assignment-card-main">
         <h2>{assessment.title}</h2>
         <span className={`difficulty-pill difficulty-${assessment.difficulty}`}>{assessment.difficulty}</span>
-        <p>10 questions <i>·</i> vocabulary and sentence building <i>·</i> about 10 minutes</p>
+        <p>{ASSESSMENT_QUESTION_COUNT} questions <i>·</i> vocabulary and sentence building <i>·</i> about 10 minutes</p>
       </div>
       <div className="assignment-status">
         <span className={latest?.result === "failed" ? "failed" : assignment.status === "in_progress" ? "in-progress" : "not-started"}>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import type { AssessmentAdminUser, AssessmentAssignment } from "@/lib/assessments/admin-api";
 import { AdminAssessmentRecentAssignments } from "@/components/admin/AdminAssessmentRecentAssignments";
 import { AdminAssessmentRecipientPicker } from "@/components/admin/AdminAssessmentRecipientPicker";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function AdminAssessmentAssignmentsPanel({
   title,
@@ -50,7 +51,7 @@ export function AdminAssessmentAssignmentsPanel({
 
   return <>
     <form className="assessment-admin-card assessment-create-form" onSubmit={(event) => onAssign(event)}>
-      <div className="assessment-card-heading"><span><Users size={19} /></span><div><h2>Assign this test</h2><p>{title || "Add a title in Tests first"} · {difficulty} · 10 questions</p></div></div>
+      <div className="assessment-card-heading"><span><Users size={19} /></span><div><h2>Assign this test</h2><p>{title || "Add a title in Tests first"} · {difficulty} · {ASSESSMENT_QUESTION_COUNT} questions</p></div></div>
       <div className="assessment-recipient-toggle"><button type="button" className={!allUsers ? "active" : ""} onClick={() => onAllUsersChange(false)}><Users size={16} /> Choose users</button><button type="button" className={allUsers ? "active" : ""} onClick={() => { onAllUsersChange(true); onSelectedChange(() => []); }}><Users size={16} /> All users ({users.length})</button></div>
       {!allUsers && <AdminAssessmentRecipientPicker
         selectedIds={selectedIds}

@@ -1,5 +1,6 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
+import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 import { resolveStateAction } from "@/lib/state-action";
 
 interface AssessmentAnswersState {
@@ -8,8 +9,8 @@ interface AssessmentAnswersState {
 }
 
 const initialState: AssessmentAnswersState = {
-  answers: Array(10).fill(""),
-  sentenceTiles: Array.from({ length: 10 }, () => []),
+  answers: Array(ASSESSMENT_QUESTION_COUNT).fill(""),
+  sentenceTiles: Array.from({ length: ASSESSMENT_QUESTION_COUNT }, () => []),
 };
 
 export function useAssessmentRunnerAnswers(questions: AssessmentQuestionForLearner[]) {
