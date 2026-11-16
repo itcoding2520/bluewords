@@ -16,6 +16,15 @@ export function getLocalReviewDay(value: string): string {
   return `${year}-${month}-${day}`;
 }
 
+export function reconcileSelectedReviewDay(
+  selectedDay: string,
+  reviews: VocabularyReviewWithWord[],
+): string {
+  const availableDays = new Set(reviews.map((review) => getLocalReviewDay(review.reviewed_at)));
+  if (selectedDay && availableDays.has(selectedDay)) return selectedDay;
+  return reviews[0] ? getLocalReviewDay(reviews[0].reviewed_at) : "";
+}
+
 export function groupReviewsByLocalDay(
   reviews: VocabularyReviewWithWord[]
 ): DailyReviewGroup[] {

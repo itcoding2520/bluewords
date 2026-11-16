@@ -4,7 +4,11 @@ import {
   getLatestVocabularyReviewHistory,
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
-import { getLocalReviewDay, groupReviewsByLocalDay } from "@/lib/review-history-view";
+import {
+  getLocalReviewDay,
+  groupReviewsByLocalDay,
+  reconcileSelectedReviewDay,
+} from "@/lib/review-history-view";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
 
 const PAGE_SIZE = 20;
@@ -27,16 +31,7 @@ export function useReviewHistoryController(userId: string) {
       .then((latestReviews) => {
         if (cancelled) return;
         setReviews(latestReviews);
-        setSelectedDay((current) => {
-          const availableDays = new Set(
-            latestReviews.map((review) => getLocalReviewDay(review.reviewed_at))
-          );
-          return current && availableDays.has(current)
-            ? current
-            : latestReviews[0]
-              ? getLocalReviewDay(latestReviews[0].reviewed_at)
-              : "";
-        });
+        setSelectedDay((current) => reconcileSelectedReviewDay(current, latestReviews));
         setIsLoading(false);
       })
       .catch(() => {
