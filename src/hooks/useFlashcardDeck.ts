@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
-import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
-import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
+import { buildFlashcardDeck, filterFlashcardWords, shuffleDeck } from "@/lib/flashcards/deck";
 import type { FlashcardReviewMode } from "@/types/flashcards";
 
 function isFlashcardDue(dueAt: string | undefined, now: number): boolean {
@@ -20,7 +19,7 @@ export function useFlashcardDeck(input: {
   shuffleSeed: number;
 }) {
   const categoryWords = useMemo(
-    () => input.words.filter((word) => matchesVocabularyCategory(word.category, input.category)),
+    () => filterFlashcardWords(input.words, input.category),
     [input.category, input.words]
   );
 

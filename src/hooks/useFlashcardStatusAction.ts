@@ -1,10 +1,9 @@
-import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import type { Flashcard } from "@/lib/flashcards/deck";
-import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
+import { buildFlashcardDeck, filterFlashcardWords, shuffleDeck } from "@/lib/flashcards/deck";
 import { recordVocabularyReview } from "@/lib/supabase/reviews";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import type { FlashcardReviewMode } from "@/types/flashcards";
@@ -55,9 +54,11 @@ export function useFlashcardStatusAction({
 
       const nextDeck = shuffleDeck(
         buildFlashcardDeck(
-          words
-            .map((word) => word.id === card.word.id ? { ...word, status: nextStatus } : word)
-            .filter((word) => word.status === nextStatus && matchesVocabularyCategory(word.category, category))
+          filterFlashcardWords(
+            words.map((word) => word.id === card.word.id ? { ...word, status: nextStatus } : word),
+            category,
+            nextStatus,
+          )
         ),
         shuffleSeed
       );
