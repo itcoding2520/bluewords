@@ -50,18 +50,24 @@ export function deriveAdminCategorySelection({
   communityCategories: CommunityCategory[];
   defaultCategories: VocabularyCategoryRow[];
 }) {
-  const customCategories = communityCategories.filter((category) =>
-    category.status === getCommunityContentStatus(activeTab)
-    && !isDefaultVocabularyCategory(category.name)
-  );
+  const customCategories: CommunityCategory[] = [];
+  const status = getCommunityContentStatus(activeTab);
+  for (const category of communityCategories) {
+    if (category.status === status && !isDefaultVocabularyCategory(category.name)) {
+      customCategories.push(category);
+    }
+  }
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;
   const normalizedSearch = normalizeVocabularyLabel(categorySearch);
-  const visibleCategories = currentCategories.filter((category) =>
-    category.name.toLocaleLowerCase().includes(normalizedSearch)
-  );
-  const selectedCategory = currentCategories.find((category) => category.id === selectedId)
-    ?? currentCategories[0]
-    ?? null;
+  const visibleCategories: AdminCategory[] = [];
+  let firstCategory: AdminCategory | null = null;
+  let selectedCategory: AdminCategory | null = null;
+  for (const category of currentCategories) {
+    firstCategory ??= category;
+    if (category.id === selectedId) selectedCategory = category;
+    if (category.name.toLocaleLowerCase().includes(normalizedSearch)) visibleCategories.push(category);
+  }
+  selectedCategory ??= firstCategory;
 
   return { customCategories, currentCategories, visibleCategories, selectedCategory };
 }
