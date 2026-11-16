@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, type SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategory, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -6,6 +6,7 @@ import { useWordFormImage } from "@/hooks/useWordFormImage";
 import { useVocabularyDetailedMeanings } from "@/hooks/useVocabularyDetailedMeanings";
 import { type WordFormErrors } from "@/lib/vocabulary/word-form";
 import { useWordFormSubmission } from "@/hooks/useWordFormSubmission";
+import { updateStateField } from "@/lib/state-action";
 
 export type { WordFormErrors } from "@/lib/vocabulary/word-form";
 
@@ -16,21 +17,33 @@ interface UseWordFormControllerOptions {
   onSubmit: (word: VocabularyWord) => Promise<boolean>;
 }
 
+interface WordFormFields {
+  word: string;
+  meaning: string;
+  type: VocabularyType;
+  category: VocabularyCategory;
+}
+
 export function useWordFormController({
   words,
   categories,
   editingWord,
   onSubmit,
 }: UseWordFormControllerOptions) {
-  const [word, setWord] = useState(editingWord?.word ?? "");
-  const [meaning, setMeaning] = useState(editingWord?.meaning ?? "");
-  const [type, setType] = useState<VocabularyType>(editingWord?.type ?? "word");
-  const [category, setCategory] = useState<VocabularyCategory>(
-    editingWord?.category ??
-      categories.find((item) => item.name === "Daily")?.name ??
-      categories[0]?.name ??
-      "Uncategorized"
-  );
+  const [fields, setFields] = useState<WordFormFields>({
+    word: editingWord?.word ?? "",
+    meaning: editingWord?.meaning ?? "",
+    type: editingWord?.type ?? "word",
+    category: editingWord?.category
+      ?? categories.find((item) => item.name === "Daily")?.name
+      ?? categories[0]?.name
+      ?? "Uncategorized",
+  });
+  const { word, meaning, type, category } = fields;
+  const setWord = (action: SetStateAction<string>) => updateStateField(setFields, "word", action);
+  const setMeaning = (action: SetStateAction<string>) => updateStateField(setFields, "meaning", action);
+  const setType = (action: SetStateAction<VocabularyType>) => updateStateField(setFields, "type", action);
+  const setCategory = (action: SetStateAction<VocabularyCategory>) => updateStateField(setFields, "category", action);
   const { detailedMeanings, updateDetailedMeaning, addDetailedMeaning, removeDetailedMeaning } =
     useVocabularyDetailedMeanings(editingWord?.detailedMeanings ?? []);
   const [errors, setErrors] = useState<WordFormErrors>({});
