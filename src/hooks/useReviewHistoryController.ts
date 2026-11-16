@@ -50,10 +50,16 @@ export function useReviewHistoryController(userId: string) {
   const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
   const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;
   const latestDay = dailyGroups[0]?.day;
-  const pageMetadata = getPageMetadata(selectedGroup?.reviews.length ?? 0, page, PAGE_SIZE);
-  const pageReviews = selectedGroup
-    ? getPageItems(selectedGroup.reviews, pageMetadata.currentPage, PAGE_SIZE)
-    : [];
+  const pageMetadata = useMemo(
+    () => getPageMetadata(selectedGroup?.reviews.length ?? 0, page, PAGE_SIZE),
+    [page, selectedGroup?.reviews.length],
+  );
+  const pageReviews = useMemo(
+    () => selectedGroup
+      ? getPageItems(selectedGroup.reviews, pageMetadata.currentPage, PAGE_SIZE)
+      : [],
+    [pageMetadata.currentPage, selectedGroup],
+  );
 
   return {
     loading: { isLoading, loadFailed },
