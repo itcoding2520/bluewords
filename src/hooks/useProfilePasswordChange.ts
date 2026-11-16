@@ -8,56 +8,59 @@ import { updateAccountPassword } from "@/lib/supabase/account-security";
 
 export function useProfilePasswordChange() {
   const supabase = useSupabaseClient();
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordNotice, setPasswordNotice] = useState("");
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+    isSaving: false,
+    error: "",
+    notice: "",
+  });
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPasswordError("");
-    setPasswordNotice("");
-    if (newPassword.length < 8) {
-      setPasswordError("Use a password with at least 8 characters.");
+    setPasswordForm((current) => ({ ...current, error: "", notice: "" }));
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordForm((current) => ({ ...current, error: "Use a password with at least 8 characters." }));
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("The passwords do not match.");
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordForm((current) => ({ ...current, error: "The passwords do not match." }));
       return;
     }
 
-    setPasswordSaving(true);
+    setPasswordForm((current) => ({ ...current, isSaving: true }));
     try {
-      await updateAccountPassword(supabase, newPassword);
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordNotice("Your password has been updated.");
+      await updateAccountPassword(supabase, passwordForm.newPassword);
+      setPasswordForm((current) => ({
+        ...current,
+        newPassword: "",
+        confirmPassword: "",
+        notice: "Your password has been updated.",
+      }));
     } catch (error) {
-      setPasswordError(getErrorMessage(error, "Could not update your password. Please try again."));
+      setPasswordForm((current) => ({
+        ...current,
+        error: getErrorMessage(error, "Could not update your password. Please try again."),
+      }));
     } finally {
-      setPasswordSaving(false);
+      setPasswordForm((current) => ({ ...current, isSaving: false }));
     }
   }
 
   function changeNewPassword(value: string) {
-    setNewPassword(value);
-    setPasswordError("");
-    setPasswordNotice("");
+    setPasswordForm((current) => ({ ...current, newPassword: value, error: "", notice: "" }));
   }
 
   function changeConfirmPassword(value: string) {
-    setConfirmPassword(value);
-    setPasswordError("");
-    setPasswordNotice("");
+    setPasswordForm((current) => ({ ...current, confirmPassword: value, error: "", notice: "" }));
   }
 
   return {
-    newPassword,
-    confirmPassword,
-    passwordSaving,
-    passwordError,
-    passwordNotice,
+    newPassword: passwordForm.newPassword,
+    confirmPassword: passwordForm.confirmPassword,
+    passwordSaving: passwordForm.isSaving,
+    passwordError: passwordForm.error,
+    passwordNotice: passwordForm.notice,
     changePassword,
     changeNewPassword,
     changeConfirmPassword,
