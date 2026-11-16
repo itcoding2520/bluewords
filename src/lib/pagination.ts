@@ -33,9 +33,10 @@ export function getInclusivePageRange(page: number, pageSize: number): { from: n
 }
 
 export function getPageRange(total: number, page: number, pageSize: number) {
+  const range = getInclusivePageRange(page, pageSize);
   return {
-    first: total > 0 ? (page - 1) * pageSize + 1 : 0,
-    last: Math.min(page * pageSize, total),
+    first: total > 0 ? range.from + 1 : 0,
+    last: Math.min(range.to + 1, total),
   };
 }
 
