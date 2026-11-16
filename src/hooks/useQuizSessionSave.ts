@@ -30,8 +30,7 @@ export function useQuizSessionSave({
   setElapsedSeconds: (seconds: number) => void;
   loadHistory: (forceRefresh: boolean, page: number, pageSize: number) => Promise<void>;
 }) {
-  const [saveState, setSaveState] = useState<QuizSaveState>("idle");
-  const [saveError, setSaveError] = useState("");
+  const [saveStatus, setSaveStatus] = useState<{ state: QuizSaveState; error: string }>({ state: "idle", error: "" });
   const [retryRevision, setRetryRevision] = useState(0);
   const saveStartedRef = useRef<number | null>(null);
   const saveRequestId = useRef(0);
@@ -44,37 +43,33 @@ export function useQuizSessionSave({
     const completedAt = Date.now();
     const payload = buildQuizSessionPayload({ mode, questions, answers, correctCount, startedAt, completedAt });
     setElapsedSeconds(payload.duration_seconds);
-    setSaveState("saving");
-    setSaveError("");
+    setSaveStatus({ state: "saving", error: "" });
 
     void saveVocabularyQuizSession(payload).then(() => {
       if (requestId !== saveRequestId.current) return;
-      setSaveState("saved");
+      setSaveStatus({ state: "saved", error: "" });
       setHistoryPage(1);
       void loadHistory(true, 1, historyPageSize);
     }).catch((error: unknown) => {
       if (requestId !== saveRequestId.current) return;
       saveStartedRef.current = null;
-      setSaveState("error");
-      setSaveError(getErrorMessage(error, "Could not save this quiz attempt."));
+      setSaveStatus({ state: "error", error: getErrorMessage(error, "Could not save this quiz attempt.") });
     });
   }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, retryRevision, setElapsedSeconds, setHistoryPage, startedAt, userId]);
 
   const retrySave = useCallback(() => {
-    if (saveState !== "error") return;
+    if (saveStatus.state !== "error") return;
     saveRequestId.current += 1;
     saveStartedRef.current = null;
-    setSaveState("idle");
-    setSaveError("");
+    setSaveStatus({ state: "idle", error: "" });
     setRetryRevision((revision) => revision + 1);
-  }, [saveState]);
+  }, [saveStatus.state]);
 
   const resetSaveState = useCallback(() => {
     saveRequestId.current += 1;
     saveStartedRef.current = null;
-    setSaveState("idle");
-    setSaveError("");
+    setSaveStatus({ state: "idle", error: "" });
   }, []);
 
-  return { saveState, saveError, resetSaveState, retrySave };
+  return { saveState: saveStatus.state, saveError: saveStatus.error, resetSaveState, retrySave };
 }
