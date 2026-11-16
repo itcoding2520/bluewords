@@ -4,6 +4,14 @@ import { useMemo } from "react";
 import type { Item } from "@/lib/communication/lesson-types";
 import { createAnswerChoices, createSentenceDrills } from "@/lib/communication/lesson-practice";
 
+function getOtherItemValues(items: Item[], currentItemId: string, getValue: (item: Item) => string) {
+  const values: string[] = [];
+  for (const item of items) {
+    if (item.id !== currentItemId) values.push(getValue(item));
+  }
+  return values;
+}
+
 export function useSituationalEnglishLessonPracticeData({
   items,
   practiceOrder,
@@ -32,10 +40,10 @@ export function useSituationalEnglishLessonPracticeData({
   const practiceMeaningCount = useMemo(() => new Set(items.map((item) => item.meaning_vi)).size, [items]);
   const listeningMeaningCount = useMemo(() => new Set(listeningItems.map((item) => item.example_vi)).size, [listeningItems]);
   const practiceChoices = useMemo(() => practiceItem
-    ? createAnswerChoices(practiceItem.meaning_vi, items.filter((item) => item.id !== practiceItem.id).map((item) => item.meaning_vi))
+    ? createAnswerChoices(practiceItem.meaning_vi, getOtherItemValues(items, practiceItem.id, (item) => item.meaning_vi))
     : [], [practiceItem, items]);
   const listeningChoices = useMemo(() => listeningItem
-    ? createAnswerChoices(listeningItem.example_vi, listeningItems.filter((item) => item.id !== listeningItem.id).map((item) => item.example_vi))
+    ? createAnswerChoices(listeningItem.example_vi, getOtherItemValues(listeningItems, listeningItem.id, (item) => item.example_vi))
     : [], [listeningItem, listeningItems]);
 
   return {
