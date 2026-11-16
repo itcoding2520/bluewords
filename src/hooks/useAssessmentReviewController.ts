@@ -4,6 +4,7 @@ import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 import type { AssessmentReviewQuestion } from "@/lib/assessments/types";
 import type { AssessmentSummary } from "@/lib/assignments/types";
+import { firstRelation } from "@/lib/supabase/first-relation";
 
 type AssessmentRecipient = { assessments: AssessmentSummary | AssessmentSummary[] | null };
 type AssessmentReviewAttempt = {
@@ -21,12 +22,9 @@ type AssessmentReviewAttempt = {
 
 function getAssessmentSummary(attempt: AssessmentReviewAttempt | null): AssessmentSummary | null {
   if (!attempt) return null;
-  const recipient = Array.isArray(attempt.assessment_recipients)
-    ? attempt.assessment_recipients[0]
-    : attempt.assessment_recipients;
+  const recipient = firstRelation(attempt.assessment_recipients);
   if (!recipient) return null;
-  const assessment = recipient.assessments;
-  return Array.isArray(assessment) ? assessment[0] ?? null : assessment;
+  return firstRelation(recipient.assessments);
 }
 
 export function useAssessmentReviewController(attemptId: string) {
