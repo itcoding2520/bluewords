@@ -5,9 +5,15 @@ import { isDifficultyLevel, type DifficultyLevel } from "@/types/difficulty";
 export type AssessmentDifficulty = DifficultyLevel;
 
 type ValidatedAssignmentInput = {
-  title: string;
-  difficulty: AssessmentDifficulty;
-  dueAt: Date | null;
+  details: {
+    title: string;
+    difficulty: AssessmentDifficulty;
+    dueAt: Date | null;
+  };
+  selection: {
+    allUsers: unknown;
+    recipientIds: unknown;
+  };
 };
 
 type AssignmentInputResult =
@@ -52,9 +58,11 @@ export function validateAssessmentAssignmentInput(input: unknown): AssignmentInp
   return {
     ok: true,
     value: {
-      title,
-      difficulty,
-      dueAt,
+      details: { title, difficulty, dueAt },
+      selection: {
+        allUsers: body.allUsers,
+        recipientIds: body.recipientIds,
+      },
     },
   };
 }
