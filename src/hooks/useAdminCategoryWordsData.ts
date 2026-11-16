@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { getSharedAdminCategory } from "@/lib/admin-category-management-view";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
@@ -22,9 +22,7 @@ export function useAdminCategoryWordsData(
 
   useEffect(() => {
     if (!selectedCategory) return;
-    const sharedCategory = activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
-      : "owner_id" in selectedCategory ? selectedCategory : null;
+    const sharedCategory = getSharedAdminCategory(activeTab, selectedCategory, publishedCategoriesByName) ?? null;
     if (!sharedCategory) {
       return scheduleDeferredTask(() => {
         setWords([]);
