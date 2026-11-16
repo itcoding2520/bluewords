@@ -4,10 +4,8 @@ import {
 } from "@/config/vocabulary";
 import { restoreSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
 import type { CsvRecord } from "@/lib/vocabulary-csv-parser";
-import {
-  normalizeVocabularyCsvValue,
-  VOCABULARY_CSV_HEADERS,
-} from "@/lib/vocabulary-csv-shared";
+import { VOCABULARY_CSV_HEADERS } from "@/lib/vocabulary-csv-shared";
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 
 export interface VocabularyCsvRowValues {
   word: string;
@@ -36,10 +34,10 @@ export function readVocabularyCsvRow(
   const value = (name: (typeof VOCABULARY_CSV_HEADERS)[number]) =>
     restoreSpreadsheetCell(record.fields[columnIndex.get(name)!] ?? "").trim();
   const word = value("word");
-  const typeValue = normalizeVocabularyCsvValue(value("type"));
-  const partOfSpeechValue = normalizeVocabularyCsvValue(value("part_of_speech"));
+  const typeValue = normalizeVocabularyKey(value("type"));
+  const partOfSpeechValue = normalizeVocabularyKey(value("part_of_speech"));
   const partOfSpeech = PARTS_OF_SPEECH.find(
-    (option) => normalizeVocabularyCsvValue(option) === partOfSpeechValue
+    (option) => normalizeVocabularyKey(option) === partOfSpeechValue
   );
   const meaning = value("meaning");
   // Older CSVs used `meaning` for the part-of-speech meaning. Continue to
@@ -50,7 +48,7 @@ export function readVocabularyCsvRow(
       ? meaning
       : "";
   const category = value("category");
-  const statusValue = normalizeVocabularyCsvValue(value("status"));
+  const statusValue = normalizeVocabularyKey(value("status"));
   const ipa = columnIndex.has("ipa") ? value("ipa") || null : null;
 
   const errors: string[] = [];

@@ -1,10 +1,8 @@
 import type { PartOfSpeech, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { CsvRecord } from "@/lib/vocabulary-csv-parser";
-import {
-  normalizeVocabularyCsvValue,
-  type VocabularyCsvIssue,
-} from "@/lib/vocabulary-csv-shared";
+import type { VocabularyCsvIssue } from "@/lib/vocabulary-csv-shared";
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 import { readVocabularyCsvRow, validateVocabularyCsvRow } from "@/lib/vocabulary-csv-row-validation";
 
 export interface VocabularyCsvWordGroup {
@@ -52,7 +50,7 @@ export function processVocabularyCsvRow({
   }
 
   const { word, typeValue, meaning, category: rawCategory, statusValue, detailedMeaning, partOfSpeech, ipa } = values;
-  const key = normalizeVocabularyCsvValue(word);
+  const key = normalizeVocabularyKey(word);
 
   if (!word) {
     rowErrors.forEach((message) => errors.push({ line: record.line, message }));
@@ -71,7 +69,7 @@ export function processVocabularyCsvRow({
     return;
   }
 
-  const category = categoriesByName.get(normalizeVocabularyCsvValue(rawCategory));
+  const category = categoriesByName.get(normalizeVocabularyKey(rawCategory));
   if (!category) fallbackWords.add(key);
   const type = typeValue as VocabularyType;
   const status = statusValue as VocabularyWord["status"];
@@ -81,7 +79,7 @@ export function processVocabularyCsvRow({
   if (existingGroup) {
     if (
       existingGroup.type !== type ||
-      normalizeVocabularyCsvValue(existingGroup.meaning) !== normalizeVocabularyCsvValue(meaning) ||
+      normalizeVocabularyKey(existingGroup.meaning) !== normalizeVocabularyKey(meaning) ||
       existingGroup.category !== resolvedCategory ||
       existingGroup.status !== status
     ) {
@@ -108,7 +106,7 @@ export function processVocabularyCsvRow({
   const group = groups.get(key)!;
   if (!group.ipa && ipa) group.ipa = ipa;
   if (partOfSpeech && detailedMeaning) {
-    const meaningKey = `${normalizeVocabularyCsvValue(partOfSpeech)}\u0000${normalizeVocabularyCsvValue(detailedMeaning)}`;
+    const meaningKey = `${normalizeVocabularyKey(partOfSpeech)}\u0000${normalizeVocabularyKey(detailedMeaning)}`;
     if (!group.seenMeanings.has(meaningKey)) {
       group.seenMeanings.add(meaningKey);
       group.detailedMeanings.push({ partOfSpeech, meaning: detailedMeaning });
