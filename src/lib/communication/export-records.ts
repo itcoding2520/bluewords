@@ -30,6 +30,11 @@ type CommonLessonFields = Pick<CommunicationCsvRecord,
   | "lesson_key" | "lesson_title_en" | "lesson_title_vi" | "difficulty" | "lesson_order" | "lesson_status"
 >;
 
+type ContentFields = Omit<
+  CommunicationCsvRecord,
+  keyof CommonLessonFields | "record_type" | "record_key" | "record_order"
+>;
+
 function getCommonLessonFields(
   topic: CommunicationTopic,
   lesson: CommunicationLesson | undefined,
@@ -51,19 +56,15 @@ function getCommonLessonFields(
   };
 }
 
-function createItemRecord(item: CommunicationLessonItem, common: CommonLessonFields): CommunicationCsvRecord {
+function createEmptyContentFields(): ContentFields {
   return {
-    record_type: "item",
-    ...common,
-    record_key: item.item_key,
-    record_order: item.sort_order,
-    item_type: item.item_type,
-    content_en: item.content_en,
-    meaning_vi: item.meaning_vi,
-    example_en: item.example_en,
-    example_vi: item.example_vi,
-    image_keyword: item.image_keyword,
-    audio_url: item.audio_url,
+    item_type: "",
+    content_en: "",
+    meaning_vi: "",
+    example_en: "",
+    example_vi: "",
+    image_keyword: "",
+    audio_url: "",
     dialogue_key: "",
     dialogue_title_en: "",
     dialogue_title_vi: "",
@@ -79,6 +80,23 @@ function createItemRecord(item: CommunicationLessonItem, common: CommonLessonFie
   };
 }
 
+function createItemRecord(item: CommunicationLessonItem, common: CommonLessonFields): CommunicationCsvRecord {
+  return {
+    record_type: "item",
+    ...common,
+    record_key: item.item_key,
+    record_order: item.sort_order,
+    ...createEmptyContentFields(),
+    item_type: item.item_type,
+    content_en: item.content_en,
+    meaning_vi: item.meaning_vi,
+    example_en: item.example_en,
+    example_vi: item.example_vi,
+    image_keyword: item.image_keyword,
+    audio_url: item.audio_url,
+  };
+}
+
 function createDialogueTurnRecord(
   turn: ExportTurn,
   dialogue: ExportDialogue,
@@ -89,13 +107,7 @@ function createDialogueTurnRecord(
     ...common,
     record_key: turn.turn_key,
     record_order: dialogue.sort_order,
-    item_type: "",
-    content_en: "",
-    meaning_vi: "",
-    example_en: "",
-    example_vi: "",
-    image_keyword: "",
-    audio_url: "",
+    ...createEmptyContentFields(),
     dialogue_key: dialogue.dialogue_key,
     dialogue_title_en: dialogue.title_en,
     dialogue_title_vi: dialogue.title_vi,
