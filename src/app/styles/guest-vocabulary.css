@@ -1,0 +1,22 @@
+/* Guest vocabulary */
+.app-content > .guest-vocabulary-page > header.guest-vocabulary-hero {
+  min-height: 0;
+  margin-bottom: 1rem;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  padding: .25rem 0;
+  background: transparent;
+  box-shadow: none;
+}
+.app-content:has(.guest-vocabulary-page) > .guest-vocabulary-page > header.guest-vocabulary-hero h1,
+.app-content:has(.guest-vocabulary-page) > .guest-vocabulary-page > header.guest-vocabulary-hero p { max-width: none; }
+.guest-vocabulary-row { transition: background-color .15s; }
+.guest-vocabulary-row:hover { background-color: rgb(239 246 255 / .55); }
+.guest-vocabulary-toolbar > div:last-child > button { min-height: 2.75rem; border-radius: 1rem; }
+.guest-vocabulary-list { border-color: rgb(226 232 240 / .85); }
+@media (max-width: 639px) {
+  .guest-vocabulary-hero > div:last-child { display: grid; grid-template-columns: 1.25rem minmax(0,1fr) auto; }
+  .guest-vocabulary-hero > div:last-child p:nth-child(2) { display: none; }
+  .guest-vocabulary-hero > div:last-child a { padding-inline: .75rem; }
+}
