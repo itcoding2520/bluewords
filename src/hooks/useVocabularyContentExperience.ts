@@ -25,7 +25,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   const { page, pageSize, debouncedSearch, selectedCategory, setPage } = filters;
   const pageData = useVocabularyPageData({
     authVersion,
-    categories,
     categoriesLoaded,
     query: {
       page,
