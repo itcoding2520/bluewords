@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import type { CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 interface PublishWordRequestsCardProps {

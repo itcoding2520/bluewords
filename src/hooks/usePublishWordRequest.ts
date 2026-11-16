@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { verifyPublishWordRequestOwnership } from "@/lib/supabase/publish-word-request";
-import type { CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 import {
   submitCommunityWordRequest,
   type PublishableWord,

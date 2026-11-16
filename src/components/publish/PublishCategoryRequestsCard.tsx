@@ -2,7 +2,7 @@ import { FolderHeart, Send, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import type { CommunityCategoryRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityCategoryRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 interface PublishCategoryRequestsCardProps {
