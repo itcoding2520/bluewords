@@ -1,7 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
-import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
+import { buildAdminUsersQuery, fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
 import { getPageCount } from "@/lib/pagination";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -28,8 +28,7 @@ export function useAdminUsersData({
     setLoading(true);
     setError("");
     try {
-      const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-      if (debouncedSearch) query.set("search", debouncedSearch);
+      const query = buildAdminUsersQuery({ page, pageSize, search: debouncedSearch });
       const cacheKey = `admin:users:${page}:${pageSize}:${debouncedSearch}`;
       const payload = await getAdminCachedData(
         cacheKey,

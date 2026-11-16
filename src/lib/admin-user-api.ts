@@ -18,6 +18,21 @@ export interface AdminUsersResponse<TUser extends AdminUserSummary = AdminUserRe
   error?: string;
 }
 
+export function buildAdminUsersQuery(input: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  all?: boolean;
+}): URLSearchParams {
+  const query = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  });
+  if (input.search) query.set("search", input.search);
+  if (input.all) query.set("all", "true");
+  return query;
+}
+
 interface AdminUserActionResponse {
   error?: string;
 }

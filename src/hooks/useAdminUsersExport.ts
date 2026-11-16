@@ -2,7 +2,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { downloadCsvFile } from "@/lib/download-csv";
-import { fetchAdminUsers } from "@/lib/admin-user-api";
+import { buildAdminUsersQuery, fetchAdminUsers } from "@/lib/admin-user-api";
 import { formatLocalDateForFilename } from "@/lib/formatDate";
 
 export function useAdminUsersExport({
@@ -20,8 +20,7 @@ export function useAdminUsersExport({
     setExporting(true);
     setError("");
     try {
-      const query = new URLSearchParams({ page: "1", pageSize: "100", all: "true" });
-      if (search) query.set("search", search);
+      const query = buildAdminUsersQuery({ page: 1, pageSize: 100, all: true, search });
       const payload = await fetchAdminUsers(query, "Could not export users.");
       const date = new Date();
       const suffix = formatLocalDateForFilename(date);
