@@ -45,8 +45,14 @@ export function useCategoryManagementView({
     });
   }, [categories, filterBy, sortBy]);
 
-  const pageMetadata = getPageMetadata(managedCategories.length, page, pageSize);
-  const pageCategories = getPageItems(managedCategories, pageMetadata.currentPage, pageSize);
+  const pageMetadata = useMemo(
+    () => getPageMetadata(managedCategories.length, page, pageSize),
+    [managedCategories.length, page, pageSize],
+  );
+  const pageCategories = useMemo(
+    () => getPageItems(managedCategories, pageMetadata.currentPage, pageSize),
+    [managedCategories, pageMetadata.currentPage, pageSize],
+  );
 
   return {
     isDefaultCategory,
