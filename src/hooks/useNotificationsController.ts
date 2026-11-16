@@ -1,6 +1,6 @@
 import { getErrorMessage } from "@/lib/errors";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { recentNotifications, type NotificationRow } from "@/lib/notifications";
 import { loadRecentNotifications, peekRecentNotifications } from "@/lib/notifications-data";
@@ -63,7 +63,10 @@ export function useNotificationsController() {
     refresh,
   });
 
-  const unreadCount = notifications.filter((item) => !item.read_at).length;
+  const unreadCount = useMemo(
+    () => notifications.filter((item) => !item.read_at).length,
+    [notifications],
+  );
 
   return {
     data: { notifications, unreadCount },
