@@ -1,7 +1,7 @@
-import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { sendAdminUserAction, type AdminUserActionInput, type AdminUserRecord } from "@/lib/admin-user-api";
+import type { AdminUserActionInput, AdminUserRecord } from "@/lib/admin-user-api";
+import { useAdminUserMutation } from "@/hooks/useAdminUserMutation";
 
 export type AdminUser = AdminUserRecord;
 
@@ -33,8 +33,7 @@ export function useAdminUsersActions({
   refreshUsers: () => void;
 }) {
   const confirmDialog = useConfirmDialog();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [notice, setNotice] = useState("");
+  const { busy, notice, setNotice, performUserAction } = useAdminUserMutation({ setError, refreshUsers });
   const [addForm, setAddForm] = useState<AddUserFormState>({
     email: "",
     nickname: "",
@@ -47,33 +46,6 @@ export function useAdminUsersActions({
     nickname: "",
     password: "",
   });
-
-  function showMutationResult(payload: { error?: string }, fallback: string) {
-    if (payload.error) {
-      setError(payload.error);
-      setNotice("");
-    } else {
-      setError("");
-      setNotice(fallback);
-      refreshUsers();
-    }
-  }
-
-  async function performUserAction(input: AdminUserActionInput) {
-    setBusy("userId" in input ? input.userId : input.action);
-    setError("");
-    setNotice("");
-    try {
-      const payload = await sendAdminUserAction(input);
-      showMutationResult(payload, input.action === "delete" ? "User removed." : input.action === "create" ? "User created." : "User saved.");
-      return true;
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not complete this user action."));
-      return false;
-    } finally {
-      setBusy(null);
-    }
-  }
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
