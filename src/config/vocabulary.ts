@@ -33,6 +33,10 @@ export const VOCABULARY_TYPES = [
 export type VocabularyType =
   (typeof VOCABULARY_TYPES)[number];
 
+export function isVocabularyType(value: unknown): value is VocabularyType {
+  return typeof value === "string" && VOCABULARY_TYPES.some((type) => type === value);
+}
+
 export const PARTS_OF_SPEECH = [
   "noun",
   "verb",

@@ -1,5 +1,6 @@
 import {
   PARTS_OF_SPEECH,
+  isVocabularyType,
   type PartOfSpeech,
 } from "@/config/vocabulary";
 import { restoreSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
@@ -72,7 +73,7 @@ export function readVocabularyCsvRow(
 export function validateVocabularyCsvRow(values: VocabularyCsvRowValues): string[] {
   const { typeValue, meaning, statusValue, detailedMeaning, partOfSpeech, partOfSpeechValue } = values;
   const errors: string[] = [];
-  if (typeValue !== "word" && typeValue !== "expression") {
+  if (!isVocabularyType(typeValue)) {
     errors.push('Type must be "word" or "expression".');
   }
   if (!meaning) errors.push("Meaning is required.");
