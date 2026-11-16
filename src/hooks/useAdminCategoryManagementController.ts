@@ -50,13 +50,13 @@ export function useAdminCategoryManagementController() {
     currentCategories,
     visibleCategories,
     selectedCategory,
-  } = deriveAdminCategorySelection({
+  } = useMemo(() => deriveAdminCategorySelection({
     activeTab,
     selectedId,
     categorySearch,
     communityCategories,
     defaultCategories: defaultVocabularyCategories,
-  });
+  }), [activeTab, categorySearch, communityCategories, selectedId]);
   const {
     words,
     setWords,
@@ -81,7 +81,7 @@ export function useAdminCategoryManagementController() {
     defaultWords,
     selectedSharedCategory,
     selectedFallbackImage,
-  } = deriveAdminCategoryDetails({
+  } = useMemo(() => deriveAdminCategoryDetails({
     activeTab,
     visibleCategories,
     selectedCategory,
@@ -89,7 +89,7 @@ export function useAdminCategoryManagementController() {
     defaultWordsByCategory,
     emails,
     words,
-  });
+  }), [activeTab, defaultWordsByCategory, emails, publishedCategoriesByName, selectedCategory, visibleCategories, words]);
 
   return {
     selection: {
