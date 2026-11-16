@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 
 import { initialQuizSessionState, quizSessionReducer } from "@/lib/quiz-session-state";
 
@@ -10,7 +10,10 @@ export function useQuizSessionState() {
   const exitQuiz = useCallback(() => dispatch({ type: "exit" }), []);
   const currentQuestion = session.questions[session.questionIndex];
   const currentAnswer = session.answers[session.questionIndex];
-  const correctCount = Object.values(session.answers).filter((answer) => answer.correct).length;
+  const correctCount = useMemo(
+    () => Object.values(session.answers).filter((answer) => answer.correct).length,
+    [session.answers],
+  );
 
   return {
     session,
