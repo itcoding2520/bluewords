@@ -1,8 +1,4 @@
-import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight } from "lucide-react";
-
-import { Card } from "@/components/ui/Card";
+import { DashboardFeatureCard } from "@/components/dashboard/DashboardFeatureCard";
 import { getGuestHomeFeatures } from "@/data/dashboard-features";
 
 export function GuestHomeContent() {
@@ -17,19 +13,7 @@ export function GuestHomeContent() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {guestActions.map(({ title, description, href, icon, illustration, color, surface }) => (
-          <Link key={href} href={href} className="group rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
-            <Card className={`ui-art-background relative flex h-full min-h-52 flex-col overflow-hidden border bg-white p-4 transition group-hover:-translate-y-0.5 group-hover:shadow-md sm:p-6 ${surface}`}>
-              <Image src={illustration} alt="" width={150} height={130} sizes="(min-width: 640px) 120px, 96px" className="pointer-events-none absolute bottom-0 right-1 z-0 h-28 w-[43%] max-w-36 object-contain drop-shadow-sm sm:h-32" />
-              <span className={`relative z-10 grid size-10 place-items-center rounded-xl ${color}`}><Image src={icon} alt="" width={27} height={27} /></span>
-              <div className="relative z-10 mt-auto flex min-h-28 max-w-[60%] flex-1 flex-col justify-end">
-                <h2 className="font-extrabold leading-tight text-slate-950">{title}</h2>
-                <p className="mt-1 text-xs leading-4 text-slate-600 sm:text-sm sm:leading-5">{description}</p>
-                <ArrowRight size={18} className="mt-2 text-slate-500 transition group-hover:translate-x-1 group-hover:text-blue-700" />
-              </div>
-            </Card>
-          </Link>
-        ))}
+        {guestActions.map((feature) => <DashboardFeatureCard key={feature.href} feature={feature} layout="guest" />)}
       </div>
     </div>
   );
