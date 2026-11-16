@@ -1,9 +1,10 @@
 import type { User } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { type NextResponse } from "next/server";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
 import { isAdminUser } from "@/lib/supabase/admin-access";
 import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 import { createClient } from "@/lib/supabase/server";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 export type AdminRouteContextResult =
   | { response: NextResponse }
@@ -19,15 +20,15 @@ export async function authorizeAdminRoute(
   const user = await getCurrentUserOrNull(supabase);
   if (!user) {
     const failure = options.authenticationFailure ?? { message: "Authentication required.", status: 401 };
-    return { response: NextResponse.json({ error: failure.message }, { status: failure.status }) };
+    return { response: jsonErrorResponse(failure.message, failure.status) };
   }
   if (!await isAdminUser(supabase, user.id)) {
-    return { response: NextResponse.json({ error: "Admin access required." }, { status: 403 }) };
+    return { response: jsonErrorResponse("Admin access required.", 403) };
   }
 
   const adminClient = createAdminClient();
   if (!adminClient) {
-    return { response: NextResponse.json({ error: options.serviceUnavailableMessage }, { status: 503 }) };
+    return { response: jsonErrorResponse(options.serviceUnavailableMessage, 503) };
   }
   return { user, adminClient };
 }
