@@ -23,7 +23,7 @@ export function SentenceBuilderContent() {
 
   if (loading) return <p className="py-16 text-center text-slate-500">Loading Sentence Builder…</p>;
   return <main className="sentence-builder-page">
-    <Link href="/games" className="word-scramble-back"><ArrowLeft size={17}/> Back to Games</Link>
+    <Link href="/games" className="sentence-builder-back"><ArrowLeft size={17}/> Back to Games</Link>
     <header className="sentence-builder-hero"><span>Vocabulary game</span><h1>Sentence <b>Builder</b> ✨</h1><p>Put the words in order to make a sentence!</p></header>
     {phase === "setup" ? <SentenceBuilderSetup
       difficulty={difficulty}

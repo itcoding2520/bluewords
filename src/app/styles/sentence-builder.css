@@ -1,6 +1,6 @@
 /* Sentence Builder */
 .sentence-builder-page { max-width:76rem; margin-inline:auto; }
-.word-scramble-back { display:inline-flex; min-height:2.6rem; align-items:center; gap:.5rem; border-radius:999px; background:#1764f5; padding:.5rem 1rem; color:white; font-size:.85rem; font-weight:800; box-shadow:0 4px 10px #1764f526; }
+.sentence-builder-back { display:inline-flex; min-height:2.6rem; align-items:center; gap:.5rem; border-radius:999px; background:#1764f5; padding:.5rem 1rem; color:white; font-size:.85rem; font-weight:800; box-shadow:0 4px 10px #1764f526; }
 .sentence-builder-hero { position:relative; overflow:hidden; border:1px solid #d8edff; border-radius:1.5rem; margin:1rem 0 1.25rem; background:radial-gradient(ellipse at 82% 5%,#d5f7ff,transparent 35%),linear-gradient(110deg,#fff,#e2f8ff); padding:1.4rem 1.7rem; text-align:center; }
 .sentence-builder-hero > span { color:#1766ee; font-size:.78rem; font-weight:900; }
 .sentence-builder-hero h1 { margin-top:.2rem; color:#102d70; font-size:clamp(2rem,5vw,3.5rem); font-weight:1000; letter-spacing:-.045em; line-height:1.1; }
@@ -67,132 +67,9 @@
 .sentence-builder-save { margin-bottom:1rem; color:#71829a; font-size:.85rem; }
 @media(max-width:760px) { .sentence-builder-setup { grid-template-columns:1fr; }.sentence-builder-howto { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:.4rem .75rem; }.sentence-builder-howto > span { grid-row:1; }.sentence-builder-howto h2 { margin:0; }.sentence-builder-howto p,.sentence-builder-howto strong { grid-column:1/-1; } }
 @media(max-width:600px) { .sentence-builder-hero { border-radius:1rem; padding:1rem .65rem; }.sentence-builder-panel,.sentence-builder-howto,.sentence-builder-game,.sentence-builder-results { border-radius:1rem; padding:.85rem; }.sentence-builder-question { grid-template-columns:1fr; gap:.8rem; padding:.65rem; }.sentence-builder-picture { min-height:11rem; max-height:14rem; }.sentence-builder-stats { gap:.45rem; font-size:.75rem; }.sentence-builder-stats > span { margin-left:0; }.sentence-builder-stats > b { margin-left:auto; }.sentence-builder-tiles { gap:.4rem; }.sentence-builder-tiles button { min-height:2.7rem; padding:.4rem .7rem; font-size:.9rem; }.sentence-builder-actions > button { flex:1 1 auto; }.sentence-builder-actions > .sentence-builder-primary { flex:1 1 100%; } }
-.game-art-maze { display:flex; width:49%; min-height:9rem; align-items:center; justify-content:space-between; overflow:hidden; border-radius:1.5rem; background:linear-gradient(160deg,#b9edff,#dcffe0 65%,#b4e99b); }
-.game-art-maze::before { position:absolute; inset:35% -10% 16%; border:1.1rem solid #f8dfaa; border-right-color:transparent; border-left-color:transparent; border-radius:50%; content:""; transform:rotate(-12deg); }
-.game-art-maze > span { position:relative; z-index:1; display:grid; width:3.4rem; height:3.4rem; place-items:center; border:3px solid white; border-radius:1rem; background:linear-gradient(145deg,#61d4ff,#2584f0); font-size:1.9rem; box-shadow:0 5px 0 #1461be; transform:rotate(-8deg); }
-.game-art-maze > .game-maze-goal { border-radius:50%; background:#fff4c6; color:#f3a91d; font-size:2rem; }
-.game-art-maze > i { position:relative; z-index:1; width:.7rem; height:.7rem; border:3px solid white; border-radius:50%; background:#61df80; box-shadow:0 1px 5px #47955366; }
-.word-maze-page { width:100%; min-width:0; }
-.word-maze-back { display:inline-flex; min-height:2.6rem; align-items:center; gap:.5rem; border-radius:999px; margin-bottom:.75rem; background:#1762ed; padding:.45rem .95rem; color:white; font-size:.85rem; font-weight:850; box-shadow:0 5px 12px #1267e52e; }
-.word-maze-back:hover { background:#0c51d2; }
-.word-maze-hero { position:relative; display:flex; min-height:8.5rem; flex-direction:column; justify-content:center; overflow:hidden; border:1px solid #d3eaff; border-radius:1.55rem; margin-bottom:1rem; padding:1.15rem 1.5rem; background:radial-gradient(ellipse at 90% 15%,#ddfff1 0%,transparent 35%),linear-gradient(110deg,#fff,#e8f8ff 70%,#d9f6ff); box-shadow:0 12px 28px #3879ae17; }
-.word-maze-hero-badge { display:inline-flex; width:max-content; align-items:center; gap:.4rem; color:#1373eb; font-size:.72rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
-.word-maze-hero h1 { position:relative; z-index:1; margin-top:.2rem; color:#102d72; font-size:clamp(1.7rem,3.3vw,2.8rem); font-weight:950; letter-spacing:-.055em; line-height:1.05; }
-.word-maze-hero h1 span { color:#1685f4; }
-.word-maze-hero > p { margin-top:.45rem; color:#42648e; font-size:1rem; font-weight:750; }
-.word-maze-hero-mascot { position:absolute; right:8%; bottom:-.8rem; font-size:6.5rem; filter:drop-shadow(0 9px 8px #186ecc36); transform:rotate(-8deg); }
-.word-maze-setup { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(17rem,.8fr); gap:1rem; }
-.word-maze-setup-card,.word-maze-howto,.word-maze-question-card,.word-maze-results { min-width:0; border:1px solid white; border-radius:1.5rem; background:linear-gradient(145deg,#fff,#f7fcff); padding:1.35rem; box-shadow:0 12px 30px #3478ae19; }
-.word-maze-setup-card { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:.75rem 1rem; }
-.word-maze-setup-icon,.word-maze-howto-icon { display:grid; width:3.2rem; height:3.2rem; place-items:center; border-radius:1.1rem; background:linear-gradient(145deg,#dff6ff,#d7e7ff); color:#1677e9; }
-.word-maze-setup-copy h2,.word-maze-howto h2 { color:#10275f; font-size:1.2rem; font-weight:900; }
-.word-maze-setup-copy p,.word-maze-howto > p { margin-top:.25rem; color:#607a9d; font-size:.88rem; line-height:1.5; }
-.word-maze-setup-card label { grid-column:1 / -1; margin-top:.45rem; color:#203b6c; font-size:.86rem; font-weight:850; }
-.word-maze-category-select { grid-column:1 / -1; width:100%; }
-.word-maze-availability { grid-column:1 / -1; color:#69809e; font-size:.8rem; }
-.word-maze-warning { grid-column:1 / -1; border-radius:.8rem; background:#fff5dd; padding:.65rem .75rem; color:#8c6200; font-size:.84rem; }
-.word-maze-primary { display:inline-flex; min-height:3.2rem; align-items:center; justify-content:center; gap:.6rem; border:0; border-radius:999px; background:linear-gradient(100deg,#ffe24a,#ffb91c); padding:.65rem 1.1rem; color:#173875; font-weight:950; box-shadow:0 5px 0 #e89917,0 10px 18px #e7aa2f32; transition:transform .16s,filter .16s; }
-.word-maze-primary:not(:disabled):hover { filter:brightness(1.03); transform:translateY(-1px); }
-.word-maze-primary:disabled { cursor:not-allowed; opacity:.48; box-shadow:none; }
-.word-maze-setup-card > .word-maze-primary { grid-column:1 / -1; justify-self:start; margin-top:.2rem; }
-.word-maze-howto { position:relative; overflow:hidden; background:radial-gradient(ellipse at 95% 0%,#e5f5ff,transparent 48%),linear-gradient(145deg,#f5f2ff,#fff); }
-.word-maze-howto h2 { margin-top:.8rem; }
-.word-maze-howto-stats { display:flex; flex-wrap:wrap; gap:.65rem; margin-top:1.2rem; }
-.word-maze-howto-stats span { display:flex; min-height:2.7rem; align-items:center; gap:.4rem; border-radius:999px; background:#fff; padding:.45rem .75rem; color:#eeae14; box-shadow:0 3px 10px #688eb51a; font-weight:900; }
-.word-maze-howto-stats span:last-child { color:#f05f78; }
-.word-maze-howto-stats small { color:#6c7f9b; font-size:.78rem; font-weight:700; }
-.word-maze-game-layout { display:grid; grid-template-columns:minmax(0,1.08fr) minmax(21rem,.92fr); align-items:stretch; gap:1rem; }
-.word-maze-map { position:relative; min-height:37rem; overflow:hidden; border:1px solid #b9e4ff; border-radius:1.6rem; background:linear-gradient(180deg,#aeeaff 0%,#d5f6ff 42%,#abdc8d 43%,#7cc779 100%); box-shadow:0 14px 32px #3478ae24; }
-.word-maze-map-sky { position:absolute; inset:0 0 37%; background:radial-gradient(ellipse at 16% 25%,#ffffffc9 0 7%,transparent 7.5%),radial-gradient(ellipse at 78% 16%,#ffffffa8 0 9%,transparent 9.5%),linear-gradient(145deg,#9ee5ff,#d9f6ff); }
-.word-maze-mountain { position:absolute; top:10%; right:12%; font-size:5rem; filter:drop-shadow(0 8px 5px #3575a933); }
-.word-maze-forest { position:absolute; z-index:1; color:#147144; font-size:1.7rem; letter-spacing:.1rem; text-shadow:0 3px 3px #f7fff1; }
-.word-maze-forest-one { top:20%; left:5%; }
-.word-maze-forest-two { right:5%; bottom:15%; }
-.word-maze-route { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-.word-maze-road { fill:none; stroke:#f6d99e; stroke-width:33; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 5px 1px #5c963d55); }
-.word-maze-road-open { fill:none; stroke:#61e13f; stroke-width:20; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:100; transition:stroke-dashoffset .65s ease; filter:drop-shadow(0 0 9px #82ff52); }
-.word-maze-node { fill:#e4e4e8; stroke:#fff; stroke-width:5; filter:drop-shadow(0 3px 3px #526e5366); transition:fill .3s,transform .3s; transform-box:fill-box; transform-origin:center; }
-.word-maze-node.is-open { fill:#74eb50; }
-.word-maze-node.is-current { stroke:#fff46e; transform:scale(1.25); }
-.word-maze-mascot { position:absolute; z-index:2; display:grid; width:3.4rem; height:3.4rem; place-items:center; border:3px solid white; border-radius:1rem; background:linear-gradient(145deg,#60d6ff,#2186f2); font-size:2.1rem; filter:drop-shadow(0 5px 0 #1769c8); transform:translate(-50%,-50%) rotate(-8deg); transition:left .55s ease,top .55s ease; }
-.word-maze-mascot.is-worried { animation:word-maze-bump .24s ease-in-out 2; }
-.word-maze-start-sign,.word-maze-finish-sign { position:absolute; z-index:2; display:inline-flex; align-items:center; gap:.25rem; border:2px solid #fff; border-radius:.55rem; background:#bd7542; padding:.35rem .55rem; color:white; font-size:.75rem; font-weight:950; box-shadow:0 3px 0 #87502e; }
-.word-maze-start-sign { bottom:16%; left:2%; }
-.word-maze-finish-sign { top:30%; right:3%; background:#f5b528; color:#72500c; }
-.word-maze-rock { position:absolute; top:44%; left:44%; font-size:2.4rem; }
-.word-maze-map-caption { position:absolute; right:.8rem; bottom:.7rem; left:.8rem; display:flex; align-items:center; justify-content:center; gap:.4rem; border:1px solid #ffffffc9; border-radius:999px; background:#ffffffdf; padding:.55rem; color:#36638a; font-size:.8rem; font-weight:800; backdrop-filter:blur(6px); }
-.word-maze-question-card { display:flex; flex-direction:column; padding:1.2rem; }
-.word-maze-stats { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; gap:.45rem; border:1px solid #dcecff; border-radius:1rem; background:linear-gradient(90deg,#f1faff,#f4f2ff); padding:.65rem; }
-.word-maze-stats > span { display:flex; min-width:0; align-items:center; justify-content:center; gap:.3rem; color:#315782; font-size:.76rem; font-weight:800; }
-.word-maze-stats > span svg { flex:0 0 auto; color:#248be8; }
-.word-maze-stats > span strong { color:#102e71; font-size:.95rem; }
-.word-maze-stats > span small { color:#627b9a; font-size:.65rem; }
-.word-maze-stats .word-maze-stars { gap:.08rem; color:#f5bd28; }
-.word-maze-stats .word-maze-stars svg { color:inherit; }
-.word-maze-stats .word-maze-lives { gap:.08rem; color:#f05d7a; }
-.word-maze-stats .word-maze-lives svg { color:inherit; }
-.word-maze-question-heading { display:flex; align-items:center; gap:.6rem; margin:1.15rem 0 1rem; }
-.word-maze-question-heading > div { min-width:0; }
-.word-maze-question-heading small { color:#1681e8; font-size:.72rem; font-weight:850; }
-.word-maze-question-heading h2 { color:#112b6e; font-size:clamp(1.15rem,1.65vw,1.7rem); font-weight:950; letter-spacing:-.035em; line-height:1.2; }
-.word-maze-choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
-.word-maze-choice { display:flex; min-width:0; min-height:4.7rem; align-items:center; justify-content:center; gap:.5rem; border:2px solid #d5e6f8; border-radius:1.15rem; background:linear-gradient(145deg,#fff,#f0f7ff); padding:.65rem; color:#183c7d; font-size:clamp(.85rem,1.1vw,1.08rem); font-weight:900; line-height:1.25; text-align:center; transition:border-color .16s,background .16s,transform .16s,box-shadow .16s; }
-.word-maze-choice:hover { border-color:#73bfff; background:#f0f9ff; transform:translateY(-1px); box-shadow:0 5px 12px #4996d21c; }
-.word-maze-choice.is-correct { border-color:#28c964; background:linear-gradient(145deg,#e9ffe5,#ccffc2); color:#087648; box-shadow:0 0 0 2px #7fe899,0 6px 15px #2ebe4a2b; }
-.word-maze-choice.is-wrong { border-color:#fa7d86; background:#fff0f1; color:#bf354b; animation:word-maze-bump .24s ease-in-out 2; }
-.word-maze-feedback { display:flex; min-height:4.2rem; align-items:center; justify-content:center; gap:.65rem; border:1px solid #dcecff; border-radius:1.2rem; margin-top:auto; background:linear-gradient(100deg,#eff8ff,#f7f3ff); padding:.65rem; color:#4f77a1; text-align:center; }
-.word-maze-feedback p { display:flex; flex-direction:column; gap:.15rem; }
-.word-maze-feedback strong { color:#254a80; font-size:.95rem; }
-.word-maze-feedback p span { font-size:.78rem; }
-.word-maze-feedback.correct { border-color:#bdeec5; background:linear-gradient(100deg,#e7ffe3,#edfff2); color:#128549; }
-.word-maze-feedback.correct strong { color:#078148; font-size:1.35rem; }
-.word-maze-feedback.wrong { border-color:#ffc5ca; background:#fff2f2; color:#cb5061; }
-.word-maze-feedback.wrong strong { color:#bb3448; }
-.word-maze-feedback-mascot { font-size:2.7rem; }
-.word-maze-continue { width:100%; min-height:3.6rem; margin-top:.7rem; background:linear-gradient(100deg,#ffe749,#ffb91d); font-size:1.1rem; }
-.word-maze-results { display:flex; min-height:25rem; flex-direction:column; align-items:center; justify-content:center; margin-inline:auto; padding:2rem; background:radial-gradient(ellipse at 50% 0%,#daf8ff,transparent 55%),linear-gradient(145deg,#fff,#f5f5ff); text-align:center; }
-.word-maze-result-mascot { margin-bottom:.5rem; font-size:4rem; filter:drop-shadow(0 5px 5px #3378a322); }
-.word-maze-results .word-maze-hero-badge { justify-content:center; }
-.word-maze-results h2 { margin-top:.45rem; color:#112b70; font-size:clamp(1.5rem,4vw,2.3rem); font-weight:950; }
-.word-maze-results > p:not(.word-maze-hero-badge) { max-width:30rem; margin-top:.5rem; color:#617b9c; }
-.word-maze-result-score { display:flex; align-items:center; gap:.4rem; margin-top:1rem; color:#efa900; font-size:2.5rem; font-weight:950; }
-.word-maze-result-score small { color:#617b9c; font-size:.9rem; }
-.word-maze-result-progress { margin-bottom:1.25rem; font-size:.86rem; }
-.word-maze-results .word-maze-primary { min-width:12rem; }
-@keyframes word-maze-bump { 25% { transform:translateX(-4px); } 75% { transform:translateX(4px); } }
-@media (max-width:900px) {
-  .word-maze-game-layout { grid-template-columns:minmax(0,1fr) minmax(19rem,.95fr); gap:.7rem; }
-  .word-maze-map { min-height:32rem; }
-  .word-maze-question-card { padding:.8rem; }
-  .word-maze-stats { grid-template-columns:1fr auto; row-gap:.5rem; }
-  .word-maze-stats > span:nth-child(odd) { justify-content:flex-start; }
-  .word-maze-stats > span:nth-child(even) { justify-content:flex-end; }
-}
-@media (max-width:700px) {
-  .game-art-maze { right:.5rem; top:3rem; bottom:.75rem; width:48%; min-height:7rem; }
-  .game-art-maze > span { width:2.6rem; height:2.6rem; font-size:1.45rem; }
-  .word-maze-hero { min-height:7.4rem; padding:.9rem 1rem; }
-  .word-maze-hero h1 { max-width:75%; font-size:clamp(1.5rem,7vw,2.1rem); }
-  .word-maze-hero > p { max-width:70%; font-size:.85rem; }
-  .word-maze-hero-mascot { right:5%; font-size:4rem; }
-  .word-maze-setup { grid-template-columns:minmax(0,1fr); }
-  .word-maze-game-layout { grid-template-columns:minmax(0,1fr); }
-  .word-maze-question-card { grid-row:1; }
-  .word-maze-map { min-height:23rem; }
-  .word-maze-question-heading { margin:.85rem 0; }
-  .word-maze-choices { gap:.5rem; }
-  .word-maze-choice { min-height:3.8rem; border-radius:.9rem; }
-  .word-maze-feedback { min-height:3.6rem; margin-top:.8rem; }
-  .word-maze-continue { min-height:3.2rem; }
-}
-@media (max-width:380px) {
-  .word-maze-setup-card,.word-maze-howto,.word-maze-question-card { padding:.7rem; }
-  .word-maze-stats { gap:.3rem; padding:.45rem; }
-  .word-maze-stats > span { font-size:.67rem; }
-  .word-maze-stats > span strong { font-size:.8rem; }
-  .word-maze-stats .word-maze-stars svg,.word-maze-stats .word-maze-lives svg { width:16px; height:16px; }
-  .word-maze-choice { min-height:3.35rem; padding:.45rem; font-size:.8rem; }
-  .word-maze-map { min-height:19rem; }
-}
-@media (prefers-reduced-motion: reduce) { .word-maze-road-open,.word-maze-node,.word-maze-mascot,.word-maze-choice { transition:none; } .word-maze-mascot.is-worried,.word-maze-choice.is-wrong { animation:none; } }
 
+.game-feature-sentence { background:radial-gradient(ellipse at 10% 16%,#fffbe0 0%,#fff2c3 48%,#ffe19b 100%); }
+.game-feature-sentence .game-feature-icon { background:#fff0bd; color:#e69a00; }
+.game-feature-sentence .game-play-button { background:linear-gradient(105deg,#ffc82f,#f59a13); }
+.game-art-sentence { display:flex; align-items:center; justify-content:center; gap:.25rem; }
+.game-art-sentence > span { display:grid; min-width:2.5rem; min-height:3rem; place-items:center; border:2px solid #fff; border-radius:.75rem; background:linear-gradient(145deg,#fff,#fff7dc); padding:.3rem; color:#17498e; font-size:clamp(.8rem,1.4vw,1.2rem); font-weight:950; box-shadow:0 5px 0 #f3cf6c,0 8px 14px #b8863126; }
