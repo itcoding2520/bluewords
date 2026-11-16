@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
@@ -153,7 +152,7 @@ export function WordFormModal({
               category={category}
               categories={categories}
               words={words}
-              onChange={(value) => setCategory(value as VocabularyCategory)}
+              onChange={setCategory}
             />
 
             <WordFormActions
