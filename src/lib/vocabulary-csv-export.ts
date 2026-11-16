@@ -1,11 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { protectSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
+import { escapeCsvCell } from "@/lib/csv-rows";
 import { VOCABULARY_CSV_HEADERS } from "@/lib/vocabulary-csv-shared";
-
-function escapeCsv(value: string): string {
-  value = protectSpreadsheetCell(value);
-  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
 
 export function exportVocabularyCsv(words: VocabularyWord[]): string {
   const rows: string[][] = [
@@ -48,5 +43,8 @@ export function exportVocabularyCsv(words: VocabularyWord[]): string {
     }
   }
 
-  return `\uFEFF${rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n")}`;
+  return `\uFEFF${rows.map((row) => row.map((value) => escapeCsvCell(value, {
+    spreadsheetSafe: true,
+    quoteAll: false,
+  })).join(",")).join("\r\n")}`;
 }

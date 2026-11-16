@@ -42,6 +42,6 @@ export function exportSentenceBuilderCsv(questions: SentenceBuilderQuestion[]) {
   const level: Record<SentenceDifficulty, string> = { easy: "1", medium: "2", hard: "3" };
   const lines = questions.map((question) => [question.question_id, level[question.difficulty], question.category, question.prompt_vi,
     question.answer_sentence, JSON.stringify(question.answer_tokens), JSON.stringify(question.distractor_tokens), question.image_keyword,
-    question.vocabulary_words.join("|")].map(escapeCsvCell).join(","));
-  return [header.map(escapeCsvCell).join(","), ...lines].join("\r\n");
+    question.vocabulary_words.join("|")].map((value) => escapeCsvCell(value)).join(","));
+  return [header.map((value) => escapeCsvCell(value)).join(","), ...lines].join("\r\n");
 }

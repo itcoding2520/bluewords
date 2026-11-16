@@ -80,5 +80,5 @@ export function exportCommunicationCsv(records: CommunicationCsvRecord[]) {
     if (name === "response_options_json") return escapeCsvCell(JSON.stringify(record.response_options));
     return escapeCsvCell(record[name as keyof CommunicationCsvRecord] as string | number | null | undefined);
   }).join(","));
-  return [outputHeaders.map(escapeCsvCell).join(","), ...lines].join("\r\n");
+  return [outputHeaders.map((header) => escapeCsvCell(header)).join(","), ...lines].join("\r\n");
 }
