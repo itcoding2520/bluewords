@@ -43,7 +43,7 @@ export function deriveAdminCategorySelection({
     && !isDefaultVocabularyCategory(category.name)
   );
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;
-  const normalizedSearch = categorySearch.trim().toLocaleLowerCase();
+  const normalizedSearch = normalizeVocabularyLabel(categorySearch);
   const visibleCategories = currentCategories.filter((category) =>
     category.name.toLocaleLowerCase().includes(normalizedSearch)
   );
