@@ -50,7 +50,8 @@ export function useWordScrambleGameplay() {
   }
 
   function submitAnswer(nextIds: number[], usedHint = state.hintUsed) {
-    const answer = nextIds.map((id) => state.letterTiles.find((tile) => tile.id === id)?.letter ?? "").join("");
+    const lettersByTileId = new Map(state.letterTiles.map((tile) => [tile.id, tile.letter]));
+    const answer = nextIds.map((id) => lettersByTileId.get(id) ?? "").join("");
     if (answer.length !== currentWord.answer.length) {
       setState((current) => ({ ...current, moves: current.moves + 1 }));
       return;
