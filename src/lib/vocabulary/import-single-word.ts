@@ -9,7 +9,7 @@ import {
   deleteVocabularyImages,
   uploadVocabularyImage,
 } from "@/lib/supabase/vocabulary-images";
-import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
+import { saveVocabularyMeanings } from "@/lib/vocabulary/meaning-workflows";
 import { normalizeVocabularyImageKey } from "@/lib/vocabulary/bulk-import-existing-images";
 import { resolveVocabularyIpa } from "@/lib/vocabulary/resolve-ipa";
 
