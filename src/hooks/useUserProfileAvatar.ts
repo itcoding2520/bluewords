@@ -2,6 +2,12 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import type { UserProfile } from "@/lib/supabase/user-profile";
 import { validateUserAvatar } from "@/lib/supabase/user-profile-avatars";
 
+interface AvatarSelectionState {
+  file: File | null;
+  remove: boolean;
+  previewUrl: string | null;
+}
+
 export function useUserProfileAvatar({
   profile,
   setError,
@@ -11,23 +17,22 @@ export function useUserProfileAvatar({
   setError: Dispatch<SetStateAction<string>>;
   setNotice: Dispatch<SetStateAction<string>>;
 }) {
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [removeAvatar, setRemoveAvatar] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selection, setSelection] = useState<AvatarSelectionState>({ file: null, remove: false, previewUrl: null });
 
   useEffect(() => {
-    if (!avatarFile) return;
+    if (!selection.file) return;
     let active = true;
     const reader = new FileReader();
     reader.onload = () => {
-      if (active && typeof reader.result === "string") setPreviewUrl(reader.result);
+      const previewUrl = reader.result;
+      if (active && typeof previewUrl === "string") setSelection((current) => ({ ...current, previewUrl }));
     };
-    reader.readAsDataURL(avatarFile);
+    reader.readAsDataURL(selection.file);
     return () => {
       active = false;
       reader.abort();
     };
-  }, [avatarFile]);
+  }, [selection.file]);
 
   function selectAvatar(file: File | undefined) {
     setError("");
@@ -38,34 +43,28 @@ export function useUserProfileAvatar({
       setError(validationError);
       return;
     }
-    setAvatarFile(file);
-    setPreviewUrl(null);
-    setRemoveAvatar(false);
+    setSelection({ file, previewUrl: null, remove: false });
   }
 
   function removeSelectedAvatar() {
-    setAvatarFile(null);
-    setPreviewUrl(null);
-    setRemoveAvatar(Boolean(profile?.avatar_path));
+    setSelection({ file: null, previewUrl: null, remove: Boolean(profile?.avatar_path) });
     setError("");
     setNotice("");
   }
 
   function undoAvatarRemoval() {
-    setRemoveAvatar(false);
+    setSelection((current) => ({ ...current, remove: false }));
   }
 
   function resetAvatarSelection() {
-    setAvatarFile(null);
-    setPreviewUrl(null);
-    setRemoveAvatar(false);
+    setSelection({ file: null, previewUrl: null, remove: false });
   }
 
   return {
-    avatarFile,
-    removeAvatar,
-    previewUrl,
-    previewPath: removeAvatar ? null : profile?.avatar_path,
+    avatarFile: selection.file,
+    removeAvatar: selection.remove,
+    previewUrl: selection.previewUrl,
+    previewPath: selection.remove ? null : profile?.avatar_path,
     selectAvatar,
     removeSelectedAvatar,
     undoAvatarRemoval,
