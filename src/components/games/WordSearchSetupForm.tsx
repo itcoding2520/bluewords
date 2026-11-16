@@ -7,8 +7,7 @@ import { ChevronDown, ChevronUp, Gamepad2, Grid3X3 } from "lucide-react";
 import { AutoDismissMessage } from "@/components/ui/AutoDismissMessage";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { getCategoryImageUrl } from "@/lib/supabase/category-images";
+import { useVocabularyCategoryOptionImageUrl } from "@/hooks/useVocabularyCategoryOptionImageUrl";
 import { DIFFICULTIES, GRID_SIZES, WORD_TARGETS, type Difficulty, type GridSize, type WordSearchCategoryOption } from "@/lib/word-search-config";
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 export type { WordSearchCategoryOption } from "@/lib/word-search-config";
@@ -22,9 +21,7 @@ function CategoryChip({
   selected: boolean;
   onClick: () => void;
 }) {
-  const isCategoryImage = option.imagePath?.startsWith("category:") ?? false;
-  const wordImageUrl = useVocabularyImageUrl(isCategoryImage ? null : option.imagePath);
-  const imageUrl = isCategoryImage ? getCategoryImageUrl(option.imagePath?.slice("category:".length)) : wordImageUrl;
+  const imageUrl = useVocabularyCategoryOptionImageUrl(option.imagePath);
 
   return (
     <button type="button" aria-pressed={selected} onClick={onClick} title={option.name} className={`flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
