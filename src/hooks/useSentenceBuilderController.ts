@@ -12,7 +12,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSentenceBuilderGameplay } from "@/hooks/useSentenceBuilderGameplay";
 
 type Phase = GamePhase;
-export type { SentenceBuilderTile } from "@/hooks/useSentenceBuilderGameplay";
+export type { SentenceBuilderTile } from "@/lib/sentence-builder";
 export const sentenceBuilderQuestionCounts = [5, 10] as const;
 
 export function useSentenceBuilderController() {

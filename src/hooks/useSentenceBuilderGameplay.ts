@@ -1,13 +1,5 @@
 import { useState } from "react";
-import { shuffle } from "@/lib/random";
-import type { SentenceBuilderQuestion } from "@/lib/sentence-builder";
-
-export type SentenceBuilderTile = { id: number; text: string };
-
-function createTiles(question: SentenceBuilderQuestion): SentenceBuilderTile[] {
-  return shuffle([...question.answer_tokens, ...question.distractor_tokens]
-    .map((text, id) => ({ id, text })));
-}
+import { createSentenceBuilderTiles, type SentenceBuilderQuestion, type SentenceBuilderTile } from "@/lib/sentence-builder";
 
 export function useSentenceBuilderGameplay() {
   const [round, setRound] = useState<SentenceBuilderQuestion[]>([]);
@@ -26,7 +18,7 @@ export function useSentenceBuilderGameplay() {
     setRound(nextRound);
     setIndex(0);
     setChosen([]);
-    setTiles(createTiles(nextRound[0]));
+    setTiles(createSentenceBuilderTiles(nextRound[0]));
     setScore(0);
     setCorrectCount(0);
     setMoves(0);
@@ -78,7 +70,7 @@ export function useSentenceBuilderGameplay() {
     const nextIndex = index + 1;
     setIndex(nextIndex);
     setChosen([]);
-    setTiles(createTiles(round[nextIndex]));
+    setTiles(createSentenceBuilderTiles(round[nextIndex]));
     setFeedback("");
     setSolved(false);
     return false;

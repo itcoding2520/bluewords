@@ -1,4 +1,5 @@
 import type { DifficultyLevel } from "@/types/difficulty";
+import { shuffle } from "@/lib/random";
 
 export type SentenceDifficulty = DifficultyLevel;
 
@@ -17,3 +18,10 @@ export type SentenceBuilderQuestion = {
 };
 
 export type SentenceQuestionInput = Omit<SentenceBuilderQuestion, "id">;
+
+export type SentenceBuilderTile = { id: number; text: string };
+
+export function createSentenceBuilderTiles(question: SentenceBuilderQuestion): SentenceBuilderTile[] {
+  return shuffle([...question.answer_tokens, ...question.distractor_tokens]
+    .map((text, id) => ({ id, text })));
+}

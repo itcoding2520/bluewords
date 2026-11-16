@@ -6,8 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Clock3, Lightbulb, Star, Undo2 } from "lu
 import { Card } from "@/components/ui/Card";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import type { SentenceBuilderTile } from "@/hooks/useSentenceBuilderGameplay";
-import type { SentenceBuilderQuestion } from "@/lib/sentence-builder";
+import type { SentenceBuilderQuestion, SentenceBuilderTile } from "@/lib/sentence-builder";
 
 const icons: Record<string, string> = { apple: "🍎", banana: "🍌", cat: "🐱", dog: "🐶", book: "📚", sun: "☀️", water: "💧", milk: "🥛", ball: "⚽", girl: "👧", boy: "👦", school: "🏫", flower: "🌸", bird: "🐦", fish: "🐟", car: "🚗", tree: "🌳" };
 
