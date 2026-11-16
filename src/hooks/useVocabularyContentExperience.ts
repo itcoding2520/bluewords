@@ -6,8 +6,7 @@ import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryE
 import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
 import { useVocabularyContentPagination } from "@/hooks/useVocabularyContentPagination";
-import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
-import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import { loadVocabularyExportWords } from "@/lib/vocabulary/export-words";
 
 export function useVocabularyContentExperience(isAdmin: boolean) {
   const {
@@ -78,12 +77,6 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     toggleMastered,
   });
 
-  async function loadExportWords() {
-    if (selectedCategory === "All") return currentPageWords;
-    const rows = await getVocabularyWordsForCategory(selectedCategory);
-    return rows.map(mapVocabularyWordRow);
-  }
-
   return {
     data: {
       categories,
@@ -106,7 +99,7 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     export: {
       count: exportCount.count,
       isLoading: exportCount.isLoading,
-      loadWords: loadExportWords,
+      loadWords: () => loadVocabularyExportWords(selectedCategory, currentPageWords),
     },
     import: {
       hasPendingImport: legacyImport.hasPendingImport,
