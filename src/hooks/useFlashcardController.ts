@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
-
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import { useFlashcardReviewTime } from "@/hooks/useFlashcardReviewTime";
 import { useFlashcardShuffleSeed } from "@/hooks/useFlashcardShuffleSeed";
 import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
 import { useFlashcardDeck } from "@/hooks/useFlashcardDeck";
-import type { FlashcardReviewMode } from "@/types/flashcards";
+import { useFlashcardNavigation } from "@/hooks/useFlashcardNavigation";
 
 export function useFlashcardController({
   words,
@@ -21,11 +19,6 @@ export function useFlashcardController({
 }) {
   const shuffleSeed = useFlashcardShuffleSeed();
   const now = useFlashcardReviewTime();
-  const [category, setCategory] = useState("all");
-  const [status, setStatus] = useState<VocabularyStatus>("learning");
-  const [index, setIndex] = useState(0);
-  const [isRevealed, setIsRevealed] = useState(false);
-  const [reviewMode, setReviewMode] = useState<FlashcardReviewMode>("all");
   const {
     reviewSchedules,
     setReviewSchedules,
@@ -34,6 +27,8 @@ export function useFlashcardController({
     scheduleLoadFailed,
     loadReviewSchedules,
   } = useFlashcardReviewSchedules(isAuthenticated);
+  const navigation = useFlashcardNavigation(loadReviewSchedules);
+  const { category, status, index, isRevealed, reviewMode } = navigation;
 
   const { statusCounts, deck, dueCount } = useFlashcardDeck({
     words,
@@ -54,36 +49,12 @@ export function useFlashcardController({
     shuffleSeed,
     isAuthenticated,
     toggleMastered,
-    setStatus,
-    setReviewMode,
-    setIndex,
-    setIsRevealed,
+    setStatus: navigation.setStatus,
+    setReviewMode: navigation.setReviewMode,
+    setIndex: navigation.setIndex,
+    setIsRevealed: navigation.setIsRevealed,
     setReviewSchedules,
   });
-
-  function changeCategory(value: string) {
-    setCategory(value);
-    setIndex(0);
-    setIsRevealed(false);
-  }
-
-  function changeStatus(value: VocabularyStatus) {
-    setStatus(value);
-    setIndex(0);
-    setIsRevealed(false);
-  }
-
-  function moveCard(offset: number) {
-    setIndex((current) => (current + offset + deck.length) % deck.length);
-    setIsRevealed(false);
-  }
-
-  function changeReviewMode(value: FlashcardReviewMode) {
-    setReviewMode(value);
-    setIndex(0);
-    setIsRevealed(false);
-    if (value === "due") void loadReviewSchedules();
-  }
 
   return {
     filters: {
@@ -92,9 +63,9 @@ export function useFlashcardController({
       reviewMode,
       statusCounts,
       dueCount,
-      changeCategory,
-      changeStatus,
-      changeReviewMode,
+      changeCategory: navigation.changeCategory,
+      changeStatus: navigation.changeStatus,
+      changeReviewMode: navigation.changeReviewMode,
     },
     schedules: {
       areLoaded: areSchedulesLoaded,
@@ -106,11 +77,11 @@ export function useFlashcardController({
       cards: deck,
       index,
       currentCard: card,
-      moveCard,
+      moveCard: (offset: number) => navigation.moveCard(offset, deck.length),
     },
     card: {
       isRevealed,
-      setIsRevealed,
+      setIsRevealed: navigation.setIsRevealed,
       isTogglingStatus,
       toggleStatus: handleToggleStatus,
     },
