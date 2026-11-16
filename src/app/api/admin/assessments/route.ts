@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { createAssessmentAssignment } from "@/lib/assessments/create-assignment";
 import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
+import { readRequestJson } from "@/lib/api/request-json";
 
 export async function GET() {
   const auth = await authorizeAdminRoute({
@@ -26,11 +27,11 @@ export async function POST(request: NextRequest) {
   });
   if ("response" in auth) return auth.response;
   const { adminClient: admin, user } = auth;
-  let input: unknown;
-  try { input = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
-  const validation = validateAssessmentAssignmentInput(input);
+  const parsedBody = await readRequestJson(request);
+  if (!parsedBody.ok) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  const validation = validateAssessmentAssignmentInput(parsedBody.value);
   if (!validation.ok) return NextResponse.json({ error: validation.message }, { status: 400 });
-  const selection = input as { allUsers?: unknown; recipientIds?: unknown };
+  const selection = parsedBody.value as { allUsers?: unknown; recipientIds?: unknown };
   const result = await createAssessmentAssignment(admin, user.id, validation.value, {
     allUsers: selection.allUsers,
     recipientIds: selection.recipientIds,

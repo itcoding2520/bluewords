@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
+import { readRequestJson } from "@/lib/api/request-json";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
@@ -23,8 +24,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to submit this test." }, { status: 401 });
   const { id } = await context.params;
-  let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  const parsedBody = await readRequestJson(request);
+  if (!parsedBody.ok) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const body = parsedBody.value;
   if (!body || typeof body !== "object" || !Array.isArray((body as { answers?: unknown }).answers)) return NextResponse.json({ error: "Provide an answer for each question." }, { status: 400 });
   const answers = (body as { answers: unknown[] }).answers;
   if (answers.length !== 10 || answers.some((answer) => typeof answer !== "string")) return NextResponse.json({ error: "All 10 answers are required." }, { status: 400 });
