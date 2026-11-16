@@ -8,7 +8,9 @@ export async function ensureTopicAndLessonIds(
 ): Promise<Map<string, string>> {
   const topicsBySlug = new Map<string, string>();
   const lessonsByKey = new Map<string, string>();
-  const topicRows = [...new Map(records.map((row) => [row.topic_slug, {
+  const topicRecordsBySlug = new Map<string, CommunicationCsvRecord>();
+  for (const row of records) topicRecordsBySlug.set(row.topic_slug, row);
+  const topicRows = [...topicRecordsBySlug.values()].map((row) => ({
     slug: row.topic_slug,
     title_en: row.topic_title_en,
     title_vi: row.topic_title_vi,
@@ -16,7 +18,7 @@ export async function ensureTopicAndLessonIds(
     description_vi: row.topic_description_vi,
     sort_order: row.topic_order,
     status: "published" as ContentStatus,
-  }])).values()];
+  }));
   const result = await supabase.from("communication_topics")
     .select("slug").in("slug", topicRows.map((row) => row.slug));
   if (result.error) throw result.error;
@@ -32,7 +34,9 @@ export async function ensureTopicAndLessonIds(
   if (lookup.error) throw lookup.error;
   for (const row of lookup.data ?? []) topicsBySlug.set(row.slug, row.id);
 
-  const lessonRows = [...new Map(records.map((row) => [row.lesson_key, {
+  const lessonRecordsByKey = new Map<string, CommunicationCsvRecord>();
+  for (const row of records) lessonRecordsByKey.set(row.lesson_key, row);
+  const lessonRows = [...lessonRecordsByKey.values()].map((row) => ({
     lesson_key: row.lesson_key,
     topic_id: topicsBySlug.get(row.topic_slug),
     title_en: row.lesson_title_en,
@@ -40,7 +44,7 @@ export async function ensureTopicAndLessonIds(
     difficulty: row.difficulty,
     sort_order: row.lesson_order,
     status: row.lesson_status,
-  }])).values()];
+  }));
   if (lessonRows.some((row) => !row.topic_id)) {
     throw new Error("Import references a topic that could not be resolved.");
   }
