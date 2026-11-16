@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import type {
-  LeaderboardDifficulty,
-  LeaderboardGame,
-  LeaderboardGridSize,
-  LeaderboardQuestionCount,
-  LeaderboardQuizMode,
-} from "@/lib/games/leaderboard-filters";
+import type { LeaderboardFilters } from "@/lib/games/leaderboard-filters";
 import {
   getQuizLeaderboard,
   getVocabularyGameLeaderboard,
@@ -19,14 +13,6 @@ export type GamesLeaderboardRow =
   | QuizLeaderboardRow
   | WordSearchLeaderboardRow
   | VocabularyGameLeaderboardRow;
-
-interface LeaderboardFilters {
-  game: LeaderboardGame;
-  quizMode: LeaderboardQuizMode;
-  questionCount: LeaderboardQuestionCount;
-  gridSize: LeaderboardGridSize;
-  difficulty: LeaderboardDifficulty;
-}
 
 export function useGamesLeaderboardData(filters: LeaderboardFilters) {
   const [rows, setRows] = useState<GamesLeaderboardRow[]>([]);

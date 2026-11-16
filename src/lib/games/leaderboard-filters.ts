@@ -13,3 +13,11 @@ export type LeaderboardQuestionCount = (typeof LEADERBOARD_QUESTION_COUNTS)[numb
 export type LeaderboardGridSize = (typeof LEADERBOARD_GRID_SIZES)[number];
 
 export const LEADERBOARD_DIFFICULTIES = DIFFICULTY_LEVELS;
+
+export interface LeaderboardFilters {
+  game: LeaderboardGame;
+  quizMode: LeaderboardQuizMode;
+  questionCount: LeaderboardQuestionCount;
+  gridSize: LeaderboardGridSize;
+  difficulty: LeaderboardDifficulty;
+}

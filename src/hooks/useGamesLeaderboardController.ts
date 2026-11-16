@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type {
+  LeaderboardFilters,
   LeaderboardDifficulty,
   LeaderboardGame,
   LeaderboardGridSize,
@@ -16,14 +17,6 @@ export type {
   LeaderboardQuizMode,
 } from "@/lib/games/leaderboard-filters";
 export type { GamesLeaderboardRow as LeaderboardRow } from "@/hooks/useGamesLeaderboardData";
-
-interface LeaderboardFilters {
-  game: LeaderboardGame;
-  quizMode: LeaderboardQuizMode;
-  questionCount: LeaderboardQuestionCount;
-  gridSize: LeaderboardGridSize;
-  difficulty: LeaderboardDifficulty;
-}
 
 export function useGamesLeaderboardController() {
   const [filters, setFilters] = useState<LeaderboardFilters>({
