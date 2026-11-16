@@ -1,4 +1,4 @@
-import { shuffle } from "@/lib/random";
+import { shuffle, shuffleAndTake } from "@/lib/random";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { ASSESSMENT_QUESTION_COUNTS } from "@/lib/assessments/constants";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
@@ -72,7 +72,10 @@ export function generateAssessmentQuestions({
     || sentencePool.length < ASSESSMENT_QUESTION_COUNTS.sentence) return null;
 
   const vocabularyQuestions: AssessmentQuestion[] = wordPool.slice(0, ASSESSMENT_QUESTION_COUNTS.vocabulary).map((word) => {
-    const distractors = shuffle(wordPool.filter((candidate) => candidate.word !== word.word && candidate.meaning !== word.meaning)).slice(0, 3).map((candidate) => candidate.meaning);
+    const distractors = shuffleAndTake(
+      wordPool.filter((candidate) => candidate.word !== word.word && candidate.meaning !== word.meaning),
+      3,
+    ).map((candidate) => candidate.meaning);
     const choices = shuffle([word.meaning, ...distractors]);
     return { type: "vocabulary", prompt: `Choose the correct meaning of “${word.word}”.`, word: word.word, meaning: word.meaning, category: word.category, imagePath: word.imagePath, choices, answer: word.meaning };
   });

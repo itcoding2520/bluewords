@@ -1,4 +1,4 @@
-import { shuffle } from "@/lib/random";
+import { shuffle, shuffleAndTake } from "@/lib/random";
 import type { DifficultyLevel } from "@/types/difficulty";
 
 export type LessonDifficulty = DifficultyLevel;
@@ -37,7 +37,7 @@ function getSentenceDrillVocabulary(items: SentenceDrillItem[]): string[] {
 }
 
 export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
-  return shuffle([...new Set([correctAnswer, ...shuffle(distractors).slice(0, 3)])]);
+  return shuffle([...new Set([correctAnswer, ...shuffleAndTake(distractors, 3)])]);
 }
 
 export function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: LessonDifficulty) {
