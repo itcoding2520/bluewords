@@ -35,7 +35,11 @@ export function useAdminAssessmentsController() {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
-  const visibleUsers = useMemo(() => users.filter((item) => `${item.nickname} ${item.email ?? ""}`.toLowerCase().includes(search.toLowerCase())), [users, search]);
+  const normalizedSearch = search.toLowerCase();
+  const visibleUsers = useMemo(
+    () => users.filter((item) => `${item.nickname} ${item.email ?? ""}`.toLowerCase().includes(normalizedSearch)),
+    [users, normalizedSearch],
+  );
   const userById = useMemo(() => new Map(users.map((item) => [item.id, item])), [users]);
   const assignmentByRecipientId = useMemo(() => {
     const assignmentsByRecipient = new Map<string, AssessmentAssignment>();
