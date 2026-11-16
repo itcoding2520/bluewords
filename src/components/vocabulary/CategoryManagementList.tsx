@@ -14,7 +14,7 @@ import {
   isCategoryManagementSort,
   type CategoryManagementFilter,
   type CategoryManagementSort,
-} from "@/hooks/useCategoryManagementView";
+} from "@/lib/category-management-filters";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";

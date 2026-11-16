@@ -6,8 +6,8 @@ import { useCategoryManagementAccess } from "@/hooks/useCategoryManagementAccess
 import { useCategoryImageActions } from "@/hooks/useCategoryImageActions";
 import { useCategoryManagementActions } from "@/hooks/useCategoryManagementActions";
 import { useCategoryManagementFormState } from "@/hooks/useCategoryManagementFormState";
-export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
-import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
+export type { CategoryManagementSort, CategoryManagementFilter } from "@/lib/category-management-filters";
+import type { CategoryManagementSort, CategoryManagementFilter } from "@/lib/category-management-filters";
 
 export function useCategoryManagementController() {
   const { categories, words, addCategory, updateCategory, deleteCategory, refreshCategories } = useVocabulary({
