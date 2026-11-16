@@ -5,9 +5,10 @@ import { getFirstImageByKey } from "@/lib/vocabulary/first-image-by-key";
 
 export function useCategoryFallbackWordImages(words: VocabularyWord[]) {
   return useMemo(() => {
-    return getFirstImageByKey(words.map((word) => ({
-      key: normalizeVocabularyLabel(word.category),
-      imagePath: word.imagePath,
-    })));
+    return getFirstImageByKey(
+      words,
+      (word) => normalizeVocabularyLabel(word.category),
+      (word) => word.imagePath,
+    );
   }, [words]);
 }

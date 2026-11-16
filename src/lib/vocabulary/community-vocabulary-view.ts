@@ -23,8 +23,9 @@ export function filterCommunityVocabularyWords(
 export function getCommunityVocabularyFallbackImages(
   visibleWords: CommunityWord[],
 ): Map<string, string> {
-  return getFirstImageByKey(visibleWords.map((item) => ({
-    key: item.community_categories.name,
-    imagePath: item.image_path,
-  })));
+  return getFirstImageByKey(
+    visibleWords,
+    (item) => item.community_categories.name,
+    (item) => item.image_path,
+  );
 }
