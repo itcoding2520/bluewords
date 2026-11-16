@@ -1,14 +1,10 @@
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { AdminNotificationComposer } from "@/components/admin/AdminNotificationComposer";
-import { isAdminUser } from "@/lib/supabase/admin-access";
+import { AdminPageAccessState } from "@/components/admin/AdminPageAccessState";
+import { getAdminPageAccess } from "@/lib/supabase/admin-page-access";
 
 export default async function AdminNotificationsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return <p className="py-12 text-center text-slate-600">Please <Link className="text-blue-600" href="/login">sign in</Link> to continue.</p>;
+  const access = await getAdminPageAccess();
+  if (access.status !== "authorized") return <AdminPageAccessState status={access.status} />;
 
-  if (!await isAdminUser(supabase, user.id)) return <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">You do not have permission to access admin tools.</p>;
-
-  return <AdminNotificationComposer currentUserId={user.id} />;
+  return <AdminNotificationComposer currentUserId={access.user.id} />;
 }
