@@ -1,23 +1,30 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { getVocabularyTextPairKey, normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
-import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
+import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { getVocabularyTextPairKey, normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
-export function getPublishVocabularyOptions(input: {
-  categories: VocabularyCategoryRow[];
-  words: VocabularyWord[];
-  categoryRequests: CommunityCategoryRequest[];
-  wordRequests: CommunityWordRequest[];
-}) {
-  const { categories, words, categoryRequests, wordRequests } = input;
-  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalizeVocabularyText(item.name)));
-  const communityCategoryNames = new Map(categoryRequests.map((item) => [item.id, normalizeVocabularyText(item.name)]));
-  const ownCommunityCategoryIds = new Set(categoryRequests
+type CategoryRequestOptions = {
+  communityCategoryNames: Map<string, string>;
+  ownCommunityCategoryNames: Set<string>;
+  requestableCategories: Array<VocabularyCategoryRow | { id: string; name: string; color: string }>;
+  userCategoryNames: Set<string>;
+};
+
+function buildCategoryRequestOptions(
+  categories: VocabularyCategoryRow[],
+  requests: CommunityCategoryRequest[],
+  defaultCategoryNames: Set<string>,
+): CategoryRequestOptions {
+  const communityCategoryNames = new Map(requests.map((item) => [item.id, normalizeVocabularyText(item.name)]));
+  const ownCommunityCategoryIds = new Set(requests
     .filter((item) => item.owner_id && item.status !== "removed")
     .map((item) => item.id));
-  const blockedCategoryNames = new Set(categoryRequests
+  const ownCommunityCategoryNames = new Set(requests
+    .filter((item) => item.owner_id && item.status !== "removed")
+    .map((item) => normalizeVocabularyText(item.name)));
+  const blockedCategoryNames = new Set(requests
     .filter((item) => item.status === "pending" || item.status === "published")
     .map((item) => normalizeVocabularyText(item.name)));
   const userCategories = categories.filter((item) => {
@@ -30,7 +37,7 @@ export function getPublishVocabularyOptions(input: {
       && !blockedCategoryNames.has(normalizedName);
   });
   const visibleCategoryNames = new Set(userCategories.map((item) => normalizeVocabularyText(item.name)));
-  const rejectedCategoryFallbacks = categoryRequests
+  const rejectedCategoryFallbacks = requests
     .filter((item) => item.owner_id
       && item.status === "rejected"
       && !defaultCategoryNames.has(normalizeVocabularyText(item.name))
@@ -38,22 +45,41 @@ export function getPublishVocabularyOptions(input: {
     .map((item) => ({ id: `retry-category-${item.id}`, name: item.name, color: "blue" }));
   const requestableCategories = [...userCategories, ...rejectedCategoryFallbacks];
   const userCategoryNames = new Set(requestableCategories.map((item) => normalizeVocabularyText(item.name)));
-  const defaultWordKeys = new Set(defaultVocabularyWords.map((item) =>
-    getVocabularyTextPairKey(item.category, item.word)
-  ));
-  const ownCommunityCategoryNames = new Set(categoryRequests
-    .filter((item) => item.owner_id && item.status !== "removed")
-    .map((item) => normalizeVocabularyText(item.name)));
-  const blockedWordKeys = new Set(wordRequests
+
+  return {
+    communityCategoryNames,
+    ownCommunityCategoryNames,
+    requestableCategories,
+    userCategoryNames,
+  };
+}
+
+function buildWordRequestOptions(input: {
+  words: VocabularyWord[];
+  requests: CommunityWordRequest[];
+  defaultCategoryNames: Set<string>;
+  defaultWordKeys: Set<string>;
+  communityCategoryNames: Map<string, string>;
+  ownCommunityCategoryNames: Set<string>;
+  userCategoryNames: Set<string>;
+}) {
+  const {
+    words,
+    requests,
+    defaultCategoryNames,
+    defaultWordKeys,
+    communityCategoryNames,
+    ownCommunityCategoryNames,
+    userCategoryNames,
+  } = input;
+  const blockedWordKeys = new Set(requests
     .filter((item) => item.status === "pending" || item.status === "published")
     .flatMap((item) => {
       const categoryName = communityCategoryNames.get(item.category_id);
       return categoryName ? [getVocabularyTextPairKey(categoryName, item.normalized_word)] : [];
     }));
-  const personalWordKeys = new Set(words.map((item) =>
-    getVocabularyTextPairKey(item.category, item.word)
-  ));
-  const rejectedWordFallbacks = wordRequests
+  const personalWordKeys = new Set(words.map((item) => getVocabularyTextPairKey(item.category, item.word)));
+  const rejectedWordFallbacks = requests
     .filter((item) => item.status === "rejected"
       && item.owner_id
       && !personalWordKeys.has(getVocabularyTextPairKey(item.category_name, item.word)))
@@ -76,12 +102,33 @@ export function getPublishVocabularyOptions(input: {
       && !blockedWordKeys.has(wordKey);
   });
 
+  return { requestableWords, userWords };
+}
+
+export function getPublishVocabularyOptions(input: {
+  categories: VocabularyCategoryRow[];
+  words: VocabularyWord[];
+  categoryRequests: CommunityCategoryRequest[];
+  wordRequests: CommunityWordRequest[];
+}) {
+  const { categories, words, categoryRequests, wordRequests } = input;
+  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalizeVocabularyText(item.name)));
+  const defaultWordKeys = new Set(defaultVocabularyWords.map((item) => getVocabularyTextPairKey(item.category, item.word)));
+  const categoryOptions = buildCategoryRequestOptions(categories, categoryRequests, defaultCategoryNames);
+  const wordOptions = buildWordRequestOptions({
+    words,
+    requests: wordRequests,
+    defaultCategoryNames,
+    defaultWordKeys,
+    ...categoryOptions,
+  });
+
   return {
     defaultCategoryNames,
-    communityCategoryNames,
+    communityCategoryNames: categoryOptions.communityCategoryNames,
     defaultWordKeys,
-    requestableCategories,
-    requestableWords,
-    userWords,
+    requestableCategories: categoryOptions.requestableCategories,
+    requestableWords: wordOptions.requestableWords,
+    userWords: wordOptions.userWords,
   };
 }
