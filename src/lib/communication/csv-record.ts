@@ -2,7 +2,7 @@ import { validateCommunicationCsvRecord } from "@/lib/communication/csv-record-v
 import type {
   CommunicationCsvRecord,
 } from "@/lib/communication/csv";
-import { isContentStatus, type CommunicationDifficulty } from "@/lib/communication/content-types";
+import { isContentStatus } from "@/lib/communication/content-types";
 import { isDifficultyLevel } from "@/types/difficulty";
 
 function integer(value: string, fallback: number, row: number, label: string) {
@@ -68,7 +68,7 @@ export function parseCommunicationCsvRecord(
     topic_slug: get("topic_slug"), topic_title_en: get("topic_title_en"), topic_title_vi: get("topic_title_vi"),
     topic_description_en: get("topic_description_en"), topic_description_vi: get("topic_description_vi"),
     topic_order: integer(get("topic_order"), 0, line, "topic_order"), lesson_key: get("lesson_key"),
-    lesson_title_en: get("lesson_title_en"), lesson_title_vi: get("lesson_title_vi"), difficulty: difficulty as CommunicationDifficulty,
+    lesson_title_en: get("lesson_title_en"), lesson_title_vi: get("lesson_title_vi"), difficulty,
     lesson_order: integer(get("lesson_order"), 0, line, "lesson_order"), lesson_status: status,
     record_key: get("record_key"), record_order: integer(get("record_order"), 0, line, "record_order"),
     item_type: itemType as CommunicationCsvRecord["item_type"], content_en: get("content_en"), meaning_vi: get("meaning_vi"),
