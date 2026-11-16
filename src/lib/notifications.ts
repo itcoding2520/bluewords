@@ -10,6 +10,7 @@ export type NotificationRow = {
 };
 
 export const NOTIFICATION_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+export const NOTIFICATIONS_UPDATED_EVENT = "bluewords:notifications-updated";
 
 export function recentNotifications(rows: NotificationRow[], now = Date.now()) {
   const cutoff = now - NOTIFICATION_LOOKBACK_MS;
