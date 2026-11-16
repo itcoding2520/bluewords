@@ -1,12 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadProjectEnv } from "./lib/load-project-env.mjs";
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-try {
-  process.loadEnvFile(path.join(projectDir, ".env.local"));
-} catch (error) {
-  if (error?.code !== "ENOENT") throw error;
-}
+loadProjectEnv(projectDir);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
