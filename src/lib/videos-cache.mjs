@@ -21,6 +21,13 @@ function readStored(cacheKey, now = Date.now()) {
   }
 }
 
+/**
+ * @template T
+ * @param {number} page
+ * @param {number} pageSize
+ * @param {number} [now]
+ * @returns {T | null}
+ */
 export function peekCachedVideosPage(page, pageSize, now = Date.now()) {
   const cacheKey = key(page, pageSize);
   const cached = cache.get(cacheKey);
@@ -33,8 +40,16 @@ export function peekCachedVideosPage(page, pageSize, now = Date.now()) {
   return null;
 }
 
+/**
+ * @template T
+ * @param {number} page
+ * @param {number} pageSize
+ * @param {() => Promise<T>} loader
+ * @returns {Promise<T>}
+ */
 export async function getCachedVideosPage(page, pageSize, loader) {
   const cacheKey = key(page, pageSize);
+  /** @type {T | null} */
   const cached = peekCachedVideosPage(page, pageSize);
   if (cached) return cached;
   const pending = inFlight.get(cacheKey);
