@@ -3,22 +3,23 @@ import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { GuestHomeContent } from "@/components/dashboard/GuestHomeContent";
 import { formatDate, getGreeting } from "@/lib/formatDate";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import { getCurrentUserClaimsOrNull } from "@/lib/supabase/authenticated-user";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const supabase = await createClient();
   const now = new Date();
-  const { data, error } = await supabase.auth.getClaims();
+  const claims = await getCurrentUserClaimsOrNull(supabase);
   const localDate = new Date(
     now.toLocaleString("en-US", {
       timeZone: "Asia/Ho_Chi_Minh",
     })
   );
 
-  if (error || !data?.claims) return <GuestHomeContent />;
+  if (!claims) return <GuestHomeContent />;
 
-  const userId = String(data.claims.sub);
+  const userId = String(claims.sub);
   const isAdmin = await isAdminUser(supabase, userId);
 
   return <DashboardContent
