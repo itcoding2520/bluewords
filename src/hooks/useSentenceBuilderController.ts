@@ -1,15 +1,14 @@
 import type { GamePhase } from "@/types/game";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
 import { shuffle } from "@/lib/random";
 import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
-import { loadSentenceBuilderQuestions } from "@/lib/supabase/sentence-builder";
-import type { SentenceBuilderQuestion, SentenceDifficulty } from "@/lib/sentence-builder";
-import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { SentenceDifficulty } from "@/lib/sentence-builder";
 import { useSentenceBuilderGameplay } from "@/hooks/useSentenceBuilderGameplay";
+import { useSentenceBuilderSetupData } from "@/hooks/useSentenceBuilderSetupData";
 
 type Phase = GamePhase;
 export type { SentenceBuilderTile } from "@/lib/sentence-builder";
@@ -18,8 +17,6 @@ export const sentenceBuilderQuestionCounts = [5, 10] as const;
 export function useSentenceBuilderController() {
   const { isAuthenticated, categories: vocabularyCategories, words } = useVocabulary();
   const confirm = useConfirmDialog();
-  const [questions, setQuestions] = useState<SentenceBuilderQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
   const [difficulty, setDifficulty] = useState<SentenceDifficulty>("easy");
   const [category, setCategory] = useState("all");
   const [questionCount, setQuestionCount] = useState<5 | 10>(5);
@@ -30,23 +27,12 @@ export function useSentenceBuilderController() {
   const [saveState, setSaveState] = useState("");
   const saveOnce = useRef(false);
 
-  const eligible = useMemo(
-    () => questions.filter((question) => question.difficulty === difficulty && (category === "all" || question.category.toLocaleLowerCase() === category.toLocaleLowerCase())),
-    [questions, difficulty, category],
-  );
-  const categories = useMemo(() => {
-    const names = [...new Set(questions.filter((question) => question.difficulty === difficulty).map((question) => question.category))].sort((a, b) => a.localeCompare(b));
-    return names.map((name): VocabularyCategoryRow => vocabularyCategories.find((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase()) ?? {
-      id: `sentence-builder-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}`, user_id: "", name, color: "blue", image_path: null, is_default: true, created_at: "", updated_at: "",
-    });
-  }, [difficulty, questions, vocabularyCategories]);
+  const { loading, eligible, categories } = useSentenceBuilderSetupData({
+    vocabularyCategories,
+    difficulty,
+    category,
+  });
   const elapsed = formatGameDuration(seconds);
-
-  useEffect(() => {
-    let active = true;
-    void loadSentenceBuilderQuestions().then((data) => { if (active) setQuestions(data); }).catch(() => { if (active) setQuestions([]); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || phase !== "results" || startedAt === null || saveOnce.current) return;
