@@ -4,6 +4,7 @@ import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/defa
 import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
 import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
 import { useAdminCategoryManagementActions } from "@/hooks/useAdminCategoryManagementActions";
+import { groupBy } from "@/lib/group-by";
 import type { CategoryTab } from "@/lib/admin-category-data";
 import {
   deriveAdminCategoryDetails,
@@ -15,15 +16,10 @@ export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
 export function useAdminCategoryManagementController() {
   const supabase = useSupabaseClient();
-  const defaultWordsByCategory = useMemo(() => {
-    const wordsByCategory = new Map<string, typeof defaultVocabularyWords>();
-    for (const word of defaultVocabularyWords) {
-      const categoryWords = wordsByCategory.get(word.category) ?? [];
-      categoryWords.push(word);
-      wordsByCategory.set(word.category, categoryWords);
-    }
-    return wordsByCategory;
-  }, []);
+  const defaultWordsByCategory = useMemo(
+    () => groupBy(defaultVocabularyWords, (word) => word.category),
+    [],
+  );
   const [activeTab, setActiveTab] = useState<CategoryTab>("default");
   const [selectedId, setSelectedId] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
