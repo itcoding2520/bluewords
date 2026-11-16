@@ -4,6 +4,7 @@ import type { VocabularyMeaningRow } from "@/types/database";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { createCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 
 export type PublishedCommunityCategory = {
   id: string;
@@ -73,7 +74,7 @@ export function mergeVocabularyCategories(
   const sharedOnlyCategories = communityCategories
     .filter((category) => !personalNames.has(normalizeVocabularyLabel(category.name)))
     .map((category) => ({
-      id: `community-category-${category.id}`,
+      id: createCommunityCategoryId(category.id),
       user_id: category.owner_id,
       name: category.name,
       color: category.color,

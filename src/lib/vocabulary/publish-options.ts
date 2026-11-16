@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
+import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 
 export function getPublishVocabularyOptions(input: {
@@ -21,8 +22,8 @@ export function getPublishVocabularyOptions(input: {
     .map((item) => normalizeVocabularyText(item.name)));
   const userCategories = categories.filter((item) => {
     const normalizedName = normalizeVocabularyText(item.name);
-    const isOwnedCommunityCategory = !item.id.startsWith("community-category-")
-      || ownCommunityCategoryIds.has(item.id.slice("community-category-".length));
+    const isOwnedCommunityCategory = !isCommunityCategoryId(item.id)
+      || ownCommunityCategoryIds.has(getCommunityCategoryId(item.id) ?? "");
     return !item.is_default
       && !defaultCategoryNames.has(normalizedName)
       && isOwnedCommunityCategory

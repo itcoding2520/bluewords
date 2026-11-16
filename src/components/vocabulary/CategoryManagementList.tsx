@@ -12,6 +12,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/hooks/useCategoryManagementController";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import { getNextPage, getPreviousPage } from "@/lib/pagination";
 
 export function CategoryManagementList({
@@ -93,7 +94,7 @@ export function CategoryManagementList({
           const selectedColor = CATEGORY_DOT_STYLES[category.color];
           const isReadOnly = category.user_id === "community";
           const isProtectedDefault = isDefaultCategory(category);
-          const isPublishedShared = category.id.startsWith("community-category-");
+          const isPublishedShared = isCommunityCategoryId(category.id);
           const canManageCategory = isAdmin || (!isProtectedDefault && !isReadOnly && !isPublishedShared);
 
           return (

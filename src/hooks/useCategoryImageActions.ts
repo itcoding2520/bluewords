@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow, VocabularyCategoryUpdate } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage } from "@/lib/supabase/category-images";
+import { getCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import {
   updatePublishedCategoryImageByName,
   updateSharedCategoryImage,
@@ -24,9 +25,7 @@ export function useCategoryImageActions({
 }) {
   async function saveImage(category: VocabularyCategoryRow, file: File) {
     const path = await uploadCategoryImage(category.id, file);
-    const communityId = category.id.startsWith("community-category-")
-      ? category.id.slice("community-category-".length)
-      : null;
+    const communityId = getCommunityCategoryId(category.id);
     if (communityId) {
       const error = await updateSharedCategoryImage(supabase, communityId, path);
       if (error) { await deleteCategoryImage(path); throw error; }

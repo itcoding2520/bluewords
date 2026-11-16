@@ -3,6 +3,7 @@ import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 
 export type CategoryManagementSort = "name" | "newest" | "oldest";
 export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
@@ -18,7 +19,7 @@ function isDefaultCategory(category: VocabularyCategoryRow) {
 }
 
 function isPublishedSharedCategory(category: VocabularyCategoryRow) {
-  return category.id.startsWith("community-category-") || category.user_id === "community";
+  return isCommunityCategoryId(category.id) || category.user_id === "community";
 }
 
 export function useCategoryManagementView({

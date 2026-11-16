@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { updateSharedCategoryDetails } from "@/lib/category-management-api";
 import type { useCategoryManagementFormState } from "@/hooks/useCategoryManagementFormState";
+import { getCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 
 type CategoryMutations = Pick<ReturnType<typeof useVocabulary>, "addCategory" | "updateCategory" | "deleteCategory">;
 
@@ -65,11 +66,10 @@ export function useCategoryManagementActions({
     }
     setIsSaving(true);
     try {
-      const isSharedCategory = form.editing.id.startsWith("community-category-");
+      const communityId = getCommunityCategoryId(form.editing.id);
       let updated = true;
-      if (isSharedCategory) {
-        const id = form.editing.id.slice("community-category-".length);
-        const error = await updateSharedCategoryDetails(supabase, id, { name: form.editName, color: form.editColor });
+      if (communityId !== null) {
+        const error = await updateSharedCategoryDetails(supabase, communityId, { name: form.editName, color: form.editColor });
         if (error) throw error;
       } else {
         updated = Boolean(await updateCategory(
