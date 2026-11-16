@@ -3,6 +3,7 @@ import { getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/a
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { readRequestJson } from "@/lib/api/request-json";
+import { isObjectRecord } from "@/lib/is-object-record";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -28,8 +29,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const parsedBody = await readRequestJson(request);
   if (!parsedBody.ok) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   const body = parsedBody.value;
-  if (!body || typeof body !== "object" || !Array.isArray((body as { answers?: unknown }).answers)) return NextResponse.json({ error: "Provide an answer for each question." }, { status: 400 });
-  const answers = (body as { answers: unknown[] }).answers;
+  if (!isObjectRecord(body) || !Array.isArray(body.answers)) return NextResponse.json({ error: "Provide an answer for each question." }, { status: 400 });
+  const answers: unknown[] = body.answers;
   if (answers.length !== 10 || answers.some((answer) => typeof answer !== "string")) return NextResponse.json({ error: "All 10 answers are required." }, { status: 400 });
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
