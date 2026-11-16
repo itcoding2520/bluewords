@@ -1,7 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
+import { getVocabularyTextPairKey, normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 
@@ -39,7 +39,7 @@ export function getPublishVocabularyOptions(input: {
   const requestableCategories = [...userCategories, ...rejectedCategoryFallbacks];
   const userCategoryNames = new Set(requestableCategories.map((item) => normalizeVocabularyText(item.name)));
   const defaultWordKeys = new Set(defaultVocabularyWords.map((item) =>
-    `${normalizeVocabularyText(item.category)}\u0000${normalizeVocabularyText(item.word)}`
+    getVocabularyTextPairKey(item.category, item.word)
   ));
   const ownCommunityCategoryNames = new Set(categoryRequests
     .filter((item) => item.owner_id && item.status !== "removed")
@@ -48,15 +48,15 @@ export function getPublishVocabularyOptions(input: {
     .filter((item) => item.status === "pending" || item.status === "published")
     .flatMap((item) => {
       const categoryName = communityCategoryNames.get(item.category_id);
-      return categoryName ? [`${categoryName}\u0000${normalizeVocabularyText(item.normalized_word)}`] : [];
+      return categoryName ? [getVocabularyTextPairKey(categoryName, item.normalized_word)] : [];
     }));
   const personalWordKeys = new Set(words.map((item) =>
-    `${normalizeVocabularyText(item.category)}\u0000${normalizeVocabularyText(item.word)}`
+    getVocabularyTextPairKey(item.category, item.word)
   ));
   const rejectedWordFallbacks = wordRequests
     .filter((item) => item.status === "rejected"
       && item.owner_id
-      && !personalWordKeys.has(`${normalizeVocabularyText(item.category_name)}\u0000${normalizeVocabularyText(item.word)}`))
+      && !personalWordKeys.has(getVocabularyTextPairKey(item.category_name, item.word)))
     .map((item) => ({
       id: `retry-word-${item.id}`,
       word: item.word,
@@ -68,7 +68,7 @@ export function getPublishVocabularyOptions(input: {
   const userWords = requestableWords.filter((item) => {
     if (item.id.startsWith("community-")) return false;
     const categoryKey = normalizeVocabularyText(item.category);
-    const wordKey = `${categoryKey}\u0000${normalizeVocabularyText(item.word)}`;
+    const wordKey = getVocabularyTextPairKey(categoryKey, item.word);
     return !defaultWordKeys.has(wordKey)
       && (userCategoryNames.has(categoryKey)
         || ownCommunityCategoryNames.has(categoryKey)
