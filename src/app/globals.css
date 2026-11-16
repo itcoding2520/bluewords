@@ -12,13 +12,13 @@
 @import "./styles/review-results.css";
 @import "./styles/vocabulary-quiz.css";
 @import "./styles/profile.css";
-@import "./styles/vocabulary-quiz-history.css";
 @import "./styles/category-organizer.css";
 @import "./styles/admin-notifications.css";
 @import "./styles/admin-users.css";
 @import "./styles/admin-category-browser.css";
 @import "./styles/admin-publish-requests.css";
 @import "./styles/shared-emphasis.css";
+@import "./styles/vocabulary-quiz-history.css";
 @import "./styles/word-match.css";
 @import "./styles/word-scramble.css";
 @import "./styles/word-maze.css";

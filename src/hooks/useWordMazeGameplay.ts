@@ -3,65 +3,84 @@ import type { MazeWord } from "@/lib/word-maze";
 
 type Feedback = "correct" | "wrong" | null;
 
-export function useWordMazeGameplay() {
-  const [round, setRound] = useState<MazeWord[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [won, setWon] = useState(false);
-  const [moves, setMoves] = useState(0);
+interface WordMazeState {
+  round: MazeWord[];
+  questionIndex: number;
+  score: number;
+  lives: number;
+  feedback: Feedback;
+  selectedChoice: string | null;
+  won: boolean;
+  moves: number;
+}
 
-  const current = round[questionIndex];
-  const progress = questionIndex + (feedback === "correct" ? 1 : 0);
+const initialState: WordMazeState = {
+  round: [],
+  questionIndex: 0,
+  score: 0,
+  lives: 3,
+  feedback: null,
+  selectedChoice: null,
+  won: false,
+  moves: 0,
+};
+
+export function useWordMazeGameplay() {
+  const [state, setState] = useState(initialState);
+
+  const current = state.round[state.questionIndex];
+  const progress = state.questionIndex + (state.feedback === "correct" ? 1 : 0);
 
   function startRound(nextRound: MazeWord[]) {
-    setRound(nextRound);
-    setQuestionIndex(0);
-    setScore(0);
-    setLives(3);
-    setFeedback(null);
-    setSelectedChoice(null);
-    setWon(false);
-    setMoves(0);
+    setState({ ...initialState, round: nextRound });
   }
 
   function chooseAnswer(choice: string): boolean {
-    if (!current || feedback === "correct" || selectedChoice === choice) return false;
-    setMoves((value) => value + 1);
-    setSelectedChoice(choice);
+    if (!current || state.feedback === "correct" || state.selectedChoice === choice) return false;
     if (choice === current.meaning) {
-      setScore((value) => value + 10);
-      setFeedback("correct");
+      setState((previous) => ({
+        ...previous,
+        moves: previous.moves + 1,
+        selectedChoice: choice,
+        score: previous.score + 10,
+        feedback: "correct",
+      }));
       return false;
     }
-    const remainingLives = lives - 1;
-    setLives(remainingLives);
-    setFeedback("wrong");
+    const remainingLives = state.lives - 1;
+    setState((previous) => ({
+      ...previous,
+      moves: previous.moves + 1,
+      selectedChoice: choice,
+      lives: previous.lives - 1,
+      feedback: "wrong",
+    }));
     return remainingLives === 0;
   }
 
   function continuePath(): boolean {
-    if (questionIndex >= round.length - 1) {
-      setWon(true);
+    if (state.questionIndex >= state.round.length - 1) {
+      setState((previous) => ({ ...previous, won: true }));
       return true;
     }
-    setQuestionIndex((index) => index + 1);
-    setFeedback(null);
-    setSelectedChoice(null);
+    setState((previous) => ({
+      ...previous,
+      questionIndex: previous.questionIndex + 1,
+      feedback: null,
+      selectedChoice: null,
+    }));
     return false;
   }
 
   return {
-    round,
-    questionIndex,
-    score,
-    lives,
-    feedback,
-    selectedChoice,
-    won,
-    moves,
+    round: state.round,
+    questionIndex: state.questionIndex,
+    score: state.score,
+    lives: state.lives,
+    feedback: state.feedback,
+    selectedChoice: state.selectedChoice,
+    won: state.won,
+    moves: state.moves,
     current,
     pathProgress: progress,
     solvedCount: progress,

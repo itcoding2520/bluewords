@@ -9,6 +9,7 @@ import { PronunciationButton } from "@/components/vocabulary/PronunciationButton
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
+import { getWordSearchMeaning } from "@/lib/vocabulary/meaning";
 import type { WordSearchSessionRow } from "@/types/database";
 import { formatGameDuration } from "@/lib/game-duration";
 import { formatDateTime } from "@/lib/formatDate";
@@ -61,7 +62,7 @@ export function WordSearchHistoryDetail({
         <div className="word-search-history-words-heading"><h3 id="word-search-history-words-title"><BookOpen size={27} />Words from this round</h3><Button onClick={onPlayAgain} className="rounded-full px-5"><Play size={16} fill="currentColor" /> Play again</Button></div>
         <ul className="word-search-history-word-grid">{session.words.map((word) => {
           const vocabularyWord = vocabularyByWord.get(normalizeWordSearchWord(word));
-          const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
+          const meaning = getWordSearchMeaning(vocabularyWord);
           return <HistoryWordCard key={word} word={vocabularyWord} meaning={meaning} />;
         })}</ul>
       </section>

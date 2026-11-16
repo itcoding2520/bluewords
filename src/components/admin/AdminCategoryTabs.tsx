@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { BookOpen, CheckCircle2, Clock3 } from "lucide-react";
 
 import { getCommunityContentStatus, type CategoryTab, type CommunityCategory } from "@/lib/admin-category-data";
@@ -21,12 +22,20 @@ interface AdminCategoryTabsProps {
 }
 
 export function AdminCategoryTabs({ activeTab, communityCategories, onChange }: AdminCategoryTabsProps) {
+  const communityCategoryCounts = useMemo(() => {
+    const counts = new Map<"pending" | "published", number>([["pending", 0], ["published", 0]]);
+    for (const category of communityCategories) {
+      counts.set(category.status, (counts.get(category.status) ?? 0) + 1);
+    }
+    return counts;
+  }, [communityCategories]);
+
   return (
     <div role="tablist" aria-label="Category type" className="admin-category-tabs mb-5 grid gap-2 sm:grid-cols-3">
       {tabs.map(({ id, label, description, icon: Icon }) => {
         const count = id === "default"
           ? defaultVocabularyCategories.length
-          : communityCategories.filter((category) => category.status === getCommunityContentStatus(id)).length;
+          : communityCategoryCounts.get(getCommunityContentStatus(id)) ?? 0;
         const active = activeTab === id;
 
         return (

@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 import {
-  createPublishedCategory,
-  createPublishedWord,
   editPublishedCategory as editPublishedCategoryRecord,
   editPublishedWord as editPublishedWordRecord,
   removePublishedAdminReview,
@@ -17,41 +14,6 @@ export function useAdminPublishedVocabularyActions(
   refresh: () => Promise<void>
 ) {
   const confirmDialog = useConfirmDialog();
-  const [newCategory, setNewCategory] = useState("");
-  const [newWord, setNewWord] = useState("");
-  const [newMeaning, setNewMeaning] = useState("");
-  const [newWordCategory, setNewWordCategory] = useState("");
-
-  async function addPublishedCategory() {
-    const name = newCategory.trim();
-    if (!name) return;
-    const result = await createPublishedCategory(supabase, name);
-    if (!result.authenticated) return;
-    const insertError = result.error;
-    if (insertError) setError(insertError.code === "23505" ? "That category already exists." : insertError.message);
-    else {
-      setNewCategory("");
-      await refresh();
-    }
-  }
-
-  async function addPublishedWord() {
-    const word = newWord.trim();
-    if (!word || !newWordCategory) return;
-    const result = await createPublishedWord(supabase, {
-      categoryId: newWordCategory,
-      word,
-      meaning: newMeaning.trim(),
-    });
-    if (!result.authenticated) return;
-    const insertError = result.error;
-    if (insertError) setError(insertError.code === "23505" ? "That word already exists in this category." : insertError.message);
-    else {
-      setNewWord("");
-      setNewMeaning("");
-      await refresh();
-    }
-  }
 
   async function removePublished(
     table: "community_categories" | "community_words",
@@ -97,16 +59,6 @@ export function useAdminPublishedVocabularyActions(
   }
 
   return {
-    newCategory,
-    setNewCategory,
-    newWord,
-    setNewWord,
-    newMeaning,
-    setNewMeaning,
-    newWordCategory,
-    setNewWordCategory,
-    addPublishedCategory,
-    addPublishedWord,
     removePublished,
     editPublishedWord,
     editPublishedCategory,

@@ -24,25 +24,26 @@ export function useFlashcardDeck(input: {
     [input.category, input.words]
   );
 
-  const statusCounts = useMemo(() => ({
-    learning: categoryWords.filter((word) => word.status === "learning").length,
-    mastered: categoryWords.filter((word) => word.status === "mastered").length,
-  }), [categoryWords]);
+  const statusCounts = useMemo(() => categoryWords.reduce((counts, word) => {
+    counts[word.status] += 1;
+    return counts;
+  }, { learning: 0, mastered: 0 }), [categoryWords]);
 
-  const deck = useMemo(() => {
-    const filteredWords = categoryWords.filter((word) => {
-      if (word.status !== input.status) return false;
-      if (input.reviewMode === "all") return true;
-      if (!input.areSchedulesLoaded) return false;
-      return isFlashcardDue(input.reviewSchedules.get(word.id)?.due_at, input.now);
-    });
-    return shuffleDeck(buildFlashcardDeck(filteredWords), input.shuffleSeed);
+  const { deck, dueCount } = useMemo(() => {
+    const filteredWords: VocabularyWord[] = [];
+    let dueCount = 0;
+    for (const word of categoryWords) {
+      if (word.status !== input.status) continue;
+      const isDue = isFlashcardDue(input.reviewSchedules.get(word.id)?.due_at, input.now);
+      if (isDue) dueCount += 1;
+      if (input.reviewMode === "all" || (input.areSchedulesLoaded && isDue)) filteredWords.push(word);
+    }
+
+    return {
+      deck: shuffleDeck(buildFlashcardDeck(filteredWords), input.shuffleSeed),
+      dueCount,
+    };
   }, [categoryWords, input.areSchedulesLoaded, input.now, input.reviewMode, input.reviewSchedules, input.shuffleSeed, input.status]);
-
-  const dueCount = useMemo(() => categoryWords.filter((word) => {
-    if (word.status !== input.status) return false;
-    return isFlashcardDue(input.reviewSchedules.get(word.id)?.due_at, input.now);
-  }).length, [categoryWords, input.now, input.reviewSchedules, input.status]);
 
   return { statusCounts, deck, dueCount };
 }

@@ -10,59 +10,55 @@ type Phase = GamePhase;
 type Puzzle = ReturnType<typeof createWordSearchPuzzle>;
 type Candidate = { id: string; word: string };
 
-interface UseWordSearchGameplayOptions {
+export interface WordSearchGameplayState {
   phase: Phase;
-  setPhase: Dispatch<SetStateAction<Phase>>;
   puzzle: Puzzle | null;
-  setPuzzle: Dispatch<SetStateAction<Puzzle | null>>;
   foundIds: Set<string>;
-  setFoundIds: Dispatch<SetStateAction<Set<string>>>;
-  setFoundWordPaths: Dispatch<SetStateAction<Record<string, CellPosition[]>>>;
+  foundWordPaths: Record<string, CellPosition[]>;
+  startedAt: number | null;
+  gameError: string;
+}
+
+interface UseWordSearchGameplayOptions {
+  state: WordSearchGameplayState;
+  setState: Dispatch<SetStateAction<WordSearchGameplayState>>;
   candidates: Candidate[];
   gridSize: GridSize;
   targetCount: number;
-  setStartedAt: Dispatch<SetStateAction<number | null>>;
-  setGameError: Dispatch<SetStateAction<string>>;
   resetTimer: () => void;
   resetSave: () => void;
 }
 
 export function useWordSearchGameplay({
-  phase,
-  setPhase,
-  puzzle,
-  setPuzzle,
-  foundIds,
-  setFoundIds,
-  setFoundWordPaths,
+  state,
+  setState,
   candidates,
   gridSize,
   targetCount,
-  setStartedAt,
-  setGameError,
   resetTimer,
   resetSave,
 }: UseWordSearchGameplayOptions) {
   function finishCellSelection(selection: CellPosition[]) {
-    if (!puzzle || phase !== "playing" || selection.length < 2) {
+    if (!state.puzzle || state.phase !== "playing" || selection.length < 2) {
       clearSelection();
       return;
     }
-    const match = findWordSearchSelectionPrefix(puzzle, selection, foundIds);
+    const match = findWordSearchSelectionPrefix(state.puzzle, selection, state.foundIds);
     if (!match?.complete) {
       clearSelection();
       return;
     }
 
-    const nextFoundIds = new Set(foundIds);
+    const nextFoundIds = new Set(state.foundIds);
     nextFoundIds.add(match.word.id);
-    setFoundIds(nextFoundIds);
-    setFoundWordPaths((paths) => ({ ...paths, [match.word.id]: selection }));
+    const isComplete = nextFoundIds.size === state.puzzle.words.length;
+    setState((current) => ({
+      ...current,
+      foundIds: nextFoundIds,
+      foundWordPaths: { ...current.foundWordPaths, [match.word.id]: selection },
+      phase: isComplete ? "results" : current.phase,
+    }));
     clearSelection();
-
-    if (nextFoundIds.size === puzzle.words.length) {
-      setPhase("results");
-    }
   }
 
   const {
@@ -73,31 +69,37 @@ export function useWordSearchGameplay({
     handlePointerUp: handleGridPointerUp,
     handlePointerCancel: handleGridPointerCancel,
   } = useWordSearchSelection({
-    enabled: phase === "playing",
+    enabled: state.phase === "playing",
     onSelectionComplete: finishCellSelection,
   });
 
   function handleStartGame() {
     const nextPuzzle = createWordSearchPuzzle(candidates, gridSize, targetCount);
     if (nextPuzzle.words.length === 0) {
-      setGameError("We couldn't build a board from this selection. Try a different category or difficulty.");
+      setState((current) => ({
+        ...current,
+        gameError: "We couldn't build a board from this selection. Try a different category or difficulty.",
+      }));
       return;
     }
-    setPuzzle(nextPuzzle);
-    setFoundIds(new Set());
-    setFoundWordPaths({});
     clearSelection();
     resetTimer();
     resetSave();
-    setStartedAt(Date.now());
-    setGameError("");
-    setPhase("playing");
+    const startedAt = Date.now();
+    setState((current) => ({
+      ...current,
+      phase: "playing",
+      puzzle: nextPuzzle,
+      foundIds: new Set(),
+      foundWordPaths: {},
+      startedAt,
+      gameError: "",
+    }));
   }
 
   function backToSetup() {
     clearSelection();
-    setStartedAt(null);
-    setPhase("setup");
+    setState((current) => ({ ...current, startedAt: null, phase: "setup" }));
   }
 
   return {

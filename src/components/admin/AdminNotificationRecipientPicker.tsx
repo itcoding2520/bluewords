@@ -1,9 +1,6 @@
 import { Search, Users } from "lucide-react";
-import type { AdminNotificationRecipient } from "@/hooks/useAdminNotificationComposerController";
-
-export function recipientInitials(recipient: AdminNotificationRecipient) {
-  return (recipient.nickname || recipient.email || "U").trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toLocaleUpperCase() || "U";
-}
+import type { AdminNotificationRecipient } from "@/lib/admin-notification-recipients";
+import { getAdminNotificationRecipientInitials } from "@/lib/admin-notification-recipients";
 
 export function AdminNotificationRecipientPicker({
   recipients,
@@ -43,7 +40,7 @@ export function AdminNotificationRecipientPicker({
               {filteredRecipients.map((recipient) => (
                 <label key={recipient.id} className="admin-recipient-row">
                   <input type="checkbox" checked={selectedIds.has(recipient.id)} onChange={(event) => onRecipientToggle(recipient.id, event.target.checked)} />
-                  <span className="admin-recipient-avatar">{recipientInitials(recipient)}</span>
+                  <span className="admin-recipient-avatar">{getAdminNotificationRecipientInitials(recipient)}</span>
                   <span className="min-w-0"><span className="block truncate font-semibold text-slate-800">{recipient.nickname || recipient.email || "User"}</span><span className="block truncate text-xs text-slate-500">{recipient.email}</span></span>
                 </label>
               ))}

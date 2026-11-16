@@ -2,11 +2,11 @@ import type { GamePhase } from "@/types/game";
 import { useMemo, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
-import { buildWordMatchPairs, type MatchCardData } from "@/lib/word-match";
+import type { MatchCardData } from "@/lib/word-match";
 import { useWordMatchGameplay } from "@/hooks/useWordMatchGameplay";
 import { shuffle } from "@/lib/random";
+import { useWordMatchSetupData } from "@/hooks/useWordMatchSetupData";
 
 type Phase = GamePhase;
 type PairCount = 6 | 8 | 10;
@@ -36,9 +36,11 @@ export function useWordMatchController(input: {
     startedAt,
   });
 
-  const availablePairs = useMemo(() => buildWordMatchPairs(words, category), [category, words]);
-
-  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
+  const { availablePairs, categoryDropdownCategories } = useWordMatchSetupData({
+    words,
+    categories,
+    category,
+  });
 
   function startRound() {
     if (availablePairs.length < pairCount) return;
@@ -58,7 +60,10 @@ export function useWordMatchController(input: {
     setPhase("results");
   }
 
-  const pairById = new Map(gameplay.pairs.map((pair) => [pair.id, pair]));
+  const pairById = useMemo(
+    () => new Map(gameplay.pairs.map((pair) => [pair.id, pair])),
+    [gameplay.pairs],
+  );
   const matchedLabel = `${gameplay.matchedIds.size} / ${gameplay.pairs.length} pairs matched`;
   const progressPercent = gameplay.pairs.length ? (gameplay.matchedIds.size / gameplay.pairs.length) * 100 : 0;
 

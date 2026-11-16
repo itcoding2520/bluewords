@@ -1,5 +1,6 @@
 import type { QuizAnswer, QuizMode, QuizQuestion } from "@/lib/quiz-model";
 import { expectedAnswer, promptText } from "@/lib/quiz-answer-model";
+import { getDurationSeconds } from "@/lib/session-duration";
 import type { SaveVocabularyQuizSession } from "@/lib/supabase/quiz";
 
 export function buildQuizSessionPayload({
@@ -21,7 +22,7 @@ export function buildQuizSessionPayload({
     mode,
     question_count: questions.length,
     correct_count: correctCount,
-    duration_seconds: Math.max(0, Math.floor((completedAt - startedAt) / 1000)),
+    duration_seconds: getDurationSeconds(startedAt, completedAt),
     started_at: new Date(startedAt).toISOString(),
     completed_at: new Date(completedAt).toISOString(),
     answers: questions.map((question, index) => {

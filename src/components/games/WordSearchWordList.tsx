@@ -1,4 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import { getWordSearchMeaning } from "@/lib/vocabulary/meaning";
 
 type WordSearchWord = { id: string; word: string };
 
@@ -15,7 +16,7 @@ export function WordSearchWordList({
     <ul className="mt-2 grid grid-cols-2 gap-2 md:mt-4 lg:grid-cols-1">
       {words.map((word) => {
         const vocabularyWord = vocabularyById.get(word.id);
-        const meaning = vocabularyWord?.meaning?.trim() || vocabularyWord?.detailedMeanings?.find((item) => item.meaning.trim())?.meaning || "Meaning unavailable";
+        const meaning = getWordSearchMeaning(vocabularyWord);
         const found = foundIds.has(word.id);
         return (
           <li key={word.id} className={`min-w-0 rounded-lg p-2 leading-4 md:px-3 ${found ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-700"}`}>

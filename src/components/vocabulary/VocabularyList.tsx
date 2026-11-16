@@ -1,5 +1,5 @@
 
-import type { RefObject } from "react";
+import { useMemo, type RefObject } from "react";
 import { SearchX } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
@@ -38,6 +38,14 @@ export function VocabularyList({
   onEdit,
   onDelete,
 }: VocabularyListProps) {
+  const categoryColors = useMemo(() => {
+    const colors = new Map<string, VocabularyCategoryRow["color"]>();
+    for (const category of categories) {
+      if (!colors.has(category.name)) colors.set(category.name, category.color);
+    }
+    return colors;
+  }, [categories]);
+
   return (
     <Card className="mt-4 overflow-hidden border border-slate-100 bg-white shadow-sm">
       {/* Desktop table header */}
@@ -96,7 +104,7 @@ export function VocabularyList({
           <VocabularyRow
             key={item.id}
             item={item}
-            categories={categories}
+            categoryColor={categoryColors.get(item.category)}
             selected={selectedIds.has(item.id)}
             onToggleSelected={onToggleSelected}
             onToggleMastered={onToggleMastered}

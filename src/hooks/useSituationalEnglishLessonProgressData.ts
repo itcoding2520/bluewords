@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import type { Item, ItemReview } from "@/lib/communication/lesson-types";
+import { countMasteredLessonItems } from "@/lib/communication/lesson-progress";
 
 export function useSituationalEnglishLessonProgressData({
   items,
@@ -14,7 +15,7 @@ export function useSituationalEnglishLessonProgressData({
   const currentItem = items[currentIndex];
   const currentStatus = currentItem ? reviews[currentItem.id]?.status ?? "learning" : "learning";
   const masteredCount = useMemo(
-    () => items.filter((item) => reviews[item.id]?.status === "mastered").length,
+    () => countMasteredLessonItems(items, reviews),
     [items, reviews],
   );
 

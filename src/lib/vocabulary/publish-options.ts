@@ -1,27 +1,35 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
-import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { CommunityCategoryRequest, CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
+import { getCommunityCategoryId, isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { getVocabularyTextPairKey, normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
-export function getPublishVocabularyOptions(input: {
-  categories: VocabularyCategoryRow[];
-  words: VocabularyWord[];
-  categoryRequests: CommunityCategoryRequest[];
-  wordRequests: CommunityWordRequest[];
-}) {
-  const { categories, words, categoryRequests, wordRequests } = input;
-  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalizeVocabularyText(item.name)));
-  const communityCategoryNames = new Map(categoryRequests.map((item) => [item.id, normalizeVocabularyText(item.name)]));
-  const ownCommunityCategoryIds = new Set(categoryRequests
-    .filter((item) => item.owner_id && item.status !== "removed")
-    .map((item) => item.id));
-  const blockedCategoryNames = new Set(categoryRequests
-    .filter((item) => item.status === "pending" || item.status === "published")
-    .map((item) => normalizeVocabularyText(item.name)));
-  const userCategories = categories.filter((item) => {
-    const normalizedName = normalizeVocabularyText(item.name);
+type CategoryRequestOptions = {
+  communityCategoryNames: Map<string, string>;
+  ownCommunityCategoryNames: Set<string>;
+  requestableCategories: Array<VocabularyCategoryRow | { id: string; name: string; color: string }>;
+  userCategoryNames: Set<string>;
+};
+
+function buildCategoryRequestOptions(
+  categories: VocabularyCategoryRow[],
+  requests: CommunityCategoryRequest[],
+  defaultCategoryNames: Set<string>,
+): CategoryRequestOptions {
+  const normalizedRequests = requests.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
+  const normalizedCategories = categories.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
+  const communityCategoryNames = new Map(normalizedRequests.map(({ item, normalizedName }) => [item.id, normalizedName]));
+  const ownCommunityCategoryIds = new Set(normalizedRequests
+    .filter(({ item }) => item.owner_id && item.status !== "removed")
+    .map(({ item }) => item.id));
+  const ownCommunityCategoryNames = new Set(normalizedRequests
+    .filter(({ item }) => item.owner_id && item.status !== "removed")
+    .map(({ normalizedName }) => normalizedName));
+  const blockedCategoryNames = new Set(normalizedRequests
+    .filter(({ item }) => item.status === "pending" || item.status === "published")
+    .map(({ normalizedName }) => normalizedName));
+  const userCategoryEntries = normalizedCategories.filter(({ item, normalizedName }) => {
     const isOwnedCommunityCategory = !isCommunityCategoryId(item.id)
       || ownCommunityCategoryIds.has(getCommunityCategoryId(item.id) ?? "");
     return !item.is_default
@@ -29,34 +37,57 @@ export function getPublishVocabularyOptions(input: {
       && isOwnedCommunityCategory
       && !blockedCategoryNames.has(normalizedName);
   });
-  const visibleCategoryNames = new Set(userCategories.map((item) => normalizeVocabularyText(item.name)));
-  const rejectedCategoryFallbacks = categoryRequests
-    .filter((item) => item.owner_id
+  const userCategories = userCategoryEntries.map(({ item }) => item);
+  const visibleCategoryNames = new Set(userCategoryEntries.map(({ normalizedName }) => normalizedName));
+  const rejectedCategoryFallbacks = normalizedRequests
+    .filter(({ item, normalizedName }) => item.owner_id
       && item.status === "rejected"
-      && !defaultCategoryNames.has(normalizeVocabularyText(item.name))
-      && !visibleCategoryNames.has(normalizeVocabularyText(item.name)))
-    .map((item) => ({ id: `retry-category-${item.id}`, name: item.name, color: "blue" }));
+      && !defaultCategoryNames.has(normalizedName)
+      && !visibleCategoryNames.has(normalizedName))
+    .map(({ item }) => ({ id: `retry-category-${item.id}`, name: item.name, color: "blue" }));
   const requestableCategories = [...userCategories, ...rejectedCategoryFallbacks];
-  const userCategoryNames = new Set(requestableCategories.map((item) => normalizeVocabularyText(item.name)));
-  const defaultWordKeys = new Set(defaultVocabularyWords.map((item) =>
-    `${normalizeVocabularyText(item.category)}\u0000${normalizeVocabularyText(item.word)}`
-  ));
-  const ownCommunityCategoryNames = new Set(categoryRequests
-    .filter((item) => item.owner_id && item.status !== "removed")
-    .map((item) => normalizeVocabularyText(item.name)));
-  const blockedWordKeys = new Set(wordRequests
+  const userCategoryNames = new Set([
+    ...userCategoryEntries.map(({ normalizedName }) => normalizedName),
+    ...rejectedCategoryFallbacks.map((item) => normalizeVocabularyText(item.name)),
+  ]);
+
+  return {
+    communityCategoryNames,
+    ownCommunityCategoryNames,
+    requestableCategories,
+    userCategoryNames,
+  };
+}
+
+function buildWordRequestOptions(input: {
+  words: VocabularyWord[];
+  requests: CommunityWordRequest[];
+  defaultCategoryNames: Set<string>;
+  defaultWordKeys: Set<string>;
+  communityCategoryNames: Map<string, string>;
+  ownCommunityCategoryNames: Set<string>;
+  userCategoryNames: Set<string>;
+}) {
+  const {
+    words,
+    requests,
+    defaultCategoryNames,
+    defaultWordKeys,
+    communityCategoryNames,
+    ownCommunityCategoryNames,
+    userCategoryNames,
+  } = input;
+  const blockedWordKeys = new Set(requests
     .filter((item) => item.status === "pending" || item.status === "published")
     .flatMap((item) => {
       const categoryName = communityCategoryNames.get(item.category_id);
-      return categoryName ? [`${categoryName}\u0000${normalizeVocabularyText(item.normalized_word)}`] : [];
+      return categoryName ? [getVocabularyTextPairKey(categoryName, item.normalized_word)] : [];
     }));
-  const personalWordKeys = new Set(words.map((item) =>
-    `${normalizeVocabularyText(item.category)}\u0000${normalizeVocabularyText(item.word)}`
-  ));
-  const rejectedWordFallbacks = wordRequests
+  const personalWordKeys = new Set(words.map((item) => getVocabularyTextPairKey(item.category, item.word)));
+  const rejectedWordFallbacks = requests
     .filter((item) => item.status === "rejected"
       && item.owner_id
-      && !personalWordKeys.has(`${normalizeVocabularyText(item.category_name)}\u0000${normalizeVocabularyText(item.word)}`))
+      && !personalWordKeys.has(getVocabularyTextPairKey(item.category_name, item.word)))
     .map((item) => ({
       id: `retry-word-${item.id}`,
       word: item.word,
@@ -68,7 +99,7 @@ export function getPublishVocabularyOptions(input: {
   const userWords = requestableWords.filter((item) => {
     if (item.id.startsWith("community-")) return false;
     const categoryKey = normalizeVocabularyText(item.category);
-    const wordKey = `${categoryKey}\u0000${normalizeVocabularyText(item.word)}`;
+    const wordKey = getVocabularyTextPairKey(categoryKey, item.word);
     return !defaultWordKeys.has(wordKey)
       && (userCategoryNames.has(categoryKey)
         || ownCommunityCategoryNames.has(categoryKey)
@@ -76,12 +107,33 @@ export function getPublishVocabularyOptions(input: {
       && !blockedWordKeys.has(wordKey);
   });
 
+  return { requestableWords, userWords };
+}
+
+export function getPublishVocabularyOptions(input: {
+  categories: VocabularyCategoryRow[];
+  words: VocabularyWord[];
+  categoryRequests: CommunityCategoryRequest[];
+  wordRequests: CommunityWordRequest[];
+}) {
+  const { categories, words, categoryRequests, wordRequests } = input;
+  const defaultCategoryNames = new Set(defaultVocabularyCategories.map((item) => normalizeVocabularyText(item.name)));
+  const defaultWordKeys = new Set(defaultVocabularyWords.map((item) => getVocabularyTextPairKey(item.category, item.word)));
+  const categoryOptions = buildCategoryRequestOptions(categories, categoryRequests, defaultCategoryNames);
+  const wordOptions = buildWordRequestOptions({
+    words,
+    requests: wordRequests,
+    defaultCategoryNames,
+    defaultWordKeys,
+    ...categoryOptions,
+  });
+
   return {
     defaultCategoryNames,
-    communityCategoryNames,
+    communityCategoryNames: categoryOptions.communityCategoryNames,
     defaultWordKeys,
-    requestableCategories,
-    requestableWords,
-    userWords,
+    requestableCategories: categoryOptions.requestableCategories,
+    requestableWords: wordOptions.requestableWords,
+    userWords: wordOptions.userWords,
   };
 }

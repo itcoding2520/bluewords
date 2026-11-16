@@ -1,6 +1,8 @@
-import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
+import { parseCsvRows } from "@/lib/csv-rows";
 import { validateCommunicationCsvConsistency } from "@/lib/communication/csv-consistency";
 import { parseCommunicationCsvRecord } from "@/lib/communication/csv-record";
+import { COMMUNICATION_CSV_HEADERS } from "@/lib/communication/csv-headers";
+export { exportCommunicationCsv } from "@/lib/communication/csv-export";
 import type { CommunicationDifficulty, CommunicationRecordType, ContentStatus } from "@/lib/communication/content-types";
 import type { LessonItemType } from "@/lib/communication/lesson-types";
 
@@ -43,15 +45,6 @@ export type CommunicationCsvRecord = {
   response_options: string[];
 };
 
-const headers = [
-  "record_type", "topic_slug", "topic_title_en", "topic_title_vi", "topic_description_en", "topic_description_vi", "topic_order",
-  "lesson_key", "lesson_title_en", "lesson_title_vi", "difficulty", "lesson_order", "lesson_status", "record_key", "record_order",
-  "item_type", "content_en", "meaning_vi", "example_en", "example_vi", "image_keyword", "audio_url", "dialogue_key",
-  "dialogue_title_en", "dialogue_title_vi", "dialogue_prompt_vi", "speaker", "turn_order", "turn_text_en", "turn_meaning_vi",
-  "turn_audio_url", "response_prompt_vi", "expected_response", "response_options_json",
-];
-
-
 export type CommunicationCsvDuplicate = { row: number; recordType: CommunicationRecordType; recordKey: string };
 export type ParsedCommunicationCsv = { records: CommunicationCsvRecord[]; recordRows: number[]; duplicates: CommunicationCsvDuplicate[] };
 
@@ -61,7 +54,7 @@ export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationC
     missingContent: "CSV needs a header and at least one content row.",
   });
   const columnNames = rows[0].map((value) => value.trim().replace(/^\uFEFF/, ""));
-  const missing = headers.filter((name) => !columnNames.includes(name));
+  const missing = COMMUNICATION_CSV_HEADERS.filter((name) => !columnNames.includes(name));
   if (missing.length) throw new Error(`Missing CSV columns: ${missing.join(", ")}. Export a template from this page to get the expected columns.`);
   const mapped = rows.slice(1).map((cells, index) =>
     parseCommunicationCsvRecord(cells, columnNames, index + 2)
@@ -72,12 +65,4 @@ export function parseCommunicationCsvDetailed(csv: string): ParsedCommunicationC
 
 export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
   return parseCommunicationCsvDetailed(csv).records;
-}
-
-export function exportCommunicationCsv(records: CommunicationCsvRecord[]) {
-  const lines = records.map((record) => headers.map((name) => {
-    if (name === "response_options_json") return escapeCsvCell(JSON.stringify(record.response_options));
-    return escapeCsvCell(record[name as keyof CommunicationCsvRecord] as string | number | null | undefined);
-  }).join(","));
-  return [headers.map((header) => escapeCsvCell(header)).join(","), ...lines].join("\r\n");
 }

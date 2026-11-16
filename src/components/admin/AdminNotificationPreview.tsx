@@ -1,6 +1,6 @@
 import { Bell, Eye, Info, Users } from "lucide-react";
-import type { AdminNotificationRecipient } from "@/hooks/useAdminNotificationComposerController";
-import { recipientInitials } from "@/components/admin/AdminNotificationRecipientPicker";
+import type { AdminNotificationRecipient } from "@/lib/admin-notification-recipients";
+import { getAdminNotificationRecipientInitials } from "@/lib/admin-notification-recipients";
 
 export function AdminNotificationPreview({
   title,
@@ -37,14 +37,14 @@ export function AdminNotificationPreview({
         </div>
         {allUsers ? (
           <div className="admin-selected-summary">
-            <span className="admin-selected-avatar-stack">{recipients.slice(0, 4).map((recipient) => <span key={recipient.id}>{recipientInitials(recipient)}</span>)}</span>
+            <span className="admin-selected-avatar-stack">{recipients.slice(0, 4).map((recipient) => <span key={recipient.id}>{getAdminNotificationRecipientInitials(recipient)}</span>)}</span>
             <strong>All users</strong>
           </div>
         ) : selectedRecipients.length ? (
           <ul className="admin-selected-list">
             {selectedRecipients.slice(0, 5).map((recipient) => (
               <li key={recipient.id}>
-                <span className="admin-recipient-avatar">{recipientInitials(recipient)}</span>
+                <span className="admin-recipient-avatar">{getAdminNotificationRecipientInitials(recipient)}</span>
                 <span className="min-w-0"><strong>{recipient.nickname || recipient.email || "User"}</strong><small>{recipient.email}</small></span>
               </li>
             ))}

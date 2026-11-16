@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { getCommunityContentStatus, type CategoryTab, type CommunityCategory, type CommunityWord } from "@/lib/admin-category-data";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
 
 export type AdminCategory = VocabularyCategoryRow | CommunityCategory;
 
@@ -30,21 +31,19 @@ export function deriveAdminCategorySelection({
   categorySearch,
   communityCategories,
   defaultCategories,
-  defaultCategoryNames,
 }: {
   activeTab: CategoryTab;
   selectedId: string;
   categorySearch: string;
   communityCategories: CommunityCategory[];
   defaultCategories: VocabularyCategoryRow[];
-  defaultCategoryNames: Set<string>;
 }) {
   const customCategories = communityCategories.filter((category) =>
     category.status === getCommunityContentStatus(activeTab)
-    && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
+    && !isDefaultVocabularyCategory(category.name)
   );
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;
-  const normalizedSearch = categorySearch.trim().toLocaleLowerCase();
+  const normalizedSearch = normalizeVocabularyLabel(categorySearch);
   const visibleCategories = currentCategories.filter((category) =>
     category.name.toLocaleLowerCase().includes(normalizedSearch)
   );
@@ -72,14 +71,21 @@ export function deriveAdminCategoryDetails({
   emails: Record<string, string>;
   words: CommunityWord[];
 }) {
+  const defaultFallbackImagesByCategory = new Map<string, string>();
+  for (const [categoryName, categoryWords] of defaultWordsByCategory) {
+    const firstImage = categoryWords.find((word) => word.imagePath)?.imagePath;
+    if (firstImage) defaultFallbackImagesByCategory.set(categoryName, firstImage);
+  }
+  const firstCommunityImage = words.find((word) => word.image_path)?.image_path;
+
   const visibleCategoryRows: AdminCategoryListRow[] = visibleCategories.map((category) => {
     const shared = activeTab === "default"
       ? publishedCategoriesByName.get(normalizeVocabularyLabel(category.name))
       : "owner_id" in category ? category : null;
     const fallbackImage = activeTab === "default"
-      ? defaultWordsByCategory.get(category.name)?.find((word) => word.imagePath)?.imagePath
+      ? defaultFallbackImagesByCategory.get(category.name)
       : category.id === selectedCategory?.id
-        ? words.find((word) => word.image_path)?.image_path
+        ? firstCommunityImage
         : undefined;
 
     return {
@@ -102,8 +108,8 @@ export function deriveAdminCategoryDetails({
       ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
       : "owner_id" in selectedCategory ? selectedCategory : null
     : null;
-  const selectedFallbackImage = defaultWords.find((word) => word.imagePath)?.imagePath
-    ?? words.find((word) => word.image_path)?.image_path
+  const selectedFallbackImage = (activeTab === "default" && selectedCategory ? defaultFallbackImagesByCategory.get(selectedCategory.name) : undefined)
+    ?? firstCommunityImage
     ?? null;
 
   return { visibleCategoryRows, defaultWords, selectedSharedCategory, selectedFallbackImage };

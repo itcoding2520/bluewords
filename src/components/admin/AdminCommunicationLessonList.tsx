@@ -3,14 +3,13 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import type {
   CommunicationLesson,
-  CommunicationLessonItem,
   CommunicationTopic,
 } from "@/lib/supabase/communication-admin-types";
 
 type Props = {
   topics: CommunicationTopic[];
   lessons: CommunicationLesson[];
-  items: CommunicationLessonItem[];
+  itemCountsByLesson: Map<string, number>;
   selectedTopicId: string;
   selectedLessonId: string;
   busy: boolean;
@@ -24,7 +23,7 @@ type Props = {
 export function AdminCommunicationLessonList({
   topics,
   lessons,
-  items,
+  itemCountsByLesson,
   selectedTopicId,
   selectedLessonId,
   busy,
@@ -76,7 +75,7 @@ export function AdminCommunicationLessonList({
                   {lesson.title_en} <span className="font-medium capitalize text-blue-700">· {lesson.difficulty}</span>
                 </span>
                 <span className="block truncate text-xs text-slate-500">
-                  {lesson.title_vi} · {lesson.status} · {items.filter((item) => item.lesson_id === lesson.id).length} items
+                  {lesson.title_vi} · {lesson.status} · {itemCountsByLesson.get(lesson.id) ?? 0} items
                 </span>
               </button>
               <button type="button" aria-label={`Edit ${lesson.title_en}`} onClick={() => onEdit(lesson)} className="grid size-9 place-items-center rounded-lg border border-blue-100 text-blue-700">

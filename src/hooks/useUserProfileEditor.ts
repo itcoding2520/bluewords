@@ -1,36 +1,23 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { getErrorMessage } from "@/lib/errors";
 
-import {
-  getUserProfile,
-  type UserProfile,
-} from "@/lib/supabase/user-profile";
+import type { UserProfile } from "@/lib/supabase/user-profile";
 import { removeReplacedProfileAvatar, saveProfileWithAvatar } from "@/lib/supabase/user-profile-workflows";
+import { useEditableUserProfileData } from "@/hooks/useEditableUserProfileData";
 import { useUserProfileAvatar } from "@/hooks/useUserProfileAvatar";
 
 export function useUserProfileEditor(userId: string) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    void getUserProfile(userId).then((loadedProfile) => {
-      if (!active) return;
-      setProfile(loadedProfile);
-      setNickname(loadedProfile?.nickname ?? "");
-    }).catch(() => {
-      if (active) setError("Could not load your profile. Please try again.");
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-    return () => { active = false; };
-  }, [userId]);
+  const onProfileLoaded = useCallback((loadedProfile: UserProfile | null) => {
+    setNickname(loadedProfile?.nickname ?? "");
+  }, []);
+  const profileData = useEditableUserProfileData({ userId, onProfileLoaded, setError });
+  const { profile, setProfile } = profileData;
 
   const avatar = useUserProfileAvatar({ profile, setError, setNotice });
 
@@ -82,7 +69,7 @@ export function useUserProfileEditor(userId: string) {
     removeAvatar: avatar.removeAvatar,
     previewUrl: avatar.previewUrl,
     previewPath: avatar.previewPath,
-    loading,
+    loading: profileData.loading,
     saving,
     error,
     notice,

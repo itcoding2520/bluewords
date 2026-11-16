@@ -1,44 +1,61 @@
 "use client";
 
 import { getErrorMessage } from "@/lib/errors";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 
 import type { SupabaseClient } from "@/lib/supabase/client";
-import type {
-  CommunicationCollections,
-  CommunicationLesson,
-  CommunicationLessonItem,
-  CommunicationTopic,
-} from "@/lib/supabase/communication-admin-types";
+import type { CommunicationCollections } from "@/lib/supabase/communication-admin-types";
 import { loadAdminCommunicationCollections } from "@/lib/communication/admin-collections";
 
 
 export function useAdminCommunicationCollections(supabase: SupabaseClient) {
-  const [topics, setTopics] = useState<CommunicationTopic[]>([]);
-  const [lessons, setLessons] = useState<CommunicationLesson[]>([]);
-  const [items, setItems] = useState<CommunicationLessonItem[]>([]);
-  const [selectedTopicId, setSelectedTopicId] = useState("");
-  const [selectedLessonId, setSelectedLessonId] = useState("");
+  const [state, setState] = useState({
+    collections: {
+      topics: [],
+      lessons: [],
+      items: [],
+    } as CommunicationCollections,
+    selectedTopicId: "",
+    selectedLessonId: "",
+  });
   const [loading, setLoading] = useState(true);
+  const { collections, selectedTopicId, selectedLessonId } = state;
 
   const loadCollections = useCallback(async (force = false): Promise<CommunicationCollections> => {
     return loadAdminCommunicationCollections(supabase, force);
   }, [supabase]);
 
   const applyCollections = useCallback((next: CommunicationCollections) => {
-    setTopics(next.topics);
-    setLessons(next.lessons);
-    setItems(next.items);
+    setState((current) => {
+      const nextTopicId = next.topics.some((topic) => topic.id === current.selectedTopicId)
+        ? current.selectedTopicId
+        : next.topics[0]?.id ?? "";
+      const nextLessonId = next.lessons.some(
+        (lesson) => lesson.id === current.selectedLessonId && lesson.topic_id === nextTopicId,
+      ) ? current.selectedLessonId : next.lessons.find(
+        (lesson) => lesson.topic_id === nextTopicId,
+      )?.id ?? "";
+      return {
+        collections: next,
+        selectedTopicId: nextTopicId,
+        selectedLessonId: nextLessonId,
+      };
+    });
+  }, []);
 
-    const nextTopicId = next.topics.some((topic) => topic.id === selectedTopicId)
-      ? selectedTopicId
-      : next.topics[0]?.id ?? "";
-    setSelectedTopicId(nextTopicId);
-    setSelectedLessonId((currentLessonId) => next.lessons.some(
-      (lesson) => lesson.id === currentLessonId && lesson.topic_id === nextTopicId,
-    ) ? currentLessonId : next.lessons.find((lesson) => lesson.topic_id === nextTopicId)?.id ?? "");
-  }, [selectedTopicId]);
+  const setSelectedTopicId: Dispatch<SetStateAction<string>> = useCallback((value) => {
+    setState((current) => ({
+      ...current,
+      selectedTopicId: typeof value === "function" ? value(current.selectedTopicId) : value,
+    }));
+  }, []);
+  const setSelectedLessonId: Dispatch<SetStateAction<string>> = useCallback((value) => {
+    setState((current) => ({
+      ...current,
+      selectedLessonId: typeof value === "function" ? value(current.selectedLessonId) : value,
+    }));
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -57,14 +74,12 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-    // Load once on mount; manual refresh uses the latest selected situation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [applyCollections, loadCollections]);
 
   return {
-    topics,
-    lessons,
-    items,
+    topics: collections.topics,
+    lessons: collections.lessons,
+    items: collections.items,
     selectedTopicId,
     setSelectedTopicId,
     selectedLessonId,

@@ -2,6 +2,7 @@ import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 import { isAdminUser } from "@/lib/supabase/admin-access";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 
 export async function checkCurrentUserIsAdmin(supabase: SupabaseClient): Promise<boolean> {
@@ -19,7 +20,7 @@ export async function loadPublishedCategoryAuthors(supabase: SupabaseClient) {
     .catch((): Record<string, string> => ({}));
 
   return Object.fromEntries(categories.map((item) => [
-    item.name.trim().toLocaleLowerCase(),
+    normalizeVocabularyLabel(item.name),
     emails[item.owner_id] ?? "Loading author…",
   ]));
 }

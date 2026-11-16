@@ -1,9 +1,8 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
-import { fetchAdminUsers } from "@/lib/admin-user-api";
-
-export type AdminNotificationRecipient = { id: string; email: string | null; nickname: string };
+import { buildAdminUsersQuery, fetchAdminUsers } from "@/lib/admin-user-api";
+import type { AdminNotificationRecipient } from "@/lib/admin-notification-recipients";
 
 export function useAdminNotificationRecipients(
   currentUserId: string,
@@ -19,7 +18,7 @@ export function useAdminNotificationRecipients(
     let active = true;
     async function loadRecipients() {
       try {
-        const query = new URLSearchParams({ page: "1", pageSize: "100", all: "true" });
+        const query = buildAdminUsersQuery({ page: 1, pageSize: 100, all: true });
         const payload = await getAdminCachedData(
           "admin:users:all-recipients",
           () => fetchAdminUsers(query)

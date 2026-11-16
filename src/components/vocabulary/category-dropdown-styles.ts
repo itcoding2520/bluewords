@@ -26,6 +26,19 @@ export const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
   slate: "bg-slate-500",
 };
 
+export const CATEGORY_BADGE_STYLES: Record<VocabularyCategoryColor, string> = {
+  blue: "bg-blue-100 text-blue-800",
+  violet: "bg-violet-100 text-violet-800",
+  orange: "bg-orange-100 text-orange-800",
+  green: "bg-emerald-100 text-emerald-800",
+  rose: "bg-rose-100 text-rose-800",
+  indigo: "bg-indigo-100 text-indigo-800",
+  teal: "bg-teal-100 text-teal-800",
+  amber: "bg-amber-100 text-amber-800",
+  pink: "bg-pink-100 text-pink-800",
+  slate: "bg-slate-100 text-slate-700",
+};
+
 export const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "border-blue-700 bg-blue-700 hover:border-blue-800 hover:bg-blue-800",
   violet: "border-[#bf00ff] bg-[#bf00ff] hover:brightness-95",

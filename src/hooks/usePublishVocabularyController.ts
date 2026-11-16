@@ -1,23 +1,20 @@
-import { getErrorMessage } from "@/lib/errors";
-import { useState } from "react";
-import { toast } from "sonner";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { getPublishVocabularyOptions } from "@/lib/vocabulary/publish-options";
 import { usePublishVocabularyRequests } from "@/hooks/usePublishVocabularyRequests";
 import { usePublishCategoryRequest } from "@/hooks/usePublishCategoryRequest";
 import { usePublishWordRequest } from "@/hooks/usePublishWordRequest";
 import { usePublishVocabularySelection } from "@/hooks/usePublishVocabularySelection";
+import { usePublishVocabularySubmission } from "@/hooks/usePublishVocabularySubmission";
 
 export function usePublishVocabularyController() {
   const { words, categories, isAuthenticated, isLoaded } = useVocabulary();
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
   const {
     communityCategoryRequests,
     communityWordRequests,
     requestsLoaded,
     refreshRequests,
   } = usePublishVocabularyRequests(isAuthenticated);
+  const submission = usePublishVocabularySubmission(refreshRequests);
 
   const {
     defaultCategoryNames,
@@ -34,7 +31,7 @@ export function usePublishVocabularyController() {
   });
   const selection = usePublishVocabularySelection(userWords);
 
-  const publishCategory = usePublishCategoryRequest(categories, setStatus);
+  const publishCategory = usePublishCategoryRequest(categories, submission.setStatus);
 
   const publishWord = usePublishWordRequest({
     userWords,
@@ -43,31 +40,11 @@ export function usePublishVocabularyController() {
     defaultWordKeys,
     defaultCategoryNames,
     categories,
-    setStatus,
+    setStatus: submission.setStatus,
   });
 
-  async function sendRequests<T>(
-    selected: T[],
-    publish: (item: T) => Promise<void>,
-    clearSelection: () => void,
-    fallbackMessage: string,
-  ) {
-    if (!selected.length || busy) return;
-    setBusy(true);
-    setStatus("");
-    try {
-      for (const item of selected) await publish(item);
-      clearSelection();
-      await refreshRequests();
-    } catch (error) {
-      toast.error(getErrorMessage(error, fallbackMessage));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function sendCategoryRequests() {
-    return sendRequests(
+    return submission.sendRequests(
       selection.selectedCategories,
       publishCategory,
       () => selection.setSelectedCategories([]),
@@ -76,7 +53,7 @@ export function usePublishVocabularyController() {
   }
 
   function sendWordRequests() {
-    return sendRequests(
+    return submission.sendRequests(
       selection.selectedWordIds,
       publishWord,
       () => selection.setSelectedWordIds([]),
@@ -99,7 +76,7 @@ export function usePublishVocabularyController() {
       toggleCategoryRequest: selection.toggleCategoryRequest,
     },
     view: { requestableCategories, userWords },
-    submission: { busy, status },
+    submission: { busy: submission.busy, status: submission.status },
     actions: { sendCategoryRequests, sendWordRequests },
   };
 }

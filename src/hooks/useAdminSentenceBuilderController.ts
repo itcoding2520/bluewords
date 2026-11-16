@@ -22,9 +22,21 @@ export function useAdminSentenceBuilderController() {
   const [pageSize, setPageSize] = useState<50 | 100>(50);
   const [page, setPage] = useState(1);
   const filteredQuestions = useMemo(() => filter === "all" ? questions : questions.filter((question) => question.difficulty === filter), [filter, questions]);
-  const pageMetadata = getPageMetadata(filteredQuestions.length, page, pageSize);
-  const visible = getPageItems(filteredQuestions, pageMetadata.currentPage, pageSize);
-  const categoryOptions = [...new Set([...questions.map((question) => question.category), draft.category].map((name) => name.trim()).filter(Boolean))].sort((left, right) => left.localeCompare(right));
+  const { pageMetadata, visible } = useMemo(() => {
+    const metadata = getPageMetadata(filteredQuestions.length, page, pageSize);
+    return {
+      pageMetadata: metadata,
+      visible: getPageItems(filteredQuestions, metadata.currentPage, pageSize),
+    };
+  }, [filteredQuestions, page, pageSize]);
+  const categoryOptions = useMemo(
+    () => [...new Set(
+      [...questions.map((question) => question.category), draft.category]
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )].sort((left, right) => left.localeCompare(right)),
+    [draft.category, questions],
+  );
 
   const actions = useAdminSentenceBuilderActions({
     supabase,

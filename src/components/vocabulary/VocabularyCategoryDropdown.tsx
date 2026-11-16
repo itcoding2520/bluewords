@@ -1,11 +1,9 @@
 import { useId } from "react";
-import { ChevronDown, ListFilter } from "lucide-react";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { useVocabularyCategoryDropdownController } from "@/hooks/useVocabularyCategoryDropdownController";
 import { CategoryDropdownOptionList, type CategoryDropdownOption } from "@/components/vocabulary/CategoryDropdownOptionList";
-import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
+import { VocabularyCategoryDropdownTrigger } from "@/components/vocabulary/VocabularyCategoryDropdownTrigger";
 import { useVocabularyCategoryDropdownOptions } from "@/hooks/useVocabularyCategoryDropdownOptions";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 export { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
@@ -80,40 +78,18 @@ export function CategoryDropdown({
         }
       }}
     >
-      <button
+      <VocabularyCategoryDropdownTrigger
         id={id}
-        ref={triggerRef}
-        type="button"
-        aria-label={ariaLabel}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-controls={listboxId}
+        triggerRef={triggerRef}
+        ariaLabel={ariaLabel}
+        listboxId={listboxId}
+        isOpen={isOpen}
+        selectedCategory={selectedCategory}
+        selectedName={selectedOption?.name}
+        fallbackWordImagePath={selectedCategory ? getFallbackImage(selectedCategory.name) : undefined}
         onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
         onKeyDown={handleTriggerKeyDown}
-        className={`group flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl border px-3 text-left text-sm font-medium shadow-sm transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 ${
-          selectedCategory
-            ? `${CATEGORY_TRIGGER_STYLES[selectedCategory.color]} text-white focus-visible:ring-blue-200`
-            : "border-blue-100 bg-blue-50/70 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-        }`}
-      >
-        {selectedCategory ? <CategoryAvatar name={selectedCategory.name} imagePath={selectedCategory.image_path} fallbackWordImagePath={getFallbackImage(selectedCategory.name)} colorClass={CATEGORY_COLOR_STYLES[selectedCategory.color]} /> : <span className={`grid size-7 shrink-0 place-items-center rounded-lg shadow-sm ring-1 ${
-          selectedCategory
-            ? "bg-white/20 text-white ring-white/20"
-            : "bg-white text-blue-600 ring-blue-100"
-        }`}>
-          <ListFilter size={15} aria-hidden="true" />
-        </span>}
-        <span className="min-w-0 flex-1 truncate">
-          {selectedOption?.name ?? "Select category"}
-        </span>
-        <ChevronDown
-          size={16}
-          aria-hidden="true"
-          className={`shrink-0 transition-transform duration-200 ${
-            selectedCategory ? "text-white/90" : "text-slate-500"
-          } ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
+      />
 
       {isOpen && <CategoryDropdownOptionList
         listboxId={listboxId}

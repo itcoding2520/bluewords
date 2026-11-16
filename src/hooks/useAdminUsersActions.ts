@@ -1,7 +1,8 @@
-import { getErrorMessage } from "@/lib/errors";
-import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { sendAdminUserAction, type AdminUserRecord } from "@/lib/admin-user-api";
+import type { AdminUserActionInput, AdminUserRecord } from "@/lib/admin-user-api";
+import { useAdminUserMutation } from "@/hooks/useAdminUserMutation";
+import { useAdminUserForms } from "@/hooks/useAdminUserForms";
 
 export type AdminUser = AdminUserRecord;
 
@@ -15,89 +16,70 @@ export function useAdminUsersActions({
   refreshUsers: () => void;
 }) {
   const confirmDialog = useConfirmDialog();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [notice, setNotice] = useState("");
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [password, setPassword] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [editEmail, setEditEmail] = useState("");
-  const [editNickname, setEditNickname] = useState("");
-  const [editPassword, setEditPassword] = useState("");
-
-  function showMutationResult(payload: { error?: string }, fallback: string) {
-    if (payload.error) {
-      setError(payload.error);
-      setNotice("");
-    } else {
-      setError("");
-      setNotice(fallback);
-      refreshUsers();
-    }
-  }
-
-  async function performUserAction(action: string, values: Record<string, string>) {
-    setBusy(values.userId ?? action);
-    setError("");
-    setNotice("");
-    try {
-      const payload = await sendAdminUserAction(action, values);
-      showMutationResult(payload, action === "delete" ? "User removed." : action === "create" ? "User created." : "User saved.");
-      return true;
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not complete this user action."));
-      return false;
-    } finally {
-      setBusy(null);
-    }
-  }
+  const { busy, notice, setNotice, performUserAction } = useAdminUserMutation({ setError, refreshUsers });
+  const forms = useAdminUserForms();
+  const { addForm, setAddForm, editForm, setEditForm } = forms;
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (await performUserAction("create", { email: email.trim(), nickname: nickname.trim(), password })) {
-      setEmail("");
-      setNickname("");
-      setPassword("");
-      setShowAddForm(false);
+    if (await performUserAction({ action: "create", email: addForm.email.trim(), nickname: addForm.nickname.trim(), password: addForm.password })) {
+      setAddForm({ email: "", nickname: "", password: "", isOpen: false });
       setPage(1);
     }
   }
 
   function openEditUser(user: AdminUser) {
-    setEditingUser(user);
-    setEditEmail(user.email ?? "");
-    setEditNickname(user.nickname);
-    setEditPassword("");
+    setEditForm({
+      user,
+      email: user.email ?? "",
+      nickname: user.nickname,
+      password: "",
+    });
     setError("");
     setNotice("");
   }
 
   async function editUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editingUser) return;
-    const values: Record<string, string> = {
-      userId: editingUser.id,
-      email: editEmail.trim(),
-      nickname: editNickname.trim(),
+    if (!editForm.user) return;
+    const values: Extract<AdminUserActionInput, { action: "update" }> = {
+      action: "update",
+      userId: editForm.user.id,
+      email: editForm.email.trim(),
+      nickname: editForm.nickname.trim(),
     };
-    if (editPassword) values.password = editPassword;
-    if (await performUserAction("update", values)) {
-      setEditingUser(null);
-      setEditPassword("");
+    if (editForm.password) values.password = editForm.password;
+    if (await performUserAction(values)) {
+      setEditForm((current) => ({ ...current, user: null, password: "" }));
     }
   }
 
   async function removeUser(user: AdminUser) {
     const confirmed = await confirmDialog({ title: "Remove user?", description: `Remove ${user.email ?? user.id}? This permanently deletes their account, vocabulary, and history.`, confirmLabel: "Remove" });
     if (!confirmed) return;
-    await performUserAction("delete", { userId: user.id });
+    await performUserAction({ action: "delete", userId: user.id });
   }
 
   return {
-    busy, notice, setNotice, email, setEmail, nickname, setNickname, password, setPassword,
-    showAddForm, setShowAddForm, editingUser, setEditingUser, editEmail, setEditEmail,
-    editNickname, setEditNickname, editPassword, setEditPassword,
+    busy,
+    notice,
+    setNotice,
+    email: forms.email,
+    setEmail: forms.setEmail,
+    nickname: forms.nickname,
+    setNickname: forms.setNickname,
+    password: forms.password,
+    setPassword: forms.setPassword,
+    showAddForm: forms.showAddForm,
+    setShowAddForm: forms.setShowAddForm,
+    editingUser: forms.editingUser,
+    setEditingUser: forms.setEditingUser,
+    editEmail: forms.editEmail,
+    setEditEmail: forms.setEditEmail,
+    editNickname: forms.editNickname,
+    setEditNickname: forms.setEditNickname,
+    editPassword: forms.editPassword,
+    setEditPassword: forms.setEditPassword,
     addUser, editUser, openEditUser, removeUser,
   };
 }

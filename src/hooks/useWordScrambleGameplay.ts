@@ -1,119 +1,151 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   createScrambledTiles,
   type LetterTile,
   type ScrambleWord,
 } from "@/lib/word-scramble";
 
-export function useWordScrambleGameplay() {
-  const [round, setRound] = useState<ScrambleWord[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [letterTiles, setLetterTiles] = useState<LetterTile[]>([]);
-  const [answerTileIds, setAnswerTileIds] = useState<number[]>([]);
-  const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [bestStreak, setBestStreak] = useState(0);
-  const [moves, setMoves] = useState(0);
-  const [hintsLeft, setHintsLeft] = useState(3);
-  const [hintUsed, setHintUsed] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [isCorrect, setIsCorrect] = useState(false);
+interface WordScrambleState {
+  round: ScrambleWord[];
+  questionIndex: number;
+  letterTiles: LetterTile[];
+  answerTileIds: number[];
+  score: number;
+  streak: number;
+  bestStreak: number;
+  moves: number;
+  hintsLeft: number;
+  hintUsed: boolean;
+  feedback: string;
+  isCorrect: boolean;
+}
 
-  const currentWord = round[questionIndex];
-  const usedTileIds = new Set(answerTileIds);
+const initialState: WordScrambleState = {
+  round: [],
+  questionIndex: 0,
+  letterTiles: [],
+  answerTileIds: [],
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  moves: 0,
+  hintsLeft: 3,
+  hintUsed: false,
+  feedback: "",
+  isCorrect: false,
+};
+
+export function useWordScrambleGameplay() {
+  const [state, setState] = useState(initialState);
+
+  const currentWord = state.round[state.questionIndex];
+  const usedTileIds = useMemo(() => new Set(state.answerTileIds), [state.answerTileIds]);
 
   function startRound(nextRound: ScrambleWord[]) {
-    setRound(nextRound);
-    setQuestionIndex(0);
-    setLetterTiles(createScrambledTiles(nextRound[0].answer));
-    setAnswerTileIds([]);
-    setScore(0);
-    setStreak(0);
-    setBestStreak(0);
-    setMoves(0);
-    setHintsLeft(3);
-    setHintUsed(false);
-    setFeedback("");
-    setIsCorrect(false);
+    setState({
+      ...initialState,
+      round: nextRound,
+      letterTiles: createScrambledTiles(nextRound[0].answer),
+    });
   }
 
-  function submitAnswer(nextIds: number[], usedHint = hintUsed) {
-    setMoves((count) => count + 1);
-    const answer = nextIds.map((id) => letterTiles.find((tile) => tile.id === id)?.letter ?? "").join("");
-    if (answer.length !== currentWord.answer.length) return;
-    if (answer === currentWord.answer) {
-      const nextStreak = streak + 1;
-      setStreak(nextStreak);
-      setBestStreak((best) => Math.max(best, nextStreak));
-      setScore((value) => value + (usedHint ? 10 : 20));
-      setFeedback(`Great job! ${currentWord.word} is correct!`);
-      setIsCorrect(true);
-    } else {
-      setStreak(0);
-      setFeedback("Almost! Rearrange the letters and try again.");
-      setIsCorrect(false);
+  function submitAnswer(nextIds: number[], usedHint = state.hintUsed) {
+    const answer = nextIds.map((id) => state.letterTiles.find((tile) => tile.id === id)?.letter ?? "").join("");
+    if (answer.length !== currentWord.answer.length) {
+      setState((current) => ({ ...current, moves: current.moves + 1 }));
+      return;
     }
+
+    setState((current) => {
+      const moves = current.moves + 1;
+      if (answer !== currentWord.answer) {
+        return {
+          ...current,
+          moves,
+          streak: 0,
+          feedback: "Almost! Rearrange the letters and try again.",
+          isCorrect: false,
+        };
+      }
+
+      const nextStreak = current.streak + 1;
+      return {
+        ...current,
+        moves,
+        streak: nextStreak,
+        bestStreak: Math.max(current.bestStreak, nextStreak),
+        score: current.score + (usedHint ? 10 : 20),
+        feedback: `Great job! ${currentWord.word} is correct!`,
+        isCorrect: true,
+      };
+    });
   }
 
   function chooseLetter(tileId: number) {
-    if (isCorrect || usedTileIds.has(tileId)) return;
-    const nextIds = [...answerTileIds, tileId];
-    setAnswerTileIds(nextIds);
+    if (state.isCorrect || usedTileIds.has(tileId)) return;
+    const nextIds = [...state.answerTileIds, tileId];
+    setState((current) => ({ ...current, answerTileIds: nextIds }));
     if (nextIds.length === currentWord.answer.length) submitAnswer(nextIds);
   }
 
   function removeLetter(tileId?: number) {
-    if (isCorrect || answerTileIds.length === 0) return;
+    if (state.isCorrect || state.answerTileIds.length === 0) return;
     const nextIds = tileId === undefined
-      ? answerTileIds.slice(0, -1)
-      : answerTileIds.filter((id) => id !== tileId);
-    setAnswerTileIds(nextIds);
-    setFeedback("");
+      ? state.answerTileIds.slice(0, -1)
+      : state.answerTileIds.filter((id) => id !== tileId);
+    setState((current) => ({ ...current, answerTileIds: nextIds, feedback: "" }));
   }
 
   function useHint() {
-    if (isCorrect || hintsLeft <= 0) return;
-    const nextPosition = answerTileIds.length;
+    if (state.isCorrect || state.hintsLeft <= 0) return;
+    const nextPosition = state.answerTileIds.length;
     const neededLetter = currentWord.answer[nextPosition];
-    const tile = letterTiles.find((item) => !usedTileIds.has(item.id) && item.letter === neededLetter);
+    const tile = state.letterTiles.find((item) => !usedTileIds.has(item.id) && item.letter === neededLetter);
     if (!tile) return;
-    const nextIds = [...answerTileIds, tile.id];
-    setAnswerTileIds(nextIds);
-    setHintsLeft((count) => count - 1);
-    setHintUsed(true);
-    setFeedback("Hint used: one letter placed. This answer is worth 10 points.");
+    const nextIds = [...state.answerTileIds, tile.id];
+    setState((current) => ({
+      ...current,
+      answerTileIds: nextIds,
+      hintsLeft: current.hintsLeft - 1,
+      hintUsed: true,
+      feedback: "Hint used: one letter placed. This answer is worth 10 points.",
+    }));
     if (nextIds.length === currentWord.answer.length) submitAnswer(nextIds, true);
   }
 
   function nextQuestion(): boolean {
-    if (questionIndex + 1 >= round.length) {
+    if (state.questionIndex + 1 >= state.round.length) {
       return true;
     }
-    const nextIndex = questionIndex + 1;
-    setQuestionIndex(nextIndex);
-    setLetterTiles(createScrambledTiles(round[nextIndex].answer));
-    setAnswerTileIds([]);
-    setHintUsed(false);
-    setFeedback("");
-    setIsCorrect(false);
+    const nextIndex = state.questionIndex + 1;
+    const nextTiles = createScrambledTiles(state.round[nextIndex].answer);
+    setState((current) => ({
+      ...current,
+      questionIndex: nextIndex,
+      letterTiles: nextTiles,
+      answerTileIds: [],
+      hintUsed: false,
+      feedback: "",
+      isCorrect: false,
+    }));
     return false;
   }
 
   return {
-    round,
-    questionIndex,
-    letterTiles,
-    answerTileIds,
-    score,
-    streak,
-    bestStreak,
-    hintsLeft,
-    hintUsed,
-    feedback,
-    isCorrect,
+    round: state.round,
+    questionIndex: state.questionIndex,
+    letterTiles: state.letterTiles,
+    answerTileIds: state.answerTileIds,
+    score: state.score,
+    streak: state.streak,
+    bestStreak: state.bestStreak,
+    hintsLeft: state.hintsLeft,
+    hintUsed: state.hintUsed,
+    feedback: state.feedback,
+    isCorrect: state.isCorrect,
     currentWord,
     usedTileIds,
-    moves,
+    moves: state.moves,
     startRound,
     chooseLetter,
     removeLetter,

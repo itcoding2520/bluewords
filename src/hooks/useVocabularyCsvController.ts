@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { formatLocalDateForFilename } from "@/lib/formatDate";
 import { downloadCsvFile } from "@/lib/download-csv";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
@@ -35,7 +36,7 @@ export function useVocabularyCsvController({
     try {
       const wordsToExport = await loadExportWords();
       const date = new Date();
-      const dateSuffix = `${String(date.getDate()).padStart(2, "0")}${String(date.getMonth() + 1).padStart(2, "0")}${date.getFullYear()}`;
+      const dateSuffix = formatLocalDateForFilename(date);
       const categoryFileName = exportCategory
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")

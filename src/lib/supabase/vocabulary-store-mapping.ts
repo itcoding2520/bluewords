@@ -1,5 +1,7 @@
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+import { firstRelation } from "@/lib/supabase/first-relation";
 import {
   mapCommunityWords,
   mapVocabularyWordRow,
@@ -21,6 +23,30 @@ export interface AuthenticatedVocabularySnapshot {
   communityWords: PublishedCommunityWord[];
   communityCategoriesError: Error | null;
   communityWordsError: Error | null;
+}
+
+type PublishedCommunityWordRow = Pick<PublishedCommunityWord, "id" | "word" | "meaning" | "ipa"> & {
+  community_categories:
+    | (Omit<PublishedCommunityWord["community_categories"], "color"> & { color: string })
+    | Array<Omit<PublishedCommunityWord["community_categories"], "color"> & { color: string }>
+    | null;
+};
+
+export function mapPublishedCommunityWordRows(
+  rows: PublishedCommunityWordRow[],
+): PublishedCommunityWord[] {
+  return rows.flatMap(({ community_categories, ...word }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{
+      ...word,
+      community_categories: {
+        id: category.id,
+        name: category.name,
+        color: category.color as VocabularyCategoryColor,
+        status: category.status,
+      },
+    }] : [];
+  });
 }
 
 export function mapAuthenticatedVocabularySnapshot(snapshot: AuthenticatedVocabularySnapshot) {

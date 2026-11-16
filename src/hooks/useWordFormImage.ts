@@ -1,7 +1,8 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { deleteVocabularyImages, uploadVocabularyImage, validateVocabularyImage } from "@/lib/supabase/vocabulary-images";
+import type { WordFormErrors } from "@/lib/vocabulary/word-form";
 
-export function useWordFormImage(setErrors: Dispatch<SetStateAction<{ image?: string; word?: string; meaning?: string }>>) {
+export function useWordFormImage(setErrors: Dispatch<SetStateAction<WordFormErrors>>) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);

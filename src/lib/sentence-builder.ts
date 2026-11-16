@@ -21,6 +21,10 @@ export type SentenceQuestionInput = Omit<SentenceBuilderQuestion, "id">;
 
 export type SentenceBuilderTile = { id: number; text: string };
 
+export function parsePipeSeparatedValues(value: string): string[] {
+  return value.split("|").map((item) => item.trim()).filter(Boolean);
+}
+
 export function createSentenceBuilderTiles(question: SentenceBuilderQuestion): SentenceBuilderTile[] {
   return shuffle([...question.answer_tokens, ...question.distractor_tokens]
     .map((text, id) => ({ id, text })));

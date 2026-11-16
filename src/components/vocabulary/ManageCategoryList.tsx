@@ -13,6 +13,7 @@ import type {
 } from "@/lib/supabase/categories";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
 
 interface ManageCategoryListProps {
   categories: VocabularyCategoryRow[];
@@ -43,6 +44,8 @@ export function ManageCategoryList({
   onUpdate,
   onDelete,
 }: ManageCategoryListProps) {
+  const fallbackImagesByCategory = useCategoryFallbackWordImages(words);
+
   return (
     <div className="mt-5 space-y-2">
       {categories.map((category) => {
@@ -96,14 +99,7 @@ export function ManageCategoryList({
               <ManageCategoryRow
                 category={category}
                 colorClass={color?.className ?? "bg-slate-300"}
-                fallbackWordImagePath={
-                  words.find(
-                    (word) =>
-                      normalizeVocabularyLabel(word.category) ===
-                        normalizeVocabularyLabel(category.name) &&
-                      word.imagePath
-                  )?.imagePath
-                }
+                fallbackWordImagePath={fallbackImagesByCategory.get(normalizeVocabularyLabel(category.name))}
                 isSaving={isSaving}
                 onEdit={() => onStartEditing(category)}
                 onDelete={() => onDelete(category)}

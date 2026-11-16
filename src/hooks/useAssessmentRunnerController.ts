@@ -1,14 +1,14 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { AssessmentRunnerAttempt } from "@/lib/assessments/types";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useAssessmentRunnerAnswers } from "@/hooks/useAssessmentRunnerAnswers";
-import { fetchAssessmentAttempt, submitAssessmentAttempt } from "@/lib/assessments/api";
+import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
+import { useAssessmentRunnerSubmission } from "@/hooks/useAssessmentRunnerSubmission";
+import { getDurationSeconds } from "@/lib/session-duration";
 
 export function useAssessmentRunnerController(attemptId: string) {
-  const router = useRouter();
   const [attempt, setAttempt] = useState<AssessmentRunnerAttempt | null>(null);
   const { answers, setAnswers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence } =
     useAssessmentRunnerAnswers(attempt?.questions ?? []);
@@ -19,15 +19,19 @@ export function useAssessmentRunnerController(attemptId: string) {
     Boolean(attempt && !attempt.completed_at)
   );
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { submitting, submit } = useAssessmentRunnerSubmission({
+    attemptId,
+    answers,
+    setError,
+  });
 
   const load = useCallback(async () => {
     try {
       const value = await fetchAssessmentAttempt<AssessmentRunnerAttempt>(attemptId, "Could not load test.");
       setAttempt(value);
       setAnswers(value.answers?.length === 10 ? value.answers : Array(10).fill(""));
-      setSeconds(Math.max(0, Math.floor((Date.now() - new Date(value.started_at).getTime()) / 1000)));
+      setSeconds(getDurationSeconds(new Date(value.started_at).getTime(), Date.now()));
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not load test."));
     } finally {
@@ -38,22 +42,6 @@ export function useAssessmentRunnerController(attemptId: string) {
   useEffect(() => {
     return scheduleDeferredTask(() => { void load(); });
   }, [load]);
-
-  async function submit() {
-    if (answers.some((answer) => !answer.trim())) {
-      setError("Answer all 10 questions before submitting.");
-      return;
-    }
-    setSubmitting(true);
-    setError("");
-    try {
-      await submitAssessmentAttempt(attemptId, answers);
-      router.replace(`/assignments/results/${attemptId}`);
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not submit test."));
-      setSubmitting(false);
-    }
-  }
 
   return {
     test: { attempt, loading, error },

@@ -2,6 +2,7 @@
 
 import type { GamePhase, GameSaveState } from "@/types/game";
 import { getErrorMessage } from "@/lib/errors";
+import { getDurationSeconds } from "@/lib/session-duration";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Difficulty, GridSize } from "@/lib/word-search-config";
@@ -54,7 +55,7 @@ export function useWordSearchSessionSave({
     if (!userId || phase !== "results" || startedAt === null || !puzzle || saveStartedRef.current === startedAt) return;
     saveStartedRef.current = startedAt;
     const completedAt = Date.now();
-    const durationSeconds = Math.max(0, Math.floor((completedAt - startedAt) / 1000));
+    const durationSeconds = getDurationSeconds(startedAt, completedAt);
     onSavedRef.current(durationSeconds);
     setSaveState("saving");
     setSaveError("");

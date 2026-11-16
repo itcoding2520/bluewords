@@ -44,6 +44,7 @@ export function SentenceDrillView({
   }
 
   const isCorrect = answer !== null && normalizeSentence(answer) === normalizeSentence(drill.answer);
+  const orderedTileIds = new Set(orderedTiles.map((tile) => tile.id));
   const selectTile = (tile: OrderedTile) => onOrderedTilesChange([...orderedTiles, tile]);
   const removeTile = (tileId: number) => onOrderedTilesChange(orderedTiles.filter((tile) => tile.id !== tileId));
   const completeSentence = (choice: string) => (drill.gapSentence ?? "").replace("________", choice);
@@ -78,7 +79,7 @@ export function SentenceDrillView({
         {orderedTiles.length === 0 && <span className="text-sm text-slate-400">Your sentence will appear here</span>}
       </div>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {drill.tiles?.filter((tile) => !orderedTiles.some((selected) => selected.id === tile.id)).map((tile) => <button key={tile.id} type="button" disabled={answer !== null || saving} onClick={() => selectTile(tile)} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}
+        {drill.tiles?.filter((tile) => !orderedTileIds.has(tile.id)).map((tile) => <button key={tile.id} type="button" disabled={answer !== null || saving} onClick={() => selectTile(tile)} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-800 shadow-sm hover:border-blue-300">{tile.text}</button>)}
       </div>
       <div className="mt-4 flex justify-center gap-2">
         <button type="button" disabled={orderedTiles.length === 0 || answer !== null} onClick={() => onOrderedTilesChange([])} className="min-h-10 rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-600 disabled:opacity-40">Clear</button>

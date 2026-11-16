@@ -1,13 +1,13 @@
 import type { GamePhase } from "@/types/game";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { useWordScrambleGameplay } from "@/hooks/useWordScrambleGameplay";
 import { shuffle } from "@/lib/random";
 import { formatGameDuration } from "@/lib/game-duration";
-import { buildWordScrambleCandidates } from "@/lib/word-scramble";
+import { getElapsedSeconds } from "@/lib/session-duration";
+import { useWordScrambleSetupData } from "@/hooks/useWordScrambleSetupData";
 
 export type { ScrambleWord, LetterTile } from "@/lib/word-scramble";
 
@@ -37,8 +37,11 @@ export function useWordScrambleController(input: {
     startedAt,
   });
 
-  const candidates = useMemo(() => buildWordScrambleCandidates(words, category), [category, words]);
-  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words);
+  const { candidates, categoryDropdownCategories } = useWordScrambleSetupData({
+    words,
+    categories,
+    category,
+  });
   const timeLabel = formatGameDuration(session.elapsedSeconds);
 
   function startRound() {
@@ -54,7 +57,7 @@ export function useWordScrambleController(input: {
     if (!gameplay.nextQuestion()) return;
     session.setElapsedSeconds(startedAt === null
       ? 0
-      : Math.floor((Date.now() - startedAt) / 1000));
+      : getElapsedSeconds(startedAt));
     setPhase("results");
   }
 

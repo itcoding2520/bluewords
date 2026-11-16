@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { createClient } from "@/lib/supabase/client";
 import { VOCABULARY_IMAGES_BUCKET } from "@/lib/supabase/vocabulary-image-config";
 
@@ -39,7 +40,7 @@ export async function createVocabularyImageUrl(path: string): Promise<string | n
 
   if (!signedUrlBatchScheduled) {
     signedUrlBatchScheduled = true;
-    window.setTimeout(() => void flushSignedUrlBatch(), 0);
+    scheduleDeferredTask(() => void flushSignedUrlBatch());
   }
 
   return request;

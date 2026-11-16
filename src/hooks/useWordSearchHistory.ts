@@ -36,8 +36,15 @@ export function useWordSearchHistory(userId: string | null) {
     }
   }, [historyPage, userId]);
 
-  const fastestSeconds = history.reduce<number | null>((best, item) => best === null || item.duration_seconds < best ? item.duration_seconds : best, null);
-  const averageWordsPerRound = history.length ? Math.round(history.reduce((total, item) => total + item.word_count, 0) / history.length) : 0;
+  let fastestSeconds: number | null = null;
+  let totalWords = 0;
+  for (const item of history) {
+    if (fastestSeconds === null || item.duration_seconds < fastestSeconds) {
+      fastestSeconds = item.duration_seconds;
+    }
+    totalWords += item.word_count;
+  }
+  const averageWordsPerRound = history.length ? Math.round(totalWords / history.length) : 0;
 
   return {
     history,

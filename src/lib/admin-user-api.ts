@@ -18,9 +18,29 @@ export interface AdminUsersResponse<TUser extends AdminUserSummary = AdminUserRe
   error?: string;
 }
 
+export function buildAdminUsersQuery(input: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  all?: boolean;
+}): URLSearchParams {
+  const query = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  });
+  if (input.search) query.set("search", input.search);
+  if (input.all) query.set("all", "true");
+  return query;
+}
+
 interface AdminUserActionResponse {
   error?: string;
 }
+
+export type AdminUserActionInput =
+  | { action: "create"; email: string; nickname: string; password: string }
+  | { action: "update"; userId: string; email: string; nickname: string; password?: string }
+  | { action: "delete"; userId: string };
 
 export async function fetchAdminUsers(
   query: URLSearchParams,
@@ -33,12 +53,11 @@ export async function fetchAdminUsers(
 }
 
 export async function sendAdminUserAction(
-  action: string,
-  values: Record<string, string>
+  input: AdminUserActionInput,
 ): Promise<AdminUserActionResponse> {
   return postJson<AdminUserActionResponse>(
     "/api/admin/users",
-    { action, ...values },
+    input,
     "Could not complete this user action.",
   );
 }

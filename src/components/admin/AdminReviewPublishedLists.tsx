@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { BookOpen, FolderOpen, Pencil, Trash2 } from "lucide-react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
+import { getPublishedCategoryFallbackImages } from "@/lib/admin-review-mapping";
 
 export function AdminReviewPublishedLists({
   categories,
@@ -18,6 +20,11 @@ export function AdminReviewPublishedLists({
   onEditCategory: (category: PublishedCategory) => void | Promise<void>;
   onEditWord: (word: PublishedWord) => void | Promise<void>;
 }) {
+  const fallbackImagesByCategory = useMemo(
+    () => getPublishedCategoryFallbackImages(words),
+    [words],
+  );
+
   return (
     <div className="admin-review-published-lists mt-5 grid gap-4 lg:grid-cols-2">
       <div className="admin-review-published-list">
@@ -28,7 +35,7 @@ export function AdminReviewPublishedLists({
               <CategoryIdentity
                 name={item.name}
                 imagePath={item.image_path}
-                fallbackWordImagePath={words.find((word) => word.category_id === item.id && word.image_path)?.image_path}
+                fallbackWordImagePath={fallbackImagesByCategory.get(item.id)}
                 author={ownerEmails[item.owner_id] ?? "Loading author…"}
               />
               <ActionMenu label={item.name} actions={[

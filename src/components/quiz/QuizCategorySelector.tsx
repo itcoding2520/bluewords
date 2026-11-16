@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
-import { getCategoryImageUrl } from "@/lib/supabase/category-images";
+import { CategoryOptionChip } from "@/components/vocabulary/CategoryOptionChip";
 import type { QuizCategoryOption } from "@/lib/quiz-setup-model";
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 
@@ -48,11 +46,5 @@ export function QuizCategorySelector({
 }
 
 function QuizCategoryChip({ name, imagePath, dotClassName, selected, onClick }: { name: string; imagePath: string | null; dotClassName: string; selected: boolean; onClick: () => void }) {
-  const isCategoryImage = imagePath?.startsWith("category:") ?? false;
-  const wordImageUrl = useVocabularyImageUrl(isCategoryImage ? null : imagePath);
-  const imageUrl = isCategoryImage ? getCategoryImageUrl(imagePath?.slice("category:".length)) : wordImageUrl;
-  return <button type="button" aria-pressed={selected} onClick={onClick} title={name} className={`quiz-category-chip flex h-10 min-w-0 items-center gap-1.5 rounded-full border px-2 text-left text-xs transition sm:gap-2 sm:px-2.5 ${selected ? "border-indigo-200 bg-indigo-50 font-semibold text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50"}`}>
-    {imageUrl ? <Image src={imageUrl} alt="" width={24} height={24} unoptimized className="size-6 shrink-0 rounded-full object-cover" /> : <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" />}
-    <span className="min-w-0 truncate">{name}</span>
-  </button>;
+  return <CategoryOptionChip name={name} imagePath={imagePath} dotClassName={dotClassName} selected={selected} onClick={onClick} className="quiz-category-chip" />;
 }

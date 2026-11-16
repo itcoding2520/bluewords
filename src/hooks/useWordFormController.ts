@@ -1,11 +1,11 @@
-import { getErrorMessage } from "@/lib/errors";
 import { type FormEvent, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategory, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useWordFormImage } from "@/hooks/useWordFormImage";
 import { useVocabularyDetailedMeanings } from "@/hooks/useVocabularyDetailedMeanings";
-import { validateVocabularyWordForm, type WordFormErrors } from "@/lib/vocabulary/word-form";
+import { type WordFormErrors } from "@/lib/vocabulary/word-form";
+import { useWordFormSubmission } from "@/hooks/useWordFormSubmission";
 
 export type { WordFormErrors } from "@/lib/vocabulary/word-form";
 
@@ -34,59 +34,25 @@ export function useWordFormController({
   const { detailedMeanings, updateDetailedMeaning, addDetailedMeaning, removeDetailedMeaning } =
     useVocabularyDetailedMeanings(editingWord?.detailedMeanings ?? []);
   const [errors, setErrors] = useState<WordFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const image = useWordFormImage(setErrors);
+  const submission = useWordFormSubmission({
+    word,
+    meaning,
+    type,
+    category,
+    detailedMeanings,
+    editingWord,
+    image,
+    setErrors,
+    onSubmit,
+  });
 
   function clearError(field: keyof WordFormErrors) {
     setErrors((current) => ({ ...current, [field]: undefined }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isSubmitting) return;
-
-    const nextErrors = validateVocabularyWordForm({
-      word,
-      meaning,
-      words,
-      editingWordId: editingWord?.id,
-    });
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      if (!image.validateSelectedImage()) return;
-
-      const trimmedWord = word.trim();
-      const trimmedMeaning = meaning.trim();
-      const wordId = editingWord?.id ?? crypto.randomUUID();
-      const uploadedPath = await image.uploadSelectedImage(wordId);
-      const success = await onSubmit({
-        id: wordId,
-        word: trimmedWord,
-        meaning: trimmedMeaning,
-        type,
-        category,
-        status: editingWord?.status ?? "learning",
-        detailedMeanings: detailedMeanings
-          .map((item) => ({ ...item, meaning: item.meaning.trim() }))
-          .filter((item) => item.meaning.length > 0),
-        imagePath:
-          uploadedPath ??
-          (image.removeCurrentImage ? null : editingWord?.imagePath ?? null),
-      });
-      if (!success && uploadedPath) await image.removeUploadedImage(uploadedPath);
-    } catch (error) {
-      setErrors((current) => ({
-        ...current,
-        image: getErrorMessage(error, "Could not upload image."),
-      }));
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submission.handleSubmit(event, words);
   }
 
   return {
@@ -105,6 +71,6 @@ export function useWordFormController({
       add: addDetailedMeaning,
       remove: removeDetailedMeaning,
     },
-    submission: { isSubmitting, handleSubmit },
+    submission: { isSubmitting: submission.isSubmitting, handleSubmit },
   };
 }

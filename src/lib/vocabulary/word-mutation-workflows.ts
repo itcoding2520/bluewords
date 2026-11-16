@@ -8,12 +8,14 @@ import {
   updateVocabularyWordWithMeanings,
 } from "@/lib/supabase/vocabulary";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
-import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
+import { saveVocabularyMeanings } from "@/lib/vocabulary/meaning-workflows";
 import { mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
 import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 import { resolveVocabularyIpa } from "@/lib/vocabulary/resolve-ipa";
 
-export async function createVocabularyWordRecord(word: VocabularyWord): Promise<VocabularyWord> {
+export async function createVocabularyWordRecord(
+  word: Omit<VocabularyWord, "id">
+): Promise<VocabularyWord> {
   const type = word.type ?? "word";
   const ipa = await resolveVocabularyIpa({ word: word.word, type, providedIpa: word.ipa });
   const row = await addVocabularyWord({

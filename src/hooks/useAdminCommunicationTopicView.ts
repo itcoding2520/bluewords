@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { getCommunicationTopicWordCounts } from "@/lib/communication/topic-word-counts";
+import { getCommunicationContentCounts } from "@/lib/communication/content-counts";
 import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 export function useAdminCommunicationTopicView({
@@ -21,7 +21,7 @@ export function useAdminCommunicationTopicView({
     ),
     [topics, normalizedSearch],
   );
-  const topicWordCounts = useMemo(() => getCommunicationTopicWordCounts(lessons, items), [items, lessons]);
+  const contentCounts = useMemo(() => getCommunicationContentCounts(lessons, items), [items, lessons]);
 
-  return { filteredTopics, topicWordCounts };
+  return { filteredTopics, ...contentCounts };
 }

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCsvRows } from "../src/lib/csv-rows.mjs";
+import { loadProjectEnv } from "./lib/load-project-env.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.resolve(scriptDir, "..");
@@ -23,11 +24,7 @@ const remainingPacks = [
   "weather",
 ];
 
-try {
-  process.loadEnvFile(path.join(projectDir, ".env.local"));
-} catch (error) {
-  if (error?.code !== "ENOENT") throw error;
-}
+loadProjectEnv(projectDir);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

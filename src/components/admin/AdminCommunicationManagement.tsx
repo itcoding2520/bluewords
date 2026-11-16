@@ -13,8 +13,8 @@ export function AdminCommunicationManagement() {
   const {
     supabase,
     data: {
-      topics, lessons, items, loading, currentTopic, currentLessons,
-      currentItems, filteredTopics, topicWordCounts, selectedLessonTitle,
+      topics, loading, currentTopic, currentLessons,
+      currentItems, filteredTopics, lessonCountsByTopic, itemCountsByLesson, topicWordCounts, selectedLessonTitle,
     },
     selection: {
       selectedTopicId, selectedLessonId, topicSearch, setTopicSearch,
@@ -57,7 +57,7 @@ export function AdminCommunicationManagement() {
         <AdminCommunicationTopicList
           topics={filteredTopics}
           totalCount={topics.length}
-          lessons={lessons}
+          lessonCountsByTopic={lessonCountsByTopic}
           wordCounts={topicWordCounts}
           selectedTopicId={selectedTopicId}
           search={topicSearch}
@@ -83,7 +83,7 @@ export function AdminCommunicationManagement() {
         <AdminCommunicationLessonList
           topics={topics}
           lessons={currentLessons}
-          items={items}
+          itemCountsByLesson={itemCountsByLesson}
           selectedTopicId={selectedTopicId}
           selectedLessonId={selectedLessonId}
           busy={busy}

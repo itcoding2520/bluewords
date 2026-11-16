@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { CategoryDropdownOption } from "@/lib/vocabulary/category-dropdown-types";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
 
 export function useVocabularyCategoryDropdownOptions(input: {
   categories: VocabularyCategoryRow[];
@@ -20,14 +20,7 @@ export function useVocabularyCategoryDropdownOptions(input: {
     return byName;
   }, [input.categories]);
 
-  const wordImagesByCategory = useMemo(() => {
-    const images = new Map<string, string>();
-    for (const word of input.words) {
-      const key = normalizeVocabularyLabel(word.category);
-      if (!images.has(key) && word.imagePath) images.set(key, word.imagePath);
-    }
-    return images;
-  }, [input.words]);
+  const wordImagesByCategory = useCategoryFallbackWordImages(input.words);
 
   const options = useMemo(() => [
     ...(input.includeAll

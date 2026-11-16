@@ -30,19 +30,25 @@ export function getCatalogRecommendation({
   dueItems: DueItem[];
 }) {
   const nextDueItem = dueItems[0];
-  const inProgressLesson = lessons.find((lesson) =>
-    progress.some((row) => row.lesson_id === lesson.id && row.status === "in_progress"),
-  );
-  const incompleteLesson = lessons.find((lesson) =>
-    !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"),
-  );
+  const completedLessonIds = new Set<string>();
+  const inProgressLessonIds = new Set<string>();
+  for (const row of progress) {
+    if (row.status === "completed") completedLessonIds.add(row.lesson_id);
+    if (row.status === "in_progress") inProgressLessonIds.add(row.lesson_id);
+  }
+  const inProgressLesson = lessons.find((lesson) => inProgressLessonIds.has(lesson.id));
+  const incompleteLesson = lessons.find((lesson) => !completedLessonIds.has(lesson.id));
   const difficultyRank: Record<DifficultyLevel, number> = { easy: 0, medium: 1, hard: 2 };
   const reviewedLessons = lessons.flatMap((lesson) => {
     const stats = lessonAccuracy[lesson.id];
     return stats && stats.attempts >= 3 ? [{ lesson, accuracy: stats.correct / stats.attempts }] : [];
   });
-  const weakestLesson = [...reviewedLessons].sort((a, b) => a.accuracy - b.accuracy)[0];
-  const strongestLesson = [...reviewedLessons].sort((a, b) => b.accuracy - a.accuracy)[0];
+  let weakestLesson = reviewedLessons[0];
+  let strongestLesson = reviewedLessons[0];
+  for (const reviewedLesson of reviewedLessons.slice(1)) {
+    if (reviewedLesson.accuracy < weakestLesson.accuracy) weakestLesson = reviewedLesson;
+    if (reviewedLesson.accuracy > strongestLesson.accuracy) strongestLesson = reviewedLesson;
+  }
   let adaptiveLesson: Lesson | undefined;
   let adaptiveLabel = "";
   let adaptiveReason = "";
@@ -50,14 +56,14 @@ export function getCatalogRecommendation({
   if (weakestLesson && weakestLesson.accuracy < 0.7) {
     adaptiveLesson = lessons.find((lesson) => lesson.topic_id === weakestLesson.lesson.topic_id
       && difficultyRank[lesson.difficulty] < difficultyRank[weakestLesson.lesson.difficulty]
-      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+      && !completedLessonIds.has(lesson.id));
     adaptiveLesson ??= weakestLesson.lesson;
     adaptiveLabel = adaptiveLesson.id === weakestLesson.lesson.id ? "Practice again" : "Try an easier lesson";
     adaptiveReason = "Your recent answers show this topic could use a little more practice.";
   } else if (strongestLesson && strongestLesson.accuracy >= 0.9) {
     adaptiveLesson = lessons.find((lesson) => lesson.topic_id === strongestLesson.lesson.topic_id
       && difficultyRank[lesson.difficulty] > difficultyRank[strongestLesson.lesson.difficulty]
-      && !progress.some((row) => row.lesson_id === lesson.id && row.status === "completed"));
+      && !completedLessonIds.has(lesson.id));
     if (adaptiveLesson) {
       adaptiveLabel = "Try a harder lesson";
       adaptiveReason = "Your recent answers show you are ready for the next level.";

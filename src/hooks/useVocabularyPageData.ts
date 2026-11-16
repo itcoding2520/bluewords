@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
-import { getVocabularyWordPage } from "@/lib/supabase/vocabulary";
-import { getCachedVocabularyPage, setCachedVocabularyPage } from "@/lib/supabase/vocabulary-page-cache.mjs";
-import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
 import { toast } from "sonner";
-import { getPageCount, type PageResult } from "@/lib/pagination";
-
-type PageQuery = { page: number; pageSize: number; search: string; category: string | null; status: VocabularyStatus | null };
-type VocabularyPageResult = PageResult<VocabularyWord>;
+import { getPageCount } from "@/lib/pagination";
+import {
+  getInitialCachedVocabularyPage,
+  loadVocabularyPage,
+  type VocabularyPageQuery,
+} from "@/lib/vocabulary/page-data";
 
 export function useVocabularyPageData({
   authVersion,
@@ -21,12 +20,11 @@ export function useVocabularyPageData({
   authVersion: number;
   categories: unknown[];
   categoriesLoaded: boolean;
-  query: PageQuery;
+  query: VocabularyPageQuery;
   onPageOutOfRange: (page: number) => void;
 }) {
   const { page, pageSize, search, category, status } = query;
-  const initialQuery: PageQuery = { page: 1, pageSize: 10, search: "", category: null, status: null };
-  const [initialCachedPage] = useState(() => getCachedVocabularyPage<VocabularyPageResult>(authVersion, initialQuery));
+  const [initialCachedPage] = useState(() => getInitialCachedVocabularyPage(authVersion));
   const [pageWords, setPageWords] = useState<VocabularyWord[]>(() => initialCachedPage?.rows ?? []);
   const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(() => initialCachedPage ? authVersion : null);
   const [totalWords, setTotalWords] = useState(() => initialCachedPage?.total ?? 0);
@@ -43,16 +41,8 @@ export function useVocabularyPageData({
     const requestId = ++requestIdRef.current;
     let cancelled = false;
     const currentQuery = { page, pageSize, search, category, status };
-    const cachedPage = getCachedVocabularyPage<VocabularyPageResult>(authVersion, currentQuery);
-    const pageResult = cachedPage
-      ? Promise.resolve(cachedPage)
-      : getVocabularyWordPage(currentQuery).then((result) => {
-          const mappedResult = { rows: result.rows.map(mapVocabularyWordRow), total: result.total };
-          setCachedVocabularyPage(authVersion, currentQuery, mappedResult);
-          return mappedResult;
-        });
 
-    void pageResult.then((result) => {
+    void loadVocabularyPage(authVersion, currentQuery).then((result) => {
       if (cancelled || requestId !== requestIdRef.current) return;
       setTotalWords(result.total);
       const resultPageCount = getPageCount(result.total, pageSize);

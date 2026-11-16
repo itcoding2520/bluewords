@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { CommunicationLessonDraft, CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
@@ -35,12 +36,30 @@ export function useAdminCommunicationSelection({
   setItemDraft,
   setItemEditing,
 }: Props) {
+  const lessonsByTopic = useMemo(() => {
+    const grouped = new Map<string, CommunicationLesson[]>();
+    for (const lesson of lessons) {
+      const topicLessons = grouped.get(lesson.topic_id);
+      if (topicLessons) topicLessons.push(lesson);
+      else grouped.set(lesson.topic_id, [lesson]);
+    }
+    return grouped;
+  }, [lessons]);
+  const itemsByLesson = useMemo(() => {
+    const grouped = new Map<string, CommunicationLessonItem[]>();
+    for (const item of items) {
+      const lessonItems = grouped.get(item.lesson_id);
+      if (lessonItems) lessonItems.push(item);
+      else grouped.set(item.lesson_id, [item]);
+    }
+    return grouped;
+  }, [items]);
   const currentTopic = topics.find((topic) => topic.id === selectedTopicId) ?? null;
-  const currentLessons = lessons.filter((lesson) => lesson.topic_id === selectedTopicId);
-  const currentItems = items.filter((item) => item.lesson_id === selectedLessonId);
+  const currentLessons = lessonsByTopic.get(selectedTopicId) ?? [];
+  const currentItems = itemsByLesson.get(selectedLessonId) ?? [];
 
   function selectTopic(topicId: string) {
-    const firstLessonId = lessons.find((lesson) => lesson.topic_id === topicId)?.id ?? "";
+    const firstLessonId = lessonsByTopic.get(topicId)?.[0]?.id ?? "";
     setSelectedTopicId(topicId);
     setSelectedLessonId(firstLessonId);
     setLessonEditing(null);

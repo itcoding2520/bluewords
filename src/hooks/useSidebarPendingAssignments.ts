@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchMyAssignments } from "@/lib/assignments/api";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
+import { countOutstandingAssignments } from "@/lib/assignments/status";
 
 export function useSidebarPendingAssignments(authUserId: string | null, isAuthenticated: boolean) {
   const [pendingAssignmentCount, setPendingAssignmentCount] = useState(0);
@@ -16,7 +17,7 @@ export function useSidebarPendingAssignments(authUserId: string | null, isAuthen
       try {
         const assignments = await fetchMyAssignments();
         if (active) {
-          setPendingAssignmentCount(assignments.filter((item) => item.status !== "completed").length);
+          setPendingAssignmentCount(countOutstandingAssignments(assignments));
         }
       } catch {
         // Keep the last known badge count while offline.
