@@ -1,5 +1,5 @@
 import seedEntries from "@/data/default-vocabulary.json";
-import type { PartOfSpeech } from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 
@@ -9,7 +9,7 @@ const entries = seedEntries as Array<{
   meaning: string;
   category: string;
   status: "learning";
-  type: "word" | "expression";
+  type: VocabularyType;
   ipa: string | null;
   imagePath: string | null;
   partOfSpeech: string | null;

@@ -1,4 +1,4 @@
-import type { PartOfSpeech, VocabularyCategoryColor } from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyCategoryColor, VocabularyType } from "@/config/vocabulary";
 import type { DifficultyLevel } from "@/types/difficulty";
 import type { QuizMode } from "@/types/quiz";
 import type { LearningStatus } from "@/types/learning";
@@ -20,7 +20,7 @@ export type VocabularyWordRow = {
   word: string;
   meaning: string;
   category: string;
-  type: "word" | "expression";
+  type: VocabularyType;
   ipa: string | null;
   image_path: string | null;
   status: LearningStatus;
