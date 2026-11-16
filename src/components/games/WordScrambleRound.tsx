@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowRight, CaseSensitive, Check, Clock3, Delete, Lightbulb, Sparkles, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
@@ -15,6 +15,7 @@ export function WordScrambleRound({
   letterTiles,
   answerTileIds,
   usedTileIds,
+  lettersByTileId,
   score,
   streak,
   timeLabel,
@@ -33,6 +34,7 @@ export function WordScrambleRound({
   letterTiles: LetterTile[];
   answerTileIds: number[];
   usedTileIds: Set<number>;
+  lettersByTileId: Map<number, string>;
   score: number;
   streak: number;
   timeLabel: string;
@@ -45,11 +47,6 @@ export function WordScrambleRound({
   onUseHint: () => void;
   onNextQuestion: () => void;
 }) {
-  const lettersByTileId = useMemo(
-    () => new Map(letterTiles.map((tile) => [tile.id, tile.letter])),
-    [letterTiles],
-  );
-
   return (
     <Card className="word-scramble-game-card">
       <div className="word-scramble-topline">

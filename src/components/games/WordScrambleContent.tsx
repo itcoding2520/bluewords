@@ -19,7 +19,7 @@ export function WordScrambleContent() {
     game: {
       phase, round, questionIndex, letterTiles, answerTileIds, score, streak,
       bestStreak, hintsLeft, hintUsed, feedback, isCorrect, currentWord,
-      usedTileIds, chooseLetter, removeLetter, useHint, nextQuestion,
+      usedTileIds, lettersByTileId, chooseLetter, removeLetter, useHint, nextQuestion,
     },
     session: { timeLabel, saveState, saveError, retrySave },
   } = useWordScrambleController({ words, categories, isAuthenticated });
@@ -56,6 +56,7 @@ export function WordScrambleContent() {
           letterTiles={letterTiles}
           answerTileIds={answerTileIds}
           usedTileIds={usedTileIds}
+          lettersByTileId={lettersByTileId}
           score={score}
           streak={streak}
           timeLabel={timeLabel}

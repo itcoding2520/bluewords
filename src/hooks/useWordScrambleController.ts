@@ -86,6 +86,7 @@ export function useWordScrambleController(input: {
       isCorrect: gameplay.isCorrect,
       currentWord: gameplay.currentWord,
       usedTileIds: gameplay.usedTileIds,
+      lettersByTileId: gameplay.lettersByTileId,
       chooseLetter: gameplay.chooseLetter,
       removeLetter: gameplay.removeLetter,
       useHint: gameplay.useHint,
