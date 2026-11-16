@@ -1,5 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
 import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import { Select } from "@/components/ui/Select";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
@@ -18,10 +19,8 @@ export function VocabularyWordCategoryField({
   onChange,
 }: VocabularyWordCategoryFieldProps) {
   const selectedCategory = categories.find((item) => item.name === category);
-  const fallbackWordImagePath = words.find((item) =>
-    normalizeVocabularyLabel(item.category) === normalizeVocabularyLabel(category)
-    && item.imagePath
-  )?.imagePath;
+  const fallbackWordImages = useCategoryFallbackWordImages(words);
+  const fallbackWordImagePath = fallbackWordImages.get(normalizeVocabularyLabel(category));
 
   return (
     <div>
