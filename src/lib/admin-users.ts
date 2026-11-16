@@ -1,4 +1,5 @@
-import type { AdminUsersResponse } from "@/lib/admin-user-api";
+import type { AdminUsersResponse, AdminUserSummary } from "@/lib/admin-user-api";
+import { readResponseJson } from "@/lib/api/read-response-json";
 
 export async function loadAdminUserEmails(
   userIds: string[],
@@ -11,8 +12,7 @@ export async function loadAdminUserEmails(
     const response = await fetch(
       `/api/admin/users?ids=${uniqueIds.slice(start, start + 100).join(",")}`
     );
-    const payload = (await response.json()) as AdminUsersResponse;
-    if (!response.ok) throw new Error(payload.error ?? errorMessage);
+    const payload = await readResponseJson<AdminUsersResponse<AdminUserSummary>>(response, errorMessage);
     for (const user of payload.users ?? []) {
       emails[user.id] = user.email ?? "No email";
     }

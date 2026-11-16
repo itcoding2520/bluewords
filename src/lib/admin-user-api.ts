@@ -1,3 +1,5 @@
+import { readResponseJson } from "@/lib/api/read-response-json";
+
 export interface AdminUserSummary {
   id: string;
   email: string | null;
@@ -26,9 +28,7 @@ export async function fetchAdminUsers(
   const response = await fetch(`/api/admin/users?${query}`, {
     cache: "no-store",
   });
-  const payload = await response.json() as AdminUsersResponse;
-  if (!response.ok) throw new Error(payload.error ?? fallbackError);
-  return payload;
+  return readResponseJson<AdminUsersResponse>(response, fallbackError);
 }
 
 export async function sendAdminUserAction(
@@ -40,7 +40,5 @@ export async function sendAdminUserAction(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, ...values }),
   });
-  const payload = await response.json() as AdminUserActionResponse;
-  if (!response.ok) throw new Error(payload.error ?? "Could not complete this user action.");
-  return payload;
+  return readResponseJson<AdminUserActionResponse>(response, "Could not complete this user action.");
 }

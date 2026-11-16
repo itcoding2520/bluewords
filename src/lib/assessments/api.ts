@@ -1,3 +1,5 @@
+import { readResponseJson } from "@/lib/api/read-response-json";
+
 type AssessmentAttemptResponse<T> = {
   attempt: T;
   error?: string;
@@ -12,8 +14,7 @@ export async function fetchAssessmentAttempt<T>(
   fallbackError: string,
 ): Promise<T> {
   const response = await fetch(`/api/assessments/attempts/${attemptId}`, { cache: "no-store" });
-  const data = await response.json() as AssessmentAttemptResponse<T>;
-  if (!response.ok) throw new Error(data.error ?? fallbackError);
+  const data = await readResponseJson<AssessmentAttemptResponse<T>>(response, fallbackError);
   return data.attempt;
 }
 
@@ -26,6 +27,5 @@ export async function submitAssessmentAttempt(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ answers }),
   });
-  const data = await response.json() as AssessmentSubmitResponse;
-  if (!response.ok) throw new Error(data.error ?? "Could not submit test.");
+  await readResponseJson<AssessmentSubmitResponse>(response, "Could not submit test.");
 }

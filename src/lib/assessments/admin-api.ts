@@ -1,3 +1,5 @@
+import { readResponseJson } from "@/lib/api/read-response-json";
+
 export type AssessmentAdminUser = {
   id: string;
   email: string | undefined;
@@ -42,9 +44,7 @@ type AssessmentAssignmentResponse = { recipients?: number | string; error?: stri
 
 export async function fetchAssessmentAdminSnapshot(): Promise<AssessmentAdminSnapshot> {
   const response = await fetch("/api/admin/assessments", { cache: "no-store" });
-  const data = await response.json() as AssessmentAdminListResponse;
-  if (!response.ok) throw new Error(data.error ?? "Could not load assignments.");
-  return data;
+  return readResponseJson<AssessmentAdminListResponse>(response, "Could not load assignments.");
 }
 
 export async function createAssessmentAssignment(input: {
@@ -59,9 +59,5 @@ export async function createAssessmentAssignment(input: {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  const data = await response.json() as AssessmentAssignmentResponse;
-  if (!response.ok && response.status !== 207) {
-    throw new Error(data.error ?? "Could not assign test.");
-  }
-  return data;
+  return readResponseJson<AssessmentAssignmentResponse>(response, "Could not assign test.");
 }

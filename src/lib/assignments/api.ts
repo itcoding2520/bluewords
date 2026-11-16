@@ -1,4 +1,5 @@
 import type { Assignment } from "@/lib/assignments/types";
+import { readResponseJson } from "@/lib/api/read-response-json";
 
 type AssignmentsResponse = {
   assignments: Assignment[];
@@ -7,8 +8,7 @@ type AssignmentsResponse = {
 
 export async function fetchMyAssignments(): Promise<Assignment[]> {
   const response = await fetch("/api/assessments", { cache: "no-store" });
-  const data = await response.json() as AssignmentsResponse;
-  if (!response.ok) throw new Error(data.error ?? "Could not load assignments.");
+  const data = await readResponseJson<AssignmentsResponse>(response, "Could not load assignments.");
   return data.assignments;
 }
 
@@ -19,7 +19,6 @@ type StartAssignmentResponse = {
 
 export async function startAssignedAssessment(assignmentId: string): Promise<string> {
   const response = await fetch(`/api/assessments/${assignmentId}/start`, { method: "POST" });
-  const data = await response.json() as StartAssignmentResponse;
-  if (!response.ok) throw new Error(data.error ?? "Could not start this test.");
+  const data = await readResponseJson<StartAssignmentResponse>(response, "Could not start this test.");
   return data.attempt.id;
 }
