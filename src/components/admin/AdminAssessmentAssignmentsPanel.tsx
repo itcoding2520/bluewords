@@ -5,6 +5,7 @@ import { CalendarDays, Send, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { AssessmentAdminUser, AssessmentAssignment } from "@/lib/assessments/admin-api";
 import { AdminAssessmentRecentAssignments } from "@/components/admin/AdminAssessmentRecentAssignments";
+import { AdminAssessmentRecipientPicker } from "@/components/admin/AdminAssessmentRecipientPicker";
 
 export function AdminAssessmentAssignmentsPanel({
   title,
@@ -51,7 +52,13 @@ export function AdminAssessmentAssignmentsPanel({
     <form className="assessment-admin-card assessment-create-form" onSubmit={(event) => onAssign(event)}>
       <div className="assessment-card-heading"><span><Users size={19} /></span><div><h2>Assign this test</h2><p>{title || "Add a title in Tests first"} · {difficulty} · 10 questions</p></div></div>
       <div className="assessment-recipient-toggle"><button type="button" className={!allUsers ? "active" : ""} onClick={() => onAllUsersChange(false)}><Users size={16} /> Choose users</button><button type="button" className={allUsers ? "active" : ""} onClick={() => { onAllUsersChange(true); onSelectedChange(() => []); }}><Users size={16} /> All users ({users.length})</button></div>
-      {!allUsers && <div className="assessment-user-picker"><input aria-label="Search learners" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search by email or nickname" /><div>{visibleUsers.map((item) => <label key={item.id}><input type="checkbox" checked={selectedIds.has(item.id)} onChange={(event) => onSelectedChange((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /><span><b>{item.nickname || item.email || "Learner"}</b><small>{item.email}</small></span></label>)}</div></div>}
+      {!allUsers && <AdminAssessmentRecipientPicker
+        selectedIds={selectedIds}
+        search={search}
+        visibleUsers={visibleUsers}
+        onSelectedChange={onSelectedChange}
+        onSearchChange={onSearchChange}
+      />}
       <label className="assessment-date-field"><CalendarDays size={17} /> Due date (optional)<input type="date" min={today || undefined} value={dueAt} onChange={(event) => onDueAtChange(event.target.value)} /></label>
       <Button type="submit" disabled={sending || loading || !title.trim() || (!allUsers && selected.length === 0)}><Send size={17} /> Assign test to learners</Button>
     </form>
