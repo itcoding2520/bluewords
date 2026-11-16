@@ -44,8 +44,9 @@ export function deriveAdminCategorySelection({
     && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
   );
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;
+  const normalizedSearch = categorySearch.trim().toLocaleLowerCase();
   const visibleCategories = currentCategories.filter((category) =>
-    category.name.toLocaleLowerCase().includes(categorySearch.trim().toLocaleLowerCase())
+    category.name.toLocaleLowerCase().includes(normalizedSearch)
   );
   const selectedCategory = currentCategories.find((category) => category.id === selectedId)
     ?? currentCategories[0]
