@@ -1,19 +1,14 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { deleteVocabularyImages, uploadVocabularyImage } from "@/lib/supabase/vocabulary-images";
 import { updateVocabularyWord } from "@/lib/supabase/vocabulary";
+import { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
+
+export { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
 
 export interface ExistingVocabularyImageImportResult {
   imagesUploaded: number;
   imagesFailed: number;
   imageUpdates: Array<{ id: string; imagePath: string }>;
-}
-
-export function normalizeVocabularyImageKey(word: string): string {
-  return word
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase()
-    .replace(/[^a-z0-9]/g, "");
 }
 
 export async function importExistingVocabularyImages(

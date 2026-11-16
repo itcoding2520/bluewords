@@ -6,6 +6,8 @@ import {
   setCachedQuizHistory,
 } from "@/lib/supabase/quiz-history-cache.mjs";
 import { quizSupabase } from "@/lib/supabase/quiz-client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import { getInclusivePageRange } from "@/lib/pagination";
 
 export function getCachedVocabularyQuizHistory(userId: string, page = 1, pageSize = 10): { rows: VocabularyQuizSessionRow[]; total: number } | null {
   return getCachedQuizHistory(userId, page, pageSize);
@@ -20,20 +22,12 @@ export async function getVocabularyQuizHistory(input: {
   pageSize: number;
   forceRefresh?: boolean;
 }): Promise<{ rows: VocabularyQuizSessionRow[]; total: number }> {
-  const {
-    data: { user },
-    error: authError,
-  } = await quizSupabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to view quiz history.");
-  }
+  const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to view quiz history.");
 
   const cached = getCachedQuizHistory(user.id, input.page, input.pageSize);
   if (cached && !input.forceRefresh) return cached;
 
-  const from = (input.page - 1) * input.pageSize;
-  const to = from + input.pageSize - 1;
+  const { from, to } = getInclusivePageRange(input.page, input.pageSize);
   const { data, error, count } = await quizSupabase
     .from("vocabulary_quiz_sessions")
     .select("id, user_id, mode, question_count, correct_count, is_perfect, duration_seconds, started_at, completed_at, created_at", { count: "exact" })
@@ -54,14 +48,7 @@ export async function getVocabularyQuizHistory(input: {
 }
 
 export async function getVocabularyQuizAnswers(sessionId: string): Promise<VocabularyQuizAnswerRow[]> {
-  const {
-    data: { user },
-    error: authError,
-  } = await quizSupabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("You must be logged in to review a quiz.");
-  }
+  const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to review a quiz.");
 
   const cached = getCachedQuizAnswers(user.id, sessionId);
   if (cached) return cached;

@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import { useFlashcardReviewTime, useFlashcardShuffleSeed } from "@/hooks/useFlashcardSession";
 import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules";
-import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
+import { useFlashcardDeck } from "@/hooks/useFlashcardDeck";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 export function useFlashcardController({
   words,
@@ -23,7 +24,7 @@ export function useFlashcardController({
   const [status, setStatus] = useState<VocabularyStatus>("learning");
   const [index, setIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
-  const [reviewMode, setReviewMode] = useState<"all" | "due">("all");
+  const [reviewMode, setReviewMode] = useState<FlashcardReviewMode>("all");
   const {
     reviewSchedules,
     setReviewSchedules,
@@ -33,30 +34,16 @@ export function useFlashcardController({
     loadReviewSchedules,
   } = useFlashcardReviewSchedules(isAuthenticated);
 
-  const statusCounts = useMemo(() => {
-    const categoryWords = words.filter((word) => category === "all" || word.category === category);
-    return {
-      learning: categoryWords.filter((word) => word.status === "learning").length,
-      mastered: categoryWords.filter((word) => word.status === "mastered").length,
-    };
-  }, [category, words]);
-
-  const deck = useMemo(() => {
-    const filteredWords = words.filter((word) => {
-      if (word.status !== status || (category !== "all" && word.category !== category)) return false;
-      if (reviewMode === "all") return true;
-      if (!areSchedulesLoaded) return false;
-      const schedule = reviewSchedules.get(word.id);
-      return !schedule || new Date(schedule.due_at).getTime() <= now;
-    });
-    return shuffleDeck(buildFlashcardDeck(filteredWords), shuffleSeed);
-  }, [areSchedulesLoaded, category, now, reviewMode, reviewSchedules, shuffleSeed, status, words]);
-
-  const dueCount = useMemo(() => words.filter((word) => {
-    if (word.status !== status || (category !== "all" && word.category !== category)) return false;
-    const schedule = reviewSchedules.get(word.id);
-    return !schedule || new Date(schedule.due_at).getTime() <= now;
-  }).length, [category, now, reviewSchedules, status, words]);
+  const { statusCounts, deck, dueCount } = useFlashcardDeck({
+    words,
+    category,
+    status,
+    reviewMode,
+    reviewSchedules,
+    areSchedulesLoaded,
+    now,
+    shuffleSeed,
+  });
 
   const card = deck.length > 0 ? deck[index % deck.length] : undefined;
   const { isTogglingStatus, handleToggleStatus } = useFlashcardStatusAction({
@@ -90,7 +77,7 @@ export function useFlashcardController({
     setIsRevealed(false);
   }
 
-  function changeReviewMode(value: "all" | "due") {
+  function changeReviewMode(value: FlashcardReviewMode) {
     setReviewMode(value);
     setIndex(0);
     setIsRevealed(false);
@@ -98,25 +85,33 @@ export function useFlashcardController({
   }
 
   return {
-    category,
-    status,
-    index,
-    setIsRevealed,
-    isRevealed,
-    isTogglingStatus,
-    reviewMode,
-    areSchedulesLoaded,
-    isLoadingSchedules,
-    scheduleLoadFailed,
-    statusCounts,
-    deck,
-    dueCount,
-    card,
-    changeCategory,
-    changeStatus,
-    moveCard,
-    changeReviewMode,
-    loadReviewSchedules,
-    handleToggleStatus,
+    filters: {
+      category,
+      status,
+      reviewMode,
+      statusCounts,
+      dueCount,
+      changeCategory,
+      changeStatus,
+      changeReviewMode,
+    },
+    schedules: {
+      areLoaded: areSchedulesLoaded,
+      isLoading: isLoadingSchedules,
+      loadFailed: scheduleLoadFailed,
+      load: loadReviewSchedules,
+    },
+    deck: {
+      cards: deck,
+      index,
+      currentCard: card,
+      moveCard,
+    },
+    card: {
+      isRevealed,
+      setIsRevealed,
+      isTogglingStatus,
+      toggleStatus: handleToggleStatus,
+    },
   };
 }

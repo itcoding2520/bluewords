@@ -1,13 +1,14 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
+import { getErrorMessage } from "@/lib/errors";
 import {
   addVocabularyCategory,
   deleteVocabularyCategory,
   updateVocabularyCategory,
-  type VocabularyCategoryColor,
   type VocabularyCategoryRow,
   type VocabularyCategoryUpdate,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { invalidateVocabularyPageCache } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
 import { sortCategories } from "@/lib/vocabulary/shared-vocabulary";
@@ -40,7 +41,7 @@ export function useVocabularyCategoryMutations({
       return row;
     } catch (error) {
       console.error("Supabase addCategory error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to add category.");
+      toast.error(getErrorMessage(error, "Failed to add category."));
       return null;
     }
   }
@@ -70,7 +71,7 @@ export function useVocabularyCategoryMutations({
     } catch (error) {
       console.error("Supabase updateCategory error:", error);
       if (!options?.silent) {
-        toast.error(error instanceof Error ? error.message : "Failed to update category.");
+        toast.error(getErrorMessage(error, "Failed to update category."));
       }
       return null;
     }
@@ -91,7 +92,7 @@ export function useVocabularyCategoryMutations({
       return true;
     } catch (error) {
       console.error("Supabase deleteCategory error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete category.");
+      toast.error(getErrorMessage(error, "Failed to delete category."));
       return false;
     }
   }

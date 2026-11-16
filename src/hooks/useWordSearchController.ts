@@ -1,6 +1,6 @@
+import type { GamePhase } from "@/types/game";
 import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import type { WordSearchSessionRow } from "@/types/database";
 import { type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
@@ -9,9 +9,9 @@ import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 import { type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
 import { useWordSearchGameplay } from "@/hooks/useWordSearchGameplay";
+import { useWordSearchNavigation } from "@/hooks/useWordSearchNavigation";
 
-type Phase = "setup" | "playing" | "results";
-type Tab = "play" | "history";
+type Phase = GamePhase;
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -20,13 +20,11 @@ export function useWordSearchController(userId: string | null) {
   const [category, setCategory] = useState("all");
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [phase, setPhase] = useState<Phase>("setup");
-  const [tab, setTab] = useState<Tab>("play");
   const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
   const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
   const [foundWordPaths, setFoundWordPaths] = useState<Record<string, CellPosition[]>>({});
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [gameError, setGameError] = useState("");
-  const [selectedHistory, setSelectedHistory] = useState<WordSearchSessionRow | null>(null);
   const { elapsedSeconds, setElapsedSeconds, reset: resetTimer } = useWordSearchTimer(phase, startedAt);
   const { saveState, saveError, reset: resetSave, retry: retrySave } = useWordSearchSessionSave({
     userId,
@@ -49,6 +47,7 @@ export function useWordSearchController(userId: string | null) {
     fastestSeconds: fastestHistorySeconds,
     averageWordsPerRound,
   } = useWordSearchHistory(userId);
+  const navigation = useWordSearchNavigation({ setPhase, setHistoryPage, loadHistory });
 
   const {
     candidates,
@@ -57,7 +56,7 @@ export function useWordSearchController(userId: string | null) {
     categoryOptions,
     targetCount,
     showStickyStart,
-  } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab });
+  } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab: navigation.tab });
 
   const gameplay = useWordSearchGameplay({
     phase,
@@ -77,53 +76,57 @@ export function useWordSearchController(userId: string | null) {
   });
 
   return {
-    words,
-    categories,
     isLoaded,
-    gridSize,
-    setGridSize,
-    difficulty,
-    setDifficulty,
-    category,
-    setCategory,
-    categoriesExpanded,
-    setCategoriesExpanded,
-    phase,
-    setPhase,
-    tab,
-    setTab,
-    puzzle,
-    foundIds,
-    foundWordPaths,
-    selectedHistory,
-    setSelectedHistory,
-    elapsedSeconds,
-    saveState,
-    saveError,
-    retrySave,
-    history,
-    historyPage,
-    setHistoryPage,
-    historyTotal,
-    historyLoading,
-    historyError,
-    loadHistory,
-    fastestHistorySeconds,
-    averageWordsPerRound,
-    vocabularyById,
-    vocabularyByWord,
-    categoryOptions,
-    targetCount,
-    showStickyStart,
-    gameError,
-    setGameError,
-    selectedCells: gameplay.selectedCells,
-    clearSelection: gameplay.clearSelection,
-    handleGridPointerDown: gameplay.handleGridPointerDown,
-    handleGridPointerMove: gameplay.handleGridPointerMove,
-    handleGridPointerUp: gameplay.handleGridPointerUp,
-    handleGridPointerCancel: gameplay.handleGridPointerCancel,
-    handleStartGame: gameplay.handleStartGame,
-    backToSetup: gameplay.backToSetup,
+    setup: {
+      gridSize,
+      setGridSize,
+      difficulty,
+      setDifficulty,
+      category,
+      setCategory,
+      categoriesExpanded,
+      toggleCategoriesExpanded: () => setCategoriesExpanded((expanded) => !expanded),
+      tab: navigation.tab,
+      categoryOptions,
+      targetCount,
+      showStickyStart,
+      gameError,
+      startGame: gameplay.handleStartGame,
+      openPlayTab: navigation.openPlayTab,
+      openHistoryTab: navigation.openHistoryTab,
+    },
+    history: {
+      selected: navigation.selectedHistory,
+      select: navigation.setSelectedHistory,
+      sessions: history,
+      page: historyPage,
+      total: historyTotal,
+      loading: historyLoading,
+      error: historyError,
+      load: loadHistory,
+      fastestSeconds: fastestHistorySeconds,
+      averageWordsPerRound,
+      vocabularyByWord,
+      view: navigation.viewHistory,
+      changePage: navigation.changeHistoryPage,
+    },
+    game: {
+      phase,
+      puzzle,
+      foundIds,
+      foundWordPaths,
+      elapsedSeconds,
+      saveState,
+      saveError,
+      retrySave,
+      vocabularyById,
+      selectedCells: gameplay.selectedCells,
+      clearSelection: gameplay.clearSelection,
+      onPointerDown: gameplay.handleGridPointerDown,
+      onPointerMove: gameplay.handleGridPointerMove,
+      onPointerUp: gameplay.handleGridPointerUp,
+      onPointerCancel: gameplay.handleGridPointerCancel,
+      backToSetup: gameplay.backToSetup,
+    },
   };
 }

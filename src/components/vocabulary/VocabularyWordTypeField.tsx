@@ -1,4 +1,4 @@
-import { VOCABULARY_TYPES, type VocabularyType } from "@/config/vocabulary";
+import { isVocabularyType, VOCABULARY_TYPES, type VocabularyType } from "@/config/vocabulary";
 import { Select } from "@/components/ui/Select";
 
 export function VocabularyWordTypeField({
@@ -16,7 +16,9 @@ export function VocabularyWordTypeField({
       <Select
         id="type"
         value={value}
-        onChange={(event) => onChange(event.target.value as VocabularyType)}
+        onChange={(event) => {
+          if (isVocabularyType(event.target.value)) onChange(event.target.value);
+        }}
         containerClassName="mt-2"
       >
         {VOCABULARY_TYPES.map((vocabularyType) => (

@@ -2,15 +2,12 @@ import { useCallback, useRef, useState, type MutableRefObject } from "react";
 
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
-import type { createClient } from "@/lib/supabase/client";
-import {
-  loadAuthenticatedVocabularyCategories,
-  mapAuthenticatedVocabularyCategories,
-} from "@/lib/supabase/vocabulary-store";
+import type { SupabaseClient } from "@/lib/supabase/client";
+import { loadAuthenticatedVocabularyCategories } from "@/lib/supabase/vocabulary-store";
+import { mapAuthenticatedVocabularyCategories } from "@/lib/supabase/vocabulary-store-mapping";
 import { loadPublicSharedVocabulary, mapPublicCategories } from "@/lib/vocabulary/public-shared-vocabulary";
 import { toast } from "sonner";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useVocabularyCategoryData(
   supabase: SupabaseClient,

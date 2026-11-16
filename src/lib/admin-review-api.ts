@@ -1,10 +1,15 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
+import { firstRelation } from "@/lib/supabase/first-relation";
 import { loadAdminUserEmails } from "@/lib/admin-users";
-import type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
+import type {
+  AdminReviewDecision,
+  AdminReviewSubmission,
+  AdminReviewTable,
+  PublishedCategory,
+  PublishedWord,
+} from "@/lib/admin-review-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
-export type AdminReviewTable = "community_categories" | "community_words";
-export type AdminReviewDecision = "published" | "rejected";
+export type { AdminReviewDecision, AdminReviewTable } from "@/lib/admin-review-types";
 
 export async function loadAdminReviewSnapshot(supabase: SupabaseClient) {
   const [categoryResult, wordResult] = await Promise.all([
@@ -13,15 +18,16 @@ export async function loadAdminReviewSnapshot(supabase: SupabaseClient) {
   ]);
   if (categoryResult.error || wordResult.error) throw categoryResult.error ?? wordResult.error;
   const pendingCategories = (categoryResult.data ?? []) as AdminReviewSubmission[];
-  const pendingWords = ((wordResult.data ?? []) as unknown as Array<AdminReviewSubmission & {
-    community_categories: { name: string; status: string; image_path: string | null; color: string };
-  }>).map(({ community_categories, ...item }) => ({
-    ...item,
-    category_name: community_categories.name,
-    category_status: community_categories.status,
-    category_image_path: community_categories.image_path,
-    category_color: community_categories.color,
-  }));
+  const pendingWords = (wordResult.data ?? []).flatMap(({ community_categories, ...item }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{
+      ...item,
+      category_name: category.name,
+      category_status: category.status,
+      category_image_path: category.image_path,
+      category_color: category.color,
+    }] : [];
+  });
 
   const [publishedCategoryResult, publishedWordResult] = await Promise.all([
     supabase.from("community_categories").select("id, owner_id, name, color, image_path, status").eq("status", "published").order("name"),
@@ -52,65 +58,5 @@ export async function updateAdminReviewStatus(
   status: AdminReviewDecision
 ) {
   const { error } = await supabase.from(table).update({ status }).eq("id", id);
-  return error;
-}
-
-export async function createPublishedCategory(supabase: SupabaseClient, name: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { authenticated: false as const, error: null };
-
-  const { error } = await supabase.from("community_categories").insert({
-    owner_id: user.id,
-    name,
-    color: "blue",
-    status: "published",
-  });
-  return { authenticated: true as const, error };
-}
-
-export async function createPublishedWord(
-  supabase: SupabaseClient,
-  input: { categoryId: string; word: string; meaning: string }
-) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { authenticated: false as const, error: null };
-
-  const { error } = await supabase.from("community_words").insert({
-    owner_id: user.id,
-    category_id: input.categoryId,
-    word: input.word,
-    meaning: input.meaning,
-    status: "published",
-  });
-  return { authenticated: true as const, error };
-}
-
-export async function removePublishedAdminReview(
-  supabase: SupabaseClient,
-  table: AdminReviewTable,
-  id: string
-) {
-  const { error } = await supabase.from(table).update({ status: "removed" }).eq("id", id);
-  return error;
-}
-
-export async function editPublishedWord(
-  supabase: SupabaseClient,
-  id: string,
-  word: string,
-  meaning: string
-) {
-  const { error } = await supabase.from("community_words")
-    .update({ word, meaning }).eq("id", id);
-  return error;
-}
-
-export async function editPublishedCategory(
-  supabase: SupabaseClient,
-  id: string,
-  name: string
-) {
-  const { error } = await supabase.from("community_categories")
-    .update({ name }).eq("id", id);
   return error;
 }

@@ -1,10 +1,11 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { loadAdminCategoryWords } from "@/lib/admin-category-data";
+import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
 export function useAdminCategoryWordsData(
@@ -21,8 +22,8 @@ export function useAdminCategoryWordsData(
   useEffect(() => {
     if (!selectedCategory) return;
     const sharedCategory = activeTab === "default"
-      ? communityCategories.find((category) => category.status === "published"
-        && category.name.trim().toLocaleLowerCase() === selectedCategory.name.trim().toLocaleLowerCase())
+      ? communityCategories.find((category) => category.status === getCommunityContentStatus("published")
+        && normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(selectedCategory.name))
       : "owner_id" in selectedCategory ? selectedCategory : null;
     if (!sharedCategory) {
       const timer = window.setTimeout(() => {
@@ -41,14 +42,14 @@ export function useAdminCategoryWordsData(
         const result = await loadAdminCategoryWords(
           supabase,
           sharedCategory,
-          activeTab === "pending" ? "pending" : "published"
+          getCommunityContentStatus(activeTab)
         );
         if (cancelled) return;
         setWords(result.words);
         setWordEmails(result.emails);
       } catch (cause) {
         if (cancelled) return;
-        setError(cause instanceof Error ? cause.message : "Could not load words.");
+        setError(getErrorMessage(cause, "Could not load words."));
         setWords([]);
         setWordEmails({});
       }

@@ -1,15 +1,9 @@
-import {
-  PARTS_OF_SPEECH,
-  type PartOfSpeech,
-  type VocabularyType,
-} from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { restoreSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
 import type { CsvRecord } from "@/lib/vocabulary-csv-parser";
-import {
-  VOCABULARY_CSV_HEADERS,
-  type VocabularyCsvIssue,
-} from "@/lib/vocabulary-csv-shared";
+import type { VocabularyCsvIssue } from "@/lib/vocabulary-csv-shared";
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
+import { readVocabularyCsvRow, validateVocabularyCsvRow } from "@/lib/vocabulary-csv-row-validation";
 
 export interface VocabularyCsvWordGroup {
   word: string;
@@ -20,10 +14,6 @@ export interface VocabularyCsvWordGroup {
   detailedMeanings: Array<{ partOfSpeech: PartOfSpeech; meaning: string }>;
   seenMeanings: Set<string>;
   ipa: string | null;
-}
-
-function normalized(value: string): string {
-  return value.trim().toLowerCase();
 }
 
 export function processVocabularyCsvRow({
@@ -49,34 +39,21 @@ export function processVocabularyCsvRow({
   fallbackWords: Set<string>;
   errors: VocabularyCsvIssue[];
 }) {
-  if (record.fields.length !== headerLength) {
-    errors.push({
-      line: record.line,
-      message: `Expected ${headerLength} columns, found ${record.fields.length}.`,
-    });
+  const { values, errors: rowErrors } = readVocabularyCsvRow(
+    record,
+    headerLength,
+    columnIndex
+  );
+  if (!values) {
+    rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     return;
   }
 
-  const value = (name: (typeof VOCABULARY_CSV_HEADERS)[number]) =>
-    restoreSpreadsheetCell(record.fields[columnIndex.get(name)!] ?? "").trim();
-  const word = value("word");
-  const typeValue = normalized(value("type"));
-  const partOfSpeechValue = normalized(value("part_of_speech"));
-  const meaning = value("meaning");
-  // Older CSVs used `meaning` for the part-of-speech meaning. Continue to
-  // accept them when the new, explicit `detailed_meaning` column is absent.
-  const detailedMeaning = columnIndex.has("detailed_meaning")
-    ? value("detailed_meaning")
-    : partOfSpeechValue
-      ? meaning
-      : "";
-  const rawCategory = value("category");
-  const statusValue = normalized(value("status"));
-  const ipa = columnIndex.has("ipa") ? value("ipa") || null : null;
-  const key = normalized(word);
+  const { word, typeValue, meaning, category: rawCategory, statusValue, detailedMeaning, partOfSpeech, ipa } = values;
+  const key = normalizeVocabularyKey(word);
 
   if (!word) {
-    errors.push({ line: record.line, message: "Word is required." });
+    rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     return;
   }
 
@@ -85,42 +62,15 @@ export function processVocabularyCsvRow({
     return;
   }
 
-  const rowErrors: string[] = [];
-  if (typeValue !== "word" && typeValue !== "expression") {
-    rowErrors.push('Type must be "word" or "expression".');
-  }
-  if (!meaning) rowErrors.push("Meaning is required.");
-  if (statusValue !== "learning" && statusValue !== "mastered") {
-    rowErrors.push('Status must be "learning" or "mastered".');
-  }
-
-  const partOfSpeech = PARTS_OF_SPEECH.find(
-    (option) => normalized(option) === partOfSpeechValue
-  );
-  if (partOfSpeechValue && !partOfSpeech) {
-    rowErrors.push(
-      `Part of speech must be one of: ${PARTS_OF_SPEECH.join(", ")}.`
-    );
-  }
-  if (typeValue === "expression" && partOfSpeechValue) {
-    rowErrors.push("Expressions must leave part_of_speech blank.");
-  }
-  if (detailedMeaning && !partOfSpeech) {
-    rowErrors.push("Detailed meaning requires a valid part_of_speech.");
-  }
-  if (partOfSpeech && !detailedMeaning) {
-    rowErrors.push("Detailed meaning is required when part_of_speech is provided.");
-  }
-
-  const category = categoriesByName.get(normalized(rawCategory));
-  if (!category) fallbackWords.add(key);
-
+  rowErrors.push(...validateVocabularyCsvRow(values));
   if (rowErrors.length) {
     rowErrors.forEach((message) => errors.push({ line: record.line, message }));
     invalidGroups.add(key);
     return;
   }
 
+  const category = categoriesByName.get(normalizeVocabularyKey(rawCategory));
+  if (!category) fallbackWords.add(key);
   const type = typeValue as VocabularyType;
   const status = statusValue as VocabularyWord["status"];
   const resolvedCategory = category ?? "Uncategorized";
@@ -129,7 +79,7 @@ export function processVocabularyCsvRow({
   if (existingGroup) {
     if (
       existingGroup.type !== type ||
-      normalized(existingGroup.meaning) !== normalized(meaning) ||
+      normalizeVocabularyKey(existingGroup.meaning) !== normalizeVocabularyKey(meaning) ||
       existingGroup.category !== resolvedCategory ||
       existingGroup.status !== status
     ) {
@@ -156,7 +106,7 @@ export function processVocabularyCsvRow({
   const group = groups.get(key)!;
   if (!group.ipa && ipa) group.ipa = ipa;
   if (partOfSpeech && detailedMeaning) {
-    const meaningKey = `${normalized(partOfSpeech)}\u0000${normalized(detailedMeaning)}`;
+    const meaningKey = `${normalizeVocabularyKey(partOfSpeech)}\u0000${normalizeVocabularyKey(detailedMeaning)}`;
     if (!group.seenMeanings.has(meaningKey)) {
       group.seenMeanings.add(meaningKey);
       group.detailedMeanings.push({ partOfSpeech, meaning: detailedMeaning });

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseCsvRows } from "../src/lib/csv-rows.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.resolve(scriptDir, "..");
@@ -41,45 +42,6 @@ if (!serviceRoleKey) {
   );
 }
 
-function parseCsv(source) {
-  const rows = [];
-  let row = [];
-  let cell = "";
-  let quoted = false;
-
-  for (let index = 0; index < source.length; index += 1) {
-    const character = source[index];
-    if (quoted) {
-      if (character === '"' && source[index + 1] === '"') {
-        cell += '"';
-        index += 1;
-      } else if (character === '"') {
-        quoted = false;
-      } else {
-        cell += character;
-      }
-    } else if (character === '"') {
-      quoted = true;
-    } else if (character === ",") {
-      row.push(cell);
-      cell = "";
-    } else if (character === "\n") {
-      row.push(cell.replace(/\r$/, ""));
-      rows.push(row);
-      row = [];
-      cell = "";
-    } else {
-      cell += character;
-    }
-  }
-
-  if (cell || row.length) {
-    row.push(cell.replace(/\r$/, ""));
-    rows.push(row);
-  }
-  return rows;
-}
-
 let uploaded = 0;
 
 for (const folder of remainingPacks) {
@@ -93,7 +55,10 @@ for (const folder of remainingPacks) {
     continue;
   }
 
-  const [header = [], ...rows] = parseCsv(source);
+  const [header = [], ...rows] = parseCsvRows(source, {
+    unclosedQuote: `CSV has an unclosed quoted field in ${csvPath}.`,
+    missingContent: `CSV needs a header and at least one content row in ${csvPath}.`,
+  }, { requireContent: false });
   const imageColumn = header.indexOf("image_file");
   if (imageColumn < 0) {
     throw new Error(`${csvPath} is missing the image_file column.`);

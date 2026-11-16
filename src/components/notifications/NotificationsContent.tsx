@@ -7,7 +7,11 @@ import { useNotificationsController } from "@/hooks/useNotificationsController";
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 
 export function NotificationsContent() {
-  const { notifications, loading, error, refresh, markAllRead, markAsRead, reviewRequest, unreadCount } = useNotificationsController();
+  const {
+    data: { notifications, unreadCount },
+    status: { loading, error },
+    actions: { refresh, markAllRead, markAsRead, reviewRequest },
+  } = useNotificationsController();
 
   return <div className="notifications-page">
     <header className="notifications-hero mb-6">

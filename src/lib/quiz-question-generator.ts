@@ -1,7 +1,7 @@
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
 import type { QuizQuestion } from "@/lib/quiz-model";
-import { sampleRandom, sampleRandomMatching, shuffle } from "@/lib/quiz-random";
+import { sampleRandom, sampleRandomMatching, shuffle } from "@/lib/random";
 
 function meaningsFor(word: VocabularyWord): VocabularyMeaning[] {
   const detailed = word.type === "expression" ? [] : word.detailedMeanings?.filter((item) => item.meaning.trim()) ?? [];

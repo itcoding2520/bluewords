@@ -1,3 +1,4 @@
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 
@@ -6,6 +7,7 @@ import type { Flashcard } from "@/lib/flashcards/deck";
 import { buildFlashcardDeck, shuffleDeck } from "@/lib/flashcards/deck";
 import { recordVocabularyReview } from "@/lib/supabase/reviews";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 interface UseFlashcardStatusActionOptions {
   card: Flashcard | undefined;
@@ -18,7 +20,7 @@ interface UseFlashcardStatusActionOptions {
     currentStatus?: VocabularyStatus
   ) => Promise<boolean>;
   setStatus: Dispatch<SetStateAction<VocabularyStatus>>;
-  setReviewMode: Dispatch<SetStateAction<"all" | "due">>;
+  setReviewMode: Dispatch<SetStateAction<FlashcardReviewMode>>;
   setIndex: Dispatch<SetStateAction<number>>;
   setIsRevealed: Dispatch<SetStateAction<boolean>>;
   setReviewSchedules: Dispatch<
@@ -55,7 +57,7 @@ export function useFlashcardStatusAction({
         buildFlashcardDeck(
           words
             .map((word) => word.id === card.word.id ? { ...word, status: nextStatus } : word)
-            .filter((word) => word.status === nextStatus && (category === "all" || word.category === category))
+            .filter((word) => word.status === nextStatus && matchesVocabularyCategory(word.category, category))
         ),
         shuffleSeed
       );

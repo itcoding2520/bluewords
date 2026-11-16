@@ -1,4 +1,7 @@
-export type LessonDifficulty = "easy" | "medium" | "hard";
+import { shuffle } from "@/lib/random";
+import type { DifficultyLevel } from "@/types/difficulty";
+
+export type LessonDifficulty = DifficultyLevel;
 
 export type SentenceDrillItem = {
   id: string;
@@ -20,17 +23,8 @@ export type SentenceDrill<T extends SentenceDrillItem = SentenceDrillItem> = {
   tiles?: Array<{ id: number; text: string }>;
 };
 
-export function shuffled<T>(values: T[]) {
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-  }
-  return result;
-}
-
 export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
-  return shuffled([...new Set([correctAnswer, ...shuffled(distractors).slice(0, 3)])]);
+  return shuffle([...new Set([correctAnswer, ...shuffle(distractors).slice(0, 3)])]);
 }
 
 export function getCorrectReviewIntervalDays(reviewCount: number, correctCount: number, difficulty: LessonDifficulty) {
@@ -67,7 +61,7 @@ export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): S
     const drills: SentenceDrill<T>[] = [];
     const sentenceWords = sentence.match(/[^\s]+/g) ?? [];
     if (sentenceWords.length >= 4) {
-      const tiles = shuffled(sentenceWords.map((text, id) => ({ id, text })));
+      const tiles = shuffle(sentenceWords.map((text, id) => ({ id, text })));
       if (tiles.every((tile, index) => tile.id === index)) tiles.push(tiles.shift()!);
       drills.push({ id: `${item.id}:order`, item, kind: "order", sentence, clue, answer: sentence, tiles });
     }
@@ -79,7 +73,7 @@ export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): S
     if (answer) {
       const pattern = exactPhrase ? new RegExp(escapeRegExp(answer), "i") : new RegExp(`\\b${escapeRegExp(answer)}\\b`, "i");
       const gapSentence = sentence.replace(pattern, "________");
-      const choices = shuffled([...new Set([answer, ...shuffled(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
+      const choices = shuffle([...new Set([answer, ...shuffle(vocabulary.filter((word) => word.toLocaleLowerCase() !== answer.toLocaleLowerCase())).slice(0, 3)])]);
       if (choices.length >= 2) drills.push({ id: `${item.id}:complete`, item, kind: "complete", sentence, clue, answer, gapSentence, choices });
     }
     return drills;

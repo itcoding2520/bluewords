@@ -5,8 +5,8 @@ import { useVocabularyContentFilters } from "@/hooks/useVocabularyContentFilters
 import { useVocabularyCategoryExportCount } from "@/hooks/useVocabularyCategoryExportCount";
 import { useLegacyVocabularyImport } from "@/hooks/useLegacyVocabularyImport";
 import { useVocabularyContentController } from "@/hooks/useVocabularyContentController";
-import { getVocabularyWordsForCategory } from "@/lib/supabase/vocabulary";
-import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
+import { useVocabularyContentPagination } from "@/hooks/useVocabularyContentPagination";
+import { loadVocabularyExportWords } from "@/lib/vocabulary/export-words";
 
 export function useVocabularyContentExperience(isAdmin: boolean) {
   const {
@@ -44,13 +44,21 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
   });
   const legacyImport = useLegacyVocabularyImport({ isAdmin, refreshWords, refreshPage: pageData.refreshPage });
 
-  const visibleTotalWords = pageData.loadedAuthVersion === authVersion ? pageData.totalWords : 0;
-  const pageCount = Math.max(1, Math.ceil(visibleTotalWords / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const currentPageWords = pageData.loadedAuthVersion === authVersion ? pageData.pageWords : [];
+  const pagination = useVocabularyContentPagination({
+    page,
+    pageSize,
+    authVersion,
+    loadedAuthVersion: pageData.loadedAuthVersion,
+    totalWords: pageData.totalWords,
+    pageWords: pageData.pageWords,
+    setPageWords: pageData.setPageWords,
+    setIsPageLoading: pageData.setIsPageLoading,
+    setPage,
+    setPageSize: filters.setPageSize,
+    refreshPage: pageData.refreshPage,
+  });
+  const { currentPageWords } = pagination;
   const selection = useVocabularySelection(currentPageWords, authVersion);
-  const firstVisibleWord = visibleTotalWords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const lastVisibleWord = Math.min(currentPage * pageSize, visibleTotalWords);
   const controller = useVocabularyContentController({
     selectedIds: selection.selectedIds,
     setSelectedIds: selection.setSelectedIds,
@@ -69,36 +77,76 @@ export function useVocabularyContentExperience(isAdmin: boolean) {
     toggleMastered,
   });
 
-  async function loadExportWords() {
-    if (selectedCategory === "All") return currentPageWords;
-    const rows = await getVocabularyWordsForCategory(selectedCategory);
-    return rows.map(mapVocabularyWordRow);
-  }
-
-  function handleImportComplete() {
-    setPage(1);
-    pageData.setIsPageLoading(true);
-    pageData.refreshPage();
-  }
-
   return {
-    categories,
-    words,
-    categoriesLoaded,
-    authVersion,
-    ...filters,
-    ...pageData,
-    ...exportCount,
-    ...legacyImport,
-    ...selection,
-    ...controller,
-    loadExportWords,
-    handleImportComplete,
-    visibleTotalWords,
-    pageCount,
-    currentPage,
-    currentPageWords,
-    firstVisibleWord,
-    lastVisibleWord,
+    data: {
+      categories,
+      words,
+      categoriesLoaded,
+      authVersion,
+      loadedAuthVersion: pageData.loadedAuthVersion,
+      isPageLoading: pageData.isPageLoading,
+      currentPageWords,
+    },
+    filters: {
+      search: filters.search,
+      status: filters.status,
+      pageSize,
+      selectedCategory,
+      handleSearchChange: controller.handleSearchChange,
+      handleCategoryChange: controller.handleCategoryChange,
+      handleStatusChange: controller.handleStatusChange,
+    },
+    export: {
+      count: exportCount.count,
+      isLoading: exportCount.isLoading,
+      loadWords: () => loadVocabularyExportWords(selectedCategory, currentPageWords),
+    },
+    import: {
+      hasPendingImport: legacyImport.hasPendingImport,
+      importPreview: legacyImport.importPreview,
+      isImporting: legacyImport.isImporting,
+      showImportPreview: legacyImport.showImportPreview,
+      togglePreview: legacyImport.togglePreview,
+      importVocabulary: legacyImport.importVocabulary,
+      handleComplete: pagination.handleImportComplete,
+    },
+    selection: {
+      selectedIds: selection.selectedIds,
+      selectPageRef: selection.selectPageRef,
+      isPageSelected: selection.isPageSelected,
+      isPagePartiallySelected: selection.isPagePartiallySelected,
+      toggleSelected: selection.toggleSelected,
+      togglePageSelection: selection.togglePageSelection,
+    },
+    pagination: {
+      visibleTotalWords: pagination.visibleTotalWords,
+      pageCount: pagination.pageCount,
+      currentPage: pagination.currentPage,
+      firstVisibleWord: pagination.firstVisibleWord,
+      lastVisibleWord: pagination.lastVisibleWord,
+      changePageSize: pagination.changePageSize,
+      goToPreviousPage: pagination.goToPreviousPage,
+      goToNextPage: pagination.goToNextPage,
+    },
+    dialogs: {
+      isFormOpen: controller.isFormOpen,
+      isCategoriesOpen: controller.isCategoriesOpen,
+      setIsCategoriesOpen: controller.setIsCategoriesOpen,
+      editingWord: controller.editingWord,
+      deletingWord: controller.deletingWord,
+      setDeletingWord: controller.setDeletingWord,
+      isSubmitting: controller.isSubmitting,
+      isBulkDeleting: controller.isBulkDeleting,
+    },
+    actions: {
+      handleOpenAdd: controller.handleOpenAdd,
+      handleEditWord: controller.handleEditWord,
+      handleCloseForm: controller.handleCloseForm,
+      handleDeleteWord: controller.handleDeleteWord,
+      handleBulkDelete: controller.handleBulkDelete,
+      handleConfirmDelete: controller.handleConfirmDelete,
+      handleSubmitWord: controller.handleSubmitWord,
+      handleToggleMastered: controller.handleToggleMastered,
+    },
   };
 }

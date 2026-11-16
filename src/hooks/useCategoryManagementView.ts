@@ -1,22 +1,23 @@
 import { useMemo } from "react";
 import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-
-export type CategoryManagementSort = "name" | "newest" | "oldest";
-export type CategoryManagementFilter = "all" | "mine" | "default" | "community";
+import { getPageItems, getPageMetadata } from "@/lib/pagination";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import type { CategoryManagementFilter, CategoryManagementSort } from "@/lib/category-management-filters";
 
 const defaultCategoryNames = new Set(
   defaultVocabularyCategories.map((category) =>
-    category.name.trim().toLocaleLowerCase()
+    normalizeVocabularyLabel(category.name)
   )
 );
 
 function isDefaultCategory(category: VocabularyCategoryRow) {
-  return category.is_default || defaultCategoryNames.has(category.name.trim().toLocaleLowerCase());
+  return category.is_default || defaultCategoryNames.has(normalizeVocabularyLabel(category.name));
 }
 
 function isPublishedSharedCategory(category: VocabularyCategoryRow) {
-  return category.id.startsWith("community-category-") || category.user_id === "community";
+  return isCommunityCategoryId(category.id) || category.user_id === "community";
 }
 
 export function useCategoryManagementView({
@@ -51,19 +52,16 @@ export function useCategoryManagementView({
     });
   }, [categories, filterBy, sortBy]);
 
-  const pageCount = Math.max(1, Math.ceil(managedCategories.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const pageCategories = managedCategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const firstVisibleCategory = managedCategories.length ? (currentPage - 1) * pageSize + 1 : 0;
-  const lastVisibleCategory = Math.min(currentPage * pageSize, managedCategories.length);
+  const pageMetadata = getPageMetadata(managedCategories.length, page, pageSize);
+  const pageCategories = getPageItems(managedCategories, pageMetadata.currentPage, pageSize);
 
   return {
     isDefaultCategory,
     managedCategories,
-    pageCount,
-    currentPage,
+    pageCount: pageMetadata.pageCount,
+    currentPage: pageMetadata.currentPage,
     pageCategories,
-    firstVisibleCategory,
-    lastVisibleCategory,
+    firstVisibleCategory: pageMetadata.first,
+    lastVisibleCategory: pageMetadata.last,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
@@ -11,12 +12,7 @@ export function useVocabularyContentFilters(categories: VocabularyCategoryRow[])
   const [status, setStatus] = useState<VocabularyStatusFilter>("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
-    return () => window.clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebouncedValue(search, 250);
 
   const selectedCategory =
     category === "All" || categories.some((item) => item.name === category)

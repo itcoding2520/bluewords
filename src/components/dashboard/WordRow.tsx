@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
-  categoryColorStyles,
+  categorySolidColorStyles,
   categoryStyles,
 } from "@/data/vocabulary";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import Image from "next/image";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
@@ -60,7 +60,7 @@ export function WordRow({
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
               (categoryColor
-                ? categoryColorStyles[categoryColor]
+                ? categorySolidColorStyles[categoryColor]
                 : categoryStyles[category]) ??
               "bg-slate-100 text-slate-600"
             }`}

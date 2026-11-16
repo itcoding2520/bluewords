@@ -2,23 +2,12 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import type { CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import { verifyPublishWordRequestOwnership } from "@/lib/supabase/publish-word-request";
+import type { CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
 import {
-  createCommunityWordRequest,
-  findOwnedVocabularyWord,
-  findOwnCommunityWordRequest,
-  findPublishedCommunityWord,
-  resolveCommunityCategoryForWordRequest,
-  resubmitCommunityWordRequest,
-} from "@/lib/supabase/publish-word-request";
-
-interface PublishableWord {
-  id: string;
-  word: string;
-  meaning: string;
-  category: string;
-  ipa?: string | null;
-}
+  submitCommunityWordRequest,
+  type PublishableWord,
+} from "@/lib/vocabulary/publish-word-request-submission";
 
 interface UsePublishWordRequestOptions {
   userWords: PublishableWord[];
@@ -52,106 +41,81 @@ export function usePublishWordRequest({
     if (!word) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (wordId.startsWith("retry-word-")) {
-      const previousRequestId = wordId.slice("retry-word-".length);
-      const ownRejectedRequest = communityWordRequests.some((request) =>
-        request.id === previousRequestId && request.owner_id === user.id && request.status === "rejected"
-      );
-      if (!ownRejectedRequest) {
-        toast.error("You can only resubmit a rejected word request that you created.");
-        return;
-      }
-    } else {
-      const { data: ownWord, error: ownershipError } = await findOwnedVocabularyWord(supabase, word.id, user.id);
-      if (ownershipError) { toast.error(ownershipError.message); return; }
-      if (!ownWord) {
-        toast.error("You can only request words from your own vocabulary.");
-        return;
-      }
+    const ownership = await verifyPublishWordRequestOwnership(supabase, {
+      wordId,
+      ownerId: user.id,
+      requests: communityWordRequests,
+    });
+    if (ownership.status === "error") {
+      toast.error(ownership.message);
+      return;
     }
-    const normalizedCategory = word.category.trim().replace(/\s+/g, " ").toLowerCase();
-    const normalizedWord = word.word.trim().replace(/\s+/g, " ").toLowerCase();
-    if (defaultWordKeys.has(`${normalizedCategory}\u0000${normalizedWord}`)) {
+    if (ownership.status === "forbidden") {
+      toast.error(wordId.startsWith("retry-word-")
+        ? "You can only resubmit a rejected word request that you created."
+        : "You can only request words from your own vocabulary.");
+      return;
+    }
+    const result = await submitCommunityWordRequest(supabase, {
+      ownerId: user.id,
+      word,
+      defaultWordKeys,
+      defaultCategoryNames,
+      categories,
+    });
+    if (result.status === "default_word") {
       toast.info(`“${word.word}” is already part of the default vocabulary in ${word.category}.`);
       return;
     }
-    const category = categories.find((item) => item.name === word.category);
-    const categoryResolution = await resolveCommunityCategoryForWordRequest(supabase, {
-      ownerId: user.id,
-      name: word.category,
-      normalizedName: normalizedCategory,
-      defaultCategoryUnavailable: defaultCategoryNames.has(normalizedCategory),
-      color: category?.color ?? "blue",
-      imagePath: category?.image_path ?? null,
-    });
-    if (categoryResolution.status === "error") {
-      toast.error(categoryResolution.source === "create" && categoryResolution.code === "23505"
+
+    if (result.status === "category_resolution_error") {
+      toast.error(result.source === "create" && result.code === "23505"
         ? "This category already has a review request."
-        : categoryResolution.message);
+        : result.message);
       return;
     }
-    if (categoryResolution.status === "default_category_unavailable") {
+    if (result.status === "default_category_unavailable") {
       toast.error("This shared category is not available for word requests yet. Refresh the page and try again.");
       return;
     }
-    if (categoryResolution.status === "not_found") {
+    if (result.status === "category_not_found") {
       toast.error("Could not locate the category.");
       return;
     }
-    const communityCategory = categoryResolution.category;
-    if (communityCategory.status !== "published"
-      && !(communityCategory.status === "pending" && communityCategory.owner_id === user.id)) {
+    if (result.status === "category_not_available") {
       toast.error("Words can only be requested in your own or an approved category.");
       return;
     }
-    const alreadyPublished = await findPublishedCommunityWord(supabase, communityCategory.id, normalizedWord);
-    if (alreadyPublished.error) { toast.error(alreadyPublished.error.message); return; }
-    if (alreadyPublished.data) {
+    if (result.status === "published_word_lookup_error") {
+      toast.error(result.message);
+      return;
+    }
+    if (result.status === "already_published") {
       toast.info(`“${word.word}” is already published in ${word.category}.`);
       return;
     }
-    const previous = await findOwnCommunityWordRequest(supabase, {
-      ownerId: user.id,
-      categoryId: communityCategory.id,
-      normalizedWord,
-    });
-    if (previous.error) { toast.error(previous.error.message); return; }
-    if (previous.data) {
-      if (previous.data.status !== "rejected") {
-        toast.info(previous.data.status === "removed"
-          ? "This request was removed and cannot be sent again."
-          : "This word already has a review request.");
-        return;
-      }
-      const { data: updated, error } = await resubmitCommunityWordRequest(supabase, {
-        id: previous.data.id,
-        ownerId: user.id,
-        word: word.word,
-        meaning: word.meaning,
-        ipa: word.ipa ?? null,
-      });
-      if (error) toast.error(error.message);
-      else if (!updated) toast.info("This word is no longer available to resubmit. Refresh the page and try again.");
-      else {
-        setStatus(REQUEST_SENT_MESSAGE);
-        toast.success("Word request sent again.");
-      }
+    if (result.status !== "saved") return;
+
+    if (result.result.status === "error") {
+      toast.error(result.result.source === "create" && result.result.code === "23505"
+        ? `“${word.word}” already has a submission in this category.`
+        : result.result.message);
       return;
     }
-    const { error } = await createCommunityWordRequest(supabase, {
-      ownerId: user.id,
-      categoryId: communityCategory.id,
-      vocabularyWordId: word.id,
-      word: word.word,
-      meaning: word.meaning,
-      ipa: word.ipa ?? null,
-    });
-    if (error) toast.error(error.code === "23505"
-      ? `“${word.word}” already has a submission in this category.`
-      : error.message);
-    else {
+    if (result.result.status === "existing") {
+      toast.info(result.result.requestStatus === "removed"
+        ? "This request was removed and cannot be sent again."
+        : "This word already has a review request.");
+      return;
+    }
+    if (result.result.status === "resubmit_unavailable") {
+      toast.info("This word is no longer available to resubmit. Refresh the page and try again.");
+      return;
+    }
+
+    if (result.result.status === "resubmitted" || result.result.status === "created") {
       setStatus(REQUEST_SENT_MESSAGE);
-      toast.success("Word request sent.");
+      toast.success(result.result.status === "resubmitted" ? "Word request sent again." : "Word request sent.");
     }
   }
 

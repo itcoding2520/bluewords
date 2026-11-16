@@ -2,8 +2,8 @@ import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
-import type { CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
 import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
+import { isLessonItemType } from "@/lib/communication/lesson-types";
 export type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
@@ -44,7 +44,7 @@ export function AdminCommunicationItemForm({
         </label>
         <label className="text-xs font-bold text-slate-600">
           Type
-          <Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={draft.item_type} onChange={(event) => onDraftChange({ ...draft, item_type: event.target.value as CommunicationLessonItem["item_type"] })}>
+          <Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={draft.item_type} onChange={(event) => { if (isLessonItemType(event.target.value)) onDraftChange({ ...draft, item_type: event.target.value }); }}>
             <option value="word">Word</option>
             <option value="phrase">Useful phrase</option>
             <option value="sentence_pattern">Sentence pattern</option>

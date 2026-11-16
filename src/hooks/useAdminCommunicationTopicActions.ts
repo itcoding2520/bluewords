@@ -5,10 +5,9 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationTopicDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationTopic, saveCommunicationTopic } from "@/lib/communication/admin-actions";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 type Props = {
   supabase: SupabaseClient;

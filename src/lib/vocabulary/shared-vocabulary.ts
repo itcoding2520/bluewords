@@ -1,8 +1,10 @@
 import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
+import type { VocabularyCategory, VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyMeaningRow } from "@/types/database";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
+import { mapCommunityVocabularyCategories } from "@/lib/vocabulary/community-vocabulary-categories";
+import { mapCommunityVocabularyWords } from "@/lib/vocabulary/community-vocabulary-words";
 
 export type PublishedCommunityCategory = {
   id: string;
@@ -29,10 +31,6 @@ export type PublishedCommunityWord = {
 
 export { loadPublicSharedVocabulary, mapPublicCategories, mapPublicWords } from "@/lib/vocabulary/public-shared-vocabulary";
 export type { PublicSharedVocabulary } from "@/lib/vocabulary/public-shared-vocabulary";
-
-function normalizeLabel(value: string) {
-  return value.trim().toLocaleLowerCase();
-}
 
 export function mapVocabularyMeaning(row: VocabularyMeaningRow): VocabularyMeaning {
   return {
@@ -67,51 +65,23 @@ export function mergeVocabularyCategories(
   personalCategories: VocabularyCategoryRow[],
   communityCategories: PublishedCommunityCategory[],
 ): VocabularyCategoryRow[] {
-  const sharedByName = new Map(communityCategories.map((category) => [normalizeLabel(category.name), category]));
-  const personalNames = new Set(personalCategories.map((category) => normalizeLabel(category.name)));
-  const categoriesWithSharedImages = personalCategories.map((category) => ({
-    ...category,
-    image_path: sharedByName.get(normalizeLabel(category.name))?.image_path ?? category.image_path ?? null,
+  const merged = mapCommunityVocabularyCategories(personalCategories, communityCategories, (category) => ({
+    userId: category.owner_id,
+    createdAt: category.created_at,
+    updatedAt: category.updated_at,
   }));
-  const sharedOnlyCategories = communityCategories
-    .filter((category) => !personalNames.has(normalizeLabel(category.name)))
-    .map((category) => ({
-      id: `community-category-${category.id}`,
-      user_id: category.owner_id,
-      name: category.name,
-      color: category.color,
-      is_default: false,
-      created_at: category.created_at,
-      updated_at: category.updated_at,
-      image_path: category.image_path,
-    }));
-
-  return sortCategories([...categoriesWithSharedImages, ...sharedOnlyCategories]);
+  return sortCategories(merged);
 }
 
 export function mapCommunityWords(
   communityWords: PublishedCommunityWord[],
   personalWords: VocabularyWord[],
 ): VocabularyWord[] {
-  const personalKeys = new Set(personalWords.map((item) =>
-    `${normalizeLabel(item.category)}\u0000${normalizeLabel(item.word)}`
-  ));
-
-  return communityWords.flatMap((item) => {
-    const key = `${normalizeLabel(item.community_categories.name)}\u0000${normalizeLabel(item.word)}`;
-    if (personalKeys.has(key)) return [];
-
-    return [{
-      id: `community-${item.id}`,
-      word: item.word,
-      meaning: item.meaning,
-      category: item.community_categories.name as VocabularyCategory,
-      status: "learning" as const,
-      type: "word" as const,
-      ipa: item.ipa,
-      imagePath: null,
-      detailedMeanings: [],
-      isCustom: true,
-    }];
-  });
+  return mapCommunityVocabularyWords(
+    communityWords.map((item) => ({
+      ...item,
+      category: item.community_categories.name,
+    })),
+    personalWords,
+  );
 }

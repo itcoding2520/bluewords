@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import type { VocabularyQuizMode, WordSearchDifficulty } from "@/types/database";
+import type { VocabularyGameType } from "@/types/game";
 
 let supabase: ReturnType<typeof createClient> | null = null;
 
@@ -31,7 +34,7 @@ export type VocabularyGameLeaderboardRow = {
   rank_position: number;
   player_name: string;
   avatar_path: string | null;
-  game_type: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
+  game_type: VocabularyGameType;
   round_size: number;
   score: number;
   correct_count: number;
@@ -41,7 +44,7 @@ export type VocabularyGameLeaderboardRow = {
 };
 
 export async function saveVocabularyGameSession(input: {
-  gameType: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
+  gameType: VocabularyGameType;
   roundSize: number;
   score: number;
   correctCount: number;
@@ -50,8 +53,7 @@ export async function saveVocabularyGameSession(input: {
   startedAt: string;
   completedAt: string;
 }): Promise<void> {
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to save game results.");
+  await requireAuthenticatedUser(getSupabase(), "You must be logged in to save game results.");
 
   const { error } = await getSupabase().rpc("save_vocabulary_game_session", {
     p_game_type: input.gameType,
@@ -67,7 +69,7 @@ export async function saveVocabularyGameSession(input: {
 }
 
 export async function getVocabularyGameLeaderboard(input: {
-  gameType: "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
+  gameType: VocabularyGameType;
   roundSize: number | null;
 }): Promise<VocabularyGameLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_vocabulary_game_leaderboard", {
@@ -80,7 +82,7 @@ export async function getVocabularyGameLeaderboard(input: {
 }
 
 export async function getQuizLeaderboard(input: {
-  mode: "type-word" | "choose-meaning";
+  mode: VocabularyQuizMode;
   questionCount: 10 | 20 | 30;
 }): Promise<QuizLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_vocabulary_quiz_leaderboard", {
@@ -94,7 +96,7 @@ export async function getQuizLeaderboard(input: {
 
 export async function getWordSearchLeaderboard(input: {
   gridSize: 10 | 15 | 20;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: WordSearchDifficulty;
 }): Promise<WordSearchLeaderboardRow[]> {
   const { data, error } = await getSupabase().rpc("get_word_search_leaderboard", {
     p_grid_size: input.gridSize,

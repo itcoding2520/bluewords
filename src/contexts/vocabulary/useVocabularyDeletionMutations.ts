@@ -1,13 +1,10 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import {
-  deleteVocabularyWord,
-  deleteVocabularyWords,
-  getVocabularyWordById,
-  getVocabularyWordImagePaths,
-} from "@/lib/supabase/vocabulary";
-import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
+import {
+  deleteVocabularyWordRecord,
+  deleteVocabularyWordRecords,
+} from "@/lib/vocabulary/word-mutation-workflows";
 import { toast } from "sonner";
 
 interface VocabularyDeletionMutationOptions {
@@ -29,15 +26,7 @@ export function useVocabularyDeletionMutations({
     const word = words.find((item) => item.id === id);
 
     try {
-      const storedWord = word ? null : await getVocabularyWordById(id);
-      await deleteVocabularyWord(id);
-
-      const imagePath = word?.imagePath ?? storedWord?.image_path;
-      if (imagePath) {
-        void deleteVocabularyImages([imagePath]).catch((error) =>
-          console.error("Could not remove vocabulary image:", error)
-        );
-      }
+      const deletedWordName = await deleteVocabularyWordRecord(id, word);
 
       setWords((current) => current.filter((item) => item.id !== id));
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {
@@ -46,7 +35,7 @@ export function useVocabularyDeletionMutations({
         reviewSchedule: true,
       });
 
-      toast.success(`"${word?.word ?? storedWord?.word ?? "Word"}" deleted successfully!`);
+      toast.success(`"${deletedWordName}" deleted successfully!`);
       return true;
     } catch {
       toast.error("Failed to delete word.");
@@ -59,18 +48,8 @@ export function useVocabularyDeletionMutations({
     if (uniqueIds.length === 0) return 0;
 
     try {
-      const imageRows = await getVocabularyWordImagePaths(uniqueIds);
-      const deletedIds = await deleteVocabularyWords(uniqueIds);
+      const deletedIds = await deleteVocabularyWordRecords(uniqueIds);
       const deletedSet = new Set(deletedIds);
-      const deletedImagePaths = imageRows
-        .filter((word) => deletedSet.has(word.id))
-        .map((word) => word.image_path);
-
-      if (deletedImagePaths.some(Boolean)) {
-        void deleteVocabularyImages(deletedImagePaths).catch((error) =>
-          console.error("Could not remove deleted vocabulary images:", error)
-        );
-      }
 
       setWords((current) => current.filter((word) => !deletedSet.has(word.id)));
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, {

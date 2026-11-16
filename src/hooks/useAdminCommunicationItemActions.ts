@@ -5,10 +5,10 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationItem, saveCommunicationItem } from "@/lib/communication/admin-actions";
-import type { createClient } from "@/lib/supabase/client";
+import { isOptionalHttpUrl } from "@/lib/communication/url-validation";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 type Props = {
   supabase: SupabaseClient;
@@ -107,14 +107,4 @@ export function useAdminCommunicationItemActions({
   }
 
   return { saveItem, editItem, removeItem };
-}
-
-function isOptionalHttpUrl(value: string) {
-  if (!value.trim()) return true;
-  try {
-    const url = new URL(value.trim());
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }

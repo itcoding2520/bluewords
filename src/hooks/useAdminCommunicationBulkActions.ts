@@ -2,9 +2,12 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
+import {
+  removeCommunicationItemsForLesson,
+  removeCommunicationLessonsForTopic,
+} from "@/lib/communication/admin-actions";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 type Props = {
   supabase: SupabaseClient;
@@ -45,7 +48,7 @@ export function useAdminCommunicationBulkActions({
     })) return;
 
     setBusy(true);
-    const { error } = await supabase.from("communication_lessons").delete().eq("topic_id", selectedTopicId);
+    const { error } = await removeCommunicationLessonsForTopic(supabase, selectedTopicId);
     setBusy(false);
     if (error) return toast.error(error.message);
 
@@ -64,7 +67,7 @@ export function useAdminCommunicationBulkActions({
     })) return;
 
     setBusy(true);
-    const { error } = await supabase.from("communication_lesson_items").delete().eq("lesson_id", selectedLessonId);
+    const { error } = await removeCommunicationItemsForLesson(supabase, selectedLessonId);
     setBusy(false);
     if (error) return toast.error(error.message);
 

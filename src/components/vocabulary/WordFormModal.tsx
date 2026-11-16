@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
@@ -33,27 +32,22 @@ export function WordFormModal({
   onSubmit,
 }: WordFormModalProps) {
   const {
-    word,
-    setWord,
-    meaning,
-    setMeaning,
-    type,
-    setType,
-    category,
-    setCategory,
-    detailedMeanings,
-    errors,
-    clearError,
-    isSubmitting,
-    selectedImage,
-    removeCurrentImage,
-    selectedImageUrl,
-    selectImage,
-    removeImage,
-    updateDetailedMeaning,
-    addDetailedMeaning,
-    removeDetailedMeaning,
-    handleSubmit,
+    fields: { word, setWord, meaning, setMeaning, type, setType, category, setCategory },
+    validation: { errors, clearError },
+    image: {
+      selected: selectedImage,
+      removeCurrent: removeCurrentImage,
+      previewUrl: selectedImageUrl,
+      select: selectImage,
+      remove: removeImage,
+    },
+    detailedMeanings: {
+      items: detailedMeanings,
+      update: updateDetailedMeaning,
+      add: addDetailedMeaning,
+      remove: removeDetailedMeaning,
+    },
+    submission: { isSubmitting, handleSubmit },
   } = useWordFormController({ words, categories, editingWord, onSubmit });
   const existingImageUrl = useVocabularyImageUrl(
     removeCurrentImage ? null : editingWord?.imagePath
@@ -158,7 +152,7 @@ export function WordFormModal({
               category={category}
               categories={categories}
               words={words}
-              onChange={(value) => setCategory(value as VocabularyCategory)}
+              onChange={setCategory}
             />
 
             <WordFormActions

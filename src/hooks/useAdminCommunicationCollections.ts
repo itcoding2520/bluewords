@@ -1,9 +1,10 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   CommunicationCollections,
   CommunicationLesson,
@@ -12,7 +13,6 @@ import type {
 } from "@/lib/supabase/communication-admin-types";
 import { loadAdminCommunicationCollections } from "@/lib/communication/admin-collections";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useAdminCommunicationCollections(supabase: SupabaseClient) {
   const [topics, setTopics] = useState<CommunicationTopic[]>([]);
@@ -44,7 +44,7 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
     try {
       applyCollections(await loadCollections(true));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load communication content.");
+      toast.error(getErrorMessage(error, "Could not load communication content."));
     }
   }, [applyCollections, loadCollections]);
 
@@ -53,7 +53,7 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
     void loadCollections()
       .then((result) => { if (active) applyCollections(result); })
       .catch((error: unknown) => {
-        if (active) toast.error(error instanceof Error ? error.message : "Could not load communication content.");
+        if (active) toast.error(getErrorMessage(error, "Could not load communication content."));
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

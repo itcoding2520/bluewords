@@ -1,17 +1,16 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
-import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
+import { getErrorMessage } from "@/lib/errors";
 import {
-  addVocabularyWord,
-  deleteVocabularyWord,
-  getVocabularyWordById,
   updateVocabularyWord,
-  updateVocabularyWordWithMeanings,
 } from "@/lib/supabase/vocabulary";
 import { deleteVocabularyImages } from "@/lib/supabase/vocabulary-images";
-import { fetchEnglishIpa } from "@/lib/dictionary";
 import { invalidateVocabularyMutationCaches } from "@/lib/vocabulary/invalidate-mutation-caches";
-import { saveVocabularyMeanings } from "@/lib/supabase/vocabulary-meanings";
-import { hasDuplicateVocabularyWord, mapVocabularyMutationWord } from "@/lib/vocabulary/word-mutations";
+import { hasDuplicateVocabularyWord } from "@/lib/vocabulary/word-mutations";
+import {
+  createVocabularyWordRecord,
+  updateVocabularyWordRecord,
+} from "@/lib/vocabulary/word-mutation-workflows";
 import { toast } from "sonner";
 
 interface VocabularyWordMutationOptions {
@@ -34,40 +33,14 @@ export function useVocabularyWordMutations({
     }
 
     try {
-      const type = word.type ?? "word";
-      const ipa = type === "word"
-        ? word.ipa?.trim() || await fetchEnglishIpa(word.word)
-        : null;
-      const row = await addVocabularyWord({
-        word: word.word,
-        meaning: word.meaning,
-        category: word.category,
-        status: word.status,
-        type,
-        ipa,
-        image_path: word.imagePath ?? null,
-      });
-
-      let savedMeanings: VocabularyMeaning[];
-      try {
-        savedMeanings = await saveVocabularyMeanings(row.id, word.detailedMeanings ?? []);
-      } catch (error) {
-        try {
-          await deleteVocabularyWord(row.id);
-        } catch (rollbackError) {
-          console.error("Failed to roll back vocabulary after meaning save error:", rollbackError);
-        }
-        throw error;
-      }
-
-      const savedWord = mapVocabularyMutationWord(row, savedMeanings);
+      const savedWord = await createVocabularyWordRecord(word);
       setWords((current) => [savedWord, ...current]);
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined);
-      toast.success(`"${row.word}" added successfully!`);
+      toast.success(`"${savedWord.word}" added successfully!`);
       return true;
     } catch (error) {
       console.error("Supabase addWord error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to add word.");
+      toast.error(getErrorMessage(error, "Failed to add word."));
       return false;
     }
   }
@@ -80,45 +53,22 @@ export function useVocabularyWordMutations({
 
     try {
       const currentWord = words.find((word) => word.id === updatedWord.id);
-      const storedWord = currentWord ? null : await getVocabularyWordById(updatedWord.id);
-      const previousImagePath = currentWord?.imagePath ?? storedWord?.image_path ?? null;
-      const previousIpa = currentWord?.ipa ?? storedWord?.ipa ?? updatedWord.ipa;
-      const type = updatedWord.type ?? "word";
-      const wordChanged = (currentWord?.word ?? storedWord?.word ?? updatedWord.word).trim().toLowerCase() !== updatedWord.word.trim().toLowerCase();
-      const ipa = type !== "word"
-        ? null
-        : updatedWord.ipa?.trim() || (wordChanged || !previousIpa
-          ? await fetchEnglishIpa(updatedWord.word)
-          : previousIpa);
-      const { word: row, meanings: meaningRows } = await updateVocabularyWordWithMeanings({
-        id: updatedWord.id,
-        word: updatedWord.word,
-        meaning: updatedWord.meaning,
-        category: updatedWord.category,
-        status: updatedWord.status,
-        type,
-        ipa,
-        image_path: updatedWord.imagePath ?? null,
-        meanings: (updatedWord.detailedMeanings ?? currentWord?.detailedMeanings ?? [])
-          .filter((item) => item.meaning.trim())
-          .map((item) => ({ part_of_speech: item.partOfSpeech, meaning: item.meaning.trim() })),
-      });
-      const savedWord = mapVocabularyMutationWord(row, meaningRows);
+      const { word: savedWord, previousImagePath } = await updateVocabularyWordRecord(updatedWord, currentWord);
 
       setWords((current) => current.map((word) =>
-        word.id === row.id
+        word.id === savedWord.id
           ? savedWord
           : word
       ));
       invalidateVocabularyMutationCaches(ownerIdRef.current ?? undefined, { reviewHistory: true });
 
-      if (previousImagePath && previousImagePath !== row.image_path) {
+      if (previousImagePath && previousImagePath !== savedWord.imagePath) {
         void deleteVocabularyImages([previousImagePath]).catch((error) =>
           console.error("Could not remove replaced vocabulary image:", error)
         );
       }
 
-      toast.success(`"${row.word}" updated successfully!`);
+      toast.success(`"${savedWord.word}" updated successfully!`);
       return true;
     } catch (error) {
       console.error("Supabase updateWord error:", error);

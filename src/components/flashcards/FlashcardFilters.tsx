@@ -1,11 +1,9 @@
 import Image from "next/image";
 import { CalendarClock, Star } from "lucide-react";
-import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
-
-type VocabularyStatus = "learning" | "mastered";
-type ReviewMode = "all" | "due";
+import type { FlashcardReviewMode } from "@/types/flashcards";
 
 interface FlashcardFiltersProps {
   words: VocabularyWord[];
@@ -16,8 +14,8 @@ interface FlashcardFiltersProps {
   status: VocabularyStatus;
   statusCounts: Record<VocabularyStatus, number>;
   onStatusChange: (status: VocabularyStatus) => void;
-  reviewMode: ReviewMode;
-  onReviewModeChange: (mode: ReviewMode) => void;
+  reviewMode: FlashcardReviewMode;
+  onReviewModeChange: (mode: FlashcardReviewMode) => void;
   isLoadingSchedules: boolean;
   areSchedulesLoaded: boolean;
   dueCount: number;

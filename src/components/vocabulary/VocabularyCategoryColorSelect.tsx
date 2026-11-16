@@ -1,5 +1,5 @@
 import { Select } from "@/components/ui/Select";
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import { isVocabularyCategoryColor, type VocabularyCategoryColor } from "@/config/vocabulary";
 
 export const vocabularyCategoryColorOptions: Array<{
   value: VocabularyCategoryColor;
@@ -33,7 +33,9 @@ export function VocabularyCategoryColorSelect({
     <Select
       aria-label={ariaLabel}
       value={value}
-      onChange={(event) => onChange(event.target.value as VocabularyCategoryColor)}
+      onChange={(event) => {
+        if (isVocabularyCategoryColor(event.target.value)) onChange(event.target.value);
+      }}
     >
       {vocabularyCategoryColorOptions.map((color) => (
         <option key={color.value} value={color.value}>

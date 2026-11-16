@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, type LucideIcon } from "lucide-react";
 
 import type { Lesson, Progress, Topic } from "@/lib/communication/catalog-types";
+import { DIFFICULTY_LEVELS } from "@/types/difficulty";
 
 const difficultyLabel = { easy: "Easy · Dễ", medium: "Medium · Trung bình", hard: "Hard · Khó" };
-const requiredLevels = ["easy", "medium", "hard"] as const;
 
 type SituationCardProps = {
   topic: Topic;
@@ -25,7 +25,7 @@ export function SituationCard({
   accent,
   TopicIcon = BookOpen,
 }: SituationCardProps) {
-  const allLevelsCompleted = requiredLevels.every((level) => completedLevels.has(level));
+  const allLevelsCompleted = DIFFICULTY_LEVELS.every((level) => completedLevels.has(level));
 
   return (
     <article className={`overflow-hidden rounded-2xl border p-3 ${accent}`}>

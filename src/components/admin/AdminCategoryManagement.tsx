@@ -10,15 +10,9 @@ import { AdminCategoryListPanel } from "@/components/admin/AdminCategoryListPane
 import { AdminCategoryDetailPanel } from "@/components/admin/AdminCategoryDetailPanel";
 
 export function AdminCategoryManagement() {
-  const {
-    activeTab, setActiveTab, setSelectedId, categorySearch, setCategorySearch,
-    communityCategories, emails, words, wordEmails, wordsLoading, loading, error,
-    currentCategories, visibleCategories, visibleCategoryRows, selectedCategory,
-    defaultWords, selectedSharedCategory, selectedFallbackImage, refresh,
-    editSharedCategory, removeSharedCategory, editSharedWord, removeSharedWord,
-  } = useAdminCategoryManagementController();
+  const { selection, data, view, actions } = useAdminCategoryManagementController();
 
-    return <div className="admin-category-page">
+  return <div className="admin-category-page">
     <AdminNavigation active="categories" />
     <header className="admin-category-hero">
       <div className="admin-category-hero-copy">
@@ -26,48 +20,51 @@ export function AdminCategoryManagement() {
         <h1 className="page-title mt-1">Category management</h1>
         <p className="page-intro-description mt-2">Browse starter and community categories,<br className="hidden sm:block" /> then open one to review its words.</p>
       </div>
-      <Button variant="secondary" onClick={() => void refresh()} disabled={loading}><RefreshCw size={17} /> Refresh</Button>
+      <Button variant="secondary" onClick={() => void actions.refresh()} disabled={data.loading}><RefreshCw size={17} /> Refresh</Button>
     </header>
 
-    {error && <AutoDismissMessage key={error} variant="error" className="mb-4">{error}</AutoDismissMessage>}
+    {data.error && <AutoDismissMessage key={data.error} variant="error" className="mb-4">{data.error}</AutoDismissMessage>}
 
     <AdminCategoryTabs
-      activeTab={activeTab}
-      communityCategories={communityCategories}
-      onChange={(tab) => {
-        setActiveTab(tab);
-        setSelectedId("");
-        setCategorySearch("");
-      }}
+      activeTab={selection.activeTab}
+      communityCategories={data.communityCategories}
+      onChange={selection.changeTab}
     />
 
     <div className="admin-category-layout grid items-start gap-5 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.65fr)]">
       <AdminCategoryListPanel
-        activeTab={activeTab}
-        loading={loading}
-        categorySearch={categorySearch}
-        currentCategories={currentCategories}
-        visibleCategories={visibleCategories}
-        visibleCategoryRows={visibleCategoryRows}
-        selectedCategory={selectedCategory}
-        onSearchChange={setCategorySearch}
-        onSelect={setSelectedId}
+        activeTab={selection.activeTab}
+        loading={data.loading}
+        search={{ query: selection.categorySearch, onChange: selection.setCategorySearch }}
+        categories={{
+          current: view.currentCategories,
+          visible: view.visibleCategories,
+          rows: view.visibleCategoryRows,
+          selected: view.selectedCategory,
+        }}
+        onSelectCategory={selection.setSelectedId}
       />
 
       <AdminCategoryDetailPanel
-        activeTab={activeTab}
-        selectedCategory={selectedCategory}
-        selectedSharedCategory={selectedSharedCategory}
-        selectedFallbackImage={selectedFallbackImage}
-        emails={emails}
-        defaultWords={defaultWords}
-        words={words}
-        wordEmails={wordEmails}
-        wordsLoading={wordsLoading}
-        onEditCategory={(category) => void editSharedCategory(category)}
-        onRemoveCategory={(category) => void removeSharedCategory(category)}
-        onEditWord={(word) => void editSharedWord(word)}
-        onRemoveWord={(word) => void removeSharedWord(word)}
+        activeTab={selection.activeTab}
+        category={{
+          selected: view.selectedCategory,
+          shared: view.selectedSharedCategory,
+          fallbackImage: view.selectedFallbackImage,
+        }}
+        owners={data.emails}
+        words={{
+          defaults: view.defaultWords,
+          community: data.words,
+          ownerEmails: data.wordEmails,
+          loading: data.wordsLoading,
+        }}
+        actions={{
+          editCategory: (category) => void actions.editSharedCategory(category),
+          removeCategory: (category) => void actions.removeSharedCategory(category),
+          editWord: (word) => void actions.editSharedWord(word),
+          removeWord: (word) => void actions.removeSharedWord(word),
+        }}
       />
     </div>
   </div>;

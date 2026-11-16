@@ -1,8 +1,10 @@
+import { validateCommunicationCsvRecord } from "@/lib/communication/csv-record-validation";
 import type {
   CommunicationCsvRecord,
-  CommunicationDifficulty,
-  ContentStatus,
 } from "@/lib/communication/csv";
+import { isContentStatus } from "@/lib/communication/content-types";
+import { isLessonItemType } from "@/lib/communication/lesson-types";
+import { isDifficultyLevel } from "@/types/difficulty";
 
 function integer(value: string, fallback: number, row: number, label: string) {
   if (!value.trim()) return fallback;
@@ -13,14 +15,27 @@ function integer(value: string, fallback: number, row: number, label: string) {
   return parsed;
 }
 
-function validateAudioUrl(value: string, row: number, label: string) {
-  if (!value) return;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
-  } catch {
-    throw new Error(`Row ${row}: ${label} must be a valid HTTP or HTTPS URL.`);
+function parseResponseOptions(value: string, row: number): string[] {
+  let options: unknown = [];
+  if (value) {
+    try {
+      options = JSON.parse(value);
+    } catch {
+      throw new Error(`Row ${row}: response_options_json must contain a valid JSON array.`);
+    }
   }
+  if (!Array.isArray(options) || !options.every((option): option is string => typeof option === "string")) {
+    throw new Error(`Row ${row}: response_options_json must be an array of strings.`);
+  }
+
+  const normalizedOptions = options.map((option) => option.trim());
+  if (normalizedOptions.some((option) => !option)) {
+    throw new Error(`Row ${row}: response_options_json cannot contain empty choices.`);
+  }
+  if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) {
+    throw new Error(`Row ${row}: response_options_json cannot contain duplicate choices.`);
+  }
+  return normalizedOptions;
 }
 
 export function parseCommunicationCsvRecord(
@@ -34,35 +49,18 @@ export function parseCommunicationCsvRecord(
     throw new Error(`Row ${line}: record_type must be item or dialogue_turn.`);
   }
   const difficulty = get("difficulty").toLowerCase();
-  if (!["easy", "medium", "hard"].includes(difficulty)) {
+  if (!isDifficultyLevel(difficulty)) {
     throw new Error(`Row ${line}: difficulty must be easy, medium, or hard.`);
   }
   const status = get("lesson_status").toLowerCase();
-  if (!["draft", "published", "archived"].includes(status)) {
+  if (!isContentStatus(status)) {
     throw new Error(`Row ${line}: lesson_status must be draft, published, or archived.`);
   }
 
-  let responseOptions: unknown = [];
-  if (get("response_options_json")) {
-    try {
-      responseOptions = JSON.parse(get("response_options_json"));
-    } catch {
-      throw new Error(`Row ${line}: response_options_json must contain a valid JSON array.`);
-    }
-  }
-  if (!Array.isArray(responseOptions) || responseOptions.some((option) => typeof option !== "string")) {
-    throw new Error(`Row ${line}: response_options_json must be an array of strings.`);
-  }
-  const normalizedOptions = (responseOptions as string[]).map((option) => option.trim());
-  if (normalizedOptions.some((option) => !option)) {
-    throw new Error(`Row ${line}: response_options_json cannot contain empty choices.`);
-  }
-  if (new Set(normalizedOptions.map((option) => option.toLocaleLowerCase())).size !== normalizedOptions.length) {
-    throw new Error(`Row ${line}: response_options_json cannot contain duplicate choices.`);
-  }
+  const normalizedOptions = parseResponseOptions(get("response_options_json"), line);
 
   const itemType = get("item_type");
-  if (recordType === "item" && !["word", "phrase", "sentence_pattern"].includes(itemType)) {
+  if (recordType === "item" && !isLessonItemType(itemType)) {
     throw new Error(`Row ${line}: item_type must be word, phrase, or sentence_pattern.`);
   }
 
@@ -71,8 +69,8 @@ export function parseCommunicationCsvRecord(
     topic_slug: get("topic_slug"), topic_title_en: get("topic_title_en"), topic_title_vi: get("topic_title_vi"),
     topic_description_en: get("topic_description_en"), topic_description_vi: get("topic_description_vi"),
     topic_order: integer(get("topic_order"), 0, line, "topic_order"), lesson_key: get("lesson_key"),
-    lesson_title_en: get("lesson_title_en"), lesson_title_vi: get("lesson_title_vi"), difficulty: difficulty as CommunicationDifficulty,
-    lesson_order: integer(get("lesson_order"), 0, line, "lesson_order"), lesson_status: status as ContentStatus,
+    lesson_title_en: get("lesson_title_en"), lesson_title_vi: get("lesson_title_vi"), difficulty,
+    lesson_order: integer(get("lesson_order"), 0, line, "lesson_order"), lesson_status: status,
     record_key: get("record_key"), record_order: integer(get("record_order"), 0, line, "record_order"),
     item_type: itemType as CommunicationCsvRecord["item_type"], content_en: get("content_en"), meaning_vi: get("meaning_vi"),
     example_en: get("example_en"), example_vi: get("example_vi"), image_keyword: get("image_keyword"), audio_url: get("audio_url"),
@@ -82,50 +80,7 @@ export function parseCommunicationCsvRecord(
     response_prompt_vi: get("response_prompt_vi"), expected_response: get("expected_response"), response_options: normalizedOptions,
   };
 
-  const commonRequired: Array<keyof CommunicationCsvRecord> = [
-    "topic_slug", "topic_title_en", "topic_title_vi", "lesson_key", "lesson_title_en", "lesson_title_vi", "record_key",
-  ];
-  const missingCommon = commonRequired.filter((key) => !String(record[key] ?? "").trim());
-  if (missingCommon.length) {
-    throw new Error(`Row ${line}: required fields missing: ${missingCommon.join(", ")}.`);
-  }
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(record.topic_slug)) {
-    throw new Error(`Row ${line}: topic_slug must use lowercase letters, numbers, and hyphens.`);
-  }
-  if (record.lesson_key.length < 2 || record.lesson_key.length > 80) {
-    throw new Error(`Row ${line}: lesson_key must be between 2 and 80 characters.`);
-  }
-  if (record.record_key.length < 2 || record.record_key.length > (record.record_type === "item" ? 100 : 120)) {
-    throw new Error(`Row ${line}: record_key is outside the database length limit.`);
-  }
-  validateAudioUrl(record.audio_url, line, "audio_url");
-  validateAudioUrl(record.turn_audio_url, line, "turn_audio_url");
-
-  if (record.record_type === "item") {
-    if (!record.content_en || !record.meaning_vi) {
-      throw new Error(`Row ${line}: item rows need content_en and meaning_vi.`);
-    }
-    if (Boolean(record.example_en) !== Boolean(record.example_vi)) {
-      throw new Error(`Row ${line}: provide both example_en and example_vi, or leave both blank.`);
-    }
-    if (record.item_type === "sentence_pattern" && (!record.example_en || !record.example_vi)) {
-      throw new Error(`Row ${line}: sentence_pattern rows need a complete English and Vietnamese example.`);
-    }
-  }
-  if (record.record_type === "dialogue_turn") {
-    if (!record.dialogue_key || !record.dialogue_title_en || !record.speaker || !record.turn_order || !record.turn_text_en) {
-      throw new Error(`Row ${line}: dialogue rows need dialogue key/title, speaker, turn_order, and turn_text_en.`);
-    }
-    if (record.dialogue_key.length < 2 || record.dialogue_key.length > 100) {
-      throw new Error(`Row ${line}: dialogue_key must be between 2 and 100 characters.`);
-    }
-    if (record.response_options.length > 0 && (record.response_options.length < 2 || !record.expected_response)) {
-      throw new Error(`Row ${line}: response choices need at least two options and an expected_response.`);
-    }
-    if (record.expected_response && !record.response_options.includes(record.expected_response)) {
-      throw new Error(`Row ${line}: expected_response must match one of response_options_json.`);
-    }
-  }
+  validateCommunicationCsvRecord(record, line);
 
   return record;
 }

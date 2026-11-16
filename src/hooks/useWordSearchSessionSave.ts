@@ -1,5 +1,7 @@
 "use client";
 
+import type { GamePhase, GameSaveState } from "@/types/game";
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Difficulty, GridSize } from "@/lib/word-search-config";
@@ -7,7 +9,6 @@ import { saveWordSearchSession } from "@/lib/supabase/word-search-history";
 import type { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 
 type Puzzle = ReturnType<typeof createWordSearchPuzzle>;
-type GamePhase = "setup" | "playing" | "results";
 
 export function useWordSearchSessionSave({
   userId,
@@ -28,7 +29,7 @@ export function useWordSearchSessionSave({
   category: string;
   onSaved: (durationSeconds: number) => void;
 }) {
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveState, setSaveState] = useState<GameSaveState>("idle");
   const [saveError, setSaveError] = useState("");
   const [saveRetryCount, setSaveRetryCount] = useState(0);
   const saveStartedRef = useRef<number | null>(null);
@@ -71,7 +72,7 @@ export function useWordSearchSessionSave({
     }).catch((error: unknown) => {
       saveStartedRef.current = null;
       setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this game attempt.");
+      setSaveError(getErrorMessage(error, "Could not save this game attempt."));
     });
   }, [category, difficulty, gridSize, phase, puzzle, saveRetryCount, startedAt, userId]);
 

@@ -1,10 +1,13 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type { Goal } from "@/lib/communication/catalog-types";
 import { invalidateCommunicationCatalogCache } from "@/lib/supabase/communication-catalog-cache";
+import {
+  saveCommunicationDailyGoal,
+  saveCommunicationLearningGoal,
+} from "@/lib/supabase/communication-preferences";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useCommunicationCatalogPreferences({
   supabase,
@@ -24,7 +27,7 @@ export function useCommunicationCatalogPreferences({
     setSavingPreference(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSavingPreference(false); return; }
-    const { error } = await supabase.from("communication_learning_preferences").upsert({ user_id: user.id, learning_goal: nextGoal, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const { error } = await saveCommunicationLearningGoal(supabase, user.id, nextGoal);
     if (error) toast.error(error.message);
     else { invalidateCommunicationCatalogCache(user.id); setGoal(nextGoal); toast.success("Learning goal saved."); }
     setSavingPreference(false);
@@ -35,7 +38,7 @@ export function useCommunicationCatalogPreferences({
     if (!authenticated) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("communication_daily_goals").upsert({ user_id: user.id, lessons_per_day: value, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const { error } = await saveCommunicationDailyGoal(supabase, user.id, value);
     if (error) toast.error(error.message); else { invalidateCommunicationCatalogCache(user.id); toast.success("Daily goal saved."); }
   }
 

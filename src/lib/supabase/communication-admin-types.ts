@@ -1,4 +1,5 @@
-import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/csv";
+import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/content-types";
+import type { LessonItemType } from "@/lib/communication/lesson-types";
 
 export type CommunicationTopic = {
   id: string;
@@ -26,7 +27,7 @@ export type CommunicationLessonItem = {
   id: string;
   lesson_id: string;
   item_key: string;
-  item_type: "word" | "phrase" | "sentence_pattern";
+  item_type: LessonItemType;
   content_en: string;
   meaning_vi: string;
   example_en: string;
@@ -34,6 +35,30 @@ export type CommunicationLessonItem = {
   image_keyword: string;
   audio_url: string;
   sort_order: number;
+};
+
+export type CommunicationDialogue = {
+  id: string;
+  dialogue_key: string;
+  lesson_id: string;
+  title_en: string;
+  title_vi: string;
+  prompt_vi: string;
+  sort_order: number;
+};
+
+export type CommunicationDialogueTurn = {
+  id: string;
+  turn_key: string;
+  dialogue_id: string;
+  turn_order: number;
+  speaker: string;
+  text_en: string;
+  meaning_vi: string;
+  audio_url: string;
+  response_prompt_vi: string;
+  expected_response: string;
+  response_options: string[];
 };
 
 export type CommunicationCollections = {

@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type {
-  VocabularyCategoryColor,
   VocabularyCategoryRow,
 } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 
 export function useManageCategoriesController() {
@@ -72,22 +72,20 @@ export function useManageCategoriesController() {
   }
 
   return {
-    categories,
-    words,
-    newName,
-    setNewName,
-    newColor,
-    setNewColor,
-    editing,
-    setEditing,
-    editName,
-    setEditName,
-    editColor,
-    setEditColor,
-    isSaving,
-    startEditing,
-    handleAdd,
-    handleUpdate,
-    handleDelete,
+    data: { categories, words },
+    form: {
+      newName,
+      setNewName,
+      newColor,
+      setNewColor,
+      editing,
+      setEditing,
+      editName,
+      setEditName,
+      editColor,
+      setEditColor,
+    },
+    status: { isSaving },
+    actions: { startEditing, handleAdd, handleUpdate, handleDelete },
   };
 }

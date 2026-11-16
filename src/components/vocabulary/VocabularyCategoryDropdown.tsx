@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { ChevronDown, ListFilter } from "lucide-react";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
@@ -6,6 +6,8 @@ import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { useVocabularyCategoryDropdownController } from "@/hooks/useVocabularyCategoryDropdownController";
 import { CategoryDropdownOptionList, type CategoryDropdownOption } from "@/components/vocabulary/CategoryDropdownOptionList";
 import { CATEGORY_COLOR_STYLES, CATEGORY_TRIGGER_STYLES } from "@/components/vocabulary/category-dropdown-styles";
+import { useVocabularyCategoryDropdownOptions } from "@/hooks/useVocabularyCategoryDropdownOptions";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 export { getVocabularyDropdownCategories } from "@/lib/vocabulary/category-dropdown";
 
 interface CategoryDropdownProps {
@@ -38,33 +40,22 @@ export function CategoryDropdown({
   fullWidth = false,
 }: CategoryDropdownProps) {
   const listboxId = useId();
-  const categoriesByName = useMemo(() => {
-    const byName = new Map<string, VocabularyCategoryRow>();
-    for (const item of categories) {
-      if (!byName.has(item.name)) byName.set(item.name, item);
-    }
-    return byName;
-  }, [categories]);
-  const wordImagesByCategory = useMemo(() => {
-    const images = new Map<string, string>();
-    for (const word of words) {
-      const key = word.category.trim().toLocaleLowerCase();
-      if (!images.has(key) && word.imagePath) images.set(key, word.imagePath);
-    }
-    return images;
-  }, [words]);
+  const {
+    categoriesByName,
+    wordImagesByCategory,
+    options,
+    selectedOption,
+    selectedCategory,
+  } = useVocabularyCategoryDropdownOptions({
+    categories,
+    words,
+    category,
+    includeAll,
+    allLabel,
+    customOptions,
+  });
   const getFallbackImage = (name: string) =>
-    wordImagesByCategory.get(name.trim().toLocaleLowerCase());
-  const options: CategoryDropdownOption[] = [
-    ...(includeAll
-      ? [{ id: "all-categories", name: allLabel, value: "all", color: null }]
-      : []),
-    ...(customOptions ?? categories.map((item) => ({ ...item, value: item.name }))),
-  ];
-  const selectedOption = options.find((item) => item.value === category);
-  const selectedCategory = selectedOption?.color
-    ? categoriesByName.get(selectedOption.name)
-    : undefined;
+    wordImagesByCategory.get(normalizeVocabularyLabel(name));
   const {
     isOpen,
     setIsOpen,

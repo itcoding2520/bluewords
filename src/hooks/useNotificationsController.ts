@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { recentNotifications, type NotificationRow } from "@/lib/notifications";
@@ -31,7 +32,7 @@ export function useNotificationsController() {
       setNotifications(recentNotifications(rows));
       setLoading(false);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load notifications.");
+      setError(getErrorMessage(cause, "Could not load notifications."));
       setLoading(false);
     }
   }, [supabase]);
@@ -39,11 +40,11 @@ export function useNotificationsController() {
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
-      void refresh().catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Could not load notifications."); });
+      void refresh().catch((cause) => { if (active) setError(getErrorMessage(cause, "Could not load notifications.")); });
     }, 0);
     const handleFocus = () => {
       if (document.visibilityState === "visible") {
-        void refresh(true).catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Could not load notifications."); });
+        void refresh(true).catch((cause) => { if (active) setError(getErrorMessage(cause, "Could not load notifications.")); });
       }
     };
     document.addEventListener("visibilitychange", handleFocus);
@@ -63,5 +64,9 @@ export function useNotificationsController() {
 
   const unreadCount = notifications.filter((item) => !item.read_at).length;
 
-  return { notifications, loading, error, refresh, markAllRead, markAsRead, reviewRequest, unreadCount };
+  return {
+    data: { notifications, unreadCount },
+    status: { loading, error },
+    actions: { refresh, markAllRead, markAsRead, reviewRequest },
+  };
 }

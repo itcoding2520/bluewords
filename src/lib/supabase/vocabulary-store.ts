@@ -1,35 +1,31 @@
-import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getVocabularyCategoriesForUser } from "@/lib/supabase/categories";
-import { getVocabularyWords, type VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
-import type { createClient } from "@/lib/supabase/client";
-import {
-  mapCommunityWords,
-  mapVocabularyWordRow,
-  mergeVocabularyCategories,
-  type PublishedCommunityCategory,
-  type PublishedCommunityWord,
-} from "@/lib/vocabulary/shared-vocabulary";
+import { getVocabularyWords } from "@/lib/supabase/vocabulary";
+import { firstRelation } from "@/lib/supabase/first-relation";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { SupabaseClient } from "@/lib/supabase/client";
+import type {
+  AuthenticatedVocabularyCategoriesSnapshot,
+  AuthenticatedVocabularySnapshot,
+} from "@/lib/supabase/vocabulary-store-mapping";
 
-type SupabaseClient = ReturnType<typeof createClient>;
+function getPublishedCommunityCategoriesQuery(supabase: SupabaseClient) {
+  return supabase.from("community_categories")
+    .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
+    .eq("status", "published");
+}
 
 export async function loadAuthenticatedVocabularyCategories(
   supabase: SupabaseClient,
   userId: string
-): Promise<{
-  personalCategories: VocabularyCategoryRow[];
-  communityCategories: PublishedCommunityCategory[];
-  error: Error | null;
-}> {
+): Promise<AuthenticatedVocabularyCategoriesSnapshot> {
   const [personalCategories, communityResult] = await Promise.all([
     getVocabularyCategoriesForUser(userId),
-    supabase.from("community_categories")
-      .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-      .eq("status", "published"),
+    getPublishedCommunityCategoriesQuery(supabase),
   ]);
 
   return {
     personalCategories,
-    communityCategories: (communityResult.data ?? []) as PublishedCommunityCategory[],
+    communityCategories: (communityResult.data ?? []) as AuthenticatedVocabularyCategoriesSnapshot["communityCategories"],
     error: communityResult.error,
   };
 }
@@ -37,28 +33,30 @@ export async function loadAuthenticatedVocabularyCategories(
 export async function loadAuthenticatedVocabularySnapshot(
   supabase: SupabaseClient,
   userId: string
-): Promise<{
-  wordRows: VocabularyWordWithMeaningsRow[];
-  personalCategories: VocabularyCategoryRow[];
-  communityCategories: PublishedCommunityCategory[];
-  communityWords: PublishedCommunityWord[];
-  communityCategoriesError: Error | null;
-  communityWordsError: Error | null;
-}> {
+): Promise<AuthenticatedVocabularySnapshot> {
   const [wordRows, personalCategories, communityCategoryResult, communityWordResult] = await Promise.all([
     getVocabularyWords(),
     getVocabularyCategoriesForUser(userId),
-    supabase.from("community_categories")
-      .select("id, owner_id, name, color, image_path, status, created_at, updated_at")
-      .eq("status", "published"),
+    getPublishedCommunityCategoriesQuery(supabase),
     supabase.from("community_words")
       .select("id, word, meaning, ipa, community_categories!inner(id, name, color, status)")
       .eq("status", "published")
       .eq("community_categories.status", "published"),
   ]);
 
-  const communityCategories = (communityCategoryResult.data ?? []) as PublishedCommunityCategory[];
-  const communityWords = (communityWordResult.data ?? []) as unknown as PublishedCommunityWord[];
+  const communityCategories = (communityCategoryResult.data ?? []) as AuthenticatedVocabularySnapshot["communityCategories"];
+  const communityWords = (communityWordResult.data ?? []).flatMap(({ community_categories, ...word }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{
+      ...word,
+      community_categories: {
+        id: category.id,
+        name: category.name,
+        color: category.color as VocabularyCategoryColor,
+        status: category.status,
+      },
+    }] : [];
+  });
 
   return {
     wordRows,
@@ -68,16 +66,4 @@ export async function loadAuthenticatedVocabularySnapshot(
     communityCategoriesError: communityCategoryResult.error,
     communityWordsError: communityWordResult.error,
   };
-}
-
-export function mapAuthenticatedVocabularySnapshot(snapshot: Awaited<ReturnType<typeof loadAuthenticatedVocabularySnapshot>>) {
-  const personalWords = snapshot.wordRows.map(mapVocabularyWordRow);
-  return {
-    words: [...personalWords, ...mapCommunityWords(snapshot.communityWords, personalWords)],
-    categories: mergeVocabularyCategories(snapshot.personalCategories, snapshot.communityCategories),
-  };
-}
-
-export function mapAuthenticatedVocabularyCategories(snapshot: Awaited<ReturnType<typeof loadAuthenticatedVocabularyCategories>>) {
-  return mergeVocabularyCategories(snapshot.personalCategories, snapshot.communityCategories);
 }

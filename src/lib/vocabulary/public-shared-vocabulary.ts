@@ -1,80 +1,10 @@
-import type { VocabularyWord } from "@/data/vocabulary";
-import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import type { VocabularyCategory } from "@/config/vocabulary";
-import type { VocabularyCategoryRow, VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { PublicSharedVocabulary } from "@/lib/vocabulary/public-shared-vocabulary-mapping";
 
-export type PublicSharedVocabulary = {
-  categories: Array<{
-    id: string;
-    name: string;
-    color: VocabularyCategoryColor;
-    image_path?: string | null;
-  }>;
-  words: Array<{
-    id: string;
-    word: string;
-    meaning: string;
-    ipa: string | null;
-    category: string;
-    imageUrl?: string | null;
-  }>;
-};
-
-function normalizeLabel(value: string) {
-  return value.trim().toLocaleLowerCase();
-}
+export { mapPublicCategories, mapPublicWords } from "@/lib/vocabulary/public-shared-vocabulary-mapping";
+export type { PublicSharedVocabulary } from "@/lib/vocabulary/public-shared-vocabulary-mapping";
 
 export async function loadPublicSharedVocabulary(): Promise<PublicSharedVocabulary> {
   const response = await fetch("/api/public-vocabulary");
   if (!response.ok) throw new Error("Could not load approved shared vocabulary.");
   return await response.json() as PublicSharedVocabulary;
-}
-
-export function mapPublicCategories(shared: PublicSharedVocabulary): VocabularyCategoryRow[] {
-  const sharedByName = new Map(shared.categories.map((category) => [normalizeLabel(category.name), category]));
-  const defaultNames = new Set(defaultVocabularyCategories.map((category) => normalizeLabel(category.name)));
-
-  return [
-    ...defaultVocabularyCategories.map((category) => ({
-      ...category,
-      image_path: sharedByName.get(normalizeLabel(category.name))?.image_path ?? category.image_path ?? null,
-    })),
-    ...shared.categories
-      .filter((category) => !defaultNames.has(normalizeLabel(category.name)))
-      .map((category) => ({
-        id: `community-category-${category.id}`,
-        user_id: "community",
-        name: category.name,
-        color: category.color,
-        is_default: false,
-        created_at: "",
-        updated_at: "",
-        image_path: category.image_path ?? null,
-      })),
-  ];
-}
-
-export function mapPublicWords(shared: PublicSharedVocabulary): VocabularyWord[] {
-  const defaultKeys = new Set(defaultVocabularyWords.map((word) =>
-    `${normalizeLabel(word.category)}\u0000${normalizeLabel(word.word)}`
-  ));
-
-  return shared.words.flatMap((word) => {
-    const key = `${normalizeLabel(word.category)}\u0000${normalizeLabel(word.word)}`;
-    if (!word.category || defaultKeys.has(key)) return [];
-
-    return [{
-      id: `community-${word.id}`,
-      word: word.word,
-      meaning: word.meaning,
-      category: word.category as VocabularyCategory,
-      status: "learning" as const,
-      type: "word" as const,
-      ipa: word.ipa,
-      imagePath: null,
-      imageUrl: word.imageUrl ?? null,
-      detailedMeanings: [],
-      isCustom: true,
-    }];
-  });
 }

@@ -2,11 +2,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import {
-  createCommunityCategoryRequest,
-  findCommunityCategoryRequest,
-  resubmitCommunityCategoryRequest,
-} from "@/lib/supabase/publish-category-request";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
+import { saveCommunityCategoryRequest } from "@/lib/vocabulary/publish-category-request-workflow";
 
 const REQUEST_SENT_MESSAGE = "Your selected vocabulary has been sent to the admin for review.";
 
@@ -22,46 +19,36 @@ export function usePublishCategoryRequest(
     if (!user) return;
 
     const category = categories.find((item) => item.name === categoryName);
-    const normalizedCategory = categoryName.trim().replace(/\s+/g, " ").toLowerCase();
-    const found = await findCommunityCategoryRequest(supabase, normalizedCategory);
-    if (found.error) {
-      toast.error(found.error.message);
-      return;
-    }
-
-    if (found.data) {
-      if (found.data.status === "rejected") {
-        const { data: updated, error } = await resubmitCommunityCategoryRequest(supabase, {
-          id: found.data.id,
-          ownerId: user.id,
-          imagePath: category?.image_path ?? null,
-        });
-        if (error) toast.error(error.message);
-        else if (!updated) toast.info("This category is no longer available to resubmit. Refresh the page and try again.");
-        else {
-          setStatus(REQUEST_SENT_MESSAGE);
-          toast.success("Category request sent again.");
-        }
-      } else {
-        toast.info(found.data.status === "published"
-          ? "This category is already published."
-          : found.data.status === "removed"
-            ? "This category was removed and cannot be requested again."
-            : "This category already has a review request.");
-      }
-      return;
-    }
-
-    const { error } = await createCommunityCategoryRequest(supabase, {
+    const normalizedCategory = normalizeVocabularyText(categoryName);
+    const result = await saveCommunityCategoryRequest(supabase, {
       ownerId: user.id,
       name: categoryName,
+      normalizedName: normalizedCategory,
       color: category?.color ?? "blue",
       imagePath: category?.image_path ?? null,
     });
-    if (error) toast.error(error.code === "23505" ? "A request for this category already exists." : error.message);
-    else {
+    if (result.status === "error") {
+      toast.error(result.source === "create" && result.code === "23505"
+        ? "A request for this category already exists."
+        : result.message);
+      return;
+    }
+    if (result.status === "existing") {
+      toast.info(result.requestStatus === "published"
+        ? "This category is already published."
+        : result.requestStatus === "removed"
+          ? "This category was removed and cannot be requested again."
+          : "This category already has a review request.");
+      return;
+    }
+    if (result.status === "resubmit_unavailable") {
+      toast.info("This category is no longer available to resubmit. Refresh the page and try again.");
+      return;
+    }
+
+    if (result.status === "resubmitted" || result.status === "created") {
       setStatus(REQUEST_SENT_MESSAGE);
-      toast.success("Category request sent.");
+      toast.success(result.status === "resubmitted" ? "Category request sent again." : "Category request sent.");
     }
   }
 

@@ -1,7 +1,11 @@
-import type { createClient } from "@/lib/supabase/client";
-import type { Goal, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
+import type { SupabaseClient } from "@/lib/supabase/client";
+import type { Goal, Lesson, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
+import {
+  mapCommunicationLessonAccuracy,
+  mapDueCommunicationReviews,
+  type CommunicationReviewAccuracyRow,
+} from "@/lib/communication/catalog-mapping";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 function localDayStart() {
   const day = new Date();
@@ -21,8 +25,8 @@ export async function loadCommunicationCatalogSnapshot(
   if (lessonResult.error) throw lessonResult.error;
 
   const data: SituationalEnglishCatalogSnapshot = {
-    topics: (topicResult.data ?? []) as unknown as Topic[],
-    lessons: (lessonResult.data ?? []) as unknown as SituationalEnglishCatalogSnapshot["lessons"],
+    topics: (topicResult.data ?? []) as Topic[],
+    lessons: (lessonResult.data ?? []) as Lesson[],
     progress: [],
     lessonAccuracy: {},
     goal: null,
@@ -48,15 +52,7 @@ export async function loadCommunicationCatalogSnapshot(
   if (dueResult.error) console.error("Failed to load due communication reviews", dueResult.error);
   if (accuracyResult.error) console.error("Failed to load communication review accuracy", accuracyResult.error);
 
-  type ReviewAccuracyRow = { review_count: number; correct_count: number; communication_lesson_items: { lesson_id: string } | { lesson_id: string }[] };
-  for (const row of (accuracyResult.data ?? []) as unknown as ReviewAccuracyRow[]) {
-    const item = Array.isArray(row.communication_lesson_items) ? row.communication_lesson_items[0] : row.communication_lesson_items;
-    if (!item) continue;
-    const stats = data.lessonAccuracy[item.lesson_id] ?? { correct: 0, attempts: 0 };
-    stats.correct += row.correct_count;
-    stats.attempts += row.review_count;
-    data.lessonAccuracy[item.lesson_id] = stats;
-  }
+  data.lessonAccuracy = mapCommunicationLessonAccuracy((accuracyResult.data ?? []) as CommunicationReviewAccuracyRow[]);
   if (!dueResult.data?.length) return data;
 
   const itemResult = await supabase.from("communication_lesson_items").select("id,lesson_id,content_en,meaning_vi").in("id", dueResult.data.map((review) => review.item_id));
@@ -66,11 +62,6 @@ export async function loadCommunicationCatalogSnapshot(
     ? await supabase.from("communication_lessons").select("id,title_en,title_vi").in("id", lessonIds).eq("status", "published")
     : { data: [], error: null };
   if (dueLessons.error) throw dueLessons.error;
-  const lessonsById = new Map((dueLessons.data ?? []).map((lesson) => [lesson.id, lesson]));
-  const dueAtById = new Map(dueResult.data.map((review) => [review.item_id, review.due_at]));
-  data.dueItems = (itemResult.data ?? []).flatMap((item) => {
-    const lesson = lessonsById.get(item.lesson_id);
-    return lesson ? [{ item_id: item.id, due_at: dueAtById.get(item.id) ?? "", content_en: item.content_en, meaning_vi: item.meaning_vi, lesson_id: item.lesson_id, lesson_title_en: lesson.title_en, lesson_title_vi: lesson.title_vi }] : [];
-  });
+  data.dueItems = mapDueCommunicationReviews(itemResult.data ?? [], dueLessons.data ?? [], dueResult.data);
   return data;
 }

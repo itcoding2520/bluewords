@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { MouseEvent } from "react";
 import { ArrowRight, BookOpen, Clock3, FolderOpen } from "lucide-react";
 import type { NotificationRow } from "@/lib/notifications";
+import { formatDateTime } from "@/lib/formatDate";
 
 export function NotificationCard({
   item,
@@ -43,6 +44,6 @@ function NotificationDetails({ item }: { item: NotificationRow }) {
   return <span className="min-w-0 flex-1">
     <span className="block font-semibold text-slate-900">{item.title}</span>
     <span className="mt-1 block text-sm text-slate-600">{item.body}</span>
-    <time className="notification-time mt-2 block text-xs text-slate-400" dateTime={item.created_at}><Clock3 size={15} />{new Date(item.created_at).toLocaleString()}</time>
+    <time className="notification-time mt-2 block text-xs text-slate-400" dateTime={item.created_at}><Clock3 size={15} />{formatDateTime(item.created_at)}</time>
   </span>;
 }

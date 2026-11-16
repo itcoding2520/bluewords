@@ -1,6 +1,18 @@
-import type {
-  PartOfSpeech,
-} from "@/config/vocabulary";
+import type { PartOfSpeech, VocabularyCategoryColor, VocabularyType } from "@/config/vocabulary";
+import type { DifficultyLevel } from "@/types/difficulty";
+import type { QuizMode } from "@/types/quiz";
+import type { LearningStatus } from "@/types/learning";
+
+export type VocabularyCategoryRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  color: VocabularyCategoryColor;
+  image_path?: string | null;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+};
 
 export type VocabularyWordRow = {
   id: string;
@@ -8,10 +20,10 @@ export type VocabularyWordRow = {
   word: string;
   meaning: string;
   category: string;
-  type: "word" | "expression";
+  type: VocabularyType;
   ipa: string | null;
   image_path: string | null;
-  status: "learning" | "mastered";
+  status: LearningStatus;
   created_at: string;
   updated_at: string;
 };
@@ -80,7 +92,7 @@ export type VocabularyReviewScheduleUpsert = Pick<
   "user_id" | "vocabulary_word_id" | "due_at" | "interval_days" | "repetitions" | "last_reviewed_at"
 >;
 
-export type VocabularyQuizMode = "type-word" | "choose-meaning";
+export type VocabularyQuizMode = QuizMode;
 
 export type VocabularyQuizSessionRow = {
   id: string;
@@ -118,7 +130,7 @@ export type VocabularyQuizAnswerInsert = Omit<
   "id" | "session_id" | "user_id" | "created_at" | "prompt_type"
 >;
 
-export type WordSearchDifficulty = "easy" | "medium" | "hard";
+export type WordSearchDifficulty = DifficultyLevel;
 
 export type WordSearchSessionRow = {
   id: string;

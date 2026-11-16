@@ -1,11 +1,10 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   CommunicationItemDraft,
   CommunicationLessonDraft,
   CommunicationTopicDraft,
 } from "@/lib/communication/admin-draft-types";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function saveCommunicationTopic(
   supabase: SupabaseClient,
@@ -35,6 +34,10 @@ export function removeCommunicationLesson(supabase: SupabaseClient, id: string) 
   return supabase.from("communication_lessons").delete().eq("id", id);
 }
 
+export function removeCommunicationLessonsForTopic(supabase: SupabaseClient, topicId: string) {
+  return supabase.from("communication_lessons").delete().eq("topic_id", topicId);
+}
+
 export function saveCommunicationItem(
   supabase: SupabaseClient,
   id: string | null,
@@ -47,4 +50,8 @@ export function saveCommunicationItem(
 
 export function removeCommunicationItem(supabase: SupabaseClient, id: string) {
   return supabase.from("communication_lesson_items").delete().eq("id", id);
+}
+
+export function removeCommunicationItemsForLesson(supabase: SupabaseClient, lessonId: string) {
+  return supabase.from("communication_lesson_items").delete().eq("lesson_id", lessonId);
 }

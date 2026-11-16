@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { CategoryIdentity } from "@/components/vocabulary/CategoryAvatar";
 import { Select } from "@/components/ui/Select";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
 interface VocabularyWordCategoryFieldProps {
   category: string;
@@ -18,7 +19,7 @@ export function VocabularyWordCategoryField({
 }: VocabularyWordCategoryFieldProps) {
   const selectedCategory = categories.find((item) => item.name === category);
   const fallbackWordImagePath = words.find((item) =>
-    item.category.trim().toLocaleLowerCase() === category.trim().toLocaleLowerCase()
+    normalizeVocabularyLabel(item.category) === normalizeVocabularyLabel(category)
     && item.imagePath
   )?.imagePath;
 

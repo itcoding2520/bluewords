@@ -1,6 +1,7 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
+import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export type ScrambleWord = {
   id: string;
@@ -22,7 +23,7 @@ export function buildWordScrambleCandidates(
   return words.flatMap((word) => {
     const answer = word.word.trim().toLocaleLowerCase().replace(/[^a-z]/g, "");
     const meaning = getPrimaryVocabularyMeaning(word);
-    if ((category !== "all" && word.category !== category)
+    if (!matchesVocabularyCategory(word.category, category)
       || answer.length < 3 || answer.length > 10 || !meaning || seen.has(answer)) return [];
     seen.add(answer);
     return [{

@@ -12,11 +12,16 @@ import { useWordMatchController } from "@/hooks/useWordMatchController";
 export function WordMatchContent() {
   const { words, categories, isLoaded, isAuthenticated } = useVocabulary();
   const {
-    category, setCategory, pairCount, setPairCount, phase, setPhase,
-    pairs, cards, matchedIds, selectedCardIds, wrongCardIds, isResolving,
-    moves, score, feedback, availablePairs, categoryDropdownCategories,
-    elapsedSeconds, saveState, saveError, retrySave, pairById, matchedLabel,
-    progressPercent, startRound, selectCard,
+    setup: {
+      category, setCategory, pairCount, setPairCount, availablePairs,
+      categoryDropdownCategories, startRound,
+    },
+    game: {
+      phase, setPhase, pairs, cards, matchedIds, selectedCardIds, wrongCardIds,
+      isResolving, moves, score, feedback, pairById, matchedLabel,
+      progressPercent, selectCard,
+    },
+    session: { elapsedSeconds, saveState, saveError, retrySave },
   } = useWordMatchController({ words, categories, isAuthenticated });
 
   if (!isLoaded) return <p className="py-16 text-center text-sm text-slate-500">Loading your vocabulary…</p>;

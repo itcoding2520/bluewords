@@ -5,8 +5,9 @@ import { useCategoryManagementView } from "@/hooks/useCategoryManagementView";
 import { useCategoryManagementAccess } from "@/hooks/useCategoryManagementAccess";
 import { useCategoryImageActions } from "@/hooks/useCategoryImageActions";
 import { useCategoryManagementActions } from "@/hooks/useCategoryManagementActions";
-export type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
-import type { CategoryManagementSort, CategoryManagementFilter } from "@/hooks/useCategoryManagementView";
+import { useCategoryManagementFormState } from "@/hooks/useCategoryManagementFormState";
+export type { CategoryManagementSort, CategoryManagementFilter } from "@/lib/category-management-filters";
+import type { CategoryManagementSort, CategoryManagementFilter } from "@/lib/category-management-filters";
 
 export function useCategoryManagementController() {
   const { categories, words, addCategory, updateCategory, deleteCategory, refreshCategories } = useVocabulary({
@@ -36,7 +37,26 @@ export function useCategoryManagementController() {
     lastVisibleCategory,
   } = useCategoryManagementView({ categories, filterBy, sortBy, page, pageSize });
 
+  const form = useCategoryManagementFormState();
+  const formState = {
+    name: form.name,
+    setName: form.setName,
+    color: form.color,
+    setColor: form.setColor,
+    newImage: form.newImage,
+    setNewImage: form.setNewImage,
+    editing: form.editing,
+    setEditing: form.setEditing,
+    editName: form.editName,
+    setEditName: form.setEditName,
+    editColor: form.editColor,
+    setEditColor: form.setEditColor,
+    editImage: form.editImage,
+    setEditImage: form.setEditImage,
+    startEdit: form.startEdit,
+  };
   const actions = useCategoryManagementActions({
+    form,
     supabase,
     isAdmin,
     setPage,
@@ -47,9 +67,32 @@ export function useCategoryManagementController() {
   });
 
   return {
-    categories, words, isAdmin, categoryAuthors, page, setPage,
-    pageSize, setPageSize, sortBy, setSortBy, filterBy, setFilterBy,
-    isDefaultCategory, managedCategories, pageCount, currentPage, pageCategories,
-    firstVisibleCategory, lastVisibleCategory, ...actions,
+    access: { isAdmin },
+    data: {
+      categories,
+      words,
+      categoryAuthors,
+      managedCategories,
+      pageCategories,
+    },
+    pagination: {
+      page,
+      setPage,
+      pageSize,
+      setPageSize,
+      pageCount,
+      currentPage,
+      firstVisibleCategory,
+      lastVisibleCategory,
+    },
+    filters: {
+      sortBy,
+      setSortBy,
+      filterBy,
+      setFilterBy,
+      isDefaultCategory,
+    },
+    form: formState,
+    actions: { ...actions, startEdit: form.startEdit },
   };
 }

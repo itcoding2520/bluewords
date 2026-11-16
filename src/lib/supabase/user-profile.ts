@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 import {
   getCachedUserProfile as readCachedUserProfile,
   setCachedUserProfile,
@@ -6,7 +8,7 @@ import {
 
 export const USER_AVATARS_BUCKET = "user-avatars";
 export const USER_PROFILE_UPDATED_EVENT = "bluewords:user-profile-updated";
-export const MAX_USER_AVATAR_SIZE = 5 * 1024 * 1024;
+export const MAX_USER_AVATAR_SIZE = MAX_STANDARD_IMAGE_SIZE;
 
 export type UserProfile = {
   user_id: string;
@@ -36,11 +38,7 @@ export function getUserAvatarUrl(path: string | null | undefined): string | null
 }
 
 export function validateUserAvatar(file: File): string | null {
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    return "Choose a JPEG, PNG, or WebP image.";
-  }
-  if (file.size > MAX_USER_AVATAR_SIZE) return "Image must be 5 MB or smaller.";
-  return null;
+  return validateStandardImage(file);
 }
 
 export async function getUserProfile(userId: string, forceRefresh = false): Promise<UserProfile | null> {
@@ -63,10 +61,9 @@ export async function uploadUserAvatar(file: File): Promise<string> {
   const validationError = validateUserAvatar(file);
   if (validationError) throw new Error(validationError);
 
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to upload an avatar.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to upload an avatar.");
 
-  const extension = file.type === "image/jpeg" ? "jpg" : file.type.slice("image/".length);
+  const extension = getStandardImageExtension(file.type);
   const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
   const { error } = await getSupabase().storage.from(USER_AVATARS_BUCKET).upload(path, file, {
     // Every upload gets a unique path, so it is safe for browsers/CDNs to cache it for a year.
@@ -88,8 +85,7 @@ export async function saveUserProfile(input: {
     throw new Error("Nickname must be between 2 and 24 characters.");
   }
 
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to update your profile.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to update your profile.");
   if (input.avatarPath && !input.avatarPath.startsWith(`${user.id}/`)) {
     throw new Error("This avatar does not belong to your account.");
   }
@@ -110,8 +106,7 @@ export async function saveUserProfile(input: {
 }
 
 export async function deleteUserAvatar(path: string): Promise<void> {
-  const { data: { user }, error: authError } = await getSupabase().auth.getUser();
-  if (authError || !user) throw new Error("You must be logged in to delete an avatar.");
+  const user = await requireAuthenticatedUser(getSupabase(), "You must be logged in to delete an avatar.");
   if (!path.startsWith(`${user.id}/`)) throw new Error("This avatar does not belong to your account.");
 
   const { error } = await getSupabase().storage.from(USER_AVATARS_BUCKET).remove([path]);

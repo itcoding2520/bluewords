@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function GET() {
-  if (!serviceKey) return NextResponse.json({ error: "Shared vocabulary is not configured." }, { status: 503 });
-  const supabase = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const supabase = createAdminClient();
+  if (!supabase) return NextResponse.json({ error: "Shared vocabulary is not configured." }, { status: 503 });
   const [categoryResult, wordResult] = await Promise.all([
     supabase.from("community_categories").select("id, name, color, image_path").eq("status", "published").order("name"),
     supabase.from("community_words").select("id, word, meaning, ipa, category_id, image_path").eq("status", "published").order("word"),

@@ -1,9 +1,20 @@
+import type { DifficultyLevel } from "@/types/difficulty";
+import type { LearningStatus } from "@/types/learning";
+
+export type LessonMode = "study" | "practice" | "drills" | "listening";
+export const LESSON_ITEM_TYPES = ["word", "phrase", "sentence_pattern"] as const;
+export type LessonItemType = (typeof LESSON_ITEM_TYPES)[number];
+
+export function isLessonItemType(value: unknown): value is LessonItemType {
+  return typeof value === "string" && LESSON_ITEM_TYPES.some((itemType) => itemType === value);
+}
+
 export type Lesson = {
   id: string;
   topic_id: string;
   title_en: string;
   title_vi: string;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: DifficultyLevel;
   status: string;
 };
 
@@ -16,7 +27,7 @@ export type Topic = {
 export type Item = {
   id: string;
   item_key: string;
-  item_type: "word" | "phrase" | "sentence_pattern";
+  item_type: LessonItemType;
   content_en: string;
   meaning_vi: string;
   example_en: string;
@@ -47,7 +58,7 @@ export type Turn = {
 };
 
 export type ItemReview = {
-  status: "learning" | "mastered";
+  status: LearningStatus;
   review_count: number;
   correct_count: number;
 };

@@ -1,4 +1,4 @@
-import type { VocabularyCategoryColor } from "@/lib/supabase/categories";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 export const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-700",
@@ -11,6 +11,19 @@ export const CATEGORY_COLOR_STYLES: Record<VocabularyCategoryColor, string> = {
   amber: "bg-amber-700",
   pink: "bg-pink-700",
   slate: "bg-slate-700",
+};
+
+export const CATEGORY_DOT_STYLES: Record<VocabularyCategoryColor, string> = {
+  blue: "bg-blue-500",
+  violet: "bg-violet-500",
+  orange: "bg-orange-500",
+  green: "bg-emerald-500",
+  rose: "bg-rose-500",
+  indigo: "bg-indigo-500",
+  teal: "bg-teal-500",
+  amber: "bg-amber-500",
+  pink: "bg-pink-500",
+  slate: "bg-slate-500",
 };
 
 export const CATEGORY_TRIGGER_STYLES: Record<VocabularyCategoryColor, string> = {

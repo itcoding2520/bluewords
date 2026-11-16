@@ -1,18 +1,13 @@
+import { getErrorMessage } from "@/lib/errors";
 import { type FormEvent, useState } from "react";
-import type { VocabularyMeaning, VocabularyWord } from "@/data/vocabulary";
-import {
-  PARTS_OF_SPEECH,
-  type VocabularyCategory,
-  type VocabularyType,
-} from "@/config/vocabulary";
+import type { VocabularyWord } from "@/data/vocabulary";
+import type { VocabularyCategory, VocabularyType } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useWordFormImage } from "@/hooks/useWordFormImage";
+import { useVocabularyDetailedMeanings } from "@/hooks/useVocabularyDetailedMeanings";
+import { validateVocabularyWordForm, type WordFormErrors } from "@/lib/vocabulary/word-form";
 
-export interface WordFormErrors {
-  word?: string;
-  meaning?: string;
-  image?: string;
-}
+export type { WordFormErrors } from "@/lib/vocabulary/word-form";
 
 interface UseWordFormControllerOptions {
   words: VocabularyWord[];
@@ -36,9 +31,8 @@ export function useWordFormController({
       categories[0]?.name ??
       "Uncategorized"
   );
-  const [detailedMeanings, setDetailedMeanings] = useState<VocabularyMeaning[]>(
-    editingWord?.detailedMeanings ?? []
-  );
+  const { detailedMeanings, updateDetailedMeaning, addDetailedMeaning, removeDetailedMeaning } =
+    useVocabularyDetailedMeanings(editingWord?.detailedMeanings ?? []);
   const [errors, setErrors] = useState<WordFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const image = useWordFormImage(setErrors);
@@ -47,48 +41,16 @@ export function useWordFormController({
     setErrors((current) => ({ ...current, [field]: undefined }));
   }
 
-  function updateDetailedMeaning(
-    index: number,
-    updates: Partial<VocabularyMeaning>
-  ) {
-    setDetailedMeanings((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...updates } : item
-      )
-    );
-  }
-
-  function addDetailedMeaning() {
-    setDetailedMeanings((current) => [
-      ...current,
-      { partOfSpeech: PARTS_OF_SPEECH[0], meaning: "" },
-    ]);
-  }
-
-  function removeDetailedMeaning(index: number) {
-    setDetailedMeanings((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index)
-    );
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting) return;
 
-    const trimmedWord = word.trim();
-    const trimmedMeaning = meaning.trim();
-    const nextErrors: WordFormErrors = {};
-
-    if (!trimmedWord) nextErrors.word = "Word is required.";
-    if (!trimmedMeaning) nextErrors.meaning = "Meaning is required.";
-
-    const wordExists = words.some(
-      (item) =>
-        item.word.toLowerCase() === trimmedWord.toLowerCase() &&
-        item.id !== editingWord?.id
-    );
-    if (wordExists) nextErrors.word = "This word already exists.";
-
+    const nextErrors = validateVocabularyWordForm({
+      word,
+      meaning,
+      words,
+      editingWordId: editingWord?.id,
+    });
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -98,6 +60,8 @@ export function useWordFormController({
     try {
       if (!image.validateSelectedImage()) return;
 
+      const trimmedWord = word.trim();
+      const trimmedMeaning = meaning.trim();
       const wordId = editingWord?.id ?? crypto.randomUUID();
       const uploadedPath = await image.uploadSelectedImage(wordId);
       const success = await onSubmit({
@@ -118,7 +82,7 @@ export function useWordFormController({
     } catch (error) {
       setErrors((current) => ({
         ...current,
-        image: error instanceof Error ? error.message : "Could not upload image.",
+        image: getErrorMessage(error, "Could not upload image."),
       }));
     } finally {
       setIsSubmitting(false);
@@ -126,27 +90,21 @@ export function useWordFormController({
   }
 
   return {
-    word,
-    setWord,
-    meaning,
-    setMeaning,
-    type,
-    setType,
-    category,
-    setCategory,
-    detailedMeanings,
-    errors,
-    setErrors,
-    isSubmitting,
-    selectedImage: image.selectedImage,
-    removeCurrentImage: image.removeCurrentImage,
-    selectedImageUrl: image.selectedImageUrl,
-    selectImage: image.selectImage,
-    removeImage: image.removeImage,
-    clearError,
-    updateDetailedMeaning,
-    addDetailedMeaning,
-    removeDetailedMeaning,
-    handleSubmit,
+    fields: { word, setWord, meaning, setMeaning, type, setType, category, setCategory },
+    validation: { errors, clearError },
+    image: {
+      selected: image.selectedImage,
+      removeCurrent: image.removeCurrentImage,
+      previewUrl: image.selectedImageUrl,
+      select: image.selectImage,
+      remove: image.removeImage,
+    },
+    detailedMeanings: {
+      items: detailedMeanings,
+      update: updateDetailedMeaning,
+      add: addDetailedMeaning,
+      remove: removeDetailedMeaning,
+    },
+    submission: { isSubmitting, handleSubmit },
   };
 }

@@ -1,5 +1,7 @@
+import type { LearningStatus } from "@/types/learning";
+
 type LessonItem = { id: string };
-type ReviewState = { status: "learning" | "mastered"; review_count: number; correct_count: number };
+type ReviewState = { status: LearningStatus; review_count: number; correct_count: number };
 
 export function getNextLessonProgress(
   items: LessonItem[],

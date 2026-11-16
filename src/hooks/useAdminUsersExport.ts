@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { exportAdminUsersCsv } from "@/lib/admin-users-csv.mjs";
 import { downloadCsvFile } from "@/lib/download-csv";
@@ -29,7 +30,7 @@ export function useAdminUsersExport({
       });
       setNotice(`Exported ${payload.users?.length ?? 0} user(s). Passwords are never included.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not export users.");
+      setError(getErrorMessage(cause, "Could not export users."));
     } finally {
       setExporting(false);
     }

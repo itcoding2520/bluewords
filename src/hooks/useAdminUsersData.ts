@@ -1,6 +1,9 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
+import { getPageCount } from "@/lib/pagination";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export function useAdminUsersData({
   page,
@@ -17,13 +20,8 @@ export function useAdminUsersData({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search.trim(), 250);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
-    return () => window.clearTimeout(timer);
-  }, [search]);
 
   const loadUsers = useCallback(async (signal?: AbortSignal, force = false) => {
     setLoading(true);
@@ -39,7 +37,7 @@ export function useAdminUsersData({
       );
       if (signal?.aborted) return;
       const nextTotal = payload.total ?? 0;
-      const nextPageCount = Math.max(1, Math.ceil(nextTotal / pageSize));
+      const nextPageCount = getPageCount(nextTotal, pageSize);
       setTotal(nextTotal);
       if (page > nextPageCount) {
         setPage(nextPageCount);
@@ -49,7 +47,7 @@ export function useAdminUsersData({
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === "AbortError") return;
       if (signal?.aborted) return;
-      setError(cause instanceof Error ? cause.message : "Could not load users.");
+      setError(getErrorMessage(cause, "Could not load users."));
       setUsers([]);
       setTotal(0);
     } finally {

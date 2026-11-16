@@ -10,34 +10,42 @@ export type DashboardFeature = {
   surface: string;
 };
 
+type DashboardGuestAction = Omit<DashboardFeature, "icon"> & { icon: string };
+
+const vocabularyFeature: DashboardGuestAction = {
+  title: "My vocabulary",
+  description: "Organize and review your words and categories.",
+  href: "/vocabulary",
+  icon: "/images/ui/icons/vocabulary.svg",
+  illustration: "/images/ui/illustrations/vocabulary-books.svg",
+  color: "bg-blue-50 text-blue-700",
+  surface: "border-emerald-100 bg-[url('/images/ui/backgrounds/card-vocabulary.svg')]",
+};
+
+const flashcardsFeature: DashboardGuestAction = {
+  title: "Flashcards",
+  description: "Practice your vocabulary at your own pace.",
+  href: "/flashcards",
+  icon: "/images/ui/icons/flashcards.svg",
+  illustration: "/images/ui/illustrations/flashcards-apple-cat.svg",
+  color: "bg-emerald-50 text-emerald-700",
+  surface: "border-pink-100 bg-[url('/images/ui/backgrounds/card-flashcards.svg')]",
+};
+
+const gamesFeature: DashboardGuestAction = {
+  title: "Games",
+  description: "Play Quiz and Word Search with your words.",
+  href: "/games",
+  icon: "/images/ui/icons/games.svg",
+  illustration: "/images/ui/illustrations/game-controller.svg",
+  color: "bg-violet-50 text-violet-700",
+  surface: "border-violet-100 bg-[url('/images/ui/backgrounds/card-games.svg')]",
+};
+
 const sharedFeatures: DashboardFeature[] = [
-  {
-    title: "My vocabulary",
-    description: "Organize and review your words and categories.",
-    href: "/vocabulary",
-    icon: "/images/ui/icons/vocabulary.svg",
-    illustration: "/images/ui/illustrations/vocabulary-books.svg",
-    color: "bg-blue-50 text-blue-700",
-    surface: "border-emerald-100 bg-[url('/images/ui/backgrounds/card-vocabulary.svg')]",
-  },
-  {
-    title: "Flashcards",
-    description: "Practice your vocabulary at your own pace.",
-    href: "/flashcards",
-    icon: "/images/ui/icons/flashcards.svg",
-    illustration: "/images/ui/illustrations/flashcards-apple-cat.svg",
-    color: "bg-emerald-50 text-emerald-700",
-    surface: "border-pink-100 bg-[url('/images/ui/backgrounds/card-flashcards.svg')]",
-  },
-  {
-    title: "Games",
-    description: "Play Quiz and Word Search with your words.",
-    href: "/games",
-    icon: "/images/ui/icons/games.svg",
-    illustration: "/images/ui/illustrations/game-controller.svg",
-    color: "bg-violet-50 text-violet-700",
-    surface: "border-violet-100 bg-[url('/images/ui/backgrounds/card-games.svg')]",
-  },
+  vocabularyFeature,
+  flashcardsFeature,
+  gamesFeature,
   {
     title: "Videos",
     description: "Watch videos selected for vocabulary learners.",
@@ -98,4 +106,24 @@ const englishPracticeFeature: DashboardFeature = {
 
 export function getDashboardFeatures(isAdmin: boolean): DashboardFeature[] {
   return [...sharedFeatures, englishPracticeFeature, ...(isAdmin ? [] : [communityFeature])];
+}
+
+export function getGuestHomeFeatures(): DashboardGuestAction[] {
+  return [
+    {
+      ...vocabularyFeature,
+      title: "Explore vocabulary",
+      description: "Browse default words and community words approved for everyone.",
+    },
+    {
+      ...flashcardsFeature,
+      title: "Practice with flashcards",
+      description: "Review public vocabulary at your own pace.",
+    },
+    {
+      ...gamesFeature,
+      title: "Play a vocabulary game",
+      description: "Try Word Search or Quiz using public words.",
+    },
+  ];
 }

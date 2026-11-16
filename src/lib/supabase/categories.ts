@@ -1,45 +1,18 @@
 import { createClient } from "@/lib/supabase/client";
+import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryRow } from "@/types/database";
+export type { VocabularyCategoryRow } from "@/types/database";
+export type { VocabularyCategoryColor } from "@/config/vocabulary";
 
 const supabase = createClient();
-
-export type VocabularyCategoryColor =
-  | "blue"
-  | "violet"
-  | "orange"
-  | "green"
-  | "rose"
-  | "indigo"
-  | "teal"
-  | "amber"
-  | "pink"
-  | "slate";
-
-export interface VocabularyCategoryRow {
-  id: string;
-  user_id: string;
-  name: string;
-  color: VocabularyCategoryColor;
-  image_path?: string | null;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export type VocabularyCategoryUpdate = Partial<
   Pick<VocabularyCategoryRow, "name" | "color" | "image_path">
 >;
 
 async function getAuthenticatedUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    throw new Error("You must be logged in to manage categories.");
-  }
-
-  return user;
+  return requireAuthenticatedUser(supabase, "You must be logged in to manage categories.");
 }
 
 export async function getVocabularyCategoriesForUser(

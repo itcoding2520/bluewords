@@ -1,3 +1,28 @@
+export function toVietnamDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+export function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString();
+}
+
+export function formatLocalTime(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(date);
+}
+
+export function formatFullLocalDate(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "full" }).format(date);
+}
+
+export function formatLocalDate(value: string | Date): string {
+  return (value instanceof Date ? value : new Date(value)).toLocaleDateString();
+}
+
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",

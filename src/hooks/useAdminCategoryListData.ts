@@ -1,10 +1,10 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminCategories } from "@/lib/admin-category-data";
 import type { CommunityCategory } from "@/lib/admin-category-data";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useAdminCategoryListData(supabase: SupabaseClient) {
   const [communityCategories, setCommunityCategories] = useState<CommunityCategory[]>([]);
@@ -21,7 +21,7 @@ export function useAdminCategoryListData(supabase: SupabaseClient) {
       setCommunityCategories(result.categories);
       setEmails(result.emails);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load categories.");
+      setError(getErrorMessage(cause, "Could not load categories."));
       setCommunityCategories([]);
       setEmails({});
     }

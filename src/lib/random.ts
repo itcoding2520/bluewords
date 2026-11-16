@@ -1,4 +1,4 @@
-/** Return a shuffled copy, leaving the input array untouched. */
+/** Return a Fisher–Yates shuffled copy without changing the input array. */
 export function shuffle<T>(items: T[]): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {

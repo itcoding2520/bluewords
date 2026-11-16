@@ -3,6 +3,7 @@ import { Pencil, Play, Trash2 } from "lucide-react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Card } from "@/components/ui/Card";
 import { getYoutubeVideoId, type VideoRow } from "@/lib/videos";
+import { formatLocalDate } from "@/lib/formatDate";
 
 interface VideoCardProps {
   video: VideoRow;
@@ -71,7 +72,7 @@ export function VideoCard({
           {video.title}
         </h3>
         <p className="mt-1 text-xs text-slate-500">
-          {new Date(video.created_at).toLocaleDateString()}
+          {formatLocalDate(video.created_at)}
         </p>
         {isAdmin && (
           <div className="mt-auto flex justify-end border-t border-slate-100 pt-3">

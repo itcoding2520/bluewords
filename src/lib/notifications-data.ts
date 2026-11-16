@@ -1,4 +1,4 @@
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedNotifications, peekCachedNotifications } from "@/lib/notifications-cache.mjs";
 import {
   NOTIFICATION_LOOKBACK_MS,
@@ -6,7 +6,6 @@ import {
   type NotificationRow,
 } from "@/lib/notifications";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function peekRecentNotifications(userId: string): NotificationRow[] | null {
   const cachedRows = peekCachedNotifications(userId) as NotificationRow[] | null;
@@ -33,4 +32,42 @@ export function loadRecentNotifications(
     if (error) throw error;
     return (data ?? []) as NotificationRow[];
   }, { force });
+}
+
+export function loadUnreadNotificationCount(supabase: SupabaseClient, userId: string) {
+  return supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("recipient_id", userId)
+    .neq("kind", "assessment_assigned")
+    .is("read_at", null);
+}
+
+export async function markRecentNotificationsRead(
+  supabase: SupabaseClient,
+  userId: string,
+  readAt: Date,
+) {
+  const cutoff = new Date(readAt.getTime() - NOTIFICATION_LOOKBACK_MS).toISOString();
+  const timestamp = readAt.toISOString();
+  return supabase.from("notifications")
+    .update({ read_at: timestamp })
+    .eq("recipient_id", userId)
+    .neq("kind", "assessment_assigned")
+    .gte("created_at", cutoff)
+    .lte("created_at", timestamp)
+    .is("read_at", null);
+}
+
+export async function markNotificationRead(
+  supabase: SupabaseClient,
+  userId: string,
+  notificationId: string,
+  readAt: string,
+) {
+  return supabase.from("notifications")
+    .update({ read_at: readAt })
+    .eq("id", notificationId)
+    .eq("recipient_id", userId)
+    .is("read_at", null);
 }

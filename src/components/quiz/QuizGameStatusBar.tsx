@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowLeft, Clock3 } from "lucide-react";
-import { formatQuizTime } from "@/lib/quiz-format";
+import { formatClockDuration } from "@/lib/clock-duration";
 import { getQuizQuestionProgress } from "@/lib/quiz-model";
 import { getQuizElapsedSeconds } from "@/lib/quiz-timing";
 
@@ -41,7 +41,7 @@ export function QuizGameStatusBar({
         </button>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-slate-500">Question {currentQuestion} of {questionCount}</span>
-          <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatQuizTime(displayElapsedSeconds)}</span>
+          <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700"><Clock3 size={16} /> {formatClockDuration(displayElapsedSeconds)}</span>
         </div>
       </div>
       <div className="quiz-game-progress mt-5 h-2 overflow-hidden rounded-full bg-slate-100">

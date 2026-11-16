@@ -7,22 +7,18 @@ import { PublishWordRequestsCard } from "@/components/publish/PublishWordRequest
 
 export function PublishVocabularyContent() {
   const {
-    isLoaded,
-    isAuthenticated,
-    selectedCategories,
-    selectedWordIds,
-    setSelectedWordIds,
-    busy,
-    status,
-    requestsLoaded,
-    communityCategoryRequests,
-    communityWordRequests,
-    communityCategoryNames,
-    requestableCategories,
-    userWords,
-    sendCategoryRequests,
-    sendWordRequests,
-    toggleCategoryRequest,
+    account: { isLoaded, isAuthenticated },
+    requests: {
+      requestsLoaded, communityCategoryRequests, communityWordRequests,
+      communityCategoryNames,
+    },
+    selection: {
+      selectedCategories, selectedWordIds, setSelectedWordIds,
+      toggleCategoryRequest,
+    },
+    view: { requestableCategories, userWords },
+    submission: { busy, status },
+    actions: { sendCategoryRequests, sendWordRequests },
   } = usePublishVocabularyController();
 
   if (!isLoaded) return <p className="py-12 text-center text-slate-600">Checking your session…</p>;

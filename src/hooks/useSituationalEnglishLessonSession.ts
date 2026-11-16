@@ -1,9 +1,9 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 
-import type { Item } from "@/lib/communication/lesson-types";
-import { shuffled } from "@/lib/communication/lesson-practice";
+import type { Item, LessonMode } from "@/lib/communication/lesson-types";
+import { shuffle } from "@/lib/random";
 
-export type LessonMode = "study" | "practice" | "drills" | "listening";
+export type { LessonMode };
 type OrderedTile = { id: number; text: string };
 
 export function useSituationalEnglishLessonSession({
@@ -25,7 +25,7 @@ export function useSituationalEnglishLessonSession({
   function selectMode(nextMode: LessonMode, listeningItemIds: string[]) {
     setMode(nextMode);
     if (nextMode === "practice") {
-      setPracticeOrder(shuffled(items.map((item) => item.id)));
+      setPracticeOrder(shuffle(items.map((item) => item.id)));
       setPracticeStep(0);
       setPracticeAnswer(null);
     }
@@ -35,7 +35,7 @@ export function useSituationalEnglishLessonSession({
       setOrderedTiles([]);
     }
     if (nextMode === "listening") {
-      setListeningOrder(shuffled(listeningItemIds));
+      setListeningOrder(shuffle(listeningItemIds));
       setPracticeStep(0);
       setPracticeAnswer(null);
     }
@@ -53,13 +53,13 @@ export function useSituationalEnglishLessonSession({
   }
 
   function restartPractice() {
-    setPracticeOrder(shuffled(items.map((item) => item.id)));
+    setPracticeOrder(shuffle(items.map((item) => item.id)));
     setPracticeStep(0);
     setPracticeAnswer(null);
   }
 
   function restartListening(listeningItemIds: string[]) {
-    setListeningOrder(shuffled(listeningItemIds));
+    setListeningOrder(shuffle(listeningItemIds));
     setPracticeStep(0);
     setPracticeAnswer(null);
   }

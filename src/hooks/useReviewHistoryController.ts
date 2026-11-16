@@ -5,6 +5,7 @@ import {
   type VocabularyReviewWithWord,
 } from "@/lib/supabase/reviews";
 import { getLocalReviewDay, groupReviewsByLocalDay } from "@/lib/review-history-view";
+import { getPageItems, getPageMetadata } from "@/lib/pagination";
 
 const PAGE_SIZE = 20;
 
@@ -54,38 +55,22 @@ export function useReviewHistoryController(userId: string) {
   const selectedGroup = dailyGroups.find((group) => group.day === selectedDay);
   const earliestDay = dailyGroups[dailyGroups.length - 1]?.day;
   const latestDay = dailyGroups[0]?.day;
-  const pageCount = Math.max(
-    1,
-    Math.ceil((selectedGroup?.reviews.length ?? 0) / PAGE_SIZE)
-  );
-  const currentPage = Math.min(page, pageCount);
-  const pageReviews =
-    selectedGroup?.reviews.slice(
-      (currentPage - 1) * PAGE_SIZE,
-      currentPage * PAGE_SIZE
-    ) ?? [];
-  const firstVisible =
-    pageReviews.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const lastVisible = Math.min(
-    currentPage * PAGE_SIZE,
-    selectedGroup?.reviews.length ?? 0
-  );
+  const pageMetadata = getPageMetadata(selectedGroup?.reviews.length ?? 0, page, PAGE_SIZE);
+  const pageReviews = selectedGroup
+    ? getPageItems(selectedGroup.reviews, pageMetadata.currentPage, PAGE_SIZE)
+    : [];
 
   return {
-    isLoading,
-    loadFailed,
-    dailyGroups,
-    selectedGroup,
-    selectedDay,
-    setSelectedDay,
-    setPage,
-    earliestDay,
-    latestDay,
-    pageReviews,
-    firstVisible,
-    lastVisible,
-    pageCount,
-    currentPage,
-    pageSize: PAGE_SIZE,
+    loading: { isLoading, loadFailed },
+    data: { dailyGroups, selectedGroup, earliestDay, latestDay, pageReviews },
+    selection: { selectedDay, setSelectedDay },
+    pagination: {
+      setPage,
+      firstVisible: pageMetadata.first,
+      lastVisible: pageMetadata.last,
+      pageCount: pageMetadata.pageCount,
+      currentPage: pageMetadata.currentPage,
+      pageSize: PAGE_SIZE,
+    },
   };
 }

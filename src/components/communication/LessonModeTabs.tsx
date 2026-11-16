@@ -1,8 +1,9 @@
 "use client";
 
 import { Headphones, Zap } from "lucide-react";
+import type { LessonMode } from "@/lib/communication/lesson-types";
 
-export type LessonMode = "study" | "practice" | "drills" | "listening";
+export type { LessonMode };
 
 export function LessonModeTabs({ mode, practiceDisabled, drillsDisabled, listeningDisabled, onSelect }: {
   mode: LessonMode;

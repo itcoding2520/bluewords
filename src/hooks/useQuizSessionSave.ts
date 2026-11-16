@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
 import type { QuizAnswer, QuizMode, QuizPhase, QuizQuestion, QuizSaveState } from "@/lib/quiz-model";
@@ -55,7 +56,7 @@ export function useQuizSessionSave({
       if (requestId !== saveRequestId.current) return;
       saveStartedRef.current = null;
       setSaveState("error");
-      setSaveError(error instanceof Error ? error.message : "Could not save this quiz attempt.");
+      setSaveError(getErrorMessage(error, "Could not save this quiz attempt."));
     });
   }, [answers, correctCount, historyPageSize, loadHistory, mode, phase, questions, retryRevision, setElapsedSeconds, setHistoryPage, startedAt, userId]);
 

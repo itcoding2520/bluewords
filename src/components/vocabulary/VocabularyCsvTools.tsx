@@ -27,24 +27,25 @@ export function VocabularyCsvTools({
   onImportComplete,
 }: VocabularyCsvToolsProps) {
   const {
-    fileInputRef,
-    imageInputRef,
-    open,
-    setOpen,
-    fileName,
-    imageFiles,
-    preview,
-    isReading,
-    isImporting,
-    isExporting,
-    exportOpen,
-    setExportOpen,
-    imageMatch,
-    openImport: handleOpenImport,
-    exportCsv: handleExport,
-    readCsvFile: handleFileChange,
-    selectImageFiles: handleImageFilesChange,
-    importCsv: handleImport,
+    import: {
+      dialog: { open, setOpen, isReading, isImporting },
+      files: {
+        csvInputRef: fileInputRef, imageInputRef, fileName, imageFiles,
+      },
+      preview: { content: preview, imageMatch },
+      actions: {
+        openImport: handleOpenImport,
+        readCsvFile: handleFileChange,
+        selectImageFiles: handleImageFilesChange,
+        importCsv: handleImport,
+      },
+    },
+    export: {
+      isExporting,
+      open: exportOpen,
+      setOpen: setExportOpen,
+      download: handleExport,
+    },
   } = useVocabularyCsvController({ exportCount, loadExportWords, exportCategory, categories, onImportComplete });
 
   return (

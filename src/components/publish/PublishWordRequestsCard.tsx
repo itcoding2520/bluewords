@@ -3,7 +3,8 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { normalize, type CommunityWordRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityWordRequest } from "@/lib/supabase/publish-vocabulary-request-types";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 interface PublishWordRequestsCardProps {
   requestsLoaded: boolean;
@@ -49,8 +50,8 @@ export function PublishWordRequestsCard({
               {item.word} <span className="text-slate-500">· {item.category}{item.meaning ? ` — ${item.meaning}` : ""}</span>
               {communityWordRequests.some((request) =>
                 request.status === "rejected"
-                && communityCategoryNames.get(request.category_id) === normalize(item.category)
-                && normalize(request.normalized_word) === normalize(item.word)
+                && communityCategoryNames.get(request.category_id) === normalizeVocabularyText(item.category)
+                && normalizeVocabularyText(request.normalized_word) === normalizeVocabularyText(item.word)
               ) && <span className="ml-2 text-xs text-amber-700">Rejected · resubmittable</span>}
             </span>
           </label>

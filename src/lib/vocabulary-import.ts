@@ -1,16 +1,13 @@
 import { addVocabularyWord } from "@/lib/supabase/vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { getLegacyVocabulary } from "@/lib/vocabulary-migration";
-import { fetchEnglishIpa } from "@/lib/dictionary";
+import { resolveVocabularyIpa } from "@/lib/vocabulary/resolve-ipa";
+import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
 
 export interface VocabularyImportPreview {
   total: number;
   duplicates: number;
   ready: VocabularyWord[];
-}
-
-function normalizeWord(word: string): string {
-  return word.trim().toLowerCase();
 }
 
 export function previewVocabularyImport(
@@ -19,14 +16,14 @@ export function previewVocabularyImport(
   const legacyWords = getLegacyVocabulary();
 
   const existingWords = new Set(
-    cloudWords.map((item) => normalizeWord(item.word))
+    cloudWords.map((item) => normalizeVocabularyKey(item.word))
   );
 
   const ready: VocabularyWord[] = [];
   let duplicates = 0;
 
   for (const item of legacyWords) {
-    const normalized = normalizeWord(item.word);
+    const normalized = normalizeVocabularyKey(item.word);
 
     if (existingWords.has(normalized)) {
       duplicates++;
@@ -68,9 +65,7 @@ export async function importLegacyVocabulary(
         category: item.category,
         status: item.status,
         type: item.type ?? "word",
-        ipa: (item.type ?? "word") === "word"
-          ? item.ipa?.trim() || await fetchEnglishIpa(item.word)
-          : null,
+        ipa: await resolveVocabularyIpa({ word: item.word, type: item.type ?? "word", providedIpa: item.ipa }),
       });
 
       imported++;

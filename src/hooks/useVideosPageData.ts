@@ -1,11 +1,11 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { loadVideosPage } from "@/lib/videos-api";
 import { toast } from "sonner";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useVideosPageData(supabase: SupabaseClient, page: number) {
   const [videos, setVideos] = useState<VideoRow[]>([]);
@@ -31,7 +31,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
       setVideos(result.videos);
       setTotal(result.total);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not load videos.");
+      toast.error(getErrorMessage(error, "Could not load videos."));
     } finally {
       setIsLoading(false);
     }

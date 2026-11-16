@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
-import type { ContentStatus } from "@/lib/communication/csv";
+import { isContentStatus } from "@/lib/communication/content-types";
 import type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 export type { CommunicationTopicDraft } from "@/lib/communication/admin-draft-types";
 
@@ -59,7 +59,7 @@ export function AdminCommunicationTopicForm({
           </label>
           <label className="text-xs font-bold text-slate-600">
             Status
-            <Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as ContentStatus })}>
+            <Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={draft.status} onChange={(event) => { if (isContentStatus(event.target.value)) onDraftChange({ ...draft, status: event.target.value }); }}>
               <option value="draft">Draft</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>

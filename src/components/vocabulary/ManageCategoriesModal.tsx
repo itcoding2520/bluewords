@@ -19,23 +19,13 @@ export function ManageCategoriesModal({
   onClose,
 }: ManageCategoriesModalProps) {
   const {
-    categories,
-    words,
-    newName,
-    setNewName,
-    newColor,
-    setNewColor,
-    editing,
-    setEditing,
-    editName,
-    setEditName,
-    editColor,
-    setEditColor,
-    isSaving,
-    startEditing,
-    handleAdd,
-    handleUpdate,
-    handleDelete,
+    data: { categories, words },
+    form: {
+      newName, setNewName, newColor, setNewColor, editing, setEditing,
+      editName, setEditName, editColor, setEditColor,
+    },
+    status: { isSaving },
+    actions: { startEditing, handleAdd, handleUpdate, handleDelete },
   } = useManageCategoriesController();
 
   return (

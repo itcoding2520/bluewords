@@ -1,12 +1,13 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
+import { getPageCount } from "@/lib/pagination";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 export function useVideosAdminActions({
   isAdmin,
@@ -51,15 +52,14 @@ export function useVideosAdminActions({
       toast.error("Enter a title between 1 and 150 characters.");
       return;
     }
-    if (!getYoutubeVideoId(trimmedUrl)) {
+    const videoId = getYoutubeVideoId(trimmedUrl);
+    if (!videoId) {
       toast.error("Enter a valid YouTube video link.");
       return;
     }
 
     setIsSaving(true);
     try {
-      const videoId = getYoutubeVideoId(trimmedUrl);
-      if (!videoId) throw new Error("Enter a valid YouTube video link.");
       const duplicate = await findVideoByYoutubeId(supabase, videoId);
       if (duplicate && duplicate.id !== editingId) {
         toast.error("This YouTube video is already in the library.");
@@ -80,7 +80,7 @@ export function useVideosAdminActions({
       else setPage(1);
     } catch (error) {
       const isDuplicate = Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
-      toast.error(isDuplicate ? "This YouTube video is already in the library." : error instanceof Error ? error.message : "Could not save video.");
+      toast.error(isDuplicate ? "This YouTube video is already in the library." : getErrorMessage(error, "Could not save video."));
     } finally {
       setIsSaving(false);
     }
@@ -97,11 +97,11 @@ export function useVideosAdminActions({
       toast.success("Video deleted.");
       invalidateVideosCache();
       const nextTotal = Math.max(0, total - 1);
-      const nextPage = Math.max(1, Math.min(page, Math.ceil(nextTotal / VIDEOS_PAGE_SIZE) || 1));
+      const nextPage = Math.max(1, Math.min(page, getPageCount(nextTotal, VIDEOS_PAGE_SIZE)));
       if (nextPage !== page) setPage(nextPage);
       else await loadVideos();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete video.");
+      toast.error(getErrorMessage(error, "Could not delete video."));
     } finally {
       setIsSaving(false);
     }

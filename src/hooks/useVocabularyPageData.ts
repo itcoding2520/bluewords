@@ -6,6 +6,7 @@ import { getVocabularyWordPage } from "@/lib/supabase/vocabulary";
 import { getCachedVocabularyPage, setCachedVocabularyPage } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { toast } from "sonner";
+import { getPageCount } from "@/lib/pagination";
 
 type PageQuery = { page: number; pageSize: number; search: string; category: string | null; status: VocabularyStatus | null };
 
@@ -53,7 +54,7 @@ export function useVocabularyPageData({
     void pageResult.then((result) => {
       if (cancelled || requestId !== requestIdRef.current) return;
       setTotalWords(result.total);
-      const resultPageCount = Math.max(1, Math.ceil(result.total / pageSize));
+      const resultPageCount = getPageCount(result.total, pageSize);
       if (page > resultPageCount) {
         pageCallbackRef.current(resultPageCount);
         return;

@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import type {
+  LeaderboardDifficulty,
+  LeaderboardGame,
+  LeaderboardGridSize,
+  LeaderboardQuestionCount,
+  LeaderboardQuizMode,
+} from "@/lib/games/leaderboard-filters";
 import {
   getQuizLeaderboard,
   getVocabularyGameLeaderboard,
@@ -8,17 +15,21 @@ import {
   type WordSearchLeaderboardRow,
 } from "@/lib/supabase/game-leaderboard";
 
-export type LeaderboardGame = "quiz" | "word-search" | "word-match" | "word-scramble" | "word-maze" | "sentence-builder";
-type QuizMode = "choose-meaning" | "type-word";
-type Difficulty = "easy" | "medium" | "hard";
-type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
+export type {
+  LeaderboardDifficulty,
+  LeaderboardGame,
+  LeaderboardGridSize,
+  LeaderboardQuestionCount,
+  LeaderboardQuizMode,
+} from "@/lib/games/leaderboard-filters";
+export type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
 
 export function useGamesLeaderboardController() {
   const [game, setGame] = useState<LeaderboardGame>("quiz");
-  const [quizMode, setQuizMode] = useState<QuizMode>("choose-meaning");
-  const [questionCount, setQuestionCount] = useState<10 | 20 | 30>(10);
-  const [gridSize, setGridSize] = useState<10 | 15 | 20>(10);
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [quizMode, setQuizMode] = useState<LeaderboardQuizMode>("choose-meaning");
+  const [questionCount, setQuestionCount] = useState<LeaderboardQuestionCount>(10);
+  const [gridSize, setGridSize] = useState<LeaderboardGridSize>(10);
+  const [difficulty, setDifficulty] = useState<LeaderboardDifficulty>("easy");
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,41 +70,52 @@ export function useGamesLeaderboardController() {
     setReloadKey((key) => key + 1);
   }
 
-  function selectGame(nextGame: LeaderboardGame) {
-    if (game === nextGame) return;
+  function prepareFilterChange() {
     setLoading(true);
     setError("");
+  }
+
+  function selectGame(nextGame: LeaderboardGame) {
+    if (game === nextGame) return;
+    prepareFilterChange();
     setGame(nextGame);
   }
 
-  function selectQuizMode(nextMode: QuizMode) {
-    setLoading(true);
-    setError("");
+  function selectQuizMode(nextMode: LeaderboardQuizMode) {
+    prepareFilterChange();
     setQuizMode(nextMode);
   }
 
-  function selectQuestionCount(nextCount: 10 | 20 | 30) {
-    setLoading(true);
-    setError("");
+  function selectQuestionCount(nextCount: LeaderboardQuestionCount) {
+    prepareFilterChange();
     setQuestionCount(nextCount);
   }
 
-  function selectGridSize(nextGridSize: 10 | 15 | 20) {
-    setLoading(true);
-    setError("");
+  function selectGridSize(nextGridSize: LeaderboardGridSize) {
+    prepareFilterChange();
     setGridSize(nextGridSize);
   }
 
-  function selectDifficulty(nextDifficulty: Difficulty) {
-    setLoading(true);
-    setError("");
+  function selectDifficulty(nextDifficulty: LeaderboardDifficulty) {
+    prepareFilterChange();
     setDifficulty(nextDifficulty);
   }
 
   return {
-    game, quizMode, questionCount, gridSize, difficulty, rows,
-    loading, refreshing, error, expanded, setExpanded,
-    refresh, selectGame, selectQuizMode, selectQuestionCount,
-    selectGridSize, selectDifficulty,
+    filters: {
+      game,
+      quizMode,
+      questionCount,
+      gridSize,
+      difficulty,
+      selectGame,
+      selectQuizMode,
+      selectQuestionCount,
+      selectGridSize,
+      selectDifficulty,
+    },
+    results: { rows, loading, error },
+    display: { refreshing, expanded, setExpanded },
+    actions: { refresh },
   };
 }

@@ -11,6 +11,7 @@ import { normalizeWordSearchWord } from "@/lib/word-search.mjs";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { WordSearchSessionRow } from "@/types/database";
 import { formatGameDuration } from "@/lib/game-duration";
+import { formatDateTime } from "@/lib/formatDate";
 
 
 function HistoryWordCard({ word, meaning }: { word: VocabularyWord | undefined; meaning: string }) {
@@ -52,7 +53,7 @@ export function WordSearchHistoryDetail({
               <span className="word-search-history-detail-stat word-search-detail-level"><BarChart3 /><span><small>Level</small><strong className="capitalize">{session.difficulty}</strong></span></span>
               <span className="word-search-history-detail-stat word-search-detail-category"><Tag /><span><small>Category</small><strong>{session.category === "all" ? "All categories" : session.category}</strong></span></span>
             </div>
-            <p className="word-search-history-detail-date"><CalendarDays size={17} />{new Date(session.completed_at).toLocaleString()}</p>
+            <p className="word-search-history-detail-date"><CalendarDays size={17} />{formatDateTime(session.completed_at)}</p>
           </div>
         </div>
       </div>

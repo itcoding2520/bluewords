@@ -1,12 +1,8 @@
 import type { VocabularyWord } from "@/data/vocabulary";
+import { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
 
 function normalizeImageName(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase()
-    .replace(/\.[^.]+$/, "")
-    .replace(/[^a-z0-9]/g, "");
+  return normalizeVocabularyImageKey(value.replace(/\.[^.]+$/, ""));
 }
 
 export function matchVocabularyImportImages(

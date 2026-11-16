@@ -1,16 +1,19 @@
+import { getErrorMessage } from "@/lib/errors";
 import { useState, type FormEvent } from "react";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { useVocabulary } from "@/contexts/VocabularyContext";
-import type { VocabularyCategoryColor, VocabularyCategoryRow } from "@/lib/supabase/categories";
+import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { deleteCategoryImage, uploadCategoryImage, validateCategoryImage } from "@/lib/supabase/category-images";
 import { toast } from "sonner";
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { updateSharedCategoryDetails } from "@/lib/category-management-api";
+import type { useCategoryManagementFormState } from "@/hooks/useCategoryManagementFormState";
+import { getCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type CategoryMutations = Pick<ReturnType<typeof useVocabulary>, "addCategory" | "updateCategory" | "deleteCategory">;
 
 export function useCategoryManagementActions({
+  form,
   supabase,
   isAdmin,
   setPage,
@@ -19,51 +22,36 @@ export function useCategoryManagementActions({
   updateCategory,
   deleteCategory,
 }: {
+  form: ReturnType<typeof useCategoryManagementFormState>;
   supabase: SupabaseClient;
   isAdmin: boolean;
   setPage: (page: number) => void;
   saveImage: (category: VocabularyCategoryRow, file: File) => Promise<void>;
 } & CategoryMutations) {
   const confirmDialog = useConfirmDialog();
-  const [name, setName] = useState("");
-  const [color, setColor] = useState<VocabularyCategoryColor>("blue");
-  const [newImage, setNewImage] = useState<File | null>(null);
-  const [editing, setEditing] = useState<VocabularyCategoryRow | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editColor, setEditColor] = useState<VocabularyCategoryColor>("blue");
-  const [editImage, setEditImage] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  function startEdit(category: VocabularyCategoryRow) {
-    setEditing(category);
-    setEditName(category.name);
-    setEditColor(category.color);
-    setEditImage(null);
-  }
 
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!name.trim() || isSaving) return;
-    if (newImage) {
-      const validationError = validateCategoryImage(newImage);
+    if (!form.name.trim() || isSaving) return;
+    if (form.newImage) {
+      const validationError = validateCategoryImage(form.newImage);
       if (validationError) { toast.error(validationError); return; }
     }
     setIsSaving(true);
     let uploadedPath: string | null = null;
     try {
-      const id = newImage ? crypto.randomUUID() : undefined;
-      if (id && newImage) uploadedPath = await uploadCategoryImage(id, newImage);
-      const added = await addCategory({ id, name, color, image_path: uploadedPath });
+      const id = form.newImage ? crypto.randomUUID() : undefined;
+      if (id && form.newImage) uploadedPath = await uploadCategoryImage(id, form.newImage);
+      const added = await addCategory({ id, name: form.name, color: form.color, image_path: uploadedPath });
       if (!added && uploadedPath) await deleteCategoryImage(uploadedPath);
       if (added) {
-        setName("");
-        setColor("blue");
-        setNewImage(null);
+        form.resetNewCategory();
         setPage(1);
       }
     } catch (error) {
       if (uploadedPath) await deleteCategoryImage(uploadedPath).catch(() => undefined);
-      toast.error(error instanceof Error ? error.message : "Could not save the category image.");
+      toast.error(getErrorMessage(error, "Could not save the category image."));
     } finally {
       setIsSaving(false);
     }
@@ -71,29 +59,28 @@ export function useCategoryManagementActions({
 
   async function handleUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editing || isSaving) return;
-    if (editImage) {
-      const validationError = validateCategoryImage(editImage);
+    if (!form.editing || isSaving) return;
+    if (form.editImage) {
+      const validationError = validateCategoryImage(form.editImage);
       if (validationError) { toast.error(validationError); return; }
     }
     setIsSaving(true);
     try {
-      const isSharedCategory = editing.id.startsWith("community-category-");
+      const communityId = getCommunityCategoryId(form.editing.id);
       let updated = true;
-      if (isSharedCategory) {
-        const id = editing.id.slice("community-category-".length);
-        const error = await updateSharedCategoryDetails(supabase, id, { name: editName, color: editColor });
+      if (communityId !== null) {
+        const error = await updateSharedCategoryDetails(supabase, communityId, { name: form.editName, color: form.editColor });
         if (error) throw error;
       } else {
         updated = Boolean(await updateCategory(
-          editing.id,
-          editing.is_default ? { color: editColor } : { name: editName, color: editColor }
+          form.editing.id,
+          form.editing.is_default ? { color: form.editColor } : { name: form.editName, color: form.editColor }
         ));
       }
-      if (updated && editImage && (isAdmin || !editing.is_default)) await saveImage(editing, editImage);
-      if (updated) setEditing(null);
+      if (updated && form.editImage && (isAdmin || !form.editing.is_default)) await saveImage(form.editing, form.editImage);
+      if (updated) form.closeEdit();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save the category image.");
+      toast.error(getErrorMessage(error, "Could not save the category image."));
     } finally {
       setIsSaving(false);
     }
@@ -112,9 +99,5 @@ export function useCategoryManagementActions({
     setIsSaving(false);
   }
 
-  return {
-    name, setName, color, setColor, newImage, setNewImage, editing, setEditing,
-    editName, setEditName, editColor, setEditColor, editImage, setEditImage,
-    isSaving, startEdit, handleAdd, handleUpdate, handleDelete,
-  };
+  return { isSaving, handleAdd, handleUpdate, handleDelete };
 }

@@ -2,10 +2,9 @@
 
 import { Download, FileUp, RefreshCw } from "lucide-react";
 
-import type { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@/lib/supabase/client";
 import { useAdminCommunicationCsvActions } from "@/hooks/useAdminCommunicationCsvActions";
 
-type SupabaseClient = ReturnType<typeof createClient>;
 
 type Props = {
   supabase: SupabaseClient;
