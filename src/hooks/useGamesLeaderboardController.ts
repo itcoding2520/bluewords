@@ -24,12 +24,22 @@ export type {
 } from "@/lib/games/leaderboard-filters";
 export type LeaderboardRow = QuizLeaderboardRow | WordSearchLeaderboardRow | VocabularyGameLeaderboardRow;
 
+interface LeaderboardFilters {
+  game: LeaderboardGame;
+  quizMode: LeaderboardQuizMode;
+  questionCount: LeaderboardQuestionCount;
+  gridSize: LeaderboardGridSize;
+  difficulty: LeaderboardDifficulty;
+}
+
 export function useGamesLeaderboardController() {
-  const [game, setGame] = useState<LeaderboardGame>("quiz");
-  const [quizMode, setQuizMode] = useState<LeaderboardQuizMode>("choose-meaning");
-  const [questionCount, setQuestionCount] = useState<LeaderboardQuestionCount>(10);
-  const [gridSize, setGridSize] = useState<LeaderboardGridSize>(10);
-  const [difficulty, setDifficulty] = useState<LeaderboardDifficulty>("easy");
+  const [filters, setFilters] = useState<LeaderboardFilters>({
+    game: "quiz",
+    quizMode: "choose-meaning",
+    questionCount: 10,
+    gridSize: 10,
+    difficulty: "easy",
+  });
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,11 +50,11 @@ export function useGamesLeaderboardController() {
   useEffect(() => {
     let active = true;
 
-    const request = game === "quiz"
-      ? getQuizLeaderboard({ mode: quizMode, questionCount })
-      : game === "word-search"
-        ? getWordSearchLeaderboard({ gridSize, difficulty })
-        : getVocabularyGameLeaderboard({ gameType: game, roundSize: null });
+    const request = filters.game === "quiz"
+      ? getQuizLeaderboard({ mode: filters.quizMode, questionCount: filters.questionCount })
+      : filters.game === "word-search"
+        ? getWordSearchLeaderboard({ gridSize: filters.gridSize, difficulty: filters.difficulty })
+        : getVocabularyGameLeaderboard({ gameType: filters.game, roundSize: null });
 
     void request.then((result) => {
       if (active) setRows(result);
@@ -61,7 +71,7 @@ export function useGamesLeaderboardController() {
     });
 
     return () => { active = false; };
-  }, [game, quizMode, questionCount, gridSize, difficulty, reloadKey]);
+  }, [filters, reloadKey]);
 
   function refresh() {
     setLoading(true);
@@ -76,38 +86,34 @@ export function useGamesLeaderboardController() {
   }
 
   function selectGame(nextGame: LeaderboardGame) {
-    if (game === nextGame) return;
+    if (filters.game === nextGame) return;
     prepareFilterChange();
-    setGame(nextGame);
+    setFilters((current) => ({ ...current, game: nextGame }));
   }
 
   function selectQuizMode(nextMode: LeaderboardQuizMode) {
     prepareFilterChange();
-    setQuizMode(nextMode);
+    setFilters((current) => ({ ...current, quizMode: nextMode }));
   }
 
   function selectQuestionCount(nextCount: LeaderboardQuestionCount) {
     prepareFilterChange();
-    setQuestionCount(nextCount);
+    setFilters((current) => ({ ...current, questionCount: nextCount }));
   }
 
   function selectGridSize(nextGridSize: LeaderboardGridSize) {
     prepareFilterChange();
-    setGridSize(nextGridSize);
+    setFilters((current) => ({ ...current, gridSize: nextGridSize }));
   }
 
   function selectDifficulty(nextDifficulty: LeaderboardDifficulty) {
     prepareFilterChange();
-    setDifficulty(nextDifficulty);
+    setFilters((current) => ({ ...current, difficulty: nextDifficulty }));
   }
 
   return {
     filters: {
-      game,
-      quizMode,
-      questionCount,
-      gridSize,
-      difficulty,
+      ...filters,
       selectGame,
       selectQuizMode,
       selectQuestionCount,
