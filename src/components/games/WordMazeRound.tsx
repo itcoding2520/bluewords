@@ -5,7 +5,7 @@ import { WordMazeMap } from "@/components/games/WordMazeMap";
 import type { MazeWord } from "@/lib/word-maze";
 
 export function WordMazeRound({
-  current, questionIndex, roundLength, score, lives, feedback, selectedChoice, pathProgress, onChoose, onContinue,
+  current, questionIndex, roundLength, score, lives, feedback, selectedChoice, progress, onChoose, onContinue,
 }: {
   current: MazeWord;
   questionIndex: number;
@@ -14,13 +14,13 @@ export function WordMazeRound({
   lives: number;
   feedback: "correct" | "wrong" | null;
   selectedChoice: string | null;
-  pathProgress: number;
+  progress: number;
   onChoose: (choice: string) => void;
   onContinue: () => void;
 }) {
   return (
     <div className="word-maze-game-layout">
-      <WordMazeMap progress={pathProgress} feedback={feedback} />
+      <WordMazeMap progress={progress} feedback={feedback} />
       <Card className="word-maze-question-card">
         <div className="word-maze-stats">
           <span><Flag size={18} /> Level <strong>{questionIndex + 1}/5</strong></span>
