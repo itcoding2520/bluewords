@@ -5,6 +5,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
@@ -26,12 +27,11 @@ export function useAdminCategoryWordsData(
         && normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(selectedCategory.name))
       : "owner_id" in selectedCategory ? selectedCategory : null;
     if (!sharedCategory) {
-      const timer = window.setTimeout(() => {
+      return scheduleDeferredTask(() => {
         setWords([]);
         setWordEmails({});
         setWordsLoading(false);
-      }, 0);
-      return () => window.clearTimeout(timer);
+      });
     }
 
     let cancelled = false;
@@ -55,10 +55,10 @@ export function useAdminCategoryWordsData(
       }
       setWordsLoading(false);
     };
-    const timer = window.setTimeout(() => { void loadWords(); }, 0);
+    const cancelScheduledLoad = scheduleDeferredTask(() => { void loadWords(); });
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      cancelScheduledLoad();
     };
   }, [activeTab, communityCategories, selectedCategory, setError, supabase]);
 

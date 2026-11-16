@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminCategories } from "@/lib/admin-category-data";
 import type { CommunityCategory } from "@/lib/admin-category-data";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 
 export function useAdminCategoryListData(supabase: SupabaseClient) {
@@ -29,8 +30,7 @@ export function useAdminCategoryListData(supabase: SupabaseClient) {
   }, [supabase]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void refresh(false); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void refresh(false); });
   }, [refresh]);
 
   return { communityCategories, emails, loading, error, setError, refresh };
