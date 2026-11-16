@@ -3,6 +3,7 @@ import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
 import { getPageItems } from "@/lib/pagination";
+import { isUuid } from "@/lib/is-uuid";
 
 function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   return {
@@ -28,8 +29,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
   const idsParameter = request.nextUrl.searchParams.get("ids");
   if (idsParameter) {
     const ids = [...new Set(idsParameter.split(",").filter(Boolean))];
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (ids.length > 100 || ids.some((id) => !uuidPattern.test(id))) {
+    if (ids.length > 100 || ids.some((id) => !isUuid(id))) {
       return NextResponse.json({ error: "Provide at most 100 valid user IDs." }, { status: 400 });
     }
 

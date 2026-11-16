@@ -1,4 +1,5 @@
 import { isObjectRecord } from "@/lib/is-object-record";
+import { isUuid } from "@/lib/is-uuid";
 
 type AdminNotificationInput = {
   title: string;
@@ -37,8 +38,7 @@ export function validateAdminNotificationInput(
   }
 
   const recipientIds = [...new Set(body.recipientIds as string[])].filter((id) => id !== senderId);
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (recipientIds.length === 0 || recipientIds.some((id) => !uuidPattern.test(id))) {
+  if (recipientIds.length === 0 || recipientIds.some((id) => !isUuid(id))) {
     return { ok: false, message: "Choose at least one valid recipient other than yourself." };
   }
 
