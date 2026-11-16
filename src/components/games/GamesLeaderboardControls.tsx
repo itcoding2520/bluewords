@@ -7,6 +7,12 @@ import type {
   LeaderboardQuestionCount,
   LeaderboardQuizMode,
 } from "@/hooks/useGamesLeaderboardController";
+import {
+  LEADERBOARD_DIFFICULTIES,
+  LEADERBOARD_GRID_SIZES,
+  LEADERBOARD_QUESTION_COUNTS,
+  LEADERBOARD_QUIZ_MODES,
+} from "@/lib/games/leaderboard-filters";
 
 const selectClassName = "min-h-10 rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-12 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
@@ -60,23 +66,35 @@ export function GamesLeaderboardControls({
         {game === "quiz" ? (
           <>
             <label className="sr-only" htmlFor="leaderboard-quiz-mode">Quiz mode</label>
-            <LeaderboardSelect id="leaderboard-quiz-mode" value={quizMode} onChange={(event) => onQuizModeChange(event.target.value as LeaderboardQuizMode)}>
-              <option value="choose-meaning">Choose the meaning</option><option value="type-word">Type the word</option>
+            <LeaderboardSelect id="leaderboard-quiz-mode" value={quizMode} onChange={(event) => {
+              const nextMode = LEADERBOARD_QUIZ_MODES.find((mode) => mode === event.target.value);
+              if (nextMode) onQuizModeChange(nextMode);
+            }}>
+              {LEADERBOARD_QUIZ_MODES.map((mode) => <option key={mode} value={mode}>{mode === "choose-meaning" ? "Choose the meaning" : "Type the word"}</option>)}
             </LeaderboardSelect>
             <label className="sr-only" htmlFor="leaderboard-question-count">Number of questions</label>
-            <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => onQuestionCountChange(Number(event.target.value) as LeaderboardQuestionCount)}>
-              <option value={10}>10 questions</option><option value={20}>20 questions</option><option value={30}>30 questions</option>
+            <LeaderboardSelect id="leaderboard-question-count" value={questionCount} onChange={(event) => {
+              const nextCount = LEADERBOARD_QUESTION_COUNTS.find((count) => String(count) === event.target.value);
+              if (nextCount !== undefined) onQuestionCountChange(nextCount);
+            }}>
+              {LEADERBOARD_QUESTION_COUNTS.map((count) => <option key={count} value={count}>{count} questions</option>)}
             </LeaderboardSelect>
           </>
         ) : game === "word-search" ? (
           <>
             <label className="sr-only" htmlFor="leaderboard-grid-size">Grid size</label>
-            <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => onGridSizeChange(Number(event.target.value) as LeaderboardGridSize)}>
-              <option value={10}>10 × 10 grid</option><option value={15}>15 × 15 grid</option><option value={20}>20 × 20 grid</option>
+            <LeaderboardSelect id="leaderboard-grid-size" value={gridSize} onChange={(event) => {
+              const nextSize = LEADERBOARD_GRID_SIZES.find((size) => String(size) === event.target.value);
+              if (nextSize !== undefined) onGridSizeChange(nextSize);
+            }}>
+              {LEADERBOARD_GRID_SIZES.map((size) => <option key={size} value={size}>{size} × {size} grid</option>)}
             </LeaderboardSelect>
             <label className="sr-only" htmlFor="leaderboard-difficulty">Difficulty</label>
-            <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => onDifficultyChange(event.target.value as LeaderboardDifficulty)}>
-              <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+            <LeaderboardSelect id="leaderboard-difficulty" value={difficulty} onChange={(event) => {
+              const nextDifficulty = LEADERBOARD_DIFFICULTIES.find((level) => level === event.target.value);
+              if (nextDifficulty) onDifficultyChange(nextDifficulty);
+            }}>
+              {LEADERBOARD_DIFFICULTIES.map((level) => <option key={level} value={level}>{level === "easy" ? "Easy" : level === "medium" ? "Medium" : "Hard"}</option>)}
             </LeaderboardSelect>
           </>
         ) : null}
