@@ -40,7 +40,10 @@ export function useAdminNotificationRecipients(
     if (!normalized) return recipients;
     return recipients.filter((recipient) => `${recipient.email ?? ""} ${recipient.nickname}`.toLocaleLowerCase().includes(normalized));
   }, [recipients, search]);
-  const selectedRecipients = useMemo(() => recipients.filter((recipient) => selected.includes(recipient.id)), [recipients, selected]);
+  const selectedRecipients = useMemo(() => {
+    const selectedIds = new Set(selected);
+    return recipients.filter((recipient) => selectedIds.has(recipient.id));
+  }, [recipients, selected]);
 
   function toggleRecipient(id: string, checked: boolean) {
     setSelected((current) => checked ? [...current, id] : current.filter((selectedId) => selectedId !== id));
