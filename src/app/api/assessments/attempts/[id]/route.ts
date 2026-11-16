@@ -4,7 +4,7 @@ import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const { user } = await getRequestUser();
+  const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to view your results." }, { status: 401 });
   const { id } = await context.params;
   const admin = createAssessmentAdminClient();
@@ -20,7 +20,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const { user } = await getRequestUser();
+  const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to submit this test." }, { status: 401 });
   const { id } = await context.params;
   let body: unknown;

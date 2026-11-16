@@ -10,7 +10,7 @@ export function createAssessmentAdminClient() {
 export async function getRequestUser() {
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
-  return { client, user };
+  return user;
 }
 
 export async function signQuestionImages(admin: NonNullable<ReturnType<typeof createAssessmentAdminClient>>, questions: AssessmentQuestion[]) {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
 
 export async function GET() {
-  const { user } = await getRequestUser();
+  const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to view your assignments." }, { status: 401 });
   const admin = createAssessmentAdminClient();
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });

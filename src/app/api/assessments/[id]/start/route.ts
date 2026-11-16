@@ -3,7 +3,7 @@ import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, shuff
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const { user } = await getRequestUser();
+  const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to start this test." }, { status: 401 });
   const { id } = await context.params;
   const admin = createAssessmentAdminClient();
