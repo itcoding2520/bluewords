@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock3, Send } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -16,11 +17,11 @@ export function AssessmentRunner({ attemptId }: { attemptId: string }) {
     answers: { answers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence },
     actions: { submit },
   } = useAssessmentRunnerController(attemptId);
+  const answered = useMemo(() => answers.filter(Boolean).length, [answers]);
 
   if (loading) return <div className="assessment-loading">Loading your test…</div>;
   if (!attempt) return <AutoDismissMessage variant="error">{error || "Test not found."}</AutoDismissMessage>;
   const question = attempt.questions[current];
-  const answered = answers.filter(Boolean).length;
   return <div className="assessment-runner-page">
     <Link className="assessment-back-link" href="/assignments"><ArrowLeft size={17} /> My assignments</Link>
     <header className="assessment-test-header"><div><span>Assigned test · {attempt.difficulty}</span><h1>{attempt.title}</h1><p>Each correct answer is worth 10 points. You need more than 50 points to pass.</p></div><div className="assessment-live-stats"><span><Clock3 />{formatDuration(seconds)}</span><span><CheckCircle2 />{answered}/10 answered</span></div></header>

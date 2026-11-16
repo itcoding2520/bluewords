@@ -22,9 +22,8 @@ type ContentFields = Omit<
 
 function getCommonLessonFields(
   topic: CommunicationTopic,
-  lesson: CommunicationLesson | undefined,
-): CommonLessonFields | null {
-  if (!lesson) return null;
+  lesson: CommunicationLesson,
+): CommonLessonFields {
   return {
     topic_slug: topic.slug,
     topic_title_en: topic.title_en,
@@ -117,8 +116,7 @@ export function buildCommunicationExportRecords(
 ): CommunicationCsvRecord[] {
   const commonFieldsByLessonId = new Map<string, CommonLessonFields>();
   for (const lesson of lessons) {
-    const common = getCommonLessonFields(topic, lesson);
-    if (common) commonFieldsByLessonId.set(lesson.id, common);
+    commonFieldsByLessonId.set(lesson.id, getCommonLessonFields(topic, lesson));
   }
   const dialogueMap = new Map(dialogues.map((dialogue) => [dialogue.id, dialogue]));
   const records: CommunicationCsvRecord[] = [];

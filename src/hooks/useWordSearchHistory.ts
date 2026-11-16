@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { WordSearchSessionRow } from "@/types/database";
 import { getCachedWordSearchSessions, getWordSearchSessions } from "@/lib/supabase/word-search-history";
@@ -36,15 +36,20 @@ export function useWordSearchHistory(userId: string | null) {
     }
   }, [historyPage, userId]);
 
-  let fastestSeconds: number | null = null;
-  let totalWords = 0;
-  for (const item of history) {
-    if (fastestSeconds === null || item.duration_seconds < fastestSeconds) {
-      fastestSeconds = item.duration_seconds;
+  const { fastestSeconds, averageWordsPerRound } = useMemo(() => {
+    let fastest: number | null = null;
+    let totalWords = 0;
+    for (const item of history) {
+      if (fastest === null || item.duration_seconds < fastest) {
+        fastest = item.duration_seconds;
+      }
+      totalWords += item.word_count;
     }
-    totalWords += item.word_count;
-  }
-  const averageWordsPerRound = history.length ? Math.round(totalWords / history.length) : 0;
+    return {
+      fastestSeconds: fastest,
+      averageWordsPerRound: history.length ? Math.round(totalWords / history.length) : 0,
+    };
+  }, [history]);
 
   return {
     history,

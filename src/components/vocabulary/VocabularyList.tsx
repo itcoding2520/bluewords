@@ -5,6 +5,7 @@ import { SearchX } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { getFirstVocabularyCategoriesByName } from "@/lib/vocabulary/category-index";
 import { VocabularyRow } from "./VocabularyRow";
 
 interface VocabularyListProps {
@@ -38,13 +39,7 @@ export function VocabularyList({
   onEdit,
   onDelete,
 }: VocabularyListProps) {
-  const categoryColors = useMemo(() => {
-    const colors = new Map<string, VocabularyCategoryRow["color"]>();
-    for (const category of categories) {
-      if (!colors.has(category.name)) colors.set(category.name, category.color);
-    }
-    return colors;
-  }, [categories]);
+  const categoriesByName = useMemo(() => getFirstVocabularyCategoriesByName(categories), [categories]);
 
   return (
     <Card className="mt-4 overflow-hidden border border-slate-100 bg-white shadow-sm">
@@ -104,7 +99,7 @@ export function VocabularyList({
           <VocabularyRow
             key={item.id}
             item={item}
-            categoryColor={categoryColors.get(item.category)}
+            categoryColor={categoriesByName.get(item.category)?.color}
             selected={selectedIds.has(item.id)}
             onToggleSelected={onToggleSelected}
             onToggleMastered={onToggleMastered}

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, CaseSensitive, Check, Clock3, Delete, Lightbulb, Sparkles, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
@@ -45,6 +45,11 @@ export function WordScrambleRound({
   onUseHint: () => void;
   onNextQuestion: () => void;
 }) {
+  const lettersByTileId = useMemo(
+    () => new Map(letterTiles.map((tile) => [tile.id, tile.letter])),
+    [letterTiles],
+  );
+
   return (
     <Card className="word-scramble-game-card">
       <div className="word-scramble-topline">
@@ -62,7 +67,7 @@ export function WordScrambleRound({
           <div className="word-scramble-answer" aria-label={`Answer, ${currentWord.answer.length} letters`}>
             {[...currentWord.answer].map((_, index) => {
               const tileId = answerTileIds[index];
-              const letter = tileId === undefined ? "" : letterTiles.find((tile) => tile.id === tileId)?.letter ?? "";
+              const letter = tileId === undefined ? "" : lettersByTileId.get(tileId) ?? "";
               return <button key={index} type="button" aria-label={letter ? `Remove letter ${letter}` : `Empty letter position ${index + 1}`} disabled={!letter || isCorrect} onClick={() => tileId !== undefined && onRemoveLetter(tileId)} className={`word-scramble-slot ${letter ? "has-letter" : ""} ${isCorrect ? "is-correct" : feedback && !isCorrect ? "is-incorrect" : ""}`}>{letter}</button>;
             })}
           </div>

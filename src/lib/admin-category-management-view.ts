@@ -25,6 +25,18 @@ export function indexPublishedCategories(categories: CommunityCategory[]) {
   return categoriesByName;
 }
 
+export function getSharedAdminCategory(
+  activeTab: CategoryTab,
+  category: AdminCategory | null,
+  publishedCategoriesByName: Map<string, CommunityCategory>,
+): CommunityCategory | undefined | null {
+  if (!category) return null;
+  if (activeTab === "default") {
+    return publishedCategoriesByName.get(normalizeVocabularyLabel(category.name));
+  }
+  return "owner_id" in category ? category : null;
+}
+
 export function deriveAdminCategorySelection({
   activeTab,
   selectedId,
@@ -79,9 +91,7 @@ export function deriveAdminCategoryDetails({
   const firstCommunityImage = words.find((word) => word.image_path)?.image_path;
 
   const visibleCategoryRows: AdminCategoryListRow[] = visibleCategories.map((category) => {
-    const shared = activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeVocabularyLabel(category.name))
-      : "owner_id" in category ? category : null;
+    const shared = getSharedAdminCategory(activeTab, category, publishedCategoriesByName);
     const fallbackImage = activeTab === "default"
       ? defaultFallbackImagesByCategory.get(category.name)
       : category.id === selectedCategory?.id
@@ -103,11 +113,7 @@ export function deriveAdminCategoryDetails({
   const defaultWords = activeTab === "default" && selectedCategory
     ? defaultWordsByCategory.get(selectedCategory.name) ?? []
     : [];
-  const selectedSharedCategory = selectedCategory
-    ? activeTab === "default"
-      ? publishedCategoriesByName.get(normalizeVocabularyLabel(selectedCategory.name)) ?? null
-      : "owner_id" in selectedCategory ? selectedCategory : null
-    : null;
+  const selectedSharedCategory = getSharedAdminCategory(activeTab, selectedCategory, publishedCategoriesByName) ?? null;
   const selectedFallbackImage = (activeTab === "default" && selectedCategory ? defaultFallbackImagesByCategory.get(selectedCategory.name) : undefined)
     ?? firstCommunityImage
     ?? null;

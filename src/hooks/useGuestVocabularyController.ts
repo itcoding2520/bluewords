@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { getPageCount, getPageItems } from "@/lib/pagination";
+import { getFirstVocabularyCategoriesByName } from "@/lib/vocabulary/category-index";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
@@ -22,13 +23,7 @@ export function useGuestVocabularyController() {
   }, [category, search, words]);
   const pageCount = getPageCount(filteredWords.length, GUEST_VOCABULARY_PAGE_SIZE);
   const pageWords = getPageItems(filteredWords, page, GUEST_VOCABULARY_PAGE_SIZE);
-  const categoryColors = useMemo(() => {
-    const colors = new Map<string, (typeof categories)[number]["color"]>();
-    for (const item of categories) {
-      if (!colors.has(item.name)) colors.set(item.name, item.color);
-    }
-    return colors;
-  }, [categories]);
+  const categoriesByName = useMemo(() => getFirstVocabularyCategoriesByName(categories), [categories]);
 
   function changeSearch(value: string) {
     setSearch(value);
@@ -41,7 +36,7 @@ export function useGuestVocabularyController() {
   }
 
   function categoryColor(name: string) {
-    return categoryColors.get(name) ?? "blue";
+    return categoriesByName.get(name)?.color ?? "blue";
   }
 
   return {

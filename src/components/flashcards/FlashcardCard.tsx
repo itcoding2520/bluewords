@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import type { Flashcard } from "@/lib/flashcards/deck";
+import { getDetailedVocabularyMeanings } from "@/lib/vocabulary/meaning";
 
 export function FlashcardWord({
   card,
@@ -43,7 +44,7 @@ export function FlashcardWord({
 }
 
 export function FlashcardAnswer({ card }: { card: Flashcard }) {
-  const detailedMeanings = card.word.detailedMeanings?.filter((meaning) => meaning.meaning.trim()) ?? [];
+  const detailedMeanings = getDetailedVocabularyMeanings(card.word);
 
   return (
     <div className="flex w-full flex-col items-center justify-center text-center">

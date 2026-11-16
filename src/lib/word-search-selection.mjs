@@ -60,10 +60,11 @@ export function findWordSearchSelectionPrefix(puzzle, cells, excludedIds = new S
   const selected = cells.map(({ row, column }) => puzzle.letters[row]?.[column] ?? "").join("");
   if (!selected || selected.length !== cells.length) return null;
 
-  const remainingWords = puzzle.words.filter((candidate) => !excludedIds.has(candidate.id));
-  const completeWord = remainingWords.find((candidate) => candidate.normalized === selected);
-  if (completeWord) return { word: completeWord, complete: true };
-
-  const word = remainingWords.find((candidate) => candidate.normalized.startsWith(selected));
-  return word ? { word, complete: false } : null;
+  let firstPrefixMatch = null;
+  for (const candidate of puzzle.words) {
+    if (excludedIds.has(candidate.id)) continue;
+    if (candidate.normalized === selected) return { word: candidate, complete: true };
+    if (!firstPrefixMatch && candidate.normalized.startsWith(selected)) firstPrefixMatch = candidate;
+  }
+  return firstPrefixMatch ? { word: firstPrefixMatch, complete: false } : null;
 }

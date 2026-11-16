@@ -20,13 +20,14 @@ export function buildWordScrambleCandidates(
   category: string
 ): ScrambleWord[] {
   const seen = new Set<string>();
-  return words.flatMap((word) => {
+  const candidates: ScrambleWord[] = [];
+  for (const word of words) {
     const answer = word.word.trim().toLocaleLowerCase().replace(/[^a-z]/g, "");
     const meaning = getPrimaryVocabularyMeaning(word);
     if (!matchesVocabularyCategory(word.category, category)
-      || answer.length < 3 || answer.length > 10 || !meaning || seen.has(answer)) return [];
+      || answer.length < 3 || answer.length > 10 || !meaning || seen.has(answer)) continue;
     seen.add(answer);
-    return [{
+    candidates.push({
       id: word.id,
       word: word.word.trim(),
       answer,
@@ -34,8 +35,9 @@ export function buildWordScrambleCandidates(
       category: word.category,
       imagePath: word.imagePath ?? null,
       imageUrl: word.imageUrl ?? null,
-    }];
-  });
+    });
+  }
+  return candidates;
 }
 
 export function createScrambledTiles(answer: string): LetterTile[] {

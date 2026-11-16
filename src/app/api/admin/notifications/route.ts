@@ -1,17 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { validateAdminNotificationInput } from "@/lib/admin-notification-input";
-import { readRequestJson } from "@/lib/api/request-json";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
+import { readRequestJsonOrResponse } from "@/lib/api/request-json";
 
 export async function POST(request: NextRequest) {
   const auth = await authorizeAdminRoute({ serviceUnavailableMessage: "Notification sending is not configured." });
   if ("response" in auth) return auth.response;
   const { user, adminClient } = auth;
 
-  const parsedBody = await readRequestJson(request);
-  if (!parsedBody.ok) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  const parsedBody = await readRequestJsonOrResponse(request);
+  if (!parsedBody.ok) return parsedBody.response;
   const validation = validateAdminNotificationInput(parsedBody.value, user.id);
-  if (!validation.ok) return NextResponse.json({ error: validation.message }, { status: 400 });
+  if (!validation.ok) return jsonErrorResponse(validation.message, 400);
   const { title, message, recipientIds } = validation.value;
 
   const rows = recipientIds.map((recipientId) => ({
@@ -22,6 +23,6 @@ export async function POST(request: NextRequest) {
     body: message,
   }));
   const { error } = await adminClient.from("notifications").insert(rows);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return jsonErrorResponse(error.message, 400);
   return NextResponse.json({ sent: rows.length });
 }

@@ -14,24 +14,27 @@ export type MatchPair = {
 export type MatchCardData = { id: string; pairId: string; kind: "word" | "match" };
 
 export function buildWordMatchPairs(words: VocabularyWord[], category: string): MatchPair[] {
-  const eligibleWords = words.filter((word) => matchesVocabularyCategory(word.category, category));
   const usedWords = new Set<string>();
   const usedMatches = new Set<string>();
-  return eligibleWords.flatMap((word) => {
+  const pairs: MatchPair[] = [];
+  for (const word of words) {
+    if (!matchesVocabularyCategory(word.category, category)) continue;
     const text = word.word.trim();
     const meaning = getPrimaryVocabularyMeaning(word);
+    const wordKey = normalizeVocabularyLabel(text);
     const matchKey = word.imagePath || word.imageUrl
       ? `image:${word.id}`
       : `meaning:${normalizeVocabularyLabel(meaning)}`;
-    if (!text || !meaning || usedWords.has(normalizeVocabularyLabel(text)) || usedMatches.has(matchKey)) return [];
-    usedWords.add(normalizeVocabularyLabel(text));
+    if (!text || !meaning || usedWords.has(wordKey) || usedMatches.has(matchKey)) continue;
+    usedWords.add(wordKey);
     usedMatches.add(matchKey);
-    return [{
+    pairs.push({
       id: word.id,
       word: text,
       meaning,
       imagePath: word.imagePath ?? null,
       imageUrl: word.imageUrl ?? null,
-    }];
-  });
+    });
+  }
+  return pairs;
 }

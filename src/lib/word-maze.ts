@@ -1,5 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { shuffle } from "@/lib/random";
+import { sampleRandomMatching, shuffle } from "@/lib/random";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
@@ -12,25 +12,30 @@ export type MazeWord = {
   choices: string[];
 };
 
+type MazeCandidate = Omit<MazeWord, "choices"> & { meaningKey: string };
+
 export function buildWordMazeRound(words: VocabularyWord[], category: string): MazeWord[] {
   const seenWords = new Set<string>();
   const seenMeanings = new Set<string>();
-  const available = words.flatMap((word) => {
+  const available: MazeCandidate[] = [];
+  for (const word of words) {
     const text = word.word.trim();
     const meaning = getPrimaryVocabularyMeaning(word);
     const wordKey = normalizeVocabularyLabel(text);
     const meaningKey = normalizeVocabularyLabel(meaning);
     if (!text || !meaning || !matchesVocabularyCategory(word.category, category)
-      || seenWords.has(wordKey) || seenMeanings.has(meaningKey)) return [];
+      || seenWords.has(wordKey) || seenMeanings.has(meaningKey)) continue;
     seenWords.add(wordKey);
     seenMeanings.add(meaningKey);
-    return [{ id: word.id, word: text, meaning, meaningKey, category: word.category }];
-  });
+    available.push({ id: word.id, word: text, meaning, meaningKey, category: word.category });
+  }
   const chosen = shuffle(available).slice(0, 5);
   return chosen.map((answer) => {
-    const distractors = shuffle(available.filter((word) =>
-      word.id !== answer.id && word.meaningKey !== answer.meaningKey
-    )).slice(0, 3).map((word) => word.meaning);
+    const distractors = shuffle(sampleRandomMatching(
+      available,
+      3,
+      (word) => word.id !== answer.id && word.meaningKey !== answer.meaningKey,
+    )).map((word) => word.meaning);
     return {
       id: answer.id,
       word: answer.word,

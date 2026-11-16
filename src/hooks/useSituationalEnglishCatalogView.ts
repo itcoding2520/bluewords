@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Lesson, Progress, Topic } from "@/lib/communication/catalog-types";
+import { groupBy } from "@/lib/group-by";
 
 export function useSituationalEnglishCatalogView({
   topics,
@@ -14,15 +15,7 @@ export function useSituationalEnglishCatalogView({
   difficulty: string;
   search: string;
 }) {
-  const lessonsByTopic = useMemo(() => {
-    const grouped = new Map<string, Lesson[]>();
-    for (const lesson of lessons) {
-      const group = grouped.get(lesson.topic_id) ?? [];
-      group.push(lesson);
-      grouped.set(lesson.topic_id, group);
-    }
-    return grouped;
-  }, [lessons]);
+  const lessonsByTopic = useMemo(() => groupBy(lessons, (lesson) => lesson.topic_id), [lessons]);
 
   const visibleLessonsByTopic = useMemo(() => {
     const visible = new Map<string, Lesson[]>();

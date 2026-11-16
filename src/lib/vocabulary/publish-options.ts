@@ -20,15 +20,18 @@ function buildCategoryRequestOptions(
   const normalizedRequests = requests.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
   const normalizedCategories = categories.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
   const communityCategoryNames = new Map(normalizedRequests.map(({ item, normalizedName }) => [item.id, normalizedName]));
-  const ownCommunityCategoryIds = new Set(normalizedRequests
-    .filter(({ item }) => item.owner_id && item.status !== "removed")
-    .map(({ item }) => item.id));
-  const ownCommunityCategoryNames = new Set(normalizedRequests
-    .filter(({ item }) => item.owner_id && item.status !== "removed")
-    .map(({ normalizedName }) => normalizedName));
-  const blockedCategoryNames = new Set(normalizedRequests
-    .filter(({ item }) => item.status === "pending" || item.status === "published")
-    .map(({ normalizedName }) => normalizedName));
+  const ownCommunityCategoryIds = new Set<string>();
+  const ownCommunityCategoryNames = new Set<string>();
+  const blockedCategoryNames = new Set<string>();
+  for (const { item, normalizedName } of normalizedRequests) {
+    if (item.owner_id && item.status !== "removed") {
+      ownCommunityCategoryIds.add(item.id);
+      ownCommunityCategoryNames.add(normalizedName);
+    }
+    if (item.status === "pending" || item.status === "published") {
+      blockedCategoryNames.add(normalizedName);
+    }
+  }
   const userCategoryEntries = normalizedCategories.filter(({ item, normalizedName }) => {
     const isOwnedCommunityCategory = !isCommunityCategoryId(item.id)
       || ownCommunityCategoryIds.has(getCommunityCategoryId(item.id) ?? "");
@@ -77,24 +80,26 @@ function buildWordRequestOptions(input: {
     ownCommunityCategoryNames,
     userCategoryNames,
   } = input;
-  const blockedWordKeys = new Set(requests
-    .filter((item) => item.status === "pending" || item.status === "published")
-    .flatMap((item) => {
-      const categoryName = communityCategoryNames.get(item.category_id);
-      return categoryName ? [getVocabularyTextPairKey(categoryName, item.normalized_word)] : [];
-    }));
   const personalWordKeys = new Set(words.map((item) => getVocabularyTextPairKey(item.category, item.word)));
-  const rejectedWordFallbacks = requests
-    .filter((item) => item.status === "rejected"
+  const blockedWordKeys = new Set<string>();
+  const rejectedWordFallbacks: Array<Pick<VocabularyWord, "id" | "word" | "meaning" | "category" | "ipa">> = [];
+  for (const item of requests) {
+    if (item.status === "pending" || item.status === "published") {
+      const categoryName = communityCategoryNames.get(item.category_id);
+      if (categoryName) blockedWordKeys.add(getVocabularyTextPairKey(categoryName, item.normalized_word));
+    }
+    if (item.status === "rejected"
       && item.owner_id
-      && !personalWordKeys.has(getVocabularyTextPairKey(item.category_name, item.word)))
-    .map((item) => ({
-      id: `retry-word-${item.id}`,
-      word: item.word,
-      meaning: item.meaning,
-      category: item.category_name,
-      ipa: item.ipa,
-    }));
+      && !personalWordKeys.has(getVocabularyTextPairKey(item.category_name, item.word))) {
+      rejectedWordFallbacks.push({
+        id: `retry-word-${item.id}`,
+        word: item.word,
+        meaning: item.meaning,
+        category: item.category_name,
+        ipa: item.ipa,
+      });
+    }
+  }
   const requestableWords = [...words, ...rejectedWordFallbacks];
   const userWords = requestableWords.filter((item) => {
     if (item.id.startsWith("community-")) return false;

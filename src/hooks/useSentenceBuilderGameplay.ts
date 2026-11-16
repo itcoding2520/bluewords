@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createSentenceBuilderTiles, type SentenceBuilderQuestion, type SentenceBuilderTile } from "@/lib/sentence-builder";
 
 interface SentenceBuilderState {
@@ -30,6 +30,7 @@ const initialState: SentenceBuilderState = {
 export function useSentenceBuilderGameplay() {
   const [state, setState] = useState(initialState);
   const current = state.round[state.index];
+  const chosenTileIds = useMemo(() => new Set(state.chosen.map((tile) => tile.id)), [state.chosen]);
 
   function startRound(nextRound: SentenceBuilderQuestion[]) {
     setState({
@@ -40,7 +41,7 @@ export function useSentenceBuilderGameplay() {
   }
 
   function choose(tile: SentenceBuilderTile) {
-    if (state.solved || state.chosen.some((item) => item.id === tile.id)) return;
+    if (state.solved || chosenTileIds.has(tile.id)) return;
     setState((previous) => ({
       ...previous,
       chosen: [...previous.chosen, tile],
@@ -88,7 +89,7 @@ export function useSentenceBuilderGameplay() {
   function useHint() {
     if (!current || state.solved || state.hints < 1) return;
     const expected = current.answer_tokens[state.chosen.length];
-    const tile = state.tiles.find((item) => item.text === expected && !state.chosen.some((picked) => picked.id === item.id));
+    const tile = state.tiles.find((item) => item.text === expected && !chosenTileIds.has(item.id));
     if (!tile) return;
     setState((previous) => ({
       ...previous,

@@ -3,6 +3,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { CategoryDropdownOption } from "@/lib/vocabulary/category-dropdown-types";
 import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
+import { getFirstVocabularyCategoriesByName } from "@/lib/vocabulary/category-index";
 
 export function useVocabularyCategoryDropdownOptions(input: {
   categories: VocabularyCategoryRow[];
@@ -13,11 +14,7 @@ export function useVocabularyCategoryDropdownOptions(input: {
   customOptions?: CategoryDropdownOption[];
 }) {
   const categoriesByName = useMemo(() => {
-    const byName = new Map<string, VocabularyCategoryRow>();
-    for (const item of input.categories) {
-      if (!byName.has(item.name)) byName.set(item.name, item);
-    }
-    return byName;
+    return getFirstVocabularyCategoriesByName(input.categories);
   }, [input.categories]);
 
   const wordImagesByCategory = useCategoryFallbackWordImages(input.words);

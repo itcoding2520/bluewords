@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { shuffle } from "@/lib/random";
 import type { MatchCardData, MatchPair } from "@/lib/word-match";
 import type { GamePhase } from "@/types/game";
@@ -29,6 +29,7 @@ const initialState: WordMatchState = {
 
 export function useWordMatchGameplay(phase: GamePhase) {
   const [state, setState] = useState(initialState);
+  const cardsById = useMemo(() => new Map(state.cards.map((card) => [card.id, card])), [state.cards]);
   const mismatchTimerRef = useRef<number | null>(null);
   const resolvingRef = useRef(false);
 
@@ -63,7 +64,7 @@ export function useWordMatchGameplay(phase: GamePhase) {
       return false;
     }
 
-    const firstCard = state.cards.find((item) => item.id === state.selectedCardIds[0]);
+    const firstCard = cardsById.get(state.selectedCardIds[0]);
     if (!firstCard) return false;
     const selectedPair = [firstCard.id, card.id];
     if (firstCard.pairId === card.pairId && firstCard.kind !== card.kind) {

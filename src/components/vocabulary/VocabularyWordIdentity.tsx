@@ -5,6 +5,7 @@ import Image from "next/image";
 
 import type { VocabularyWord } from "@/data/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { getDetailedVocabularyMeanings } from "@/lib/vocabulary/meaning";
 import { PronunciationButton } from "./PronunciationButton";
 
 const WORD_EMOJI: Record<string, string> = {
@@ -18,9 +19,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 function VocabularyMeanings({ item }: { item: VocabularyWord }) {
-  const detailedMeanings = (item.detailedMeanings ?? []).filter(
-    (meaning) => typeof meaning.meaning === "string" && meaning.meaning.trim()
-  );
+  const detailedMeanings = getDetailedVocabularyMeanings(item);
   const hasPartOfSpeech = detailedMeanings.some(
     (meaning) => typeof meaning.partOfSpeech === "string" && meaning.partOfSpeech.trim()
   );

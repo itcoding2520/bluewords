@@ -34,8 +34,10 @@ export function useAdminReviewModeration(supabase: SupabaseClient, {
     id: string,
     status: "published" | "rejected"
   ) {
+    const word = table === "community_words"
+      ? words.find((item) => item.id === id)
+      : undefined;
     if (table === "community_words" && status === "published") {
-      const word = words.find((item) => item.id === id);
       if (word && word.category_status !== "published") {
         setBlockedWordId(id);
         return;
@@ -68,7 +70,6 @@ export function useAdminReviewModeration(supabase: SupabaseClient, {
           ? { ...item, category_status: status }
           : item));
       } else {
-        const word = words.find((item) => item.id === id);
         setWords((current) => current.filter((item) => item.id !== id));
         if (word && status === "published") {
           const publishedWord = mapPublishedWordSubmission(word);
