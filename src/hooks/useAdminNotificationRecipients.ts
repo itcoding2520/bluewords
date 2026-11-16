@@ -23,7 +23,7 @@ export function useAdminNotificationRecipients(
         const payload = await getAdminCachedData(
           "admin:users:all-recipients",
           () => fetchAdminUsers(query)
-        ) as { users?: AdminNotificationRecipient[] };
+        );
         if (active) setRecipients((payload.users ?? []).filter((recipient) => recipient.id !== currentUserId));
       } catch (cause) {
         if (active) setError(getErrorMessage(cause, "Could not load users."));

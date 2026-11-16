@@ -6,6 +6,11 @@ let generation = 0;
 /**
  * Reuse recent admin data during client-side navigation and deduplicate
  * concurrent loads. Pass force=true for explicit refreshes.
+ * @template T
+ * @param {string} key
+ * @param {() => Promise<T>} loader
+ * @param {{ force?: boolean; ttlMs?: number; now?: number }} [options]
+ * @returns {Promise<T>}
  */
 export async function getAdminCachedData(key, loader, { force = false, ttlMs = DEFAULT_TTL_MS, now = Date.now() } = {}) {
   if (!force) {
