@@ -12,7 +12,7 @@ export async function getPublicVocabulary(adminClient: AdminClient) {
     };
   }
 
-  const categories = (categoryResult.data ?? []).map(({ id, name, color, image_path }) => ({ id, name, color, image_path }));
+  const categories = categoryResult.data ?? [];
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
   const publishedWords = (wordResult.data ?? []).filter((item) => categoryNames.has(item.category_id));
   const imagePaths = [...new Set(publishedWords.flatMap((item) => item.image_path ? [item.image_path] : []))];
