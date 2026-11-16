@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ReviewHistoryEntry } from "@/components/reviews/ReviewHistoryEntry";
+import { formatFullLocalDate } from "@/lib/formatDate";
 import type { DailyReviewGroup } from "@/lib/review-history-view";
 import type { VocabularyReviewWithWord } from "@/lib/supabase/reviews";
 import { getNextPage, getPreviousPage } from "@/lib/pagination";
@@ -8,7 +9,7 @@ import { getNextPage, getPreviousPage } from "@/lib/pagination";
 function formatDay(day: string): string {
   const date = new Date(`${day}T12:00:00`);
   if (Number.isNaN(date.getTime())) return day;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "full" }).format(date);
+  return formatFullLocalDate(date);
 }
 
 export function ReviewHistoryDayPanel({

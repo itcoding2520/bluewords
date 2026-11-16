@@ -11,6 +11,14 @@ export function formatDateTime(value: string): string {
   return new Date(value).toLocaleString();
 }
 
+export function formatLocalTime(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(date);
+}
+
+export function formatFullLocalDate(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "full" }).format(date);
+}
+
 export function formatLocalDate(value: string | Date): string {
   return (value instanceof Date ? value : new Date(value)).toLocaleDateString();
 }

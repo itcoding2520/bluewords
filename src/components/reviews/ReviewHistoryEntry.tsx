@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Check, Circle } from "lucide-react";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
+import { formatLocalTime } from "@/lib/formatDate";
 import type { VocabularyReviewWithWord } from "@/lib/supabase/review-history";
 
 export function ReviewHistoryEntry({ review }: { review: VocabularyReviewWithWord }) {
@@ -47,5 +48,5 @@ function formatReviewedAt(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Recently";
 
-  return new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(date);
+  return formatLocalTime(date);
 }
