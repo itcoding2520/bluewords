@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, Check, Clock3, Lightbulb, Star, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -12,7 +12,10 @@ const icons: Record<string, string> = { apple: "🍎", banana: "🍌", cat: "�
 
 function SentencePicture({ keyword, questionId }: { keyword: string; questionId: string }) {
   const { words } = useVocabulary();
-  const word = words.find((item) => item.word.toLocaleLowerCase() === keyword.toLocaleLowerCase());
+  const word = useMemo(
+    () => words.find((item) => item.word.toLocaleLowerCase() === keyword.toLocaleLowerCase()),
+    [words, keyword],
+  );
   const imageUrl = useVocabularyImageUrl(word?.imagePath ?? null);
   const [failed, setFailed] = useState(false);
 
