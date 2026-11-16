@@ -1,4 +1,4 @@
-import { useState, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { AdminUserRecord } from "@/lib/admin-user-api";
 
 export type AdminUser = AdminUserRecord;
@@ -21,6 +21,17 @@ function applyFieldAction<T>(current: T, action: SetStateAction<T>): T {
   return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
 }
 
+function updateField<TState, TKey extends keyof TState>(
+  setState: Dispatch<SetStateAction<TState>>,
+  key: TKey,
+  action: SetStateAction<TState[TKey]>,
+) {
+  setState((current) => ({
+    ...current,
+    [key]: applyFieldAction(current[key], action),
+  }));
+}
+
 export function useAdminUserForms() {
   const [addForm, setAddForm] = useState<AddUserFormState>({
     email: "",
@@ -41,45 +52,21 @@ export function useAdminUserForms() {
     editForm,
     setEditForm,
     email: addForm.email,
-    setEmail: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
+    setEmail: (action: SetStateAction<string>) => updateField(setAddForm, "email", action),
     nickname: addForm.nickname,
-    setNickname: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
+    setNickname: (action: SetStateAction<string>) => updateField(setAddForm, "nickname", action),
     password: addForm.password,
-    setPassword: (action: SetStateAction<string>) => setAddForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
+    setPassword: (action: SetStateAction<string>) => updateField(setAddForm, "password", action),
     showAddForm: addForm.isOpen,
-    setShowAddForm: (action: SetStateAction<boolean>) => setAddForm((current) => ({
-      ...current,
-      isOpen: applyFieldAction(current.isOpen, action),
-    })),
+    setShowAddForm: (action: SetStateAction<boolean>) => updateField(setAddForm, "isOpen", action),
     editingUser: editForm.user,
-    setEditingUser: (action: SetStateAction<AdminUser | null>) => setEditForm((current) => ({
-      ...current,
-      user: applyFieldAction(current.user, action),
-    })),
+    setEditingUser: (action: SetStateAction<AdminUser | null>) => updateField(setEditForm, "user", action),
     editEmail: editForm.email,
-    setEditEmail: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      email: applyFieldAction(current.email, action),
-    })),
+    setEditEmail: (action: SetStateAction<string>) => updateField(setEditForm, "email", action),
     editNickname: editForm.nickname,
-    setEditNickname: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      nickname: applyFieldAction(current.nickname, action),
-    })),
+    setEditNickname: (action: SetStateAction<string>) => updateField(setEditForm, "nickname", action),
     editPassword: editForm.password,
-    setEditPassword: (action: SetStateAction<string>) => setEditForm((current) => ({
-      ...current,
-      password: applyFieldAction(current.password, action),
-    })),
+    setEditPassword: (action: SetStateAction<string>) => updateField(setEditForm, "password", action),
   };
 }
 
