@@ -11,6 +11,7 @@ import {
   getCachedLatestVocabularyReviewCounts,
   getCachedLatestVocabularyReviewHistory,
   getCachedLatestVocabularyReviews,
+  REVIEW_HISTORY_PAGE_SIZE,
   type LatestVocabularyReviewCounts,
   type LatestVocabularyReviewsPage,
 } from "@/lib/supabase/review-history-cache";
@@ -19,8 +20,6 @@ export { getCachedLatestVocabularyReviewCounts, getCachedLatestVocabularyReviewH
 export type { LatestVocabularyReviewCounts, LatestVocabularyReviewsPage } from "@/lib/supabase/review-history-cache";
 
 const supabase = createClient();
-const REVIEW_HISTORY_PAGE_SIZE = 20;
-
 export async function getLatestVocabularyReviewHistory(
   expectedUserId: string
 ): Promise<VocabularyReviewWithWord[]> {
