@@ -1,4 +1,5 @@
 import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
+import { parsePipeSeparatedValues } from "@/lib/sentence-builder";
 import type {
   SentenceBuilderQuestion,
   SentenceDifficulty,
@@ -30,7 +31,7 @@ export function parseSentenceBuilderCsv(csv: string): SentenceQuestionInput[] {
     const item: SentenceQuestionInput = {
       question_id: value("question_id"), difficulty, category: value("category"), prompt_vi: value("prompt_vi"),
       answer_sentence: value("answer_sentence"), answer_tokens: answerTokens as string[], distractor_tokens: distractorTokens as string[],
-      image_keyword: value("image_keyword"), vocabulary_words: value("vocabulary_words").split("|").map((word) => word.trim()).filter(Boolean), is_active: true,
+      image_keyword: value("image_keyword"), vocabulary_words: parsePipeSeparatedValues(value("vocabulary_words")), is_active: true,
     };
     if (!item.question_id || !item.category || !item.prompt_vi || !item.answer_sentence) throw new Error(`Row ${rowIndex + 2}: question ID, category, hint, and answer are required.`);
     return item;
