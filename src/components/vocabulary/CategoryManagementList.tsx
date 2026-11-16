@@ -9,7 +9,12 @@ import { VocabularyCategoryColorSelect } from "@/components/vocabulary/Vocabular
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
-import type { CategoryManagementFilter, CategoryManagementSort } from "@/hooks/useCategoryManagementController";
+import {
+  isCategoryManagementFilter,
+  isCategoryManagementSort,
+  type CategoryManagementFilter,
+  type CategoryManagementSort,
+} from "@/hooks/useCategoryManagementView";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
@@ -79,12 +84,12 @@ export function CategoryManagementList({
       <div className="category-list-toolbar">
         <h2>{managedCategories.length} categories</h2>
         <label className="category-inline-filter">Filter by
-          <Select aria-label="Filter categories" value={filterBy} onChange={(event) => onFilterChange(event.target.value as CategoryManagementFilter)}>
+          <Select aria-label="Filter categories" value={filterBy} onChange={(event) => { if (isCategoryManagementFilter(event.target.value)) onFilterChange(event.target.value); }}>
             <option value="all">All categories</option><option value="mine">By me</option><option value="default">Default</option><option value="community">Community</option>
           </Select>
         </label>
         <label className="category-inline-filter">Sort by
-          <Select aria-label="Sort categories" value={sortBy} onChange={(event) => onSortChange(event.target.value as CategoryManagementSort)}>
+          <Select aria-label="Sort categories" value={sortBy} onChange={(event) => { if (isCategoryManagementSort(event.target.value)) onSortChange(event.target.value); }}>
             <option value="name">A → Z</option><option value="newest">Newest</option><option value="oldest">Oldest</option>
           </Select>
         </label>
