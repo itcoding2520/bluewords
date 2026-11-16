@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/assessments/server";
+import { getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { readRequestJson } from "@/lib/api/request-json";
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to view your results." }, { status: 401 });
   const { id } = await context.params;
-  const admin = createAssessmentAdminClient();
+  const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
   const { data, error } = await admin.from("assessment_attempts").select("id,recipient_id,attempt_number,questions,answers,score,correct_count,elapsed_seconds,result,started_at,completed_at,assessment_recipients!inner(assessments!inner(title,difficulty))").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !data) return NextResponse.json({ error: "Result not found." }, { status: 404 });
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!body || typeof body !== "object" || !Array.isArray((body as { answers?: unknown }).answers)) return NextResponse.json({ error: "Provide an answer for each question." }, { status: 400 });
   const answers = (body as { answers: unknown[] }).answers;
   if (answers.length !== 10 || answers.some((answer) => typeof answer !== "string")) return NextResponse.json({ error: "All 10 answers are required." }, { status: 400 });
-  const admin = createAssessmentAdminClient();
+  const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
   const { data: attempt, error } = await admin.from("assessment_attempts").select("id,user_id,recipient_id,questions,started_at,completed_at").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !attempt) return NextResponse.json({ error: "Attempt not found." }, { status: 404 });

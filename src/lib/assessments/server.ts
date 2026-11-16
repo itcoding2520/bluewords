@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import type { AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
-export function createAssessmentAdminClient() {
-  return createAdminClient();
-}
 
 export async function getRequestUser() {
   const client = await createClient();
@@ -11,7 +8,7 @@ export async function getRequestUser() {
   return user;
 }
 
-export async function signQuestionImages(admin: NonNullable<ReturnType<typeof createAssessmentAdminClient>>, questions: AssessmentQuestion[]) {
+export async function signQuestionImages(admin: AdminClient, questions: AssessmentQuestion[]) {
   return Promise.all(questions.map(async (question) => {
     if (question.type !== "vocabulary" || !question.imagePath) return question;
     const { data } = await admin.storage.from("vocabulary-images").createSignedUrl(question.imagePath, 60 * 60);

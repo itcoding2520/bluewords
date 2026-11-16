@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
+import { getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { shuffle } from "@/lib/random";
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
   if (!user) return NextResponse.json({ error: "Sign in to start this test." }, { status: 401 });
   const { id } = await context.params;
-  const admin = createAssessmentAdminClient();
+  const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
   const { data: recipient, error } = await admin.from("assessment_recipients").select("id,status,assessments!inner(id,title,difficulty,due_at,questions)").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !recipient) return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
