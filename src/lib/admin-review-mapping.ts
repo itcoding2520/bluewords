@@ -31,3 +31,15 @@ export function mapPublishedWordSubmission(
     image_path: word.image_path ?? null,
   };
 }
+
+export function getPublishedCategoryFallbackImages(
+  words: PublishedWord[],
+): Map<string, string> {
+  const imagesByCategory = new Map<string, string>();
+  for (const word of words) {
+    if (word.image_path && !imagesByCategory.has(word.category_id)) {
+      imagesByCategory.set(word.category_id, word.image_path);
+    }
+  }
+  return imagesByCategory;
+}
