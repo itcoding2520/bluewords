@@ -3,6 +3,7 @@ import { getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { shuffle } from "@/lib/random";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { firstRelation } from "@/lib/supabase/first-relation";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
@@ -13,7 +14,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   const { data: recipient, error } = await admin.from("assessment_recipients").select("id,status,assessments!inner(id,title,difficulty,due_at,questions)").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !recipient) return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
   if (recipient.status === "completed") return NextResponse.json({ error: "This assignment is already complete." }, { status: 409 });
-  const assessment = Array.isArray(recipient.assessments) ? recipient.assessments[0] : recipient.assessments;
+  const assessment = firstRelation(recipient.assessments)!;
   const { data: oldAttempts } = await admin.from("assessment_attempts").select("id,attempt_number,started_at,completed_at,questions").eq("recipient_id", id).order("attempt_number", { ascending: false }).limit(1);
   const latest = oldAttempts?.[0];
   if (latest && !latest.completed_at) {

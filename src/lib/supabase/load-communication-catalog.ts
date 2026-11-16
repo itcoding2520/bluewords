@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { Goal, Progress, SituationalEnglishCatalogSnapshot, Topic } from "@/lib/communication/catalog-types";
+import { firstRelation } from "@/lib/supabase/first-relation";
 
 
 function localDayStart() {
@@ -49,7 +50,7 @@ export async function loadCommunicationCatalogSnapshot(
 
   type ReviewAccuracyRow = { review_count: number; correct_count: number; communication_lesson_items: { lesson_id: string } | { lesson_id: string }[] };
   for (const row of (accuracyResult.data ?? []) as unknown as ReviewAccuracyRow[]) {
-    const item = Array.isArray(row.communication_lesson_items) ? row.communication_lesson_items[0] : row.communication_lesson_items;
+    const item = firstRelation(row.communication_lesson_items);
     if (!item) continue;
     const stats = data.lessonAccuracy[item.lesson_id] ?? { correct: 0, attempts: 0 };
     stats.correct += row.correct_count;
