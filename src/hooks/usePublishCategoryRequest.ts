@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { normalize } from "@/lib/vocabulary/publish-options";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 import { saveCommunityCategoryRequest } from "@/lib/vocabulary/publish-category-request-workflow";
 
 const REQUEST_SENT_MESSAGE = "Your selected vocabulary has been sent to the admin for review.";
@@ -19,7 +19,7 @@ export function usePublishCategoryRequest(
     if (!user) return;
 
     const category = categories.find((item) => item.name === categoryName);
-    const normalizedCategory = normalize(categoryName);
+    const normalizedCategory = normalizeVocabularyText(categoryName);
     const result = await saveCommunityCategoryRequest(supabase, {
       ownerId: user.id,
       name: categoryName,

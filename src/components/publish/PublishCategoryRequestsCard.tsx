@@ -2,7 +2,8 @@ import { FolderHeart, Send, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { normalize, type CommunityCategoryRequest } from "@/lib/vocabulary/publish-options";
+import type { CommunityCategoryRequest } from "@/lib/vocabulary/publish-options";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 interface PublishCategoryRequestsCardProps {
   requestsLoaded: boolean;
@@ -42,7 +43,7 @@ export function PublishCategoryRequestsCard({
             />
             <span>{item.name}</span>
             {communityCategoryRequests.some((request) =>
-              normalize(request.name) === normalize(item.name) && request.status === "rejected"
+              normalizeVocabularyText(request.name) === normalizeVocabularyText(item.name) && request.status === "rejected"
             ) && <span className="text-xs text-amber-700">Rejected · resubmittable</span>}
           </label>
         )) : (

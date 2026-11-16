@@ -6,7 +6,7 @@ import {
   saveCommunityWordRequest,
   type CommunityWordRequestSaveResult,
 } from "@/lib/vocabulary/publish-word-request-workflows";
-import { normalize } from "@/lib/vocabulary/publish-options";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 export interface PublishableWord {
   id: string;
@@ -36,8 +36,8 @@ export async function submitCommunityWordRequest(
     categories: VocabularyCategoryRow[];
   }
 ): Promise<PublishWordSubmissionResult> {
-  const normalizedCategory = normalize(input.word.category);
-  const normalizedWord = normalize(input.word.word);
+  const normalizedCategory = normalizeVocabularyText(input.word.category);
+  const normalizedWord = normalizeVocabularyText(input.word.word);
   if (input.defaultWordKeys.has(`${normalizedCategory}\u0000${normalizedWord}`)) {
     return { status: "default_word" };
   }

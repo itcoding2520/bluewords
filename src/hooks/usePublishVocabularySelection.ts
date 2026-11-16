@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { normalize } from "@/lib/vocabulary/publish-options";
+import { normalizeVocabularyText } from "@/lib/vocabulary/normalize-text";
 
 type PublishableWord = Pick<VocabularyWord, "id" | "category">;
 
@@ -9,12 +9,12 @@ export function usePublishVocabularySelection(userWords: PublishableWord[]) {
   const [selectedWordIds, setSelectedWordIds] = useState<string[]>([]);
 
   function toggleCategoryRequest(categoryName: string, checked: boolean) {
-    const normalizedName = normalize(categoryName);
+    const normalizedName = normalizeVocabularyText(categoryName);
     setSelectedCategories((current) => checked
       ? current.includes(categoryName) ? current : [...current, categoryName]
       : current.filter((name) => name !== categoryName));
     const categoryWordIds = userWords
-      .filter((word) => normalize(word.category) === normalizedName)
+      .filter((word) => normalizeVocabularyText(word.category) === normalizedName)
       .map((word) => word.id);
     setSelectedWordIds((current) => checked
       ? [...new Set([...current, ...categoryWordIds])]
