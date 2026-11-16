@@ -1,14 +1,14 @@
 import type { GamePhase } from "@/types/game";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
 import { shuffle } from "@/lib/random";
-import { saveVocabularyGameSession } from "@/lib/supabase/game-leaderboard";
 import type { SentenceDifficulty } from "@/lib/sentence-builder";
 import { useSentenceBuilderGameplay } from "@/hooks/useSentenceBuilderGameplay";
 import { useSentenceBuilderSetupData } from "@/hooks/useSentenceBuilderSetupData";
+import { useSentenceBuilderResultSave } from "@/hooks/useSentenceBuilderResultSave";
 
 type Phase = GamePhase;
 export type { SentenceBuilderTile } from "@/lib/sentence-builder";
@@ -24,30 +24,28 @@ export function useSentenceBuilderController() {
   const gameplay = useSentenceBuilderGameplay();
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const { elapsedSeconds: seconds, setElapsedSeconds: setSeconds } = useElapsedTimer(startedAt, phase === "playing");
-  const [saveState, setSaveState] = useState("");
-  const saveOnce = useRef(false);
-
   const { loading, eligible, categories } = useSentenceBuilderSetupData({
     vocabularyCategories,
     difficulty,
     category,
   });
   const elapsed = formatGameDuration(seconds);
-
-  useEffect(() => {
-    if (!isAuthenticated || phase !== "results" || startedAt === null || saveOnce.current) return;
-    saveOnce.current = true;
-    setSaveState("Saving result…");
-    void saveVocabularyGameSession({ gameType: "sentence-builder", roundSize: gameplay.round.length, score: gameplay.score, correctCount: gameplay.correctCount, moves: Math.max(gameplay.moves, gameplay.correctCount), durationSeconds: seconds, startedAt: new Date(startedAt).toISOString(), completedAt: new Date().toISOString() })
-      .then(() => setSaveState("Result saved to the leaderboard."))
-      .catch(() => setSaveState("Could not save your leaderboard result."));
-  }, [gameplay.correctCount, gameplay.moves, gameplay.round.length, gameplay.score, isAuthenticated, phase, seconds, startedAt]);
+  const resultSave = useSentenceBuilderResultSave({
+    isAuthenticated,
+    phase,
+    startedAt,
+    roundSize: gameplay.round.length,
+    score: gameplay.score,
+    correctCount: gameplay.correctCount,
+    moves: gameplay.moves,
+    durationSeconds: seconds,
+  });
 
   function start() {
     if (eligible.length < questionCount) return;
     const next = shuffle(eligible).slice(0, questionCount);
     gameplay.startRound(next);
-    setStartedAt(Date.now()); setSeconds(0); saveOnce.current = false; setSaveState(""); setPhase("playing");
+    setStartedAt(Date.now()); setSeconds(0); resultSave.resetSaveState(); setPhase("playing");
   }
 
   function nextQuestion() {
@@ -60,7 +58,7 @@ export function useSentenceBuilderController() {
   }
 
   return {
-    session: { isAuthenticated, loading, saveState, elapsed },
+    session: { isAuthenticated, loading, saveState: resultSave.saveState, elapsed },
     setup: {
       words,
       difficulty,
