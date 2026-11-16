@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRequestUser, hideQuestionAnswers, signQuestionImages } from "@/lib/assessments/server";
+import { getAssessmentAdminClient, hideQuestionAnswers, requireAssessmentUser, signQuestionImages } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { areAssessmentAnswersEqual } from "@/lib/assessments/normalize-answer";
 import { readRequestJson } from "@/lib/api/request-json";
 import { isObjectRecord } from "@/lib/is-object-record";
-import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const user = await getRequestUser();
-  if (!user) return NextResponse.json({ error: "Sign in to view your results." }, { status: 401 });
+  const auth = await requireAssessmentUser("Sign in to view your results.");
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
   const { id } = await context.params;
-  const admin = createAdminClient();
-  if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  const admin = getAssessmentAdminClient();
+  if (admin instanceof NextResponse) return admin;
   const { data, error } = await admin.from("assessment_attempts").select("id,recipient_id,attempt_number,questions,answers,score,correct_count,elapsed_seconds,result,started_at,completed_at,assessment_recipients!inner(assessments!inner(title,difficulty))").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !data) return NextResponse.json({ error: "Result not found." }, { status: 404 });
   if (!data.completed_at) {
@@ -23,8 +23,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await getRequestUser();
-  if (!user) return NextResponse.json({ error: "Sign in to submit this test." }, { status: 401 });
+  const auth = await requireAssessmentUser("Sign in to submit this test.");
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
   const { id } = await context.params;
   const parsedBody = await readRequestJson(request);
   if (!parsedBody.ok) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
@@ -32,8 +33,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!isObjectRecord(body) || !Array.isArray(body.answers)) return NextResponse.json({ error: "Provide an answer for each question." }, { status: 400 });
   const answers: unknown[] = body.answers;
   if (answers.length !== 10 || answers.some((answer) => typeof answer !== "string")) return NextResponse.json({ error: "All 10 answers are required." }, { status: 400 });
-  const admin = createAdminClient();
-  if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  const admin = getAssessmentAdminClient();
+  if (admin instanceof NextResponse) return admin;
   const { data: attempt, error } = await admin.from("assessment_attempts").select("id,user_id,recipient_id,questions,started_at,completed_at").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (error || !attempt) return NextResponse.json({ error: "Attempt not found." }, { status: 404 });
   if (attempt.completed_at) return NextResponse.json({ error: "This attempt has already been submitted." }, { status: 409 });

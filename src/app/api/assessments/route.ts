@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { getAssessmentAdminClient, hideQuestionAnswers, requireAssessmentUser } from "@/lib/assessments/server";
 import { firstRelation } from "@/lib/supabase/first-relation";
 
 export async function GET() {
-  const user = await getRequestUser();
-  if (!user) return NextResponse.json({ error: "Sign in to view your assignments." }, { status: 401 });
-  const admin = createAdminClient();
-  if (!admin) return NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  const auth = await requireAssessmentUser("Sign in to view your assignments.");
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
+  const admin = getAssessmentAdminClient();
+  if (admin instanceof NextResponse) return admin;
   const { data, error } = await admin.from("assessment_recipients").select("id,status,assigned_at,assessments!inner(id,title,difficulty,due_at,questions),assessment_attempts(id,attempt_number,score,correct_count,elapsed_seconds,result,started_at,completed_at)").eq("user_id", user.id).order("assigned_at", { ascending: false }).limit(200);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const rows = (data ?? []).map((item) => {
