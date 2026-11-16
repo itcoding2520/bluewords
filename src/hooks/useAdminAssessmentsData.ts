@@ -4,26 +4,24 @@ import { getErrorMessage } from "@/lib/errors";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import {
   fetchAssessmentAdminSnapshot,
-  type AssessmentAdminUser,
-  type AssessmentAssignment,
-  type AssessmentAttempt,
+  type AssessmentAdminSnapshot,
 } from "@/lib/assessments/admin-api";
 
 export function useAdminAssessmentsData(
   setError: Dispatch<SetStateAction<string>>
 ) {
-  const [users, setUsers] = useState<AssessmentAdminUser[]>([]);
-  const [assignments, setAssignments] = useState<AssessmentAssignment[]>([]);
-  const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
+  const [snapshot, setSnapshot] = useState<AssessmentAdminSnapshot>({
+    users: [],
+    assignments: [],
+    attempts: [],
+  });
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchAssessmentAdminSnapshot();
-      setUsers(data.users);
-      setAssignments(data.assignments);
-      setAttempts(data.attempts);
+      setSnapshot(data);
       setError("");
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not load assignments."));
@@ -36,5 +34,5 @@ export function useAdminAssessmentsData(
     return scheduleDeferredTask(() => { void refresh(); });
   }, [refresh]);
 
-  return { users, assignments, attempts, loading, refresh };
+  return { ...snapshot, loading, refresh };
 }
