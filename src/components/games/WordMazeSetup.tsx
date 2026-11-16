@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { WORD_MAZE_QUESTION_COUNT } from "@/lib/word-maze";
+import { WORD_MAZE_LIVES, WORD_MAZE_QUESTION_COUNT } from "@/lib/word-maze";
 
 export function WordMazeSetup({
   category, categories, words, candidateCount, onCategoryChange, onStart,
@@ -26,7 +26,7 @@ export function WordMazeSetup({
         {candidateCount < WORD_MAZE_QUESTION_COUNT && <p className="word-maze-warning" role="status">Add at least {WORD_MAZE_QUESTION_COUNT} words with different meanings to start this adventure.</p>}
         <button type="button" className="word-maze-primary" disabled={candidateCount < WORD_MAZE_QUESTION_COUNT} onClick={onStart}><Map size={20} /> Start adventure <ArrowRight size={20} /></button>
       </Card>
-      <Card className="word-maze-howto"><span className="word-maze-howto-icon"><Sparkles size={24} /></span><h2>How to play</h2><p>Choose the correct meaning to move your mascot along the glowing path. A wrong answer costs one life, but you can try the question again.</p><div className="word-maze-howto-stats"><span><Star size={18} fill="currentColor" /> +10 <small>points</small></span><span><Heart size={18} fill="currentColor" /> 3 <small>lives</small></span></div></Card>
+      <Card className="word-maze-howto"><span className="word-maze-howto-icon"><Sparkles size={24} /></span><h2>How to play</h2><p>Choose the correct meaning to move your mascot along the glowing path. A wrong answer costs one life, but you can try the question again.</p><div className="word-maze-howto-stats"><span><Star size={18} fill="currentColor" /> +10 <small>points</small></span><span><Heart size={18} fill="currentColor" /> {WORD_MAZE_LIVES} <small>lives</small></span></div></Card>
     </div>
   );
 }

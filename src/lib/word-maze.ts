@@ -5,6 +5,7 @@ import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 
 export const WORD_MAZE_QUESTION_COUNT = 5;
+export const WORD_MAZE_LIVES = 3;
 
 export type MazeWord = {
   id: string;

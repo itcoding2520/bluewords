@@ -2,7 +2,7 @@ import { ArrowRight, Check, Flag, Heart, Map, ShieldAlert, Sparkles, Star } from
 import { Card } from "@/components/ui/Card";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { WordMazeMap } from "@/components/games/WordMazeMap";
-import { WORD_MAZE_QUESTION_COUNT, type MazeWord } from "@/lib/word-maze";
+import { WORD_MAZE_LIVES, WORD_MAZE_QUESTION_COUNT, type MazeWord } from "@/lib/word-maze";
 
 export function WordMazeRound({
   current, questionIndex, roundLength, score, lives, feedback, selectedChoice, progress, onChoose, onContinue,
@@ -26,7 +26,7 @@ export function WordMazeRound({
           <span><Flag size={18} /> Level <strong>{questionIndex + 1}/{WORD_MAZE_QUESTION_COUNT}</strong></span>
           <span className="word-maze-stars" aria-label={`${Math.floor(score / 10)} of ${WORD_MAZE_QUESTION_COUNT} stars`}>{Array.from({ length: WORD_MAZE_QUESTION_COUNT }, (_, index) => <Star key={index} size={21} fill={score / 10 > index ? "currentColor" : "none"} />)}</span>
           <span><Map size={18} /> <strong>{questionIndex + 1}/{WORD_MAZE_QUESTION_COUNT}</strong><small>questions</small></span>
-          <span className="word-maze-lives" aria-label={`${lives} lives remaining`}>{Array.from({ length: 3 }, (_, index) => <Heart key={index} size={21} fill={index < lives ? "currentColor" : "none"} />)}</span>
+          <span className="word-maze-lives" aria-label={`${lives} lives remaining`}>{Array.from({ length: WORD_MAZE_LIVES }, (_, index) => <Heart key={index} size={21} fill={index < lives ? "currentColor" : "none"} />)}</span>
         </div>
         <div className="word-maze-question-heading"><PronunciationButton word={current.word} /><div><small>{current.category}</small><h2>What does “{current.word}” mean?</h2></div></div>
         <div className="word-maze-choices">
