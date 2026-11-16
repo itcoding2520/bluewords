@@ -3,7 +3,7 @@ import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { createAssessmentAssignment } from "@/lib/assessments/create-assignment";
 import { getAdminAssessmentOverview } from "@/lib/assessments/admin-overview";
 import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
-import { readRequestJson } from "@/lib/api/request-json";
+import { readRequestJsonOrResponse } from "@/lib/api/request-json";
 
 const ADMIN_AUTH_OPTIONS = {
   serviceUnavailableMessage: "Assessment service is not configured.",
@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
   const auth = await authorizeAdminRoute(ADMIN_AUTH_OPTIONS);
   if ("response" in auth) return auth.response;
   const { adminClient: admin, user } = auth;
-  const parsedBody = await readRequestJson(request);
-  if (!parsedBody.ok) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  const parsedBody = await readRequestJsonOrResponse(request);
+  if (!parsedBody.ok) return parsedBody.response;
   const validation = validateAssessmentAssignmentInput(parsedBody.value);
   if (!validation.ok) return NextResponse.json({ error: validation.message }, { status: 400 });
   const result = await createAssessmentAssignment(
