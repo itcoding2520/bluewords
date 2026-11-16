@@ -5,6 +5,7 @@ import {
 } from "@/lib/vocabulary-csv";
 import { importExistingVocabularyImages } from "@/lib/vocabulary/bulk-import-existing-images";
 import { importSingleVocabularyWord } from "@/lib/vocabulary/import-single-word";
+import { runWithConcurrency } from "@/lib/run-with-concurrency";
 
 export interface BulkVocabularyImportResult {
   imported: number;
@@ -42,27 +43,19 @@ export async function importVocabularyWords(
   let failed = 0;
   let imagesUploaded = 0;
   let imagesFailed = 0;
-  let nextIndex = 0;
   const savedWords: VocabularyWord[] = [];
 
-  async function importNext() {
-    while (nextIndex < importedWords.length) {
-      const word = importedWords[nextIndex++];
-      const result = await importSingleVocabularyWord(word, imageFilesByWord);
-      if (result.status === "duplicate") duplicates++;
-      else if (result.status === "failed") failed++;
-      else {
-        imported++;
-        imagesUploaded += result.imagesUploaded;
-        imagesFailed += result.imagesFailed;
-        savedWords.push(result.word);
-      }
+  await runWithConcurrency(importedWords, 4, async (word) => {
+    const result = await importSingleVocabularyWord(word, imageFilesByWord);
+    if (result.status === "duplicate") duplicates++;
+    else if (result.status === "failed") failed++;
+    else {
+      imported++;
+      imagesUploaded += result.imagesUploaded;
+      imagesFailed += result.imagesFailed;
+      savedWords.push(result.word);
     }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(4, importedWords.length) }, () => importNext()),
-  );
+  });
 
   const existingImageResult = await importExistingVocabularyImages(
     imageFilesByWord,

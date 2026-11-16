@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { deleteVocabularyImages, uploadVocabularyImage } from "@/lib/supabase/vocabulary-images";
 import { updateVocabularyWord } from "@/lib/supabase/vocabulary";
 import { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
+import { runWithConcurrency } from "@/lib/run-with-concurrency";
 
 export { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
 
@@ -32,34 +33,26 @@ export async function importExistingVocabularyImages(
   const imageUpdates: ExistingVocabularyImageImportResult["imageUpdates"] = [];
   let imagesUploaded = 0;
   let imagesFailed = 0;
-  let imageIndex = 0;
 
-  async function importNextExistingImage() {
-    while (imageIndex < existingImageCandidates.length) {
-      const { word, file } = existingImageCandidates[imageIndex++];
-      let uploadedPath: string | null = null;
-      try {
-        uploadedPath = await uploadVocabularyImage(word.id, file);
-        const row = await updateVocabularyWord(word.id, { image_path: uploadedPath });
-        imageUpdates.push({ id: row.id, imagePath: row.image_path ?? uploadedPath });
-        imagesUploaded++;
-      } catch (imageError) {
-        if (uploadedPath) {
-          try {
-            await deleteVocabularyImages([uploadedPath]);
-          } catch (cleanupError) {
-            console.error("Failed to clean up imported vocabulary image:", cleanupError);
-          }
+  await runWithConcurrency(existingImageCandidates, 4, async ({ word, file }) => {
+    let uploadedPath: string | null = null;
+    try {
+      uploadedPath = await uploadVocabularyImage(word.id, file);
+      const row = await updateVocabularyWord(word.id, { image_path: uploadedPath });
+      imageUpdates.push({ id: row.id, imagePath: row.image_path ?? uploadedPath });
+      imagesUploaded++;
+    } catch (imageError) {
+      if (uploadedPath) {
+        try {
+          await deleteVocabularyImages([uploadedPath]);
+        } catch (cleanupError) {
+          console.error("Failed to clean up imported vocabulary image:", cleanupError);
         }
-        imagesFailed++;
-        console.error("Failed to import image for existing vocabulary:", word.word, imageError);
       }
+      imagesFailed++;
+      console.error("Failed to import image for existing vocabulary:", word.word, imageError);
     }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(4, existingImageCandidates.length) }, () => importNextExistingImage()),
-  );
+  });
 
   return { imagesUploaded, imagesFailed, imageUpdates };
 }
