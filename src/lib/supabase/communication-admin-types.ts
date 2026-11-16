@@ -37,6 +37,30 @@ export type CommunicationLessonItem = {
   sort_order: number;
 };
 
+export type CommunicationDialogue = {
+  id: string;
+  dialogue_key: string;
+  lesson_id: string;
+  title_en: string;
+  title_vi: string;
+  prompt_vi: string;
+  sort_order: number;
+};
+
+export type CommunicationDialogueTurn = {
+  id: string;
+  turn_key: string;
+  dialogue_id: string;
+  turn_order: number;
+  speaker: string;
+  text_en: string;
+  meaning_vi: string;
+  audio_url: string;
+  response_prompt_vi: string;
+  expected_response: string;
+  response_options: string[];
+};
+
 export type CommunicationCollections = {
   topics: CommunicationTopic[];
   lessons: CommunicationLesson[];

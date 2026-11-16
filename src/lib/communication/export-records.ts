@@ -1,29 +1,14 @@
 import type { CommunicationCsvRecord } from "@/lib/communication/csv";
-import type { CommunicationLesson, CommunicationLessonItem, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
+import type {
+  CommunicationDialogue,
+  CommunicationDialogueTurn,
+  CommunicationLesson,
+  CommunicationLessonItem,
+  CommunicationTopic,
+} from "@/lib/supabase/communication-admin-types";
 
-export type ExportDialogue = {
-  id: string;
-  dialogue_key: string;
-  lesson_id: string;
-  title_en: string;
-  title_vi: string;
-  prompt_vi: string;
-  sort_order: number;
-};
-
-export type ExportTurn = {
-  id: string;
-  turn_key: string;
-  dialogue_id: string;
-  turn_order: number;
-  speaker: string;
-  text_en: string;
-  meaning_vi: string;
-  audio_url: string;
-  response_prompt_vi: string;
-  expected_response: string;
-  response_options: string[];
-};
+export type ExportDialogue = CommunicationDialogue;
+export type ExportTurn = CommunicationDialogueTurn;
 
 type CommonLessonFields = Pick<CommunicationCsvRecord,
   | "topic_slug" | "topic_title_en" | "topic_title_vi" | "topic_description_en" | "topic_description_vi" | "topic_order"
