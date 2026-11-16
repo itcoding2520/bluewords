@@ -13,6 +13,21 @@ function localDayStart() {
   return day.toISOString();
 }
 
+type LearnerSnapshot = Pick<SituationalEnglishCatalogSnapshot,
+  "progress" | "lessonAccuracy" | "goal" | "dailyGoal" | "todayCompleted" | "dueItems"
+>;
+
+function createEmptyLearnerSnapshot(): LearnerSnapshot {
+  return {
+    progress: [],
+    lessonAccuracy: {},
+    goal: null,
+    dailyGoal: 1,
+    todayCompleted: 0,
+    dueItems: [],
+  };
+}
+
 async function loadPublishedCatalog(supabase: SupabaseClient) {
   const [topicResult, lessonResult] = await Promise.all([
     supabase.from("communication_topics").select("id,slug,title_en,title_vi,description_en,description_vi,sort_order").eq("status", "published").order("sort_order"),
@@ -30,19 +45,8 @@ async function loadPublishedCatalog(supabase: SupabaseClient) {
 async function loadLearnerSnapshot(
   supabase: SupabaseClient,
   userId: string,
-): Promise<Pick<SituationalEnglishCatalogSnapshot,
-  "progress" | "lessonAccuracy" | "goal" | "dailyGoal" | "todayCompleted" | "dueItems"
->> {
-  const data: Pick<SituationalEnglishCatalogSnapshot,
-    "progress" | "lessonAccuracy" | "goal" | "dailyGoal" | "todayCompleted" | "dueItems"
-  > = {
-    progress: [],
-    lessonAccuracy: {},
-    goal: null,
-    dailyGoal: 1,
-    todayCompleted: 0,
-    dueItems: [],
-  };
+): Promise<LearnerSnapshot> {
+  const data = createEmptyLearnerSnapshot();
   const [progressResult, preferenceResult, dailyGoalResult, completedResult, dueResult, accuracyResult] = await Promise.all([
     supabase.from("communication_lesson_progress").select("lesson_id,status,completed_items").eq("user_id", userId),
     supabase.from("communication_learning_preferences").select("learning_goal").eq("user_id", userId).maybeSingle(),
@@ -80,12 +84,7 @@ export async function loadCommunicationCatalogSnapshot(
 
   const data: SituationalEnglishCatalogSnapshot = {
     ...catalog,
-    progress: [],
-    lessonAccuracy: {},
-    goal: null,
-    dailyGoal: 1,
-    todayCompleted: 0,
-    dueItems: [],
+    ...createEmptyLearnerSnapshot(),
     authenticated: Boolean(userId),
   };
   if (!userId) return data;
