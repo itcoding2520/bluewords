@@ -1,5 +1,7 @@
 import { getVocabularyCategoriesForUser } from "@/lib/supabase/categories";
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
+import { firstRelation } from "@/lib/supabase/first-relation";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type {
   AuthenticatedVocabularyCategoriesSnapshot,
@@ -43,7 +45,18 @@ export async function loadAuthenticatedVocabularySnapshot(
   ]);
 
   const communityCategories = (communityCategoryResult.data ?? []) as AuthenticatedVocabularySnapshot["communityCategories"];
-  const communityWords = (communityWordResult.data ?? []) as unknown as AuthenticatedVocabularySnapshot["communityWords"];
+  const communityWords = (communityWordResult.data ?? []).flatMap(({ community_categories, ...word }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{
+      ...word,
+      community_categories: {
+        id: category.id,
+        name: category.name,
+        color: category.color as VocabularyCategoryColor,
+        status: category.status,
+      },
+    }] : [];
+  });
 
   return {
     wordRows,
