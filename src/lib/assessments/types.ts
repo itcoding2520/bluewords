@@ -6,6 +6,17 @@ export type AssessmentQuestionForLearner =
   | Omit<Extract<AssessmentQuestion, { type: "vocabulary" }>, "answer">
   | Omit<Extract<AssessmentQuestion, { type: "sentence" }>, "answer">;
 
+export type AssessmentRunnerAttempt = {
+  id: string;
+  attempt_number: number;
+  started_at: string;
+  title: string;
+  difficulty: string;
+  questions: AssessmentQuestionForLearner[];
+  completed_at: string | null;
+  answers: string[];
+};
+
 export type AssessmentReviewQuestion = {
   type: "vocabulary" | "sentence";
   prompt: string;

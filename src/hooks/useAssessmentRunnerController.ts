@@ -1,16 +1,14 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
+import type { AssessmentRunnerAttempt } from "@/lib/assessments/types";
 import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useAssessmentRunnerAnswers } from "@/hooks/useAssessmentRunnerAnswers";
 import { fetchAssessmentAttempt, submitAssessmentAttempt } from "@/lib/assessments/api";
 
-type AssessmentAttempt = { id: string; attempt_number: number; started_at: string; title: string; difficulty: string; questions: AssessmentQuestionForLearner[]; completed_at: string | null; answers: string[] };
-
 export function useAssessmentRunnerController(attemptId: string) {
   const router = useRouter();
-  const [attempt, setAttempt] = useState<AssessmentAttempt | null>(null);
+  const [attempt, setAttempt] = useState<AssessmentRunnerAttempt | null>(null);
   const { answers, setAnswers, sentenceTiles, setAnswer, toggleSentenceTile, clearSentence } =
     useAssessmentRunnerAnswers(attempt?.questions ?? []);
   const [current, setCurrent] = useState(0);
@@ -25,7 +23,7 @@ export function useAssessmentRunnerController(attemptId: string) {
 
   const load = useCallback(async () => {
     try {
-      const value = await fetchAssessmentAttempt<AssessmentAttempt>(attemptId, "Could not load test.");
+      const value = await fetchAssessmentAttempt<AssessmentRunnerAttempt>(attemptId, "Could not load test.");
       setAttempt(value);
       setAnswers(value.answers?.length === 10 ? value.answers : Array(10).fill(""));
       setSeconds(Math.max(0, Math.floor((Date.now() - new Date(value.started_at).getTime()) / 1000)));
