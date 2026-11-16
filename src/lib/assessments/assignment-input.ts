@@ -1,5 +1,5 @@
 import { toVietnamDateKey } from "@/lib/formatDate";
-import type { DifficultyLevel } from "@/types/difficulty";
+import { isDifficultyLevel, type DifficultyLevel } from "@/types/difficulty";
 
 export type AssessmentDifficulty = DifficultyLevel;
 
@@ -21,7 +21,7 @@ export function validateAssessmentAssignmentInput(input: unknown): AssignmentInp
   const body = input as { title?: unknown; difficulty?: unknown; dueAt?: unknown };
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const difficulty = String(body.difficulty);
-  if (!title || title.length > 120 || !["easy", "medium", "hard"].includes(difficulty)) {
+  if (!title || title.length > 120 || !isDifficultyLevel(difficulty)) {
     return { ok: false, message: "Enter a title and select a difficulty." };
   }
 
@@ -52,7 +52,7 @@ export function validateAssessmentAssignmentInput(input: unknown): AssignmentInp
     ok: true,
     value: {
       title,
-      difficulty: difficulty as AssessmentDifficulty,
+      difficulty,
       dueAt,
     },
   };

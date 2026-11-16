@@ -3,6 +3,7 @@ import type {
   CommunicationCsvRecord,
 } from "@/lib/communication/csv";
 import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/content-types";
+import { isDifficultyLevel } from "@/types/difficulty";
 
 function integer(value: string, fallback: number, row: number, label: string) {
   if (!value.trim()) return fallback;
@@ -47,7 +48,7 @@ export function parseCommunicationCsvRecord(
     throw new Error(`Row ${line}: record_type must be item or dialogue_turn.`);
   }
   const difficulty = get("difficulty").toLowerCase();
-  if (!["easy", "medium", "hard"].includes(difficulty)) {
+  if (!isDifficultyLevel(difficulty)) {
     throw new Error(`Row ${line}: difficulty must be easy, medium, or hard.`);
   }
   const status = get("lesson_status").toLowerCase();
