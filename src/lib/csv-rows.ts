@@ -8,6 +8,9 @@ export function parseCsvRows(
   return parseRows(csv, messages, options);
 }
 
-export function escapeCsvCell(value: string | number | null | undefined): string {
-  return escapeCell(value);
+export function escapeCsvCell(
+  value: string | number | null | undefined,
+  options?: { spreadsheetSafe?: boolean; quoteAll?: boolean },
+): string {
+  return escapeCell(value, options);
 }

@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
@@ -56,11 +57,11 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
         }
       }
     }
-    const loadingTimer = window.setTimeout(() => { if (active) setRequestsLoaded(false); }, 0);
+    const cancelLoadingUpdate = scheduleDeferredTask(() => { if (active) setRequestsLoaded(false); });
     void loadRequests();
     return () => {
       active = false;
-      window.clearTimeout(loadingTimer);
+      cancelLoadingUpdate();
     };
   }, [isAuthenticated, loadPublishRequests, supabase]);
 

@@ -1,4 +1,4 @@
-import { readResponseJson } from "@/lib/api/read-response-json";
+import { postJson } from "@/lib/api/post-json";
 
 type CreateAdminNotificationResponse = {
   sent?: number;
@@ -10,10 +10,9 @@ export async function createAdminNotification(input: {
   message: string;
   recipientIds: string[];
 }): Promise<CreateAdminNotificationResponse> {
-  const response = await fetch("/api/admin/notifications", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  return readResponseJson<CreateAdminNotificationResponse>(response, "Could not send notification.");
+  return postJson<CreateAdminNotificationResponse>(
+    "/api/admin/notifications",
+    input,
+    "Could not send notification.",
+  );
 }

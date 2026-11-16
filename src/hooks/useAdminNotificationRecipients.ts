@@ -23,7 +23,7 @@ export function useAdminNotificationRecipients(
         const payload = await getAdminCachedData(
           "admin:users:all-recipients",
           () => fetchAdminUsers(query)
-        ) as { users?: AdminNotificationRecipient[] };
+        );
         if (active) setRecipients((payload.users ?? []).filter((recipient) => recipient.id !== currentUserId));
       } catch (cause) {
         if (active) setError(getErrorMessage(cause, "Could not load users."));
@@ -40,7 +40,10 @@ export function useAdminNotificationRecipients(
     if (!normalized) return recipients;
     return recipients.filter((recipient) => `${recipient.email ?? ""} ${recipient.nickname}`.toLocaleLowerCase().includes(normalized));
   }, [recipients, search]);
-  const selectedRecipients = useMemo(() => recipients.filter((recipient) => selected.includes(recipient.id)), [recipients, selected]);
+  const selectedRecipients = useMemo(() => {
+    const selectedIds = new Set(selected);
+    return recipients.filter((recipient) => selectedIds.has(recipient.id));
+  }, [recipients, selected]);
 
   function toggleRecipient(id: string, checked: boolean) {
     setSelected((current) => checked ? [...current, id] : current.filter((selectedId) => selectedId !== id));

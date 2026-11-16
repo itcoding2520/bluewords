@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMyAssignments, startAssignedAssessment } from "@/lib/assignments/api";
@@ -26,8 +27,7 @@ export function useAssignmentsController() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void refresh(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void refresh(); });
   }, [refresh]);
 
   const outstanding = useMemo(() => assignments.filter((item) => item.status !== "completed"), [assignments]);

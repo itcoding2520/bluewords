@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
+import { getPageItems } from "@/lib/pagination";
+import { isUuid } from "@/lib/is-uuid";
 
 function mapAdminUser(user: AuthUser, profileNickname?: string | null) {
   return {
@@ -27,8 +29,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
   const idsParameter = request.nextUrl.searchParams.get("ids");
   if (idsParameter) {
     const ids = [...new Set(idsParameter.split(",").filter(Boolean))];
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (ids.length > 100 || ids.some((id) => !uuidPattern.test(id))) {
+    if (ids.length > 100 || ids.some((id) => !isUuid(id))) {
       return NextResponse.json({ error: "Provide at most 100 valid user IDs." }, { status: 400 });
     }
 
@@ -78,8 +79,7 @@ export async function getAdminUserList(adminClient: AdminClient, request: NextRe
       if (userPage >= data.lastPage || data.users.length === 0) break;
     }
     if (all) return NextResponse.json({ users: matches, total: matches.length });
-    const offset = (page - 1) * pageSize;
-    return NextResponse.json({ users: matches.slice(offset, offset + pageSize), total: matches.length, page, pageSize });
+    return NextResponse.json({ users: getPageItems(matches, page, pageSize), total: matches.length, page, pageSize });
   }
 
   const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: pageSize });

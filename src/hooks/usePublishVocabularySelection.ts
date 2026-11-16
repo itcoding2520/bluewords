@@ -16,9 +16,10 @@ export function usePublishVocabularySelection(userWords: PublishableWord[]) {
     const categoryWordIds = userWords
       .filter((word) => normalizeVocabularyText(word.category) === normalizedName)
       .map((word) => word.id);
+    const categoryWordIdSet = new Set(categoryWordIds);
     setSelectedWordIds((current) => checked
       ? [...new Set([...current, ...categoryWordIds])]
-      : current.filter((id) => !categoryWordIds.includes(id)));
+      : current.filter((id) => !categoryWordIdSet.has(id)));
   }
 
   return {

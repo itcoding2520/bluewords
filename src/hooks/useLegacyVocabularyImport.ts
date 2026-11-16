@@ -8,6 +8,7 @@ import { importLegacyVocabulary, previewVocabularyImport } from "@/lib/vocabular
 import { getVocabularyWords } from "@/lib/supabase/vocabulary";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import type { VocabularyWord } from "@/data/vocabulary";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 export function useLegacyVocabularyImport({
   isAdmin,
@@ -25,10 +26,9 @@ export function useLegacyVocabularyImport({
   const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    return scheduleDeferredTask(() => {
       setHasLegacyData(previewVocabularyImport([]).total > 0);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    });
   }, []);
 
   const importPreview = useMemo(() => {

@@ -6,9 +6,10 @@ import { getVocabularyWordPage } from "@/lib/supabase/vocabulary";
 import { getCachedVocabularyPage, setCachedVocabularyPage } from "@/lib/supabase/vocabulary-page-cache.mjs";
 import { mapVocabularyWordRow } from "@/lib/vocabulary/shared-vocabulary";
 import { toast } from "sonner";
-import { getPageCount } from "@/lib/pagination";
+import { getPageCount, type PageResult } from "@/lib/pagination";
 
 type PageQuery = { page: number; pageSize: number; search: string; category: string | null; status: VocabularyStatus | null };
+type VocabularyPageResult = PageResult<VocabularyWord>;
 
 export function useVocabularyPageData({
   authVersion,
@@ -25,7 +26,7 @@ export function useVocabularyPageData({
 }) {
   const { page, pageSize, search, category, status } = query;
   const initialQuery: PageQuery = { page: 1, pageSize: 10, search: "", category: null, status: null };
-  const [initialCachedPage] = useState(() => getCachedVocabularyPage(authVersion, initialQuery) as { rows: VocabularyWord[]; total: number } | null);
+  const [initialCachedPage] = useState(() => getCachedVocabularyPage<VocabularyPageResult>(authVersion, initialQuery));
   const [pageWords, setPageWords] = useState<VocabularyWord[]>(() => initialCachedPage?.rows ?? []);
   const [loadedAuthVersion, setLoadedAuthVersion] = useState<number | null>(() => initialCachedPage ? authVersion : null);
   const [totalWords, setTotalWords] = useState(() => initialCachedPage?.total ?? 0);
@@ -42,7 +43,7 @@ export function useVocabularyPageData({
     const requestId = ++requestIdRef.current;
     let cancelled = false;
     const currentQuery = { page, pageSize, search, category, status };
-    const cachedPage = getCachedVocabularyPage(authVersion, currentQuery) as { rows: VocabularyWord[]; total: number } | null;
+    const cachedPage = getCachedVocabularyPage<VocabularyPageResult>(authVersion, currentQuery);
     const pageResult = cachedPage
       ? Promise.resolve(cachedPage)
       : getVocabularyWordPage(currentQuery).then((result) => {

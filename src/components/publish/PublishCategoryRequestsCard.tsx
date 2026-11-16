@@ -24,6 +24,13 @@ export function PublishCategoryRequestsCard({
   onToggle,
   onSend,
 }: PublishCategoryRequestsCardProps) {
+  const selectedNames = new Set(selectedCategories);
+  const rejectedCategoryNames = new Set(
+    communityCategoryRequests
+      .filter((request) => request.status === "rejected")
+      .map((request) => normalizeVocabularyText(request.name)),
+  );
+
   return (
     <Card className="publish-request-card publish-category-card p-5 sm:p-6">
       <div className="publish-request-heading">
@@ -38,13 +45,12 @@ export function PublishCategoryRequestsCard({
           <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50">
             <input
               type="checkbox"
-              checked={selectedCategories.includes(item.name)}
+              checked={selectedNames.has(item.name)}
               onChange={(event) => onToggle(item.name, event.target.checked)}
             />
             <span>{item.name}</span>
-            {communityCategoryRequests.some((request) =>
-              normalizeVocabularyText(request.name) === normalizeVocabularyText(item.name) && request.status === "rejected"
-            ) && <span className="text-xs text-amber-700">Rejected · resubmittable</span>}
+            {rejectedCategoryNames.has(normalizeVocabularyText(item.name))
+              && <span className="text-xs text-amber-700">Rejected · resubmittable</span>}
           </label>
         )) : (
           <div className="publish-empty-state">

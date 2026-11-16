@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } 
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers, type AdminUserRecord } from "@/lib/admin-user-api";
 import { getPageCount } from "@/lib/pagination";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export function useAdminUsersData({
@@ -57,8 +58,8 @@ export function useAdminUsersData({
 
   useEffect(() => {
     const controller = new AbortController();
-    const timer = window.setTimeout(() => { void loadUsers(controller.signal, refreshKey > 0); }, 0);
-    return () => { controller.abort(); window.clearTimeout(timer); };
+    const cancelScheduledLoad = scheduleDeferredTask(() => { void loadUsers(controller.signal, refreshKey > 0); });
+    return () => { controller.abort(); cancelScheduledLoad(); };
   }, [loadUsers, refreshKey]);
 
   const refreshUsers = useCallback(() => {

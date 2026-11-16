@@ -11,10 +11,23 @@ function pageKey(authVersion, query) {
   ].join(":");
 }
 
+/**
+ * @template T
+ * @param {number} authVersion
+ * @param {{ page: number; pageSize: number; search: string; category: string | null; status: string | null }} query
+ * @returns {T | null}
+ */
 export function getCachedVocabularyPage(authVersion, query) {
   return pages.get(pageKey(authVersion, query)) ?? null;
 }
 
+/**
+ * @template T
+ * @param {number} authVersion
+ * @param {{ page: number; pageSize: number; search: string; category: string | null; status: string | null }} query
+ * @param {T} result
+ * @returns {void}
+ */
 export function setCachedVocabularyPage(authVersion, query, result) {
   pages.set(pageKey(authVersion, query), result);
 }

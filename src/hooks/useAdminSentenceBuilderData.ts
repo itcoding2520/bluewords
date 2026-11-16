@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { loadSentenceBuilderQuestions } from "@/lib/supabase/sentence-builder";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import type { SentenceBuilderQuestion } from "@/lib/sentence-builder";
 
 export function useAdminSentenceBuilderData() {
@@ -22,12 +23,10 @@ export function useAdminSentenceBuilderData() {
 
   useEffect(() => {
     mounted.current = true;
-    const timer = window.setTimeout(() => {
-      void refresh();
-    }, 0);
+    const cancelScheduledLoad = scheduleDeferredTask(() => { void refresh(); });
     return () => {
       mounted.current = false;
-      window.clearTimeout(timer);
+      cancelScheduledLoad();
     };
   }, [refresh]);
 

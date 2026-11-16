@@ -4,8 +4,10 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { getCachedVideosPage, peekCachedVideosPage } from "@/lib/videos-cache.mjs";
 import { VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { loadVideosPage } from "@/lib/videos-api";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { toast } from "sonner";
 
+type VideosPage = { videos: VideoRow[]; total: number };
 
 export function useVideosPageData(supabase: SupabaseClient, page: number) {
   const [videos, setVideos] = useState<VideoRow[]>([]);
@@ -13,7 +15,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadVideos = useCallback(async () => {
-    const cached = peekCachedVideosPage(page, VIDEOS_PAGE_SIZE) as { videos: VideoRow[]; total: number } | null;
+    const cached = peekCachedVideosPage<VideosPage>(page, VIDEOS_PAGE_SIZE);
     if (cached) {
       setVideos(cached.videos);
       setTotal(cached.total);
@@ -27,7 +29,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
         page,
         VIDEOS_PAGE_SIZE,
         () => loadVideosPage(supabase, page, VIDEOS_PAGE_SIZE)
-      ) as { videos: VideoRow[]; total: number };
+      );
       setVideos(result.videos);
       setTotal(result.total);
     } catch (error) {
@@ -38,8 +40,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
   }, [page, supabase]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadVideos(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void loadVideos(); });
   }, [loadVideos]);
 
   return { videos, total, isLoading, loadVideos };

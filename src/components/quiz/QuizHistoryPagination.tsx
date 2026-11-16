@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { RowsPerPageSelect } from "@/components/ui/RowsPerPageSelect";
 import { getNextPage, getPageCount, getPageRange, getPreviousPage } from "@/lib/pagination";
 
 export function QuizHistoryPagination({
@@ -24,19 +25,11 @@ export function QuizHistoryPagination({
     <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <p aria-live="polite">Showing {pageRange.first}–{pageRange.last} of {total} attempts</p>
       <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-        <label className="flex items-center gap-2 whitespace-nowrap">
-          <span className="relative inline-flex">
-            <select
-              aria-label="Quiz history rows per page"
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-10 w-[76px] cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
-            >
-              {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
-            </select>
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500"><ChevronDown size={15} /></span>
-          </span>
-        </label>
+        <RowsPerPageSelect
+          ariaLabel="Quiz history rows per page"
+          value={pageSize}
+          onChange={onPageSizeChange}
+        />
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap">Page {page} of {pageCount}</span>
           <Button variant="secondary" aria-label="Previous quiz history page" onClick={() => onPageChange(getPreviousPage(page))} disabled={page <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button>

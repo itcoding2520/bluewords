@@ -1,3 +1,5 @@
+import { protectSpreadsheetCell } from "./spreadsheet-csv-safety.mjs";
+
 /**
  * @param {string} csv
  * @param {{ unclosedQuote: string; missingContent: string }} messages
@@ -46,7 +48,14 @@ export function parseCsvRows(csv, messages, { requireContent = true } = {}) {
   return rows;
 }
 
-/** @param {string | number | null | undefined} value */
-export function escapeCsvCell(value) {
-  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+/**
+ * @param {string | number | null | undefined} value
+ * @param {{ spreadsheetSafe?: boolean; quoteAll?: boolean }} [options]
+ */
+export function escapeCsvCell(value, { spreadsheetSafe = false, quoteAll = true } = {}) {
+  let cell = String(value ?? "");
+  if (spreadsheetSafe) cell = protectSpreadsheetCell(cell);
+  return quoteAll || /[",\r\n]/.test(cell)
+    ? `"${cell.replace(/"/g, '""')}"`
+    : cell;
 }

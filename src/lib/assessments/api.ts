@@ -1,4 +1,5 @@
 import { readResponseJson } from "@/lib/api/read-response-json";
+import { postJson } from "@/lib/api/post-json";
 
 type AssessmentAttemptResponse<T> = {
   attempt: T;
@@ -22,10 +23,9 @@ export async function submitAssessmentAttempt(
   attemptId: string,
   answers: string[],
 ): Promise<void> {
-  const response = await fetch(`/api/assessments/attempts/${attemptId}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ answers }),
-  });
-  await readResponseJson<AssessmentSubmitResponse>(response, "Could not submit test.");
+  await postJson<AssessmentSubmitResponse>(
+    `/api/assessments/attempts/${attemptId}`,
+    { answers },
+    "Could not submit test.",
+  );
 }

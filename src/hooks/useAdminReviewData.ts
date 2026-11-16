@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminReviewSnapshot } from "@/lib/admin-review-api";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 export type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 
@@ -39,8 +40,7 @@ export function useAdminReviewData() {
   }, [supabase]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void refresh(false); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void refresh(false); });
   }, [refresh]);
 
   return {

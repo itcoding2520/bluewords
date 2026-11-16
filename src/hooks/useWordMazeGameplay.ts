@@ -14,8 +14,7 @@ export function useWordMazeGameplay() {
   const [moves, setMoves] = useState(0);
 
   const current = round[questionIndex];
-  const pathProgress = questionIndex + (feedback === "correct" ? 1 : 0);
-  const solvedCount = questionIndex + (feedback === "correct" ? 1 : 0);
+  const progress = questionIndex + (feedback === "correct" ? 1 : 0);
 
   function startRound(nextRound: MazeWord[]) {
     setRound(nextRound);
@@ -64,8 +63,8 @@ export function useWordMazeGameplay() {
     won,
     moves,
     current,
-    pathProgress,
-    solvedCount,
+    pathProgress: progress,
+    solvedCount: progress,
     startRound,
     chooseAnswer,
     continuePath,

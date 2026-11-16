@@ -5,6 +5,10 @@ import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 
+const DEFAULT_VOCABULARY_CATEGORY_NAMES = new Set(
+  defaultVocabularyCategories.map((category) => normalizeVocabularyLabel(category.name)),
+);
+
 interface AdminReviewPublishedVocabularyProps {
   categories: PublishedCategory[];
   words: PublishedWord[];
@@ -43,9 +47,7 @@ export function AdminReviewPublishedVocabulary({
   onEditWord,
 }: AdminReviewPublishedVocabularyProps) {
   const customCategories = categories.filter((item) =>
-    !defaultVocabularyCategories.some((category) =>
-      normalizeVocabularyLabel(category.name) === normalizeVocabularyLabel(item.name)
-    )
+    !DEFAULT_VOCABULARY_CATEGORY_NAMES.has(normalizeVocabularyLabel(item.name))
   );
 
   return (

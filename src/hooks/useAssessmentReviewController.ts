@@ -5,6 +5,7 @@ import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 import type { AssessmentReviewQuestion } from "@/lib/assessments/types";
 import type { AssessmentSummary } from "@/lib/assignments/types";
 import { firstRelation } from "@/lib/supabase/first-relation";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 type AssessmentRecipient = { assessments: AssessmentSummary | AssessmentSummary[] | null };
 type AssessmentReviewAttempt = {
@@ -41,8 +42,7 @@ export function useAssessmentReviewController(attemptId: string) {
   }, [attemptId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void load(); }, 0);
-    return () => window.clearTimeout(timer);
+    return scheduleDeferredTask(() => { void load(); });
   }, [load]);
 
   return { attempt, assessment: getAssessmentSummary(attempt), error, isCorrectAnswer: areAssessmentAnswersEqual };

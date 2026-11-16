@@ -3,6 +3,7 @@ import type {
 } from "@/types/database";
 import type { VocabularyStatus } from "@/data/vocabulary";
 import { fetchAllPages } from "@/lib/supabase/fetch-all-pages.mjs";
+import { isObjectRecord } from "@/lib/is-object-record";
 import { vocabularySupabase } from "@/lib/supabase/vocabulary-client";
 import type { VocabularyWordPage, VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary-types";
 
@@ -39,7 +40,7 @@ export async function getVocabularyWordPage(input: {
 
   if (error) throw error;
 
-  const result = data as { rows?: unknown; total?: unknown } | null;
+  const result = isObjectRecord(data) ? data : null;
   return {
     rows: Array.isArray(result?.rows)
       ? result.rows as VocabularyWordWithMeaningsRow[]

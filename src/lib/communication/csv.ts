@@ -75,10 +75,9 @@ export function parseCommunicationCsv(csv: string): CommunicationCsvRecord[] {
 }
 
 export function exportCommunicationCsv(records: CommunicationCsvRecord[]) {
-  const outputHeaders = [...headers.slice(0, -1), "response_options_json"];
-  const lines = records.map((record) => outputHeaders.map((name) => {
+  const lines = records.map((record) => headers.map((name) => {
     if (name === "response_options_json") return escapeCsvCell(JSON.stringify(record.response_options));
     return escapeCsvCell(record[name as keyof CommunicationCsvRecord] as string | number | null | undefined);
   }).join(","));
-  return [outputHeaders.map(escapeCsvCell).join(","), ...lines].join("\r\n");
+  return [headers.map((header) => escapeCsvCell(header)).join(","), ...lines].join("\r\n");
 }

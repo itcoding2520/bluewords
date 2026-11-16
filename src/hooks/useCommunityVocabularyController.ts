@@ -3,6 +3,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { loadPublishedCommunityVocabulary, type CommunityWord } from "@/lib/supabase/community-vocabulary";
 import { createVocabularySearchMatcher } from "@/lib/vocabulary/search";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 export function useCommunityVocabularyController() {
   const supabase = useSupabaseClient();
@@ -13,7 +14,7 @@ export function useCommunityVocabularyController() {
 
   useEffect(() => {
     let active = true;
-    const timer = window.setTimeout(() => {
+    const cancelScheduledLoad = scheduleDeferredTask(() => {
       void loadPublishedCommunityVocabulary(supabase)
         .then((loadedWords) => {
           if (active) {
@@ -21,8 +22,8 @@ export function useCommunityVocabularyController() {
             setLoaded(true);
           }
         });
-    }, 0);
-    return () => { active = false; window.clearTimeout(timer); };
+    });
+    return () => { active = false; cancelScheduledLoad(); };
   }, [supabase]);
 
   const categories = useMemo(() => [...new Set(words.map((item) => item.community_categories.name))].sort((a, b) => a.localeCompare(b)), [words]);

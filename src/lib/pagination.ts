@@ -1,3 +1,5 @@
+export type PageResult<T> = { rows: T[]; total: number };
+
 export function getPageCount(total: number, pageSize: number): number {
   return Math.max(1, Math.ceil(total / pageSize));
 }
