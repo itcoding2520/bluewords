@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { shuffle } from "@/lib/random";
-import type { MatchCardData, MatchPair } from "@/lib/word-match";
+import { createWordMatchCards, type MatchCardData, type MatchPair } from "@/lib/word-match";
 import type { GamePhase } from "@/types/game";
 
 interface WordMatchState {
@@ -43,17 +42,10 @@ export function useWordMatchGameplay(phase: GamePhase) {
 
   function startRound(nextPairs: MatchPair[]) {
     if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
-    const nextCards: MatchCardData[] = [];
-    for (const pair of nextPairs) {
-      nextCards.push(
-        { id: `${pair.id}:word`, pairId: pair.id, kind: "word" },
-        { id: `${pair.id}:match`, pairId: pair.id, kind: "match" },
-      );
-    }
     setState({
       ...initialState,
       pairs: nextPairs,
-      cards: shuffle(nextCards),
+      cards: createWordMatchCards(nextPairs),
       feedback: "Flip two cards to find a matching word and picture or meaning.",
     });
     resolvingRef.current = false;
