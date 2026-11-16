@@ -1,16 +1,15 @@
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentDifficulty } from "@/lib/assessments/assignment-input";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
+import {
+  resolveAssessmentRecipientIds,
+  type AssessmentRecipientSelection,
+} from "@/lib/assessments/recipient-selection";
 
 type AssignmentDetails = {
   title: string;
   difficulty: AssessmentDifficulty;
   dueAt: Date | null;
-};
-
-type RecipientSelection = {
-  allUsers: unknown;
-  recipientIds: unknown;
 };
 
 type CreatedAssessment = {
@@ -33,7 +32,7 @@ export async function createAssessmentAssignment(
   admin: AdminClient,
   createdBy: string,
   details: AssignmentDetails,
-  selection: RecipientSelection,
+  selection: AssessmentRecipientSelection,
 ): Promise<CreateAssessmentAssignmentResult> {
   const { title, difficulty, dueAt } = details;
   const [{ data: defaultKeys, error: keyError }, { data: wordsData, error: wordError }, { data: sharedData, error: sharedError }, { data: sentencesData, error: sentenceError }] = await Promise.all([
@@ -54,19 +53,11 @@ export async function createAssessmentAssignment(
   });
   if (!questions) return { status: "questions_unavailable" };
 
-  let recipientIds: string[] = [];
-  if (selection.allUsers === true) {
-    let page = 1;
-    while (true) {
-      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 500 });
-      if (error) return { status: "recipient_lookup_error", message: error.message };
-      recipientIds.push(...data.users.map((entry) => entry.id));
-      if (data.users.length < 500) break;
-      page++;
-    }
-  } else if (Array.isArray(selection.recipientIds)) {
-    recipientIds = [...new Set(selection.recipientIds.filter((id): id is string => typeof id === "string"))];
+  const recipientResolution = await resolveAssessmentRecipientIds(admin, selection);
+  if (recipientResolution.status === "error") {
+    return { status: "recipient_lookup_error", message: recipientResolution.message };
   }
+  const recipientIds = recipientResolution.recipientIds;
   if (!recipientIds.length) return { status: "no_recipients" };
 
   const { data: assignment, error: assignmentError } = await admin.from("assessments").insert({
