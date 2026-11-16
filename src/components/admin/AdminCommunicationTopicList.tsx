@@ -1,14 +1,14 @@
 import { Pencil, Trash2 } from "lucide-react";
 
-import type { TopicWordCounts } from "@/lib/communication/topic-word-counts";
-import type { CommunicationLesson, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
+import type { TopicWordCounts } from "@/lib/communication/content-counts";
+import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
 
 const inputClass = "mt-1 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
 type Props = {
   topics: CommunicationTopic[];
   totalCount: number;
-  lessons: CommunicationLesson[];
+  lessonCountsByTopic: Map<string, number>;
   wordCounts: Map<string, TopicWordCounts>;
   selectedTopicId: string;
   search: string;
@@ -22,7 +22,7 @@ type Props = {
 export function AdminCommunicationTopicList({
   topics,
   totalCount,
-  lessons,
+  lessonCountsByTopic,
   wordCounts,
   selectedTopicId,
   search,
@@ -41,7 +41,7 @@ export function AdminCommunicationTopicList({
       {loading ? <p className="p-6 text-sm text-slate-500">Loading…</p> : (
         <div className="max-h-[34rem] divide-y divide-slate-100 overflow-y-auto">
           {topics.map((topic) => {
-            const lessonCount = lessons.filter((lesson) => lesson.topic_id === topic.id).length;
+            const lessonCount = lessonCountsByTopic.get(topic.id) ?? 0;
             const counts = wordCounts.get(topic.id) ?? { easy: 0, medium: 0, hard: 0 };
             return (
               <article key={topic.id} className={`flex items-center gap-2 p-3 ${selectedTopicId === topic.id ? "bg-blue-50" : ""}`}>

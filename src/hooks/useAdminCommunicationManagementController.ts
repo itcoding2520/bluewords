@@ -104,7 +104,12 @@ export function useAdminCommunicationManagementController() {
     refresh,
   });
 
-  const { filteredTopics, topicWordCounts } = useAdminCommunicationTopicView({ topics, lessons, items, search: topicSearch });
+  const {
+    filteredTopics,
+    lessonCountsByTopic,
+    itemCountsByLesson,
+    topicWordCounts,
+  } = useAdminCommunicationTopicView({ topics, lessons, items, search: topicSearch });
 
   function submitTopic(event: FormEvent<HTMLFormElement>) {
     void saveTopic(event);
@@ -133,6 +138,8 @@ export function useAdminCommunicationManagementController() {
       currentLessons,
       currentItems,
       filteredTopics,
+      lessonCountsByTopic,
+      itemCountsByLesson,
       topicWordCounts,
       selectedLessonTitle: selectedLesson?.title_en ?? null,
     },
