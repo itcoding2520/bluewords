@@ -5,19 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import type { SupabaseClient } from "@/lib/supabase/client";
-import type {
-  CommunicationCollections,
-  CommunicationLesson,
-  CommunicationLessonItem,
-  CommunicationTopic,
-} from "@/lib/supabase/communication-admin-types";
+import type { CommunicationCollections } from "@/lib/supabase/communication-admin-types";
 import { loadAdminCommunicationCollections } from "@/lib/communication/admin-collections";
 
 
 export function useAdminCommunicationCollections(supabase: SupabaseClient) {
-  const [topics, setTopics] = useState<CommunicationTopic[]>([]);
-  const [lessons, setLessons] = useState<CommunicationLesson[]>([]);
-  const [items, setItems] = useState<CommunicationLessonItem[]>([]);
+  const [collections, setCollections] = useState<CommunicationCollections>({
+    topics: [],
+    lessons: [],
+    items: [],
+  });
   const [selectedTopicId, setSelectedTopicId] = useState("");
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -27,9 +24,7 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
   }, [supabase]);
 
   const applyCollections = useCallback((next: CommunicationCollections) => {
-    setTopics(next.topics);
-    setLessons(next.lessons);
-    setItems(next.items);
+    setCollections(next);
 
     const nextTopicId = next.topics.some((topic) => topic.id === selectedTopicId)
       ? selectedTopicId
@@ -62,9 +57,9 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
   }, []);
 
   return {
-    topics,
-    lessons,
-    items,
+    topics: collections.topics,
+    lessons: collections.lessons,
+    items: collections.items,
     selectedTopicId,
     setSelectedTopicId,
     selectedLessonId,
