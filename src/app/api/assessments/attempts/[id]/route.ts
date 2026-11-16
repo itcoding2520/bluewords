@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAssessmentAdminClient, hideQuestionAnswers, requireAssessmentUser, signQuestionImages } from "@/lib/assessments/server";
-import type { AssessmentQuestion } from "@/lib/assessments/types";
+import { getAssessmentAdminClient, requireAssessmentUser } from "@/lib/assessments/server";
+import { getAssessmentAttemptResult } from "@/lib/assessments/get-attempt-result";
 import { submitAssessmentAttempt } from "@/lib/assessments/submit-attempt";
 import { readRequestJson } from "@/lib/api/request-json";
 import { isObjectRecord } from "@/lib/is-object-record";
@@ -12,14 +12,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { id } = await context.params;
   const admin = getAssessmentAdminClient();
   if (admin instanceof NextResponse) return admin;
-  const { data, error } = await admin.from("assessment_attempts").select("id,recipient_id,attempt_number,questions,answers,score,correct_count,elapsed_seconds,result,started_at,completed_at,assessment_recipients!inner(assessments!inner(title,difficulty))").eq("id", id).eq("user_id", user.id).maybeSingle();
-  if (error || !data) return NextResponse.json({ error: "Result not found." }, { status: 404 });
-  if (!data.completed_at) {
-    const questions = data.questions as AssessmentQuestion[];
-    const questionsWithImages = await signQuestionImages(admin, questions);
-    return NextResponse.json({ attempt: { ...data, questions: questionsWithImages.map(hideQuestionAnswers) } });
-  }
-  return NextResponse.json({ attempt: data });
+  const result = await getAssessmentAttemptResult(admin, id, user.id);
+  if (result.status === "not_found") return NextResponse.json({ error: "Result not found." }, { status: 404 });
+  return NextResponse.json({ attempt: result.attempt });
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
