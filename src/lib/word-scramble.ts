@@ -15,6 +15,12 @@ export type ScrambleWord = {
 
 export type LetterTile = { id: number; letter: string };
 
+function spellsAnswer(tiles: LetterTile[], answer: string) {
+  let spelling = "";
+  for (const tile of tiles) spelling += tile.letter;
+  return spelling === answer;
+}
+
 export function buildWordScrambleCandidates(
   words: VocabularyWord[],
   category: string
@@ -44,11 +50,11 @@ export function createScrambledTiles(answer: string): LetterTile[] {
   const letters = [...answer].map((letter, id) => ({ id, letter }));
   let shuffled = shuffle(letters);
   let attempts = 0;
-  while (shuffled.map(({ letter }) => letter).join("") === answer && attempts < 8) {
+  while (spellsAnswer(shuffled, answer) && attempts < 8) {
     shuffled = shuffle(letters);
     attempts += 1;
   }
-  if (shuffled.map(({ letter }) => letter).join("") === answer && shuffled.length > 1) {
+  if (spellsAnswer(shuffled, answer) && shuffled.length > 1) {
     const swapIndex = shuffled.findIndex((tile, index) => tile.letter !== shuffled[0].letter && index > 0);
     if (swapIndex > 0) [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
   }
