@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
-import { getUserProfile, USER_PROFILE_UPDATED_EVENT, type UserProfile } from "@/lib/supabase/user-profile";
+import { getUserProfile, subscribeToUserProfileUpdates } from "@/lib/supabase/user-profile";
 
 export function useDashboardAccountIdentity() {
   const supabase = useSupabaseClient();
@@ -28,10 +28,9 @@ export function useDashboardAccountIdentity() {
       if (active) syncUser(session?.user ?? null);
     });
 
-    function handleProfileUpdated(event: Event) {
-      setNickname((event as CustomEvent<UserProfile>).detail.nickname);
-    }
-    window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+    const unsubscribeProfileUpdates = subscribeToUserProfileUpdates((profile) => {
+      setNickname(profile.nickname);
+    });
 
     async function loadSession() {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -48,7 +47,7 @@ export function useDashboardAccountIdentity() {
     return () => {
       active = false;
       subscription.unsubscribe();
-      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+      unsubscribeProfileUpdates();
     };
   }, [supabase]);
 

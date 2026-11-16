@@ -22,6 +22,14 @@ export function getCachedUserProfile(userId: string): UserProfile | null | undef
   return readCachedUserProfile(userId) as UserProfile | null | undefined;
 }
 
+export function subscribeToUserProfileUpdates(onUpdate: (profile: UserProfile) => void): () => void {
+  const handleProfileUpdated = (event: Event) => {
+    onUpdate((event as CustomEvent<UserProfile>).detail);
+  };
+  window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+  return () => window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+}
+
 let supabase: ReturnType<typeof createClient> | null = null;
 
 function getSupabase() {

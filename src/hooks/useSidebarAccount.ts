@@ -7,7 +7,7 @@ import { isAdminUser } from "@/lib/supabase/admin-access";
 import {
   getCachedUserProfile,
   getUserProfile,
-  USER_PROFILE_UPDATED_EVENT,
+  subscribeToUserProfileUpdates,
   type UserProfile,
 } from "@/lib/supabase/user-profile";
 
@@ -89,15 +89,12 @@ export function useSidebarAccount() {
       }
     });
 
-    function handleProfileUpdated(event: Event) {
-      setProfile((event as CustomEvent<UserProfile>).detail);
-    }
-    window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+    const unsubscribeProfileUpdates = subscribeToUserProfileUpdates(setProfile);
 
     return () => {
       active = false;
       subscription.unsubscribe();
-      window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+      unsubscribeProfileUpdates();
     };
   }, [supabase]);
 
