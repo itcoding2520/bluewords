@@ -1,12 +1,8 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCsvWord } from "@/lib/vocabulary-csv";
-import { updateVocabularyWord } from "@/lib/supabase/vocabulary";
-import {
-  deleteVocabularyImages,
-  uploadVocabularyImage,
-} from "@/lib/supabase/vocabulary-images";
 import { createVocabularyWordRecord } from "@/lib/vocabulary/word-mutation-workflows";
 import { normalizeVocabularyImageKey } from "@/lib/vocabulary/image-key";
+import { importVocabularyWordImage } from "@/lib/vocabulary/import-image";
 
 export type SingleVocabularyImportResult =
   | { status: "duplicate" }
@@ -44,22 +40,12 @@ export async function importSingleVocabularyWord(
     let imagePath = createdWord.imagePath;
     const imageFile = imageFilesByWord?.get(normalizeVocabularyImageKey(word.word));
     if (imageFile) {
-      let uploadedPath: string | null = null;
-      try {
-        uploadedPath = await uploadVocabularyImage(createdWord.id, imageFile);
-        const updatedRow = await updateVocabularyWord(createdWord.id, { image_path: uploadedPath });
-        imagePath = updatedRow.image_path ?? uploadedPath;
+      const result = await importVocabularyWordImage(createdWord.id, word.word, imageFile, "new");
+      if (result) {
+        imagePath = result.imagePath;
         imagesUploaded++;
-      } catch (imageError) {
-        if (uploadedPath) {
-          try {
-            await deleteVocabularyImages([uploadedPath]);
-          } catch (cleanupError) {
-            console.error("Failed to clean up imported vocabulary image:", cleanupError);
-          }
-        }
+      } else {
         imagesFailed++;
-        console.error("Failed to import vocabulary image:", word.word, imageError);
       }
     }
 
