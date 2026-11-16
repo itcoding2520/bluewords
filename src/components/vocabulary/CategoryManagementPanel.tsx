@@ -3,9 +3,7 @@
 import { ImagePlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import type { VocabularyCategoryColor } from "@/config/vocabulary";
-import { vocabularyCategoryColorOptions } from "@/components/vocabulary/VocabularyCategoryColorSelect";
+import { VocabularyCategoryColorSelect } from "@/components/vocabulary/VocabularyCategoryColorSelect";
 import { CategoryManagementList } from "@/components/vocabulary/CategoryManagementList";
 import { useCategoryManagementController } from "@/hooks/useCategoryManagementController";
 
@@ -31,7 +29,7 @@ export function CategoryManagementPanel() {
         <div className="category-add-heading"><span className="category-add-illustration"><ImagePlus size={34} /></span><div><h2>Add a new category</h2><p>Create a category to organize your words. You can also add a custom image for game chips.</p></div></div>
         <form onSubmit={(event) => void handleAdd(event)} className="category-add-form">
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category name<Input value={name} onChange={(event) => setName(event.target.value)} placeholder="New category" maxLength={50} /></label>
-          <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<Select value={color} onChange={(event) => setColor(event.target.value as VocabularyCategoryColor)}>{vocabularyCategoryColorOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+          <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<VocabularyCategoryColorSelect ariaLabel="Color" value={color} onChange={setColor} /></label>
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category image <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setNewImage(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-700" /></label>
           <Button type="submit" disabled={!name.trim() || isSaving}><Plus size={16} /> Add category</Button>
         </form>

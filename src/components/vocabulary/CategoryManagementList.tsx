@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
-import { vocabularyCategoryColorOptions } from "@/components/vocabulary/VocabularyCategoryColorSelect";
+import { VocabularyCategoryColorSelect } from "@/components/vocabulary/VocabularyCategoryColorSelect";
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 import { CategoryAvatar } from "@/components/vocabulary/CategoryAvatar";
 import { ActionMenu } from "@/components/ui/ActionMenu";
@@ -102,7 +102,7 @@ export function CategoryManagementList({
               {editing?.id === category.id ? (
                 <form onSubmit={onUpdate} className="category-edit-form grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_minmax(180px,0.8fr)_auto] sm:items-end">
                   <label className="grid gap-1.5 text-sm font-medium text-slate-700">Category name<Input value={editName} disabled={category.is_default} onChange={(event) => onEditNameChange(event.target.value)} maxLength={50} /></label>
-                  <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<Select value={editColor} onChange={(event) => onEditColorChange(event.target.value as VocabularyCategoryColor)}>{vocabularyCategoryColorOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
+                  <label className="grid gap-1.5 text-sm font-medium text-slate-700">Color<VocabularyCategoryColorSelect ariaLabel="Color" value={editColor} onChange={onEditColorChange} /></label>
                   <label className="grid gap-1.5 text-sm font-medium text-slate-700">{isProtectedDefault ? "Default category image" : "Change category image"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={category.is_default && !isAdmin} onChange={(event) => onEditImageChange(event.target.files?.[0] ?? null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-2 file:rounded-md file:border-0 file:bg-blue-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-blue-700 disabled:opacity-50" /></label>
                   <div className="flex gap-2"><Button type="submit" disabled={isSaving}><Check size={16} /> Save</Button><Button type="button" variant="secondary" onClick={() => onEditingChange(null)} disabled={isSaving}><X size={16} /></Button></div>
                 </form>
