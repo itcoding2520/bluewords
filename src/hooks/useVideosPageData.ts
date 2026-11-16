@@ -10,15 +10,13 @@ import { toast } from "sonner";
 type VideosPage = { videos: VideoRow[]; total: number };
 
 export function useVideosPageData(supabase: SupabaseClient, page: number) {
-  const [videos, setVideos] = useState<VideoRow[]>([]);
-  const [total, setTotal] = useState(0);
+  const [pageData, setPageData] = useState<VideosPage>({ videos: [], total: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   const loadVideos = useCallback(async () => {
     const cached = peekCachedVideosPage<VideosPage>(page, VIDEOS_PAGE_SIZE);
     if (cached) {
-      setVideos(cached.videos);
-      setTotal(cached.total);
+      setPageData(cached);
       setIsLoading(false);
       return;
     }
@@ -30,8 +28,7 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
         VIDEOS_PAGE_SIZE,
         () => loadVideosPage(supabase, page, VIDEOS_PAGE_SIZE)
       );
-      setVideos(result.videos);
-      setTotal(result.total);
+      setPageData(result);
     } catch (error) {
       toast.error(getErrorMessage(error, "Could not load videos."));
     } finally {
@@ -43,5 +40,5 @@ export function useVideosPageData(supabase: SupabaseClient, page: number) {
     return scheduleDeferredTask(() => { void loadVideos(); });
   }, [loadVideos]);
 
-  return { videos, total, isLoading, loadVideos };
+  return { ...pageData, isLoading, loadVideos };
 }
