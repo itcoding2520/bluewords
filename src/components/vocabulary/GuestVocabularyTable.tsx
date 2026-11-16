@@ -7,6 +7,7 @@ import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { Card } from "@/components/ui/Card";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 const categoryColors: Record<VocabularyCategoryColor, string> = {
   blue: "bg-blue-100 text-blue-800", violet: "bg-violet-100 text-violet-800",
@@ -24,8 +25,7 @@ function GuestWordRow({ word, color }: { word: VocabularyWord; color: Vocabulary
     const row = rowRef.current;
     if (!row || !word.imagePath) return;
     if (!("IntersectionObserver" in window)) {
-      const timeout = globalThis.setTimeout(() => setNearViewport(true), 0);
-      return () => globalThis.clearTimeout(timeout);
+      return scheduleDeferredTask(() => setNearViewport(true));
     }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
