@@ -19,40 +19,39 @@ export function mapCommunityVocabularyCategories<TCategory extends CommunityVoca
     updatedAt: string;
   },
 ): VocabularyCategoryRow[] {
-  const communityCategoryEntries = communityCategories.map((category) => ({
-    category,
-    normalizedName: normalizeVocabularyLabel(category.name),
-  }));
-  const sharedByName = new Map(communityCategoryEntries.map(({ category, normalizedName }) => [
-    normalizedName,
-    category,
-  ]));
-  const baseCategoryEntries = baseCategories.map((category) => ({
-    category,
-    normalizedName: normalizeVocabularyLabel(category.name),
-  }));
-  const baseNames = new Set(baseCategoryEntries.map(({ normalizedName }) => normalizedName));
-  const baseWithSharedImages = baseCategoryEntries.map(({ category, normalizedName }) => ({
-    ...category,
-    image_path: sharedByName.get(normalizedName)?.image_path
-      ?? category.image_path
-      ?? null,
-  }));
-  const sharedOnlyCategories = communityCategoryEntries
-    .filter(({ normalizedName }) => !baseNames.has(normalizedName))
-    .map(({ category }) => {
-      const metadata = getCommunityMetadata(category);
-      return {
-        id: createCommunityCategoryId(category.id),
-        user_id: metadata.userId,
-        name: category.name,
-        color: category.color,
-        is_default: false,
-        created_at: metadata.createdAt,
-        updated_at: metadata.updatedAt,
-        image_path: category.image_path ?? null,
-      };
+  const sharedByName = new Map<string, TCategory>();
+  for (const category of communityCategories) {
+    sharedByName.set(normalizeVocabularyLabel(category.name), category);
+  }
+
+  const baseNames = new Set<string>();
+  const baseWithSharedImages: VocabularyCategoryRow[] = [];
+  for (const category of baseCategories) {
+    const normalizedName = normalizeVocabularyLabel(category.name);
+    baseNames.add(normalizedName);
+    baseWithSharedImages.push({
+      ...category,
+      image_path: sharedByName.get(normalizedName)?.image_path
+        ?? category.image_path
+        ?? null,
     });
+  }
+
+  const sharedOnlyCategories: VocabularyCategoryRow[] = [];
+  for (const category of communityCategories) {
+    if (baseNames.has(normalizeVocabularyLabel(category.name))) continue;
+    const metadata = getCommunityMetadata(category);
+    sharedOnlyCategories.push({
+      id: createCommunityCategoryId(category.id),
+      user_id: metadata.userId,
+      name: category.name,
+      color: category.color,
+      is_default: false,
+      created_at: metadata.createdAt,
+      updated_at: metadata.updatedAt,
+      image_path: category.image_path ?? null,
+    });
+  }
 
   return [...baseWithSharedImages, ...sharedOnlyCategories];
 }
