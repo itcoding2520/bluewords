@@ -15,20 +15,33 @@ export function useSentenceBuilderSetupData({
   const [questions, setQuestions] = useState<SentenceBuilderQuestion[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const questionsByDifficulty = useMemo(() => {
+    const grouped = new Map<SentenceDifficulty, SentenceBuilderQuestion[]>();
+    for (const question of questions) {
+      const difficultyQuestions = grouped.get(question.difficulty);
+      if (difficultyQuestions) difficultyQuestions.push(question);
+      else grouped.set(question.difficulty, [question]);
+    }
+    return grouped;
+  }, [questions]);
+  const difficultyQuestions = useMemo(
+    () => questionsByDifficulty.get(difficulty) ?? [],
+    [difficulty, questionsByDifficulty],
+  );
   const eligible = useMemo(
-    () => questions.filter((question) => question.difficulty === difficulty && (category === "all" || question.category.toLocaleLowerCase() === category.toLocaleLowerCase())),
-    [questions, difficulty, category],
+    () => difficultyQuestions.filter((question) => category === "all" || question.category.toLocaleLowerCase() === category.toLocaleLowerCase()),
+    [category, difficultyQuestions],
   );
   const vocabularyCategoriesByName = useMemo(
     () => new Map(vocabularyCategories.map((item) => [item.name.toLocaleLowerCase(), item])),
     [vocabularyCategories],
   );
   const categories = useMemo(() => {
-    const names = [...new Set(questions.filter((question) => question.difficulty === difficulty).map((question) => question.category))].sort((a, b) => a.localeCompare(b));
+    const names = [...new Set(difficultyQuestions.map((question) => question.category))].sort((a, b) => a.localeCompare(b));
     return names.map((name): VocabularyCategoryRow => vocabularyCategoriesByName.get(name.toLocaleLowerCase()) ?? {
       id: `sentence-builder-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}`, user_id: "", name, color: "blue", image_path: null, is_default: true, created_at: "", updated_at: "",
     });
-  }, [difficulty, questions, vocabularyCategoriesByName]);
+  }, [difficultyQuestions, vocabularyCategoriesByName]);
 
   useEffect(() => {
     let active = true;
