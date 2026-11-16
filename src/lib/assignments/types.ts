@@ -23,9 +23,13 @@ export type Assignment = {
   attempts: AssignmentAttempt[];
 };
 
+export type CompletedAssignmentAttempt = AssignmentAttempt & {
+  completed_at: string;
+};
+
 export type AssignmentHistoryEntry = {
   assignment: Assignment;
-  attempt: AssignmentAttempt;
+  attempt: CompletedAssignmentAttempt;
 };
 
 export type AssessmentSummary = {

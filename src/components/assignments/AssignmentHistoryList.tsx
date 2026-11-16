@@ -17,7 +17,7 @@ export function AssignmentHistoryList({ entries }: { entries: AssignmentHistoryE
             <p>
               {assignment.assessment?.difficulty} · {attempt.correct_count}/10 correct · {formatDuration(attempt.elapsed_seconds ?? 0)}
             </p>
-            <small>{formatDateTime(attempt.completed_at!)} · Attempt {attempt.attempt_number}</small>
+            <small>{formatDateTime(attempt.completed_at)} · Attempt {attempt.attempt_number}</small>
           </div>
           <b className={attempt.result === "passed" ? "passed" : "failed"}>
             {attempt.score}/100 · {attempt.result === "passed" ? "Passed" : "Not passed"}
