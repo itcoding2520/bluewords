@@ -40,9 +40,9 @@ export function useVocabularyContentMutations({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  function reloadCurrentPage() {
+  function refreshCurrentPage(options: { clearVisibleWords?: boolean } = {}) {
     setIsPageLoading(true);
-    setPageWords([]);
+    if (options.clearVisibleWords) setPageWords([]);
     refreshPage();
   }
 
@@ -61,8 +61,7 @@ export function useVocabularyContentMutations({
       const deletedCount = await deleteWords([...selectedIds]);
       if (deletedCount > 0) {
         setSelectedIds(new Set());
-        setIsPageLoading(true);
-        refreshPage();
+        refreshCurrentPage();
         toast.success(`Deleted ${deletedCount} ${deletedCount === 1 ? "word" : "words"}.`);
       }
     } finally {
@@ -76,7 +75,7 @@ export function useVocabularyContentMutations({
     try {
       const success = await deleteWord(deletingWord.id);
       if (success) {
-        reloadCurrentPage();
+        refreshCurrentPage({ clearVisibleWords: true });
         setSelectedIds((current) => {
           const next = new Set(current);
           next.delete(deletingWord.id);
@@ -98,7 +97,7 @@ export function useVocabularyContentMutations({
         : await addWord(submittedWord);
       if (success) {
         setPage(1);
-        reloadCurrentPage();
+        refreshCurrentPage({ clearVisibleWords: true });
         handleCloseForm();
       }
       return success;
@@ -110,7 +109,7 @@ export function useVocabularyContentMutations({
   async function handleToggleMastered(id: string, status: VocabularyWord["status"]) {
     const success = await toggleMastered(id, status);
     if (success) {
-      reloadCurrentPage();
+      refreshCurrentPage({ clearVisibleWords: true });
     }
     return success;
   }
