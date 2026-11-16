@@ -1,3 +1,22 @@
+.word-search-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(var(--word-search-grid-count), minmax(0, 1fr));
+}
+
+.word-search-grid--10 {
+  --word-search-grid-count: 10;
+}
+
+.word-search-grid--15 {
+  --word-search-grid-count: 15;
+}
+
+.word-search-grid--20 {
+  --word-search-grid-count: 20;
+}
+
 .app-shell:has(.word-search-playing) { height: 100dvh; overflow: hidden; }
 .app-shell:has(.word-search-playing) > div > section { display: flex; min-height: 0; height: 100dvh; overflow: hidden; padding: 0; }
 .app-shell:has(.word-search-playing) .app-content { display: flex; width: 100%; max-width: none; min-width: 0; height: 100dvh; min-height: 0; flex-direction: column; overflow: hidden; }
