@@ -40,6 +40,10 @@ export function useWordScrambleGameplay() {
 
   const currentWord = state.round[state.questionIndex];
   const usedTileIds = useMemo(() => new Set(state.answerTileIds), [state.answerTileIds]);
+  const lettersByTileId = useMemo(
+    () => new Map(state.letterTiles.map((tile) => [tile.id, tile.letter])),
+    [state.letterTiles],
+  );
 
   function startRound(nextRound: ScrambleWord[]) {
     setState({
@@ -50,7 +54,6 @@ export function useWordScrambleGameplay() {
   }
 
   function submitAnswer(nextIds: number[], usedHint = state.hintUsed) {
-    const lettersByTileId = new Map(state.letterTiles.map((tile) => [tile.id, tile.letter]));
     const answer = nextIds.map((id) => lettersByTileId.get(id) ?? "").join("");
     if (answer.length !== currentWord.answer.length) {
       setState((current) => ({ ...current, moves: current.moves + 1 }));
