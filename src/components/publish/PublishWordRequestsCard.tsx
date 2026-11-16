@@ -27,6 +27,16 @@ export function PublishWordRequestsCard({
   busy,
   onSend,
 }: PublishWordRequestsCardProps) {
+  const selectedIds = new Set(selectedWordIds);
+  const rejectedWordKeys = new Set(
+    communityWordRequests.flatMap((request) => {
+      if (request.status !== "rejected") return [];
+      const categoryName = communityCategoryNames.get(request.category_id);
+      if (!categoryName) return [];
+      return [JSON.stringify([categoryName, normalizeVocabularyText(request.normalized_word)])];
+    }),
+  );
+
   return (
     <Card className="publish-request-card publish-word-card p-5 sm:p-6">
       <div className="publish-request-heading">
@@ -41,18 +51,15 @@ export function PublishWordRequestsCard({
           <label key={item.id} className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50">
             <input
               type="checkbox"
-              checked={selectedWordIds.includes(item.id)}
+              checked={selectedIds.has(item.id)}
               onChange={(event) => setSelectedWordIds((current) =>
                 event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id)
               )}
             />
             <span>
               {item.word} <span className="text-slate-500">· {item.category}{item.meaning ? ` — ${item.meaning}` : ""}</span>
-              {communityWordRequests.some((request) =>
-                request.status === "rejected"
-                && communityCategoryNames.get(request.category_id) === normalizeVocabularyText(item.category)
-                && normalizeVocabularyText(request.normalized_word) === normalizeVocabularyText(item.word)
-              ) && <span className="ml-2 text-xs text-amber-700">Rejected · resubmittable</span>}
+              {rejectedWordKeys.has(JSON.stringify([normalizeVocabularyText(item.category), normalizeVocabularyText(item.word)]))
+                && <span className="ml-2 text-xs text-amber-700">Rejected · resubmittable</span>}
             </span>
           </label>
         )) : (
