@@ -2,7 +2,7 @@ import { validateCommunicationCsvRecord } from "@/lib/communication/csv-record-v
 import type {
   CommunicationCsvRecord,
 } from "@/lib/communication/csv";
-import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/content-types";
+import { isContentStatus, type CommunicationDifficulty } from "@/lib/communication/content-types";
 import { isDifficultyLevel } from "@/types/difficulty";
 
 function integer(value: string, fallback: number, row: number, label: string) {
@@ -52,7 +52,7 @@ export function parseCommunicationCsvRecord(
     throw new Error(`Row ${line}: difficulty must be easy, medium, or hard.`);
   }
   const status = get("lesson_status").toLowerCase();
-  if (!["draft", "published", "archived"].includes(status)) {
+  if (!isContentStatus(status)) {
     throw new Error(`Row ${line}: lesson_status must be draft, published, or archived.`);
   }
 
@@ -69,7 +69,7 @@ export function parseCommunicationCsvRecord(
     topic_description_en: get("topic_description_en"), topic_description_vi: get("topic_description_vi"),
     topic_order: integer(get("topic_order"), 0, line, "topic_order"), lesson_key: get("lesson_key"),
     lesson_title_en: get("lesson_title_en"), lesson_title_vi: get("lesson_title_vi"), difficulty: difficulty as CommunicationDifficulty,
-    lesson_order: integer(get("lesson_order"), 0, line, "lesson_order"), lesson_status: status as ContentStatus,
+    lesson_order: integer(get("lesson_order"), 0, line, "lesson_order"), lesson_status: status,
     record_key: get("record_key"), record_order: integer(get("record_order"), 0, line, "record_order"),
     item_type: itemType as CommunicationCsvRecord["item_type"], content_en: get("content_en"), meaning_vi: get("meaning_vi"),
     example_en: get("example_en"), example_vi: get("example_vi"), image_keyword: get("image_keyword"), audio_url: get("audio_url"),
