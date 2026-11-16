@@ -2,6 +2,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { getCommunityContentStatus, type CategoryTab, type CommunityCategory, type CommunityWord } from "@/lib/admin-category-data";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
 
 export type AdminCategory = VocabularyCategoryRow | CommunityCategory;
 
@@ -30,18 +31,16 @@ export function deriveAdminCategorySelection({
   categorySearch,
   communityCategories,
   defaultCategories,
-  defaultCategoryNames,
 }: {
   activeTab: CategoryTab;
   selectedId: string;
   categorySearch: string;
   communityCategories: CommunityCategory[];
   defaultCategories: VocabularyCategoryRow[];
-  defaultCategoryNames: Set<string>;
 }) {
   const customCategories = communityCategories.filter((category) =>
     category.status === getCommunityContentStatus(activeTab)
-    && !defaultCategoryNames.has(normalizeVocabularyLabel(category.name))
+    && !isDefaultVocabularyCategory(category.name)
   );
   const currentCategories = activeTab === "default" ? defaultCategories : customCategories;
   const normalizedSearch = categorySearch.trim().toLocaleLowerCase();

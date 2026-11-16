@@ -5,7 +5,6 @@ import { useAdminCategoryListData } from "@/hooks/useAdminCategoryListData";
 import { useAdminCategoryWordsData } from "@/hooks/useAdminCategoryWordsData";
 import { useAdminCategoryManagementActions } from "@/hooks/useAdminCategoryManagementActions";
 import type { CategoryTab } from "@/lib/admin-category-data";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import {
   deriveAdminCategoryDetails,
   deriveAdminCategorySelection,
@@ -16,10 +15,6 @@ export type { CategoryTab, CommunityCategory } from "@/lib/admin-category-data";
 
 export function useAdminCategoryManagementController() {
   const supabase = useSupabaseClient();
-  const defaultCategoryNames = useMemo(
-    () => new Set(defaultVocabularyCategories.map((category) => normalizeVocabularyLabel(category.name))),
-    []
-  );
   const defaultWordsByCategory = useMemo(() => {
     const wordsByCategory = new Map<string, typeof defaultVocabularyWords>();
     for (const word of defaultVocabularyWords) {
@@ -61,7 +56,6 @@ export function useAdminCategoryManagementController() {
     categorySearch,
     communityCategories,
     defaultCategories: defaultVocabularyCategories,
-    defaultCategoryNames,
   });
   const {
     words,

@@ -1,13 +1,8 @@
 import { Sparkles } from "lucide-react";
 import { AdminReviewPublishedForms } from "@/components/admin/AdminReviewPublishedForms";
 import { AdminReviewPublishedLists } from "@/components/admin/AdminReviewPublishedLists";
-import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
-
-const DEFAULT_VOCABULARY_CATEGORY_NAMES = new Set(
-  defaultVocabularyCategories.map((category) => normalizeVocabularyLabel(category.name)),
-);
+import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
 
 interface AdminReviewPublishedVocabularyProps {
   categories: PublishedCategory[];
@@ -47,7 +42,7 @@ export function AdminReviewPublishedVocabulary({
   onEditWord,
 }: AdminReviewPublishedVocabularyProps) {
   const customCategories = categories.filter((item) =>
-    !DEFAULT_VOCABULARY_CATEGORY_NAMES.has(normalizeVocabularyLabel(item.name))
+    !isDefaultVocabularyCategory(item.name)
   );
 
   return (

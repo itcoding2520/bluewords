@@ -1,19 +1,12 @@
 import { useMemo } from "react";
-import { defaultVocabularyCategories } from "@/data/default-vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
 import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/lib/category-management-filters";
 
-const defaultCategoryNames = new Set(
-  defaultVocabularyCategories.map((category) =>
-    normalizeVocabularyLabel(category.name)
-  )
-);
-
 function isDefaultCategory(category: VocabularyCategoryRow) {
-  return category.is_default || defaultCategoryNames.has(normalizeVocabularyLabel(category.name));
+  return category.is_default || isDefaultVocabularyCategory(category.name);
 }
 
 function isPublishedSharedCategory(category: VocabularyCategoryRow) {
