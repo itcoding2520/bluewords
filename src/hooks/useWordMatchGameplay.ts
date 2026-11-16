@@ -29,7 +29,11 @@ const initialState: WordMatchState = {
 
 export function useWordMatchGameplay(phase: GamePhase) {
   const [state, setState] = useState(initialState);
-  const cardsById = useMemo(() => new Map(state.cards.map((card) => [card.id, card])), [state.cards]);
+  const cardsById = useMemo(() => {
+    const index = new Map<string, MatchCardData>();
+    for (const card of state.cards) index.set(card.id, card);
+    return index;
+  }, [state.cards]);
   const mismatchTimerRef = useRef<number | null>(null);
   const resolvingRef = useRef(false);
 
@@ -39,10 +43,13 @@ export function useWordMatchGameplay(phase: GamePhase) {
 
   function startRound(nextPairs: MatchPair[]) {
     if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
-    const nextCards = nextPairs.flatMap((pair) => [
-      { id: `${pair.id}:word`, pairId: pair.id, kind: "word" as const },
-      { id: `${pair.id}:match`, pairId: pair.id, kind: "match" as const },
-    ]);
+    const nextCards: MatchCardData[] = [];
+    for (const pair of nextPairs) {
+      nextCards.push(
+        { id: `${pair.id}:word`, pairId: pair.id, kind: "word" },
+        { id: `${pair.id}:match`, pairId: pair.id, kind: "match" },
+      );
+    }
     setState({
       ...initialState,
       pairs: nextPairs,
