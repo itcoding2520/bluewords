@@ -1,6 +1,6 @@
-import { useState, type SetStateAction } from "react";
+import { useState } from "react";
 import type { AdminUserRecord } from "@/lib/admin-user-api";
-import { updateStateField } from "@/lib/state-action";
+import { useStateField } from "@/hooks/useStateField";
 
 interface AddUserFormState {
   email: string;
@@ -29,6 +29,14 @@ export function useAdminUserForms() {
     nickname: "",
     password: "",
   });
+  const setEmail = useStateField(setAddForm, "email");
+  const setNickname = useStateField(setAddForm, "nickname");
+  const setPassword = useStateField(setAddForm, "password");
+  const setShowAddForm = useStateField(setAddForm, "isOpen");
+  const setEditingUser = useStateField(setEditForm, "user");
+  const setEditEmail = useStateField(setEditForm, "email");
+  const setEditNickname = useStateField(setEditForm, "nickname");
+  const setEditPassword = useStateField(setEditForm, "password");
 
   return {
     addForm,
@@ -36,21 +44,21 @@ export function useAdminUserForms() {
     editForm,
     setEditForm,
     email: addForm.email,
-    setEmail: (action: SetStateAction<string>) => updateStateField(setAddForm, "email", action),
+    setEmail,
     nickname: addForm.nickname,
-    setNickname: (action: SetStateAction<string>) => updateStateField(setAddForm, "nickname", action),
+    setNickname,
     password: addForm.password,
-    setPassword: (action: SetStateAction<string>) => updateStateField(setAddForm, "password", action),
+    setPassword,
     showAddForm: addForm.isOpen,
-    setShowAddForm: (action: SetStateAction<boolean>) => updateStateField(setAddForm, "isOpen", action),
+    setShowAddForm,
     editingUser: editForm.user,
-    setEditingUser: (action: SetStateAction<AdminUserRecord | null>) => updateStateField(setEditForm, "user", action),
+    setEditingUser,
     editEmail: editForm.email,
-    setEditEmail: (action: SetStateAction<string>) => updateStateField(setEditForm, "email", action),
+    setEditEmail,
     editNickname: editForm.nickname,
-    setEditNickname: (action: SetStateAction<string>) => updateStateField(setEditForm, "nickname", action),
+    setEditNickname,
     editPassword: editForm.password,
-    setEditPassword: (action: SetStateAction<string>) => updateStateField(setEditForm, "password", action),
+    setEditPassword,
   };
 }
 

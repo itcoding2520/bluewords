@@ -1,12 +1,12 @@
 import { getErrorMessage } from "@/lib/errors";
-import { useEffect, useState, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 import { getSharedAdminCategory } from "@/lib/admin-category-management-view";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
-import { updateStateField } from "@/lib/state-action";
+import { useStateField } from "@/hooks/useStateField";
 
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
@@ -23,7 +23,7 @@ export function useAdminCategoryWordsData(
   });
   const [wordsLoading, setWordsLoading] = useState(false);
   const { words, emails: wordEmails } = snapshot;
-  const setWords = (action: SetStateAction<CommunityWord[]>) => updateStateField(setSnapshot, "words", action);
+  const setWords = useStateField(setSnapshot, "words");
 
   useEffect(() => {
     if (!selectedCategory) return;
