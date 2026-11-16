@@ -5,6 +5,7 @@ import type { DifficultyLevel } from "@/types/difficulty";
 import { firstRelation } from "@/lib/supabase/first-relation";
 
 type AssessmentDifficulty = DifficultyLevel;
+type AssessmentWord = { word: string; meaning: string; category: string; imagePath: string | null };
 type DefaultVocabularyKey = { normalized_word: string };
 type VocabularySource = { word: string; meaning: string; category: string; image_path: string | null; type: string };
 type CommunityCategory = { name: string };
@@ -24,6 +25,12 @@ type SentenceQuestionSource = {
   image_keyword: string;
 };
 
+function matchesAssessmentDifficulty(word: string, difficulty: AssessmentDifficulty) {
+  if (difficulty === "easy") return word.length <= 5;
+  if (difficulty === "medium") return word.length >= 6 && word.length <= 8;
+  return word.length >= 9;
+}
+
 export function generateAssessmentQuestions({
   defaultKeys,
   vocabularyRows,
@@ -37,8 +44,9 @@ export function generateAssessmentQuestions({
   sentenceQuestions: SentenceQuestionSource[] | null;
   difficulty: AssessmentDifficulty;
 }): AssessmentQuestion[] | null {
-  const defaultSet = new Set((defaultKeys ?? []).map((item) => item.normalized_word));
-  const wordMap = new Map<string, { word: string; meaning: string; category: string; imagePath: string | null }>();
+  const defaultSet = new Set<string>();
+  for (const item of defaultKeys ?? []) defaultSet.add(item.normalized_word);
+  const wordMap = new Map<string, AssessmentWord>();
   for (const row of vocabularyRows ?? []) {
     const normalized = normalizeVocabularyText(row.word);
     if (row.type === "word" && row.meaning.trim() && defaultSet.has(normalized)) {
@@ -53,7 +61,11 @@ export function generateAssessmentQuestions({
     }
   }
 
-  const wordPool = shuffle([...wordMap.values()].filter(({ word }) => difficulty === "easy" ? word.length <= 5 : difficulty === "medium" ? word.length >= 6 && word.length <= 8 : word.length >= 9));
+  const eligibleWords: AssessmentWord[] = [];
+  for (const word of wordMap.values()) {
+    if (matchesAssessmentDifficulty(word.word, difficulty)) eligibleWords.push(word);
+  }
+  const wordPool = shuffle(eligibleWords);
   const sentencePool = shuffle(sentenceQuestions ?? []);
   if (wordPool.length < 5 || sentencePool.length < 5) return null;
 
