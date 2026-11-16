@@ -2,8 +2,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { getAdminCachedData } from "@/lib/admin-data-cache.mjs";
 import { fetchAdminUsers } from "@/lib/admin-user-api";
-
-export type AdminNotificationRecipient = { id: string; email: string | null; nickname: string };
+import type { AdminNotificationRecipient } from "@/lib/admin-notification-recipients";
 
 export function useAdminNotificationRecipients(
   currentUserId: string,

@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useAdminNotificationRecipients } from "@/hooks/useAdminNotificationRecipients";
 import { useAdminNotificationSend } from "@/hooks/useAdminNotificationSend";
 
-export type { AdminNotificationRecipient } from "@/hooks/useAdminNotificationRecipients";
-
 export function useAdminNotificationComposerController(currentUserId: string) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
