@@ -32,8 +32,7 @@ export function useGameSessionTracking({
   startedAt: number | null;
 }) {
   const { elapsedSeconds, setElapsedSeconds, reset: resetElapsedSeconds } = useElapsedTimer(startedAt, isPlaying);
-  const [saveState, setSaveState] = useState<GameSaveState>("idle");
-  const [saveError, setSaveError] = useState("");
+  const [saveStatus, setSaveStatus] = useState<{ state: GameSaveState; error: string }>({ state: "idle", error: "" });
   const [retryCount, setRetryCount] = useState(0);
   const submittedSessionRef = useRef<number | null>(null);
 
@@ -43,8 +42,7 @@ export function useGameSessionTracking({
     const completedAt = Date.now();
     const durationSeconds = getDurationSeconds(startedAt, completedAt);
     setElapsedSeconds(durationSeconds);
-    setSaveState("saving");
-    setSaveError("");
+    setSaveStatus({ state: "saving", error: "" });
 
     void saveVocabularyGameSession({
       gameType,
@@ -55,23 +53,28 @@ export function useGameSessionTracking({
       durationSeconds,
       startedAt: new Date(startedAt).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
-    }).then(() => setSaveState("saved")).catch((error: unknown) => {
+    }).then(() => setSaveStatus({ state: "saved", error: "" })).catch((error: unknown) => {
       submittedSessionRef.current = null;
-      setSaveState("error");
-      setSaveError(getErrorMessage(error, "Could not save this result."));
+      setSaveStatus({ state: "error", error: getErrorMessage(error, "Could not save this result.") });
     });
   }, [correctCount, gameType, isAuthenticated, moves, retryCount, roundSize, score, shouldSubmit, startedAt, setElapsedSeconds]);
 
   function resetSession() {
     submittedSessionRef.current = null;
     resetElapsedSeconds();
-    setSaveState("idle");
-    setSaveError("");
+    setSaveStatus({ state: "idle", error: "" });
   }
 
   function retrySave() {
     setRetryCount((count) => count + 1);
   }
 
-  return { elapsedSeconds, setElapsedSeconds, saveState, saveError, resetSession, retrySave };
+  return {
+    elapsedSeconds,
+    setElapsedSeconds,
+    saveState: saveStatus.state,
+    saveError: saveStatus.error,
+    resetSession,
+    retrySave,
+  };
 }
