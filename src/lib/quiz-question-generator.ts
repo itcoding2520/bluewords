@@ -12,15 +12,24 @@ function meaningsFor(word: VocabularyWord): VocabularyMeaning[] {
 
 /** Build randomized multiple-choice questions from vocabulary words. */
 export function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
-  const entries = words.map((word) => ({ word, meanings: meaningsFor(word) }));
-  const uniqueAnswers = [...new Map(entries
-    .flatMap(({ meanings }) => meanings.map((meaning) => meaning.meaning.trim()))
-    .map((meaning) => [normalizeQuizAnswer(meaning), meaning] as const)).values()];
-  const uniqueWords = [...new Map(words.map((word) => [normalizeQuizAnswer(word.word), word.word.trim()] as const))]
-    .map(([normalized, word]) => ({ normalized, word }));
+  const entries: Array<{ word: VocabularyWord; meanings: VocabularyMeaning[] }> = [];
+  const answersByKey = new Map<string, string>();
+  const wordsByKey = new Map<string, string>();
+  for (const word of words) {
+    const meanings = meaningsFor(word);
+    entries.push({ word, meanings });
+    for (const meaning of meanings) {
+      const answer = meaning.meaning.trim();
+      answersByKey.set(normalizeQuizAnswer(answer), answer);
+    }
+    wordsByKey.set(normalizeQuizAnswer(word.word), word.word.trim());
+  }
+  const uniqueAnswers = [...answersByKey.values()];
+  const uniqueWords = [...wordsByKey].map(([normalized, word]) => ({ normalized, word }));
 
-  return shuffle(entries.flatMap(({ word, meanings: wordMeanings }) => {
-    if (wordMeanings.length === 0) return [];
+  const questions: QuizQuestion[] = [];
+  for (const { word, meanings: wordMeanings } of entries) {
+    if (wordMeanings.length === 0) continue;
     const meaning = wordMeanings[Math.floor(Math.random() * wordMeanings.length)];
     const normalizedMeaning = normalizeQuizAnswer(meaning.meaning);
     const meaningDistractors = shuffle(sampleRandomMatching(
@@ -36,19 +45,20 @@ export function buildMeaningQuestions(words: VocabularyWord[]): QuizQuestion[] {
     )).map((answer) => answer.word);
     const canChooseMeaning = meaningDistractors.length === 3;
     const canChooseWord = wordDistractors.length === 3;
-    if (!canChooseMeaning && !canChooseWord) return [];
+    if (!canChooseMeaning && !canChooseWord) continue;
     const choiceType: QuizQuestion["choiceType"] = canChooseMeaning && canChooseWord
       ? Math.random() < 0.5 ? "meaning" : "word"
       : canChooseMeaning ? "meaning" : "word";
     const correctAnswer = choiceType === "meaning" ? meaning.meaning.trim() : word.word.trim();
     const distractors = choiceType === "meaning" ? meaningDistractors : wordDistractors;
-    return [{
+    questions.push({
       word,
       meaning: meaning.meaning.trim(),
       partOfSpeech: word.type !== "expression" && word.detailedMeanings?.some((item) => item.meaning.trim()) ? meaning.partOfSpeech : null,
       choices: sampleRandom([correctAnswer, ...distractors], distractors.length + 1),
       choiceType,
       correctAnswer,
-    }];
-  }));
+    });
+  }
+  return shuffle(questions);
 }
