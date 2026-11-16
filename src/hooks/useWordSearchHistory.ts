@@ -6,9 +6,8 @@ import type { WordSearchSessionRow } from "@/types/database";
 import { getCachedWordSearchSessions, getWordSearchSessions } from "@/lib/supabase/word-search-history";
 
 export function useWordSearchHistory(userId: string | null) {
-  const [history, setHistory] = useState<WordSearchSessionRow[]>([]);
+  const [historyData, setHistoryData] = useState<{ rows: WordSearchSessionRow[]; total: number }>({ rows: [], total: 0 });
   const [historyPage, setHistoryPage] = useState(1);
-  const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
 
@@ -16,8 +15,7 @@ export function useWordSearchHistory(userId: string | null) {
     if (!userId) return;
     const cached = getCachedWordSearchSessions(userId, page, 10);
     if (cached && !forceRefresh) {
-      setHistory(cached.rows);
-      setHistoryTotal(cached.total);
+      setHistoryData({ rows: cached.rows, total: cached.total });
       setHistoryError("");
       setHistoryLoading(false);
       return;
@@ -27,8 +25,7 @@ export function useWordSearchHistory(userId: string | null) {
     setHistoryError("");
     try {
       const result = await getWordSearchSessions({ page, pageSize: 10, forceRefresh });
-      setHistory(result.rows);
-      setHistoryTotal(result.total);
+      setHistoryData({ rows: result.rows, total: result.total });
     } catch {
       setHistoryError("Could not load game history. Please try again.");
     } finally {
@@ -39,7 +36,7 @@ export function useWordSearchHistory(userId: string | null) {
   const { fastestSeconds, averageWordsPerRound } = useMemo(() => {
     let fastest: number | null = null;
     let totalWords = 0;
-    for (const item of history) {
+    for (const item of historyData.rows) {
       if (fastest === null || item.duration_seconds < fastest) {
         fastest = item.duration_seconds;
       }
@@ -47,15 +44,15 @@ export function useWordSearchHistory(userId: string | null) {
     }
     return {
       fastestSeconds: fastest,
-      averageWordsPerRound: history.length ? Math.round(totalWords / history.length) : 0,
+      averageWordsPerRound: historyData.rows.length ? Math.round(totalWords / historyData.rows.length) : 0,
     };
-  }, [history]);
+  }, [historyData.rows]);
 
   return {
-    history,
+    history: historyData.rows,
     historyPage,
     setHistoryPage,
-    historyTotal,
+    historyTotal: historyData.total,
     historyLoading,
     historyError,
     loadHistory,
