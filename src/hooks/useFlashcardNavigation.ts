@@ -9,16 +9,19 @@ export function useFlashcardNavigation(loadReviewSchedules: () => Promise<unknow
   const [isRevealed, setIsRevealed] = useState(false);
   const [reviewMode, setReviewMode] = useState<FlashcardReviewMode>("all");
 
-  function changeCategory(value: string) {
-    setCategory(value);
+  function resetCardView() {
     setIndex(0);
     setIsRevealed(false);
   }
 
+  function changeCategory(value: string) {
+    setCategory(value);
+    resetCardView();
+  }
+
   function changeStatus(value: VocabularyStatus) {
     setStatus(value);
-    setIndex(0);
-    setIsRevealed(false);
+    resetCardView();
   }
 
   function moveCard(offset: number, deckLength: number) {
@@ -28,8 +31,7 @@ export function useFlashcardNavigation(loadReviewSchedules: () => Promise<unknow
 
   function changeReviewMode(value: FlashcardReviewMode) {
     setReviewMode(value);
-    setIndex(0);
-    setIsRevealed(false);
+    resetCardView();
     if (value === "due") void loadReviewSchedules();
   }
 
