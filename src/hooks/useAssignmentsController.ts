@@ -3,8 +3,9 @@ import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchMyAssignments, startAssignedAssessment } from "@/lib/assignments/api";
-import type { Assignment, AssignmentHistoryEntry } from "@/lib/assignments/types";
+import type { Assignment } from "@/lib/assignments/types";
 import { getOutstandingAssignments } from "@/lib/assignments/status";
+import { getAssignmentHistory } from "@/lib/assignments/history";
 
 export function useAssignmentsController() {
   const router = useRouter();
@@ -32,9 +33,7 @@ export function useAssignmentsController() {
   }, [refresh]);
 
   const outstanding = useMemo(() => getOutstandingAssignments(assignments), [assignments]);
-  const history = useMemo<AssignmentHistoryEntry[]>(() => assignments
-    .flatMap((item) => item.attempts.filter((attempt) => attempt.completed_at).map((attempt) => ({ assignment: item, attempt })))
-    .sort((a, b) => new Date(b.attempt.completed_at!).getTime() - new Date(a.attempt.completed_at!).getTime()), [assignments]);
+  const history = useMemo(() => getAssignmentHistory(assignments), [assignments]);
 
   async function start(assignmentId: string) {
     setStarting(assignmentId);
