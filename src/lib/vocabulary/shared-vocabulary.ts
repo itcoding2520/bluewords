@@ -3,8 +3,7 @@ import type { VocabularyCategory, VocabularyCategoryColor } from "@/config/vocab
 import type { VocabularyMeaningRow } from "@/types/database";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
-import { createCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { mapCommunityVocabularyCategories } from "@/lib/vocabulary/community-vocabulary-categories";
 import { mapCommunityVocabularyWords } from "@/lib/vocabulary/community-vocabulary-words";
 
 export type PublishedCommunityCategory = {
@@ -66,26 +65,12 @@ export function mergeVocabularyCategories(
   personalCategories: VocabularyCategoryRow[],
   communityCategories: PublishedCommunityCategory[],
 ): VocabularyCategoryRow[] {
-  const sharedByName = new Map(communityCategories.map((category) => [normalizeVocabularyLabel(category.name), category]));
-  const personalNames = new Set(personalCategories.map((category) => normalizeVocabularyLabel(category.name)));
-  const categoriesWithSharedImages = personalCategories.map((category) => ({
-    ...category,
-    image_path: sharedByName.get(normalizeVocabularyLabel(category.name))?.image_path ?? category.image_path ?? null,
+  const merged = mapCommunityVocabularyCategories(personalCategories, communityCategories, (category) => ({
+    userId: category.owner_id,
+    createdAt: category.created_at,
+    updatedAt: category.updated_at,
   }));
-  const sharedOnlyCategories = communityCategories
-    .filter((category) => !personalNames.has(normalizeVocabularyLabel(category.name)))
-    .map((category) => ({
-      id: createCommunityCategoryId(category.id),
-      user_id: category.owner_id,
-      name: category.name,
-      color: category.color,
-      is_default: false,
-      created_at: category.created_at,
-      updated_at: category.updated_at,
-      image_path: category.image_path,
-    }));
-
-  return sortCategories([...categoriesWithSharedImages, ...sharedOnlyCategories]);
+  return sortCategories(merged);
 }
 
 export function mapCommunityWords(
