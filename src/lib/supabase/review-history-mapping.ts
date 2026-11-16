@@ -1,6 +1,7 @@
 import type { VocabularyStatus } from "@/data/vocabulary";
 import type { VocabularyReviewRow } from "@/types/database";
 import { getVocabularyWordImagePaths } from "@/lib/supabase/vocabulary";
+import { chunkArray } from "@/lib/chunk-array";
 
 export interface VocabularyReviewWithWord extends VocabularyReviewRow {
   vocabulary_words: {
@@ -31,8 +32,8 @@ export async function mapLatestReviewRows(
   const wordIds = [...new Set(rows.map((review) => review.vocabulary_word_id))];
   try {
     const imageRows = [];
-    for (let start = 0; start < wordIds.length; start += 100) {
-      imageRows.push(...await getVocabularyWordImagePaths(wordIds.slice(start, start + 100)));
+    for (const ids of chunkArray(wordIds, 100)) {
+      imageRows.push(...await getVocabularyWordImagePaths(ids));
     }
     imagePathByWordId = new Map(imageRows.map((row) => [row.id, row.image_path]));
   } catch {

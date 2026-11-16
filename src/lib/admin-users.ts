@@ -1,5 +1,6 @@
 import type { AdminUsersResponse, AdminUserSummary } from "@/lib/admin-user-api";
 import { readResponseJson } from "@/lib/api/read-response-json";
+import { chunkArray } from "@/lib/chunk-array";
 
 export async function loadAdminUserEmails(
   userIds: string[],
@@ -8,9 +9,9 @@ export async function loadAdminUserEmails(
   const emails: Record<string, string> = {};
   const uniqueIds = [...new Set(userIds)];
 
-  for (let start = 0; start < uniqueIds.length; start += 100) {
+  for (const ids of chunkArray(uniqueIds, 100)) {
     const response = await fetch(
-      `/api/admin/users?ids=${uniqueIds.slice(start, start + 100).join(",")}`
+      `/api/admin/users?ids=${ids.join(",")}`
     );
     const payload = await readResponseJson<AdminUsersResponse<AdminUserSummary>>(response, errorMessage);
     for (const user of payload.users ?? []) {
