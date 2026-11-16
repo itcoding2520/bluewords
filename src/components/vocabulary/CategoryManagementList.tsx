@@ -12,6 +12,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/hooks/useCategoryManagementController";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import { getNextPage, getPreviousPage } from "@/lib/pagination";
 
 export function CategoryManagementList({
   words,
@@ -121,7 +122,7 @@ export function CategoryManagementList({
           <p aria-live="polite">Showing {firstVisibleCategory}–{lastVisibleCategory} of {managedCategories.length} categories</p>
           <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
             <label className="flex items-center gap-2 whitespace-nowrap"><span>Rows per page</span><select aria-label="Categories per page" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))} className="h-10 cursor-pointer rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50">{[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
-            <div className="flex items-center gap-2"><span className="whitespace-nowrap">Page {currentPage} of {pageCount}</span><Button type="button" variant="secondary" aria-label="Previous category page" onClick={() => onPageChange((value) => Math.max(1, value - 1))} disabled={currentPage <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button><Button type="button" variant="secondary" aria-label="Next category page" onClick={() => onPageChange((value) => Math.min(pageCount, value + 1))} disabled={currentPage >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button></div>
+            <div className="flex items-center gap-2"><span className="whitespace-nowrap">Page {currentPage} of {pageCount}</span><Button type="button" variant="secondary" aria-label="Previous category page" onClick={() => onPageChange((value) => getPreviousPage(value))} disabled={currentPage <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button><Button type="button" variant="secondary" aria-label="Next category page" onClick={() => onPageChange((value) => getNextPage(value, pageCount))} disabled={currentPage >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button></div>
           </div>
         </footer>
       )}

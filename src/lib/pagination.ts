@@ -2,6 +2,14 @@ export function getPageCount(total: number, pageSize: number): number {
   return Math.max(1, Math.ceil(total / pageSize));
 }
 
+export function getPreviousPage(page: number): number {
+  return Math.max(1, page - 1);
+}
+
+export function getNextPage(page: number, pageCount: number): number {
+  return Math.min(pageCount, page + 1);
+}
+
 export function getPageItems<T>(items: T[], page: number, pageSize: number): T[] {
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);

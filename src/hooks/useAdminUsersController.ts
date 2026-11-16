@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAdminUsersActions } from "@/hooks/useAdminUsersActions";
 import { useAdminUsersData } from "@/hooks/useAdminUsersData";
 import { useAdminUsersExport } from "@/hooks/useAdminUsersExport";
-import { getPageMetadata } from "@/lib/pagination";
+import { getNextPage, getPageMetadata, getPreviousPage } from "@/lib/pagination";
 
 export function useAdminUsersController() {
   const [page, setPage] = useState(1);
@@ -47,8 +47,8 @@ export function useAdminUsersController() {
       lastVisible: pageMetadata.last,
       changeSearch,
       changePageSize,
-      previousPage: () => setPage((value) => Math.max(1, value - 1)),
-      nextPage: () => setPage((value) => Math.min(pageMetadata.pageCount, value + 1)),
+      previousPage: () => setPage((value) => getPreviousPage(value)),
+      nextPage: () => setPage((value) => getNextPage(value, pageMetadata.pageCount)),
       refresh: refreshUsers,
     },
     addForm: {

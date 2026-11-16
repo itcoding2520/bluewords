@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { getPageCount, getPageRange } from "@/lib/pagination";
+import { getNextPage, getPageCount, getPageRange, getPreviousPage } from "@/lib/pagination";
 
 export function QuizHistoryPagination({
   total,
@@ -39,8 +39,8 @@ export function QuizHistoryPagination({
         </label>
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap">Page {page} of {pageCount}</span>
-          <Button variant="secondary" aria-label="Previous quiz history page" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button>
-          <Button variant="secondary" aria-label="Next quiz history page" onClick={() => onPageChange(Math.min(pageCount, page + 1))} disabled={page >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button>
+          <Button variant="secondary" aria-label="Previous quiz history page" onClick={() => onPageChange(getPreviousPage(page))} disabled={page <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button>
+          <Button variant="secondary" aria-label="Next quiz history page" onClick={() => onPageChange(getNextPage(page, pageCount))} disabled={page >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button>
         </div>
       </div>
     </div>

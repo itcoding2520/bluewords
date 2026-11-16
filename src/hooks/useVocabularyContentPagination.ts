@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
-import { getPageMetadata } from "@/lib/pagination";
+import { getNextPage, getPageMetadata, getPreviousPage } from "@/lib/pagination";
 
 export function useVocabularyContentPagination({
   page,
@@ -41,13 +41,13 @@ export function useVocabularyContentPagination({
   function goToPreviousPage() {
     setIsPageLoading(true);
     setPageWords([]);
-    setPage((current) => Math.max(1, current - 1));
+    setPage((current) => getPreviousPage(current));
   }
 
   function goToNextPage() {
     setIsPageLoading(true);
     setPageWords([]);
-    setPage((current) => Math.min(pageMetadata.pageCount, current + 1));
+    setPage((current) => getNextPage(current, pageMetadata.pageCount));
   }
 
   function handleImportComplete() {

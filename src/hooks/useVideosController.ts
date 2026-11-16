@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { VIDEOS_PAGE_SIZE } from "@/lib/videos";
-import { getPageCount } from "@/lib/pagination";
+import { getNextPage, getPageCount, getPreviousPage } from "@/lib/pagination";
 import { useVideosPageData } from "@/hooks/useVideosPageData";
 import { useVideosAdminActions } from "@/hooks/useVideosAdminActions";
 
@@ -18,11 +18,11 @@ export function useVideosController(isAdmin: boolean) {
   const pageCount = getPageCount(total, VIDEOS_PAGE_SIZE);
 
   function previousPage() {
-    setPage((current) => Math.max(1, current - 1));
+    setPage((current) => getPreviousPage(current));
   }
 
   function nextPage() {
-    setPage((current) => Math.min(pageCount, current + 1));
+    setPage((current) => getNextPage(current, pageCount));
   }
 
   return {

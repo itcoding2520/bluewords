@@ -6,6 +6,7 @@ import { Search, Sparkles, Star } from "lucide-react";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import { useGuestVocabularyController } from "@/hooks/useGuestVocabularyController";
 import { GuestVocabularyTable } from "@/components/vocabulary/GuestVocabularyTable";
+import { getNextPage, getPreviousPage } from "@/lib/pagination";
 
 export function GuestVocabularyContent() {
   const {
@@ -47,8 +48,8 @@ export function GuestVocabularyContent() {
         page={page}
         pageCount={pageCount}
         categoryColor={categoryColor}
-        onPrevious={() => setPage((value) => Math.max(1, value - 1))}
-        onNext={() => setPage((value) => Math.min(pageCount, value + 1))}
+        onPrevious={() => setPage((value) => getPreviousPage(value))}
+        onNext={() => setPage((value) => getNextPage(value, pageCount))}
       />
     </div>
   );
