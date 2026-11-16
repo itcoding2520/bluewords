@@ -1,3 +1,5 @@
+import { clearSessionStorageCachePrefix, readSessionStorageCache, writeSessionStorageCache } from "./session-storage-cache.mjs";
+
 const TTL_MS = 30_000;
 const STORAGE_PREFIX = "bluewords:videos:";
 const cache = new Map();
@@ -9,16 +11,8 @@ function key(page, pageSize) {
 }
 
 function readStored(cacheKey, now = Date.now()) {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.sessionStorage.getItem(`${STORAGE_PREFIX}${cacheKey}`);
-    if (!raw) return null;
-    const stored = JSON.parse(raw);
-    if (!Array.isArray(stored.value?.videos) || !Number.isFinite(stored.value?.total) || !Number.isFinite(stored.savedAt) || now - stored.savedAt >= TTL_MS) return null;
-    return { value: stored.value, expiresAt: stored.savedAt + TTL_MS };
-  } catch {
-    return null;
-  }
+  return readSessionStorageCache(`${STORAGE_PREFIX}${cacheKey}`, now, TTL_MS,
+    (stored, currentTime) => Array.isArray(stored.value?.videos) && Number.isFinite(stored.value?.total) && Number.isFinite(stored.savedAt) && currentTime - stored.savedAt < TTL_MS);
 }
 
 /**
@@ -60,9 +54,7 @@ export async function getCachedVideosPage(page, pageSize, loader) {
     if (generation === requestGeneration && inFlight.get(cacheKey) === request) {
       const savedAt = Date.now();
       cache.set(cacheKey, { value, expiresAt: savedAt + TTL_MS });
-      if (typeof window !== "undefined") {
-        try { window.sessionStorage.setItem(`${STORAGE_PREFIX}${cacheKey}`, JSON.stringify({ value, savedAt })); } catch { /* Storage is optional. */ }
-      }
+      writeSessionStorageCache(`${STORAGE_PREFIX}${cacheKey}`, value, savedAt);
     }
     return value;
   }).finally(() => {
@@ -76,12 +68,5 @@ export function invalidateVideosCache() {
   generation += 1;
   cache.clear();
   inFlight.clear();
-  if (typeof window !== "undefined") {
-    try {
-      for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
-        const storageKey = window.sessionStorage.key(index);
-        if (storageKey?.startsWith(STORAGE_PREFIX)) window.sessionStorage.removeItem(storageKey);
-      }
-    } catch { /* Storage is optional. */ }
-  }
+  clearSessionStorageCachePrefix(STORAGE_PREFIX);
 }
