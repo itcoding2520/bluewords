@@ -1,6 +1,7 @@
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentDifficulty } from "@/lib/assessments/assignment-input";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
+import { loadAssessmentQuestionSources } from "@/lib/assessments/question-sources";
 import {
   resolveAssessmentRecipientIds,
   type AssessmentRecipientSelection,
@@ -35,20 +36,13 @@ export async function createAssessmentAssignment(
   selection: AssessmentRecipientSelection,
 ): Promise<CreateAssessmentAssignmentResult> {
   const { title, difficulty, dueAt } = details;
-  const [{ data: defaultKeys, error: keyError }, { data: wordsData, error: wordError }, { data: sharedData, error: sharedError }, { data: sentencesData, error: sentenceError }] = await Promise.all([
-    admin.from("default_vocabulary_keys").select("normalized_word"),
-    admin.from("vocabulary_words").select("word,meaning,category,image_path,type").limit(5000),
-    admin.from("community_words").select("word,meaning,image_path,community_categories!inner(name)").eq("status", "published").eq("community_categories.status", "published").limit(1000),
-    admin.from("sentence_builder_questions").select("difficulty,category,prompt_vi,answer_sentence,answer_tokens,distractor_tokens,image_keyword,is_active").eq("difficulty", difficulty).eq("is_active", true).limit(1000),
-  ]);
-  const sourceError = keyError ?? wordError ?? sharedError ?? sentenceError;
-  if (sourceError) return { status: "source_error", message: sourceError.message };
+  const sourceResult = await loadAssessmentQuestionSources(admin, difficulty);
+  if (sourceResult.status === "error") {
+    return { status: "source_error", message: sourceResult.message };
+  }
 
   const questions = generateAssessmentQuestions({
-    defaultKeys,
-    vocabularyRows: wordsData,
-    communityWords: sharedData,
-    sentenceQuestions: sentencesData,
+    ...sourceResult.sources,
     difficulty,
   });
   if (!questions) return { status: "questions_unavailable" };
