@@ -7,6 +7,7 @@ import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
 import { getPageCount } from "@/lib/pagination";
 import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
+import { useVideosAdminForm } from "@/hooks/useVideosAdminForm";
 
 
 export function useVideosAdminActions({
@@ -26,22 +27,8 @@ export function useVideosAdminActions({
 }) {
   const confirmDialog = useConfirmDialog();
   const [isSaving, setIsSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-
-  function resetForm() {
-    setEditingId(null);
-    setTitle("");
-    setYoutubeUrl("");
-  }
-
-  function startEditing(video: VideoRow) {
-    setEditingId(video.id);
-    setTitle(video.title);
-    setYoutubeUrl(video.youtube_url);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const form = useVideosAdminForm();
+  const { editingId, title, youtubeUrl, resetForm } = form;
 
   async function saveVideo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,12 +97,12 @@ export function useVideosAdminActions({
   return {
     isSaving,
     editingId,
-    title,
-    setTitle,
-    youtubeUrl,
-    setYoutubeUrl,
+    title: form.title,
+    setTitle: form.setTitle,
+    youtubeUrl: form.youtubeUrl,
+    setYoutubeUrl: form.setYoutubeUrl,
     resetForm,
-    startEditing,
+    startEditing: form.startEditing,
     saveVideo,
     deleteVideo,
   };
