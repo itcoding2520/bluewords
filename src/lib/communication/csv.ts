@@ -1,12 +1,10 @@
 import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
 import { validateCommunicationCsvConsistency } from "@/lib/communication/csv-consistency";
 import { parseCommunicationCsvRecord } from "@/lib/communication/csv-record";
+import type { CommunicationDifficulty, CommunicationRecordType, ContentStatus } from "@/lib/communication/content-types";
 import type { LessonItemType } from "@/lib/communication/lesson-types";
-import type { DifficultyLevel } from "@/types/difficulty";
 
-export type CommunicationDifficulty = DifficultyLevel;
-export type ContentStatus = "draft" | "published" | "archived";
-export type CommunicationRecordType = "item" | "dialogue_turn";
+export type { CommunicationDifficulty, CommunicationRecordType, ContentStatus } from "@/lib/communication/content-types";
 
 export type CommunicationCsvRecord = {
   record_type: CommunicationRecordType;

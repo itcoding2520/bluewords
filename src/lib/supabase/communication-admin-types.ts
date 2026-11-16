@@ -1,4 +1,4 @@
-import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/csv";
+import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/content-types";
 import type { LessonItemType } from "@/lib/communication/lesson-types";
 
 export type CommunicationTopic = {

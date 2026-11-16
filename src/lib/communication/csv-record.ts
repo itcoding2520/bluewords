@@ -1,9 +1,8 @@
 import { validateCommunicationCsvRecord } from "@/lib/communication/csv-record-validation";
 import type {
   CommunicationCsvRecord,
-  CommunicationDifficulty,
-  ContentStatus,
 } from "@/lib/communication/csv";
+import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/content-types";
 
 function integer(value: string, fallback: number, row: number, label: string) {
   if (!value.trim()) return fallback;

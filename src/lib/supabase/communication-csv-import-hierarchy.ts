@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
-import { type CommunicationCsvRecord, type ContentStatus } from "@/lib/communication/csv";
+import type { CommunicationCsvRecord } from "@/lib/communication/csv";
+import type { ContentStatus } from "@/lib/communication/content-types";
 
 export async function ensureTopicAndLessonIds(
   supabase: SupabaseClient,
