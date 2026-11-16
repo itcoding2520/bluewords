@@ -1,102 +1,42 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { isAdminUser } from "@/lib/supabase/admin-access";
-import {
-  getCachedUserProfile,
-  getUserProfile,
-  subscribeToUserProfileUpdates,
-  type UserProfile,
-} from "@/lib/supabase/user-profile";
+import { useCurrentAccountProfile } from "@/hooks/useCurrentAccountProfile";
 
 export function useSidebarAccount() {
   const supabase = useSupabaseClient();
-  const [email, setEmail] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminChecked, setIsAdminChecked] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [adminCheck, setAdminCheck] = useState<{ user: User; isAdmin: boolean } | null>(null);
+  const { user, profile, isSessionLoaded } = useCurrentAccountProfile({
+    sessionErrorLabel: "Failed to load session:",
+    profileErrorLabel: "Failed to load user profile:",
+  });
 
   useEffect(() => {
     let active = true;
-    let currentUserId: string | null = null;
-
-    async function loadProfile(userId: string) {
-      currentUserId = userId;
-      const cachedProfile = getCachedUserProfile(userId);
-      if (active && cachedProfile !== undefined) setProfile(cachedProfile);
-      try {
-        const nextProfile = await getUserProfile(userId);
-        if (active && currentUserId === userId) setProfile(nextProfile);
-      } catch (profileError) {
-        console.error("Failed to load user profile:", profileError);
-      }
+    if (user) {
+      void isAdminUser(supabase, user.id).then((admin) => {
+        if (active) setAdminCheck({ user, isAdmin: admin });
+      });
     }
-
-    async function loadSession() {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (!active) return;
-      if (error) {
-        console.error("Failed to load session:", error);
-        return;
-      }
-
-      setEmail(session?.user.email ?? null);
-      setIsAuthenticated(Boolean(session?.user.id));
-      setAuthUserId(session?.user.id ?? null);
-      if (session?.user.id) {
-        setIsAdminChecked(false);
-        const admin = await isAdminUser(supabase, session.user.id);
-        if (active) {
-          setIsAdmin(admin);
-          setIsAdminChecked(true);
-        }
-      } else {
-        setIsAdmin(false);
-        setIsAdminChecked(true);
-      }
-      if (session?.user.id) void loadProfile(session.user.id);
-      else {
-        currentUserId = null;
-        setProfile(null);
-      }
-    }
-
-    void loadSession();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setEmail(session?.user.email ?? null);
-      setIsAuthenticated(Boolean(session?.user.id));
-      setAuthUserId(session?.user.id ?? null);
-      setIsAdmin(false);
-      setIsAdminChecked(!session?.user.id);
-      if (session?.user.id) {
-        const userId = session.user.id;
-        void isAdminUser(supabase, userId).then((admin) => {
-          if (active) {
-            setIsAdmin(admin);
-            setIsAdminChecked(true);
-          }
-        });
-      }
-      if (session?.user.id) void loadProfile(session.user.id);
-      else {
-        currentUserId = null;
-        setProfile(null);
-      }
-    });
-
-    const unsubscribeProfileUpdates = subscribeToUserProfileUpdates(setProfile);
 
     return () => {
       active = false;
-      subscription.unsubscribe();
-      unsubscribeProfileUpdates();
     };
-  }, [supabase]);
+  }, [supabase, user]);
 
-  return { email, isAuthenticated, authUserId, isAdmin, isAdminChecked, profile };
+  const isAdminChecked = isSessionLoaded && (!user || adminCheck?.user === user);
+  const isAdmin = Boolean(user && adminCheck?.user === user && adminCheck.isAdmin);
+
+  return {
+    email: user?.email ?? null,
+    isAuthenticated: Boolean(user?.id),
+    authUserId: user?.id ?? null,
+    isAdmin,
+    isAdminChecked,
+    profile,
+  };
 }
