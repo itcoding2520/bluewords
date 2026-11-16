@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
+import { DifficultyOptions } from "@/components/ui/DifficultyOptions";
 
 type SituationFiltersProps = {
   search: string;
@@ -24,9 +25,7 @@ export function SituationFilters({ search, difficulty, onSearchChange, onDifficu
       </label>
       <Select aria-label="Filter lessons by difficulty" className="!h-10 !rounded-xl" value={difficulty} onChange={(event) => onDifficultyChange(event.target.value)}>
         <option value="all">All levels</option>
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
+        <DifficultyOptions />
       </Select>
     </div>
   );

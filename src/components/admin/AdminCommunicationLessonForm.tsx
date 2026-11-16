@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 
 import { Select } from "@/components/ui/Select";
+import { DifficultyOptions } from "@/components/ui/DifficultyOptions";
 import { isContentStatus } from "@/lib/communication/content-types";
 import type { CommunicationLessonDraft } from "@/lib/communication/admin-draft-types";
 import { isDifficultyLevel } from "@/types/difficulty";
@@ -48,9 +49,7 @@ export function AdminCommunicationLessonForm({
         <label className="text-xs font-bold text-slate-600">
           Difficulty
           <Select className="!mt-1 !h-11 !rounded-xl !border-sky-200 !text-sm" value={draft.difficulty} onChange={(event) => { if (isDifficultyLevel(event.target.value)) onDraftChange({ ...draft, difficulty: event.target.value }); }}>
-            <option value="easy">Easy · Dễ</option>
-            <option value="medium">Medium · Trung bình</option>
-            <option value="hard">Hard · Khó</option>
+            <DifficultyOptions labelStyle="bilingual-dot" />
           </Select>
         </label>
         <label className="text-xs font-bold text-slate-600">

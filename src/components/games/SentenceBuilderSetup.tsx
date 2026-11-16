@@ -1,6 +1,7 @@
 import { ArrowRight, Sparkles, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
+import { DifficultyOptions } from "@/components/ui/DifficultyOptions";
 import { sentenceBuilderQuestionCounts } from "@/hooks/useSentenceBuilderController";
 import type { SentenceDifficulty } from "@/lib/sentence-builder";
 import type { VocabularyWord } from "@/data/vocabulary";
@@ -36,7 +37,7 @@ export function SentenceBuilderSetup({
         <div className="sentence-builder-panel-title"><span>🧩</span><div><h2>Build a sentence</h2><p>Use the picture and Vietnamese clue to arrange the word tiles.</p></div></div>
         <label htmlFor="sentence-builder-difficulty">Difficulty</label>
         <select id="sentence-builder-difficulty" className="sentence-builder-difficulty-select" value={difficulty} onChange={(event) => { if (!isDifficultyLevel(event.target.value)) return; onDifficultyChange(event.target.value); onCategoryChange("all"); }}>
-          <option value="easy">Easy · Dễ</option><option value="medium">Medium · Trung bình</option><option value="hard">Hard · Khó</option>
+          <DifficultyOptions labelStyle="bilingual-dot" />
         </select>
         <label className="sentence-builder-category-label" htmlFor="sentence-builder-category">Category</label>
         <CategoryDropdown id="sentence-builder-category" ariaLabel="Sentence category" category={category} categories={categories} words={words} onChange={onCategoryChange} includeAll fullWidth />

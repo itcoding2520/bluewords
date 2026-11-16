@@ -1,7 +1,8 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { Select } from "@/components/ui/Select";
+import { DifficultyOptions } from "@/components/ui/DifficultyOptions";
 import type { SentenceBuilderQuestion, SentenceDifficulty } from "@/lib/sentence-builder";
-import { DIFFICULTY_LEVELS, isDifficultyLevel } from "@/types/difficulty";
+import { isDifficultyLevel } from "@/types/difficulty";
 
 export function AdminSentenceBuilderQuestionBank({
   filteredQuestions,
@@ -44,7 +45,7 @@ export function AdminSentenceBuilderQuestionBank({
             const value = event.target.value;
             if (value === "all" || isDifficultyLevel(value)) onFilterChange(value);
           }}>
-            <option value="all">All levels</option>{DIFFICULTY_LEVELS.map((level) => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
+            <option value="all">All levels</option><DifficultyOptions />
           </Select>
           <Select aria-label="Questions per page" containerClassName="w-full sm:w-32" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value) as 50 | 100)}>
             <option value={50}>50 / page</option><option value={100}>100 / page</option>
