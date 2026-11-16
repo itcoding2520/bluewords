@@ -9,12 +9,14 @@ import { quizSupabase } from "@/lib/supabase/quiz-client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
 import { getInclusivePageRange } from "@/lib/pagination";
 
-export function getCachedVocabularyQuizHistory(userId: string, page = 1, pageSize = 10): { rows: VocabularyQuizSessionRow[]; total: number } | null {
-  return getCachedQuizHistory(userId, page, pageSize);
+type VocabularyQuizHistoryPage = { rows: VocabularyQuizSessionRow[]; total: number };
+
+export function getCachedVocabularyQuizHistory(userId: string, page = 1, pageSize = 10): VocabularyQuizHistoryPage | null {
+  return getCachedQuizHistory<VocabularyQuizHistoryPage>(userId, page, pageSize);
 }
 
 export function getCachedVocabularyQuizAnswers(userId: string, sessionId: string): VocabularyQuizAnswerRow[] | null {
-  return getCachedQuizAnswers(userId, sessionId);
+  return getCachedQuizAnswers<VocabularyQuizAnswerRow[]>(userId, sessionId);
 }
 
 export async function getVocabularyQuizHistory(input: {
@@ -24,7 +26,7 @@ export async function getVocabularyQuizHistory(input: {
 }): Promise<{ rows: VocabularyQuizSessionRow[]; total: number }> {
   const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to view quiz history.");
 
-  const cached = getCachedQuizHistory(user.id, input.page, input.pageSize);
+  const cached = getCachedQuizHistory<VocabularyQuizHistoryPage>(user.id, input.page, input.pageSize);
   if (cached && !input.forceRefresh) return cached;
 
   const { from, to } = getInclusivePageRange(input.page, input.pageSize);
@@ -50,7 +52,7 @@ export async function getVocabularyQuizHistory(input: {
 export async function getVocabularyQuizAnswers(sessionId: string): Promise<VocabularyQuizAnswerRow[]> {
   const user = await requireAuthenticatedUser(quizSupabase, "You must be logged in to review a quiz.");
 
-  const cached = getCachedQuizAnswers(user.id, sessionId);
+  const cached = getCachedQuizAnswers<VocabularyQuizAnswerRow[]>(user.id, sessionId);
   if (cached) return cached;
 
   const { data, error } = await quizSupabase
