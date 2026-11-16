@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import type { SentenceBuilderQuestion, SentenceDifficulty } from "@/lib/sentence-builder";
+import { DIFFICULTY_LEVELS, isDifficultyLevel } from "@/types/difficulty";
 
 export function AdminSentenceBuilderQuestionBank({
   filteredQuestions,
@@ -39,8 +40,11 @@ export function AdminSentenceBuilderQuestionBank({
           <p className="mt-1 text-sm text-slate-500">Source level 1/2/3 maps to Easy/Medium/Hard when importing the sample CSV.</p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          <Select aria-label="Filter by difficulty" containerClassName="w-full sm:w-40" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={filter} onChange={(event) => onFilterChange(event.target.value as SentenceDifficulty | "all")}>
-            <option value="all">All levels</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+          <Select aria-label="Filter by difficulty" containerClassName="w-full sm:w-40" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={filter} onChange={(event) => {
+            const value = event.target.value;
+            if (value === "all" || isDifficultyLevel(value)) onFilterChange(value);
+          }}>
+            <option value="all">All levels</option>{DIFFICULTY_LEVELS.map((level) => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
           </Select>
           <Select aria-label="Questions per page" containerClassName="w-full sm:w-32" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value) as 50 | 100)}>
             <option value={50}>50 / page</option><option value={100}>100 / page</option>
