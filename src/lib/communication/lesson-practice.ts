@@ -23,6 +23,19 @@ export type SentenceDrill<T extends SentenceDrillItem = SentenceDrillItem> = {
   tiles?: Array<{ id: number; text: string }>;
 };
 
+const commonWords = new Set(["this", "that", "with", "from", "your", "have", "will", "would", "could", "there", "their", "they", "them", "what", "when", "where", "which", "about", "after", "before", "into", "like", "want", "some", "very", "much", "than", "then", "also", "does", "the", "and", "for", "you", "are"]);
+
+function getSentenceDrillVocabulary(items: SentenceDrillItem[]): string[] {
+  const vocabulary = new Set<string>();
+  for (const item of items) {
+    const words = `${item.content_en} ${item.example_en}`.match(/[\p{L}][\p{L}'’-]*/gu) ?? [];
+    for (const word of words) {
+      if (word.length >= 3 && !commonWords.has(word.toLocaleLowerCase())) vocabulary.add(word);
+    }
+  }
+  return [...vocabulary];
+}
+
 export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
   return shuffle([...new Set([correctAnswer, ...shuffle(distractors).slice(0, 3)])]);
 }
@@ -52,8 +65,7 @@ function escapeRegExp(value: string) {
 }
 
 export function createSentenceDrills<T extends SentenceDrillItem>(items: T[]): SentenceDrill<T>[] {
-  const commonWords = new Set(["this", "that", "with", "from", "your", "have", "will", "would", "could", "there", "their", "they", "them", "what", "when", "where", "which", "about", "after", "before", "into", "like", "want", "some", "very", "much", "than", "then", "also", "does", "the", "and", "for", "you", "are"]);
-  const vocabulary = [...new Set(items.flatMap((item) => `${item.content_en} ${item.example_en}`.match(/[\p{L}][\p{L}'’-]*/gu) ?? []).filter((word) => word.length >= 3 && !commonWords.has(word.toLocaleLowerCase())))];
+  const vocabulary = getSentenceDrillVocabulary(items);
   return items.flatMap((item) => {
     const sentence = item.example_en.trim();
     if (!sentence) return [];
