@@ -1,9 +1,10 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
-import type { VocabularyCategory, VocabularyCategoryColor } from "@/config/vocabulary";
+import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { createCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { mapCommunityVocabularyWords } from "@/lib/vocabulary/community-vocabulary-words";
 
 export type PublicSharedVocabulary = {
   categories: Array<{
@@ -47,26 +48,9 @@ export function mapPublicCategories(shared: PublicSharedVocabulary): VocabularyC
 }
 
 export function mapPublicWords(shared: PublicSharedVocabulary): VocabularyWord[] {
-  const defaultKeys = new Set(defaultVocabularyWords.map((word) =>
-    `${normalizeVocabularyLabel(word.category)}\u0000${normalizeVocabularyLabel(word.word)}`
-  ));
-
-  return shared.words.flatMap((word) => {
-    const key = `${normalizeVocabularyLabel(word.category)}\u0000${normalizeVocabularyLabel(word.word)}`;
-    if (!word.category || defaultKeys.has(key)) return [];
-
-    return [{
-      id: `community-${word.id}`,
-      word: word.word,
-      meaning: word.meaning,
-      category: word.category as VocabularyCategory,
-      status: "learning" as const,
-      type: "word" as const,
-      ipa: word.ipa,
-      imagePath: null,
-      imageUrl: word.imageUrl ?? null,
-      detailedMeanings: [],
-      isCustom: true,
-    }];
-  });
+  return mapCommunityVocabularyWords(
+    shared.words,
+    defaultVocabularyWords,
+    { skipUncategorized: true, includeImageUrl: true },
+  );
 }

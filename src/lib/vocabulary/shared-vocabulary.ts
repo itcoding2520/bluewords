@@ -5,6 +5,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWordWithMeaningsRow } from "@/lib/supabase/vocabulary";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { createCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { mapCommunityVocabularyWords } from "@/lib/vocabulary/community-vocabulary-words";
 
 export type PublishedCommunityCategory = {
   id: string;
@@ -91,25 +92,11 @@ export function mapCommunityWords(
   communityWords: PublishedCommunityWord[],
   personalWords: VocabularyWord[],
 ): VocabularyWord[] {
-  const personalKeys = new Set(personalWords.map((item) =>
-    `${normalizeVocabularyLabel(item.category)}\u0000${normalizeVocabularyLabel(item.word)}`
-  ));
-
-  return communityWords.flatMap((item) => {
-    const key = `${normalizeVocabularyLabel(item.community_categories.name)}\u0000${normalizeVocabularyLabel(item.word)}`;
-    if (personalKeys.has(key)) return [];
-
-    return [{
-      id: `community-${item.id}`,
-      word: item.word,
-      meaning: item.meaning,
-      category: item.community_categories.name as VocabularyCategory,
-      status: "learning" as const,
-      type: "word" as const,
-      ipa: item.ipa,
-      imagePath: null,
-      detailedMeanings: [],
-      isCustom: true,
-    }];
-  });
+  return mapCommunityVocabularyWords(
+    communityWords.map((item) => ({
+      ...item,
+      category: item.community_categories.name,
+    })),
+    personalWords,
+  );
 }
