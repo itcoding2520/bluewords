@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import type { VocabularyStatus, VocabularyWord } from "@/data/vocabulary";
-import { useFlashcardReviewTime, useFlashcardShuffleSeed } from "@/hooks/useFlashcardSession";
+import { useFlashcardReviewTime } from "@/hooks/useFlashcardReviewTime";
+import { useFlashcardShuffleSeed } from "@/hooks/useFlashcardShuffleSeed";
 import { useFlashcardReviewSchedules } from "@/hooks/useFlashcardReviewSchedules";
 import { useFlashcardStatusAction } from "@/hooks/useFlashcardStatusAction";
 import { useFlashcardDeck } from "@/hooks/useFlashcardDeck";
