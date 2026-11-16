@@ -2,16 +2,14 @@ import { redirect } from "next/navigation";
 
 import { ReviewHistoryContent } from "@/components/reviews/ReviewHistoryContent";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserClaimsOrNull } from "@/lib/supabase/authenticated-user";
 
 export default async function ReviewsPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+  const claims = await getCurrentUserClaimsOrNull(supabase);
+  if (!claims) redirect("/login");
 
-  if (error || !data?.claims) {
-    redirect("/login");
-  }
-
-  const userId = typeof data.claims.sub === "string" ? data.claims.sub : "";
+  const userId = typeof claims.sub === "string" ? claims.sub : "";
 
   return <ReviewHistoryContent userId={userId} />;
 }
