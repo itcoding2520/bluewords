@@ -2,7 +2,12 @@ import type { DifficultyLevel } from "@/types/difficulty";
 import type { LearningStatus } from "@/types/learning";
 
 export type LessonMode = "study" | "practice" | "drills" | "listening";
-export type LessonItemType = "word" | "phrase" | "sentence_pattern";
+export const LESSON_ITEM_TYPES = ["word", "phrase", "sentence_pattern"] as const;
+export type LessonItemType = (typeof LESSON_ITEM_TYPES)[number];
+
+export function isLessonItemType(value: unknown): value is LessonItemType {
+  return typeof value === "string" && LESSON_ITEM_TYPES.some((itemType) => itemType === value);
+}
 
 export type Lesson = {
   id: string;

@@ -3,6 +3,7 @@ import type {
   CommunicationCsvRecord,
 } from "@/lib/communication/csv";
 import { isContentStatus } from "@/lib/communication/content-types";
+import { isLessonItemType } from "@/lib/communication/lesson-types";
 import { isDifficultyLevel } from "@/types/difficulty";
 
 function integer(value: string, fallback: number, row: number, label: string) {
@@ -59,7 +60,7 @@ export function parseCommunicationCsvRecord(
   const normalizedOptions = parseResponseOptions(get("response_options_json"), line);
 
   const itemType = get("item_type");
-  if (recordType === "item" && !["word", "phrase", "sentence_pattern"].includes(itemType)) {
+  if (recordType === "item" && !isLessonItemType(itemType)) {
     throw new Error(`Row ${line}: item_type must be word, phrase, or sentence_pattern.`);
   }
 
