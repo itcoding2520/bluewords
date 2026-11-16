@@ -12,20 +12,23 @@ export type MazeWord = {
   choices: string[];
 };
 
+type MazeCandidate = Omit<MazeWord, "choices"> & { meaningKey: string };
+
 export function buildWordMazeRound(words: VocabularyWord[], category: string): MazeWord[] {
   const seenWords = new Set<string>();
   const seenMeanings = new Set<string>();
-  const available = words.flatMap((word) => {
+  const available: MazeCandidate[] = [];
+  for (const word of words) {
     const text = word.word.trim();
     const meaning = getPrimaryVocabularyMeaning(word);
     const wordKey = normalizeVocabularyLabel(text);
     const meaningKey = normalizeVocabularyLabel(meaning);
     if (!text || !meaning || !matchesVocabularyCategory(word.category, category)
-      || seenWords.has(wordKey) || seenMeanings.has(meaningKey)) return [];
+      || seenWords.has(wordKey) || seenMeanings.has(meaningKey)) continue;
     seenWords.add(wordKey);
     seenMeanings.add(meaningKey);
-    return [{ id: word.id, word: text, meaning, meaningKey, category: word.category }];
-  });
+    available.push({ id: word.id, word: text, meaning, meaningKey, category: word.category });
+  }
   const chosen = shuffle(available).slice(0, 5);
   return chosen.map((answer) => {
     const distractors = shuffle(sampleRandomMatching(
