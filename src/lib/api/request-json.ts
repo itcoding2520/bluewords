@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 export type RequestJsonResult =
   | { ok: true; value: unknown }
@@ -19,5 +19,5 @@ export async function readRequestJsonOrResponse(
   const result = await readRequestJson(request);
   return result.ok
     ? result
-    : { ok: false as const, response: NextResponse.json({ error: invalidMessage }, { status: 400 }) };
+    : { ok: false as const, response: jsonErrorResponse(invalidMessage, 400) };
 }
