@@ -4,18 +4,11 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
+import { CATEGORY_BADGE_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 import { useVocabularyImageUrl } from "@/hooks/useVocabularyImageUrl";
 import { PronunciationButton } from "@/components/vocabulary/PronunciationButton";
 import { Card } from "@/components/ui/Card";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
-
-const categoryColors: Record<VocabularyCategoryColor, string> = {
-  blue: "bg-blue-100 text-blue-800", violet: "bg-violet-100 text-violet-800",
-  orange: "bg-orange-100 text-orange-800", green: "bg-emerald-100 text-emerald-800",
-  rose: "bg-rose-100 text-rose-800", indigo: "bg-indigo-100 text-indigo-800",
-  teal: "bg-teal-100 text-teal-800", amber: "bg-amber-100 text-amber-800",
-  pink: "bg-pink-100 text-pink-800", slate: "bg-slate-100 text-slate-700",
-};
 
 function GuestWordRow({ word, color }: { word: VocabularyWord; color: VocabularyCategoryColor }) {
   const rowRef = useRef<HTMLLIElement>(null);
@@ -54,7 +47,7 @@ function GuestWordRow({ word, color }: { word: VocabularyWord; color: Vocabulary
         </div>
       </div>
       <p className="min-w-0 break-words text-sm leading-5 text-slate-600">{word.meaning}</p>
-      <span className={`col-span-2 w-fit rounded-full px-3 py-1.5 text-xs font-semibold sm:col-span-1 ${categoryColors[color]}`}>{word.category}</span>
+      <span className={`col-span-2 w-fit rounded-full px-3 py-1.5 text-xs font-semibold sm:col-span-1 ${CATEGORY_BADGE_STYLES[color]}`}>{word.category}</span>
     </li>
   );
 }
