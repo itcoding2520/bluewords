@@ -99,11 +99,12 @@ export async function deleteVocabularyWordRecords(ids: string[]): Promise<string
   const imageRows = await getVocabularyWordImagePaths(uniqueIds);
   const deletedIds = await deleteVocabularyWords(uniqueIds);
   const deletedSet = new Set(deletedIds);
-  const deletedImagePaths = imageRows
-    .filter((word) => deletedSet.has(word.id))
-    .map((word) => word.image_path);
+  const deletedImagePaths: string[] = [];
+  for (const word of imageRows) {
+    if (deletedSet.has(word.id) && word.image_path) deletedImagePaths.push(word.image_path);
+  }
 
-  if (deletedImagePaths.some(Boolean)) {
+  if (deletedImagePaths.length > 0) {
     void deleteVocabularyImages(deletedImagePaths).catch((error) =>
       console.error("Could not remove deleted vocabulary images:", error)
     );
