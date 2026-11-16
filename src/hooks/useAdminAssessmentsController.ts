@@ -1,8 +1,9 @@
 import { getErrorMessage } from "@/lib/errors";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { toLocalDateInputValue } from "@/lib/formatDate";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { createAssessmentAssignment, fetchAssessmentAdminSnapshot, type AssessmentAdminUser, type AssessmentAssignment, type AssessmentAttempt } from "@/lib/assessments/admin-api";
+import { useAdminAssessmentsView } from "@/hooks/useAdminAssessmentsView";
 
 export type AssessmentAdminTab = "tests" | "assignments" | "results";
 export function useAdminAssessmentsController() {
@@ -35,21 +36,7 @@ export function useAdminAssessmentsController() {
     return scheduleDeferredTask(() => { void refresh(); });
   }, [refresh]);
 
-  const normalizedSearch = search.toLowerCase();
-  const visibleUsers = useMemo(
-    () => users.filter((item) => `${item.nickname} ${item.email ?? ""}`.toLowerCase().includes(normalizedSearch)),
-    [users, normalizedSearch],
-  );
-  const userById = useMemo(() => new Map(users.map((item) => [item.id, item])), [users]);
-  const assignmentByRecipientId = useMemo(() => {
-    const assignmentsByRecipient = new Map<string, AssessmentAssignment>();
-    for (const assignment of assignments) {
-      for (const recipient of assignment.assessment_recipients) {
-        if (!assignmentsByRecipient.has(recipient.id)) assignmentsByRecipient.set(recipient.id, assignment);
-      }
-    }
-    return assignmentsByRecipient;
-  }, [assignments]);
+  const assessmentView = useAdminAssessmentsView({ users, assignments, search });
 
   async function assign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSending(true); setError(""); setNotice("");
@@ -82,7 +69,7 @@ export function useAdminAssessmentsController() {
       allUsers, setAllUsers, dueAt, setDueAt, today, search, setSearch, sending,
     },
     feedback: { error, notice },
-    view: { visibleUsers, userById, assignmentByRecipientId },
+    view: assessmentView,
     actions: { refresh, assign },
   };
 }
