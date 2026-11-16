@@ -115,19 +115,23 @@ export function buildCommunicationExportRecords(
   dialogues: ExportDialogue[],
   turns: ExportTurn[],
 ): CommunicationCsvRecord[] {
-  const lessonMap = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+  const commonFieldsByLessonId = new Map<string, CommonLessonFields>();
+  for (const lesson of lessons) {
+    const common = getCommonLessonFields(topic, lesson);
+    if (common) commonFieldsByLessonId.set(lesson.id, common);
+  }
   const dialogueMap = new Map(dialogues.map((dialogue) => [dialogue.id, dialogue]));
   const records: CommunicationCsvRecord[] = [];
 
   for (const item of items) {
-    const common = getCommonLessonFields(topic, lessonMap.get(item.lesson_id));
+    const common = commonFieldsByLessonId.get(item.lesson_id);
     if (common) records.push(createItemRecord(item, common));
   }
 
   for (const turn of turns) {
     const dialogue = dialogueMap.get(turn.dialogue_id);
     if (!dialogue) continue;
-    const common = getCommonLessonFields(topic, lessonMap.get(dialogue.lesson_id));
+    const common = commonFieldsByLessonId.get(dialogue.lesson_id);
     if (common) records.push(createDialogueTurnRecord(turn, dialogue, common));
   }
 
