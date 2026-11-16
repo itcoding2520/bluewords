@@ -11,6 +11,23 @@ export type VideoRow = {
   updated_at: string;
 };
 
+export type VideoInputValidation =
+  | { valid: false; reason: "title" | "youtube_url" }
+  | { valid: true; title: string; youtubeUrl: string; videoId: string };
+
+export function validateVideoInput(title: string, youtubeUrl: string): VideoInputValidation {
+  const normalizedTitle = title.trim();
+  const normalizedUrl = youtubeUrl.trim();
+  if (!normalizedTitle || normalizedTitle.length > 150) {
+    return { valid: false, reason: "title" };
+  }
+
+  const videoId = getYoutubeVideoId(normalizedUrl);
+  if (!videoId) return { valid: false, reason: "youtube_url" };
+
+  return { valid: true, title: normalizedTitle, youtubeUrl: normalizedUrl, videoId };
+}
+
 export function getYoutubeVideoId(value: string): string | null {
   try {
     const url = new URL(value.trim());

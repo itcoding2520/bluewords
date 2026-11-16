@@ -5,7 +5,7 @@ import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
 import { getPageCount } from "@/lib/pagination";
-import { getYoutubeVideoId, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
+import { validateVideoInput, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 import { useVideosAdminForm } from "@/hooks/useVideosAdminForm";
 
@@ -33,31 +33,29 @@ export function useVideosAdminActions({
   async function saveVideo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAdmin || isSaving) return;
-    const trimmedTitle = title.trim();
-    const trimmedUrl = youtubeUrl.trim();
-    if (!trimmedTitle || trimmedTitle.length > 150) {
+    const input = validateVideoInput(title, youtubeUrl);
+    if (!input.valid && input.reason === "title") {
       toast.error("Enter a title between 1 and 150 characters.");
       return;
     }
-    const videoId = getYoutubeVideoId(trimmedUrl);
-    if (!videoId) {
+    if (!input.valid) {
       toast.error("Enter a valid YouTube video link.");
       return;
     }
 
     setIsSaving(true);
     try {
-      const duplicate = await findVideoByYoutubeId(supabase, videoId);
+      const duplicate = await findVideoByYoutubeId(supabase, input.videoId);
       if (duplicate && duplicate.id !== editingId) {
         toast.error("This YouTube video is already in the library.");
         return;
       }
 
       if (editingId) {
-        await updateVideoRecord(supabase, editingId, { title: trimmedTitle, youtube_url: trimmedUrl });
+        await updateVideoRecord(supabase, editingId, { title: input.title, youtube_url: input.youtubeUrl });
         toast.success("Video updated.");
       } else {
-        await createVideoRecord(supabase, { title: trimmedTitle, youtube_url: trimmedUrl });
+        await createVideoRecord(supabase, { title: input.title, youtube_url: input.youtubeUrl });
         setPage(1);
         toast.success("Video added.");
       }
