@@ -10,7 +10,7 @@ export function useWordSearchNavigation({
   setHistoryPage,
   loadHistory,
 }: {
-  setPhase: Dispatch<SetStateAction<Phase>>;
+  setPhase: (phase: Phase) => void;
   setHistoryPage: Dispatch<SetStateAction<number>>;
   loadHistory: (forceRefresh?: boolean, page?: number) => Promise<void>;
 }) {

@@ -1,17 +1,12 @@
-import type { GamePhase } from "@/types/game";
 import { useState } from "react";
 import { useVocabulary } from "@/contexts/VocabularyContext";
-import { type CellPosition } from "@/hooks/useWordSearchSelection";
 import { useWordSearchHistory } from "@/hooks/useWordSearchHistory";
 import { useWordSearchSessionSave } from "@/hooks/useWordSearchSessionSave";
 import { useWordSearchTimer } from "@/hooks/useWordSearchTimer";
-import { createWordSearchPuzzle } from "@/lib/word-search.mjs";
 import { type Difficulty, type GridSize } from "@/lib/word-search-config";
 import { useWordSearchGameData } from "@/hooks/useWordSearchGameData";
-import { useWordSearchGameplay } from "@/hooks/useWordSearchGameplay";
+import { useWordSearchGameplay, type WordSearchGameplayState } from "@/hooks/useWordSearchGameplay";
 import { useWordSearchNavigation } from "@/hooks/useWordSearchNavigation";
-
-type Phase = GamePhase;
 
 export function useWordSearchController(userId: string | null) {
   const { words, categories, isLoaded } = useVocabulary();
@@ -19,12 +14,15 @@ export function useWordSearchController(userId: string | null) {
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [category, setCategory] = useState("all");
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  const [phase, setPhase] = useState<Phase>("setup");
-  const [puzzle, setPuzzle] = useState<ReturnType<typeof createWordSearchPuzzle> | null>(null);
-  const [foundIds, setFoundIds] = useState<Set<string>>(() => new Set());
-  const [foundWordPaths, setFoundWordPaths] = useState<Record<string, CellPosition[]>>({});
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [gameError, setGameError] = useState("");
+  const [gameState, setGameState] = useState<WordSearchGameplayState>({
+    phase: "setup",
+    puzzle: null,
+    foundIds: new Set(),
+    foundWordPaths: {},
+    startedAt: null,
+    gameError: "",
+  });
+  const { phase, puzzle, foundIds, foundWordPaths, startedAt, gameError } = gameState;
   const { elapsedSeconds, setElapsedSeconds, reset: resetTimer } = useWordSearchTimer(phase, startedAt);
   const { saveState, saveError, reset: resetSave, retry: retrySave } = useWordSearchSessionSave({
     userId,
@@ -47,7 +45,11 @@ export function useWordSearchController(userId: string | null) {
     fastestSeconds: fastestHistorySeconds,
     averageWordsPerRound,
   } = useWordSearchHistory(userId);
-  const navigation = useWordSearchNavigation({ setPhase, setHistoryPage, loadHistory });
+  const navigation = useWordSearchNavigation({
+    setPhase: (nextPhase) => setGameState((current) => ({ ...current, phase: nextPhase })),
+    setHistoryPage,
+    loadHistory,
+  });
 
   const {
     candidates,
@@ -59,18 +61,11 @@ export function useWordSearchController(userId: string | null) {
   } = useWordSearchGameData({ words, categories, category, difficulty, gridSize, phase, tab: navigation.tab });
 
   const gameplay = useWordSearchGameplay({
-    phase,
-    setPhase,
-    puzzle,
-    setPuzzle,
-    foundIds,
-    setFoundIds,
-    setFoundWordPaths,
+    state: gameState,
+    setState: setGameState,
     candidates,
     gridSize,
     targetCount,
-    setStartedAt,
-    setGameError,
     resetTimer,
     resetSave,
   });
