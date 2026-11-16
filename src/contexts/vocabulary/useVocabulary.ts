@@ -1,5 +1,6 @@
 import { useContext, useEffect } from "react";
 import { VocabularyContext } from "@/contexts/vocabulary/context";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 export function useVocabulary(options: {
   loadWords?: boolean;
@@ -17,17 +18,14 @@ export function useVocabulary(options: {
   useEffect(() => {
     if (!loadWords || isLoaded !== false || !refreshWords) return;
 
-    const loadTimer = setTimeout(() => {
+    return scheduleDeferredTask(() => {
       void refreshWords();
-    }, 0);
-
-    return () => clearTimeout(loadTimer);
+    });
   }, [authVersion, isLoaded, loadWords, refreshWords]);
 
   useEffect(() => {
     if (loadCategories || categoriesLoaded !== false || !refreshCategories) return;
-    const loadTimer = setTimeout(() => void refreshCategories(), 0);
-    return () => clearTimeout(loadTimer);
+    return scheduleDeferredTask(() => void refreshCategories());
   }, [authVersion, categoriesLoaded, loadCategories, refreshCategories]);
 
   if (!context) {
