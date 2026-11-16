@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { getErrorMessage } from "@/lib/errors";
 
 import {
   getUserProfile,
@@ -62,9 +63,7 @@ export function useUserProfileEditor(userId: string) {
         : null;
       setError(code === "23505"
         ? "That nickname is already in use. Choose another one."
-        : saveError instanceof Error
-          ? saveError.message
-          : "Could not save your profile. Please try again.");
+        : getErrorMessage(saveError, "Could not save your profile. Please try again."));
     } finally {
       setSaving(false);
     }
