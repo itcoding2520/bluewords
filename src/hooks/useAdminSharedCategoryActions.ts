@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
-import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { removeAdminSharedCategory, updateAdminSharedCategory } from "@/lib/admin-category-api";
 import type { CommunityCategory } from "@/lib/admin-category-data";
+import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
 
 export function useAdminSharedCategoryActions({
   supabase,
@@ -15,8 +15,6 @@ export function useAdminSharedCategoryActions({
   refresh: (force?: boolean) => Promise<void>;
   setSelectedId: Dispatch<SetStateAction<string>>;
 }) {
-  const confirmDialog = useConfirmDialog();
-
   async function editSharedCategory(category: CommunityCategory) {
     const name = window.prompt("Category name", category.name)?.trim();
     if (!name || name === category.name) return;
@@ -25,20 +23,19 @@ export function useAdminSharedCategoryActions({
     else await refresh();
   }
 
-  async function removeSharedCategory(category: CommunityCategory) {
-    const confirmed = await confirmDialog({
+  const removeSharedCategory = useConfirmedAdminAction({
+    confirmation: (category: CommunityCategory) => ({
       title: "Remove category?",
       description: `Remove “${category.name}” and its published words?`,
       confirmLabel: "Remove",
-    });
-    if (!confirmed) return;
-    const deleteError = await removeAdminSharedCategory(supabase, category.id);
-    if (deleteError) setError(deleteError.message);
-    else {
+    }),
+    run: (category: CommunityCategory) => removeAdminSharedCategory(supabase, category.id),
+    onError: (error) => setError(error.message),
+    onSuccess: async () => {
       setSelectedId("");
       await refresh();
-    }
-  }
+    },
+  });
 
   return { editSharedCategory, removeSharedCategory };
 }

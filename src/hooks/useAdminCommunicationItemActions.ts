@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 
-import { useAdminCommunicationRemoveAction } from "@/hooks/useAdminCommunicationRemoveAction";
+import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
 import type { CommunicationItemDraft } from "@/lib/communication/admin-draft-types";
 import { createCommunicationItemDraft } from "@/lib/communication/admin-drafts";
 import { removeCommunicationItem, saveCommunicationItem } from "@/lib/communication/admin-actions";
@@ -88,12 +88,18 @@ export function useAdminCommunicationItemActions({
     });
   }
 
-  const removeItem = useAdminCommunicationRemoveAction({
-    title: "Remove learning item?",
-    describe: (item: CommunicationLessonItem) => `Remove “${item.content_en}” from this lesson?`,
-    remove: (item: CommunicationLessonItem) => removeCommunicationItem(supabase, item.id),
-    successMessage: "Learning item removed.",
-    refresh,
+  const removeItem = useConfirmedAdminAction({
+    confirmation: (item: CommunicationLessonItem) => ({
+      title: "Remove learning item?",
+      description: `Remove “${item.content_en}” from this lesson?`,
+      confirmLabel: "Remove",
+    }),
+    run: (item: CommunicationLessonItem) => removeCommunicationItem(supabase, item.id).then(({ error }) => error),
+    onError: (error) => toast.error(error.message),
+    onSuccess: async () => {
+      toast.success("Learning item removed.");
+      await refresh();
+    },
   });
 
   return { saveItem, editItem, removeItem };
