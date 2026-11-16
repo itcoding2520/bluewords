@@ -4,6 +4,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { VocabularyWord } from "@/data/vocabulary";
 import { CategoryDropdown } from "@/components/vocabulary/VocabularyCategoryDropdown";
 import type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
+import { isLearningStatus, LEARNING_STATUSES } from "@/types/learning";
 export type { CategoryFilter, VocabularyStatusFilter } from "@/lib/vocabulary/filters";
 
 interface VocabularyToolbarProps {
@@ -97,11 +98,14 @@ export function VocabularyToolbar({
           includeAll
           allLabel="All words"
           listLabel="Choose a status"
-          options={[
-            { id: "status-learning", name: "Learning", value: "learning" },
-            { id: "status-mastered", name: "Mastered", value: "mastered" },
-          ]}
-          onChange={(value) => onStatusChange(value as VocabularyStatusFilter)}
+          options={LEARNING_STATUSES.map((value) => ({
+            id: `status-${value}`,
+            name: value === "learning" ? "Learning" : "Mastered",
+            value,
+          }))}
+          onChange={(value) => {
+            if (value === "all" || isLearningStatus(value)) onStatusChange(value);
+          }}
         />
         {/* Category filters */}
         <div
@@ -120,7 +124,7 @@ export function VocabularyToolbar({
             category={category}
             categories={categories}
             words={words}
-            onChange={(value) => onCategoryChange(value as CategoryFilter)}
+            onChange={onCategoryChange}
           />
         </div>
       </div>

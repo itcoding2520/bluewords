@@ -1,9 +1,8 @@
 
 import type { VocabularyWord } from "@/data/vocabulary";
+import { VOCABULARY_CATEGORIES } from "@/config/vocabulary";
 import { loadVocabulary } from "@/lib/storage";
-
-const CATEGORIES = ["Daily", "Work", "Frontend"] as const;
-const STATUSES = ["learning", "mastered"] as const;
+import { isLearningStatus } from "@/types/learning";
 
 function isVocabularyWord(value: unknown): value is VocabularyWord {
   if (
@@ -22,12 +21,8 @@ function isVocabularyWord(value: unknown): value is VocabularyWord {
     word.word.trim().length > 0 &&
     typeof word.meaning === "string" &&
     word.meaning.trim().length > 0 &&
-    CATEGORIES.includes(
-      word.category as (typeof CATEGORIES)[number]
-    ) &&
-    STATUSES.includes(
-      word.status as (typeof STATUSES)[number]
-    )
+    VOCABULARY_CATEGORIES.some((category) => category === word.category) &&
+    isLearningStatus(word.status)
   );
 }
 

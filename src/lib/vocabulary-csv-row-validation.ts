@@ -7,6 +7,7 @@ import { restoreSpreadsheetCell } from "@/lib/spreadsheet-csv-safety.mjs";
 import type { CsvRecord } from "@/lib/vocabulary-csv-parser";
 import { VOCABULARY_CSV_HEADERS } from "@/lib/vocabulary-csv-shared";
 import { normalizeVocabularyKey } from "@/lib/vocabulary/normalize-text";
+import { isLearningStatus } from "@/types/learning";
 
 export interface VocabularyCsvRowValues {
   word: string;
@@ -77,7 +78,7 @@ export function validateVocabularyCsvRow(values: VocabularyCsvRowValues): string
     errors.push('Type must be "word" or "expression".');
   }
   if (!meaning) errors.push("Meaning is required.");
-  if (statusValue !== "learning" && statusValue !== "mastered") {
+  if (!isLearningStatus(statusValue)) {
     errors.push('Status must be "learning" or "mastered".');
   }
 
