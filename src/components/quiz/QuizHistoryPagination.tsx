@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { RowsPerPageSelect } from "@/components/ui/RowsPerPageSelect";
-import { getNextPage, getPageCount, getPageRange, getPreviousPage } from "@/lib/pagination";
+import { createPageNavigationActions, getPageCount, getPageRange } from "@/lib/pagination";
 
 export function QuizHistoryPagination({
   total,
@@ -20,6 +20,7 @@ export function QuizHistoryPagination({
 }) {
   const pageCount = getPageCount(total, pageSize);
   const pageRange = getPageRange(total, page, pageSize);
+  const pageNavigation = createPageNavigationActions(pageCount, (update) => onPageChange(update(page)));
 
   return (
     <div className="quiz-history-pagination mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -32,8 +33,8 @@ export function QuizHistoryPagination({
         />
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap">Page {page} of {pageCount}</span>
-          <Button variant="secondary" aria-label="Previous quiz history page" onClick={() => onPageChange(getPreviousPage(page))} disabled={page <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button>
-          <Button variant="secondary" aria-label="Next quiz history page" onClick={() => onPageChange(getNextPage(page, pageCount))} disabled={page >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button>
+          <Button variant="secondary" aria-label="Previous quiz history page" onClick={pageNavigation.previousPage} disabled={page <= 1} className="size-10 px-0"><ChevronLeft size={17} /></Button>
+          <Button variant="secondary" aria-label="Next quiz history page" onClick={pageNavigation.nextPage} disabled={page >= pageCount} className="size-10 px-0"><ChevronRight size={17} /></Button>
         </div>
       </div>
     </div>

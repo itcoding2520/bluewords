@@ -12,6 +12,16 @@ export function getNextPage(page: number, pageCount: number): number {
   return Math.min(pageCount, page + 1);
 }
 
+export function createPageNavigationActions(
+  pageCount: number,
+  onPageChange: (update: (page: number) => number) => void,
+) {
+  return {
+    previousPage: () => onPageChange(getPreviousPage),
+    nextPage: () => onPageChange((page) => getNextPage(page, pageCount)),
+  };
+}
+
 export function getPageItems<T>(items: T[], page: number, pageSize: number): T[] {
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
