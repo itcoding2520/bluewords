@@ -1,8 +1,8 @@
-import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 
 import type { Item, LessonMode } from "@/lib/communication/lesson-types";
 import { shuffle } from "@/lib/random";
-import { resolveStateAction } from "@/lib/state-action";
+import { useStateField } from "@/hooks/useStateField";
 
 export type { LessonMode };
 type OrderedTile = { id: number; text: string };
@@ -22,18 +22,10 @@ export function useSituationalEnglishLessonSession({
   const [listeningOrder, setListeningOrder] = useState<string[]>([]);
   const [drills, setDrills] = useState<DrillState>({ step: 0, answer: null, orderedTiles: [] });
 
-  const setPracticeStep = useCallback<Dispatch<SetStateAction<number>>>((action) => {
-    setPractice((current) => ({ ...current, step: resolveStateAction(current.step, action) }));
-  }, []);
-  const setPracticeAnswer = useCallback<Dispatch<SetStateAction<string | null>>>((action) => {
-    setPractice((current) => ({ ...current, answer: resolveStateAction(current.answer, action) }));
-  }, []);
-  const setDrillAnswer = useCallback<Dispatch<SetStateAction<string | null>>>((action) => {
-    setDrills((current) => ({ ...current, answer: resolveStateAction(current.answer, action) }));
-  }, []);
-  const setOrderedTiles = useCallback<Dispatch<SetStateAction<OrderedTile[]>>>((action) => {
-    setDrills((current) => ({ ...current, orderedTiles: resolveStateAction(current.orderedTiles, action) }));
-  }, []);
+  const setPracticeStep = useStateField(setPractice, "step");
+  const setPracticeAnswer = useStateField(setPractice, "answer");
+  const setDrillAnswer = useStateField(setDrills, "answer");
+  const setOrderedTiles = useStateField(setDrills, "orderedTiles");
 
   function selectMode(nextMode: LessonMode, listeningItemIds: string[]) {
     setMode(nextMode);

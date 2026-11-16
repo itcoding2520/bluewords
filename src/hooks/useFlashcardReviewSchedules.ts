@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import { getVocabularyReviewSchedules } from "@/lib/supabase/reviews";
-import { resolveStateAction } from "@/lib/state-action";
+import { useStateField } from "@/hooks/useStateField";
 
 type ScheduleLoadState = "idle" | "loading" | "loaded" | "error";
 interface ReviewScheduleState {
@@ -16,12 +16,7 @@ export function useFlashcardReviewSchedules(isAuthenticated: boolean) {
     loadState: "idle",
   }));
   const scheduleRequestRef = useRef<Promise<void> | null>(null);
-  const setReviewSchedules = useCallback<Dispatch<SetStateAction<Map<string, VocabularyReviewScheduleRow>>>>((action) => {
-    setState((current) => ({
-      ...current,
-      schedules: resolveStateAction(current.schedules, action),
-    }));
-  }, []);
+  const setReviewSchedules = useStateField(setState, "schedules");
 
   async function loadReviewSchedules() {
     if (!isAuthenticated) return;

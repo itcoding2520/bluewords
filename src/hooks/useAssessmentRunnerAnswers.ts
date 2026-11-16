@@ -1,7 +1,7 @@
-import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import { useState } from "react";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
 import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
-import { resolveStateAction } from "@/lib/state-action";
+import { useStateField } from "@/hooks/useStateField";
 
 interface AssessmentAnswersState {
   answers: string[];
@@ -16,12 +16,7 @@ const initialState: AssessmentAnswersState = {
 export function useAssessmentRunnerAnswers(questions: AssessmentQuestionForLearner[]) {
   const [state, setState] = useState(initialState);
 
-  const setAnswers = useCallback<Dispatch<SetStateAction<string[]>>>((action) => {
-    setState((current) => ({
-      ...current,
-      answers: resolveStateAction(current.answers, action),
-    }));
-  }, []);
+  const setAnswers = useStateField(setState, "answers");
 
   function setAnswer(index: number, value: string) {
     setState((current) => ({
