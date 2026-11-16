@@ -5,11 +5,13 @@ import { getAdminAssessmentOverview } from "@/lib/assessments/admin-overview";
 import { validateAssessmentAssignmentInput } from "@/lib/assessments/assignment-input";
 import { readRequestJson } from "@/lib/api/request-json";
 
+const ADMIN_AUTH_OPTIONS = {
+  serviceUnavailableMessage: "Assessment service is not configured.",
+  authenticationFailure: { message: "Admin access required.", status: 403 },
+} as const;
+
 export async function GET() {
-  const auth = await authorizeAdminRoute({
-    serviceUnavailableMessage: "Assessment service is not configured.",
-    authenticationFailure: { message: "Admin access required.", status: 403 },
-  });
+  const auth = await authorizeAdminRoute(ADMIN_AUTH_OPTIONS);
   if ("response" in auth) return auth.response;
   const overview = await getAdminAssessmentOverview(auth.adminClient);
   if (overview.status === "error") return NextResponse.json({ error: overview.message }, { status: 400 });
@@ -17,10 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await authorizeAdminRoute({
-    serviceUnavailableMessage: "Assessment service is not configured.",
-    authenticationFailure: { message: "Admin access required.", status: 403 },
-  });
+  const auth = await authorizeAdminRoute(ADMIN_AUTH_OPTIONS);
   if ("response" in auth) return auth.response;
   const { adminClient: admin, user } = auth;
   const parsedBody = await readRequestJson(request);
