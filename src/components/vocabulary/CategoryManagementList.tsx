@@ -1,4 +1,4 @@
-import { useMemo, type FormEvent } from "react";
+import { type FormEvent } from "react";
 import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -14,6 +14,7 @@ import {
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { getNextPage, getPreviousPage } from "@/lib/pagination";
+import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
 
 export function CategoryManagementList({
   words,
@@ -74,15 +75,7 @@ export function CategoryManagementList({
   onUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: (category: VocabularyCategoryRow) => void;
 }) {
-  const fallbackImagesByCategory = useMemo(() => {
-    const images = new Map<string, string>();
-    for (const word of words) {
-      if (!word.imagePath) continue;
-      const key = normalizeVocabularyLabel(word.category);
-      if (!images.has(key)) images.set(key, word.imagePath);
-    }
-    return images;
-  }, [words]);
+  const fallbackImagesByCategory = useCategoryFallbackWordImages(words);
 
   return (
     <div className="category-list-panel">
