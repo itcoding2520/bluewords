@@ -54,7 +54,6 @@ export function CategoryManagementList({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  isDefaultCategory,
   onStartEdit,
   onUpdate,
   onDelete,
@@ -83,7 +82,6 @@ export function CategoryManagementList({
   pageSize: number;
   onPageChange: (update: (page: number) => number) => void;
   onPageSizeChange: (size: number) => void;
-  isDefaultCategory: (category: VocabularyCategoryRow) => boolean;
   onStartEdit: (category: VocabularyCategoryRow) => void;
   onUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: (category: VocabularyCategoryRow) => void;
@@ -116,7 +114,6 @@ export function CategoryManagementList({
               isAdmin={isAdmin}
               author={categoryAuthor}
               fallbackWordImagePath={fallbackImagesByCategory.get(normalizedCategoryName)}
-              isDefaultCategory={isDefaultCategory}
               editing={editing?.id === category.id}
               editName={editName}
               onEditNameChange={onEditNameChange}

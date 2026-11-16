@@ -1,17 +1,8 @@
 import { useMemo } from "react";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
-import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
-import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { isDefaultCategory, isPublishedSharedCategory } from "@/lib/vocabulary/category-management";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/lib/category-management-filters";
-
-function isDefaultCategory(category: VocabularyCategoryRow) {
-  return category.is_default || isDefaultVocabularyCategory(category.name);
-}
-
-function isPublishedSharedCategory(category: VocabularyCategoryRow) {
-  return isCommunityCategoryId(category.id) || category.user_id === "community";
-}
 
 export function useCategoryManagementView({
   categories,
@@ -61,7 +52,6 @@ export function useCategoryManagementView({
   );
 
   return {
-    isDefaultCategory,
     managedCategories,
     pageCount: pageMetadata.pageCount,
     currentPage: pageMetadata.currentPage,

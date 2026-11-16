@@ -7,14 +7,13 @@ import { VocabularyCategoryColorSelect } from "@/components/vocabulary/Vocabular
 import { CATEGORY_DOT_STYLES } from "@/components/vocabulary/category-dropdown-styles";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
+import { isDefaultCategory, isPublishedSharedCategory } from "@/lib/vocabulary/category-management";
 
 export function CategoryManagementCard({
   category,
   isAdmin,
   author,
   fallbackWordImagePath,
-  isDefaultCategory,
   editing,
   editName,
   onEditNameChange,
@@ -31,7 +30,6 @@ export function CategoryManagementCard({
   isAdmin: boolean;
   author: string | undefined;
   fallbackWordImagePath: string | undefined;
-  isDefaultCategory: (category: VocabularyCategoryRow) => boolean;
   editing: boolean;
   editName: string;
   onEditNameChange: (value: string) => void;
@@ -47,7 +45,7 @@ export function CategoryManagementCard({
   const selectedColor = CATEGORY_DOT_STYLES[category.color];
   const isReadOnly = category.user_id === "community";
   const isProtectedDefault = isDefaultCategory(category);
-  const isPublishedShared = isCommunityCategoryId(category.id);
+  const isPublishedShared = isPublishedSharedCategory(category);
   const canManageCategory = isAdmin || (!isProtectedDefault && !isReadOnly && !isPublishedShared);
 
   return (
