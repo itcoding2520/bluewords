@@ -11,24 +11,34 @@ import {
   ShieldCheck,
   Send,
   UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/cn";
 
-const navigation = [
-  { label: "Profile", href: "/profile", icon: UserRound },
-  { label: "Overview", href: "/", icon: LayoutDashboard },
-  { label: "Vocabulary", href: "/vocabulary", icon: Library },
-  { label: "Flashcards", href: "/flashcards", icon: BookOpenCheck },
-  { label: "Games", href: "/games", icon: Gamepad2 },
-  { label: "Assignments", href: "/assignments", icon: ClipboardCheck },
-  { label: "English practice", href: "/communication", icon: MessageCircle },
-  { label: "Videos", href: "/videos", icon: Clapperboard },
-  { label: "Review results", href: "/reviews", icon: History },
-  { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Publish vocabulary", href: "/publish", icon: Send },
-  { label: "Admin", href: "/admin", icon: ShieldCheck },
+type NavigationAudience = "public" | "member" | "learner" | "learner-after-role-check" | "admin";
+
+interface NavigationItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  audience: NavigationAudience;
+}
+
+const navigation: NavigationItem[] = [
+  { label: "Profile", href: "/profile", icon: UserRound, audience: "member" },
+  { label: "Overview", href: "/", icon: LayoutDashboard, audience: "public" },
+  { label: "Vocabulary", href: "/vocabulary", icon: Library, audience: "public" },
+  { label: "Flashcards", href: "/flashcards", icon: BookOpenCheck, audience: "public" },
+  { label: "Games", href: "/games", icon: Gamepad2, audience: "public" },
+  { label: "Assignments", href: "/assignments", icon: ClipboardCheck, audience: "learner-after-role-check" },
+  { label: "English practice", href: "/communication", icon: MessageCircle, audience: "public" },
+  { label: "Videos", href: "/videos", icon: Clapperboard, audience: "member" },
+  { label: "Review results", href: "/reviews", icon: History, audience: "member" },
+  { label: "Notifications", href: "/notifications", icon: Bell, audience: "member" },
+  { label: "Publish vocabulary", href: "/publish", icon: Send, audience: "learner" },
+  { label: "Admin", href: "/admin", icon: ShieldCheck, audience: "admin" },
 ];
 
 const navigationArtwork: Record<string, string> = {
@@ -41,6 +51,21 @@ const navigationArtwork: Record<string, string> = {
   "/notifications": "/images/ui/icons/notifications.svg",
   "/publish": "/images/ui/icons/publish.svg",
 };
+
+function canViewNavigationItem(
+  audience: NavigationAudience,
+  isAuthenticated: boolean,
+  isAdmin: boolean,
+  isAdminChecked: boolean,
+) {
+  switch (audience) {
+    case "public": return true;
+    case "member": return isAuthenticated;
+    case "learner": return isAuthenticated && !isAdmin;
+    case "learner-after-role-check": return isAuthenticated && isAdminChecked && !isAdmin;
+    case "admin": return isAuthenticated && isAdmin;
+  }
+}
 
 interface SidebarNavigationProps {
   pathname: string;
@@ -61,14 +86,9 @@ export function SidebarNavigation({
   pendingAssignmentCount,
   onNavigate,
 }: SidebarNavigationProps) {
-  const visibleItems = navigation.filter((item) => {
-    if (item.href === "/admin") return isAuthenticated && isAdmin;
-    if (item.href === "/videos") return isAuthenticated;
-    if (item.href === "/notifications") return isAuthenticated;
-    if (item.href === "/assignments") return isAuthenticated && isAdminChecked && !isAdmin;
-    if (item.href === "/publish") return isAuthenticated && !isAdmin;
-    return isAuthenticated || !["/profile", "/reviews"].includes(item.href);
-  });
+  const visibleItems = navigation.filter((item) =>
+    canViewNavigationItem(item.audience, isAuthenticated, isAdmin, isAdminChecked)
+  );
 
   return (
     <nav aria-label="Main navigation" className="space-y-2">
