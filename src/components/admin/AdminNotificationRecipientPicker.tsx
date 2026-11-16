@@ -26,6 +26,8 @@ export function AdminNotificationRecipientPicker({
   selected: string[];
   onRecipientToggle: (id: string, checked: boolean) => void;
 }) {
+  const selectedIds = new Set(selected);
+
   return (
     <div>
       <div className="admin-notification-section-heading"><span className="admin-notification-heading-icon"><Users size={22} /></span><div><h2>Recipients</h2><p>Choose who should receive this notification.</p></div></div>
@@ -40,7 +42,7 @@ export function AdminNotificationRecipientPicker({
             <div className="admin-recipient-scroll">
               {filteredRecipients.map((recipient) => (
                 <label key={recipient.id} className="admin-recipient-row">
-                  <input type="checkbox" checked={selected.includes(recipient.id)} onChange={(event) => onRecipientToggle(recipient.id, event.target.checked)} />
+                  <input type="checkbox" checked={selectedIds.has(recipient.id)} onChange={(event) => onRecipientToggle(recipient.id, event.target.checked)} />
                   <span className="admin-recipient-avatar">{recipientInitials(recipient)}</span>
                   <span className="min-w-0"><span className="block truncate font-semibold text-slate-800">{recipient.nickname || recipient.email || "User"}</span><span className="block truncate text-xs text-slate-500">{recipient.email}</span></span>
                 </label>
