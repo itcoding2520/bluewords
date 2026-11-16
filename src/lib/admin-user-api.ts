@@ -1,13 +1,16 @@
-export interface AdminUserRecord {
+export interface AdminUserSummary {
   id: string;
   email: string | null;
+}
+
+export interface AdminUserRecord extends AdminUserSummary {
   nickname: string;
   created_at: string;
   last_sign_in_at: string | null;
 }
 
-interface AdminUsersResponse {
-  users?: AdminUserRecord[];
+export interface AdminUsersResponse<TUser extends AdminUserSummary = AdminUserRecord> {
+  users?: TUser[];
   total?: number;
   error?: string;
 }

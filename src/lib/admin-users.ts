@@ -1,12 +1,4 @@
-interface AdminUserSummary {
-  id: string;
-  email: string | null;
-}
-
-interface AdminUsersResponse {
-  users?: AdminUserSummary[];
-  error?: string;
-}
+import type { AdminUsersResponse } from "@/lib/admin-user-api";
 
 export async function loadAdminUserEmails(
   userIds: string[],
