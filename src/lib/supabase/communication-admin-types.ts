@@ -1,4 +1,5 @@
 import type { CommunicationDifficulty, ContentStatus } from "@/lib/communication/csv";
+import type { LessonItemType } from "@/lib/communication/lesson-types";
 
 export type CommunicationTopic = {
   id: string;
@@ -26,7 +27,7 @@ export type CommunicationLessonItem = {
   id: string;
   lesson_id: string;
   item_key: string;
-  item_type: "word" | "phrase" | "sentence_pattern";
+  item_type: LessonItemType;
   content_en: string;
   meaning_vi: string;
   example_en: string;

@@ -2,6 +2,7 @@ import type { DifficultyLevel } from "@/types/difficulty";
 import type { LearningStatus } from "@/types/learning";
 
 export type LessonMode = "study" | "practice" | "drills" | "listening";
+export type LessonItemType = "word" | "phrase" | "sentence_pattern";
 
 export type Lesson = {
   id: string;
@@ -21,7 +22,7 @@ export type Topic = {
 export type Item = {
   id: string;
   item_key: string;
-  item_type: "word" | "phrase" | "sentence_pattern";
+  item_type: LessonItemType;
   content_en: string;
   meaning_vi: string;
   example_en: string;

@@ -1,6 +1,7 @@
 import { escapeCsvCell, parseCsvRows } from "@/lib/csv-rows";
 import { validateCommunicationCsvConsistency } from "@/lib/communication/csv-consistency";
 import { parseCommunicationCsvRecord } from "@/lib/communication/csv-record";
+import type { LessonItemType } from "@/lib/communication/lesson-types";
 import type { DifficultyLevel } from "@/types/difficulty";
 
 export type CommunicationDifficulty = DifficultyLevel;
@@ -23,7 +24,7 @@ export type CommunicationCsvRecord = {
   lesson_status: ContentStatus;
   record_key: string;
   record_order: number;
-  item_type: "word" | "phrase" | "sentence_pattern" | "";
+  item_type: LessonItemType | "";
   content_en: string;
   meaning_vi: string;
   example_en: string;
