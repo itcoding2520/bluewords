@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useMemo, type FormEvent } from "react";
 import { Check, ChevronLeft, ChevronRight, ImagePlus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -79,6 +79,16 @@ export function CategoryManagementList({
   onUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: (category: VocabularyCategoryRow) => void;
 }) {
+  const fallbackImagesByCategory = useMemo(() => {
+    const images = new Map<string, string>();
+    for (const word of words) {
+      if (!word.imagePath) continue;
+      const key = normalizeVocabularyLabel(word.category);
+      if (!images.has(key)) images.set(key, word.imagePath);
+    }
+    return images;
+  }, [words]);
+
   return (
     <div className="category-list-panel">
       <div className="category-list-toolbar">
@@ -113,7 +123,7 @@ export function CategoryManagementList({
                 </form>
               ) : (
                 <div className="category-item-content">
-                  <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={words.find((word) => normalizeVocabularyLabel(word.category) === normalizeVocabularyLabel(category.name) && word.imagePath)?.imagePath} colorClass={selectedColor} sizeClass="size-20" shapeClass="rounded-2xl" />
+                  <CategoryAvatar name={category.name} imagePath={category.image_path} fallbackWordImagePath={fallbackImagesByCategory.get(normalizeVocabularyLabel(category.name))} colorClass={selectedColor} sizeClass="size-20" shapeClass="rounded-2xl" />
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{category.name}</p><p className="mt-1 text-xs text-slate-500">{isAdmin && categoryAuthors[normalizeVocabularyLabel(category.name)] ? `By ${categoryAuthors[normalizeVocabularyLabel(category.name)]}` : isReadOnly ? "Published community category" : category.is_default ? "Default category" : category.image_path ? "Custom image" : "Uses the first word image in games"}</p></div>
                   {canManageCategory && <ActionMenu label={category.name} disabled={isSaving} actions={[{ label: "Edit", icon: <Pencil size={15} />, onSelect: () => onStartEdit(category) }, ...(!category.is_default ? [{ label: "Remove", icon: <Trash2 size={15} />, onSelect: () => onDelete(category), destructive: true }] : [])]} />}
                 </div>
