@@ -5,6 +5,24 @@ import { sendAdminUserAction, type AdminUserActionInput, type AdminUserRecord } 
 
 export type AdminUser = AdminUserRecord;
 
+interface AddUserFormState {
+  email: string;
+  nickname: string;
+  password: string;
+  isOpen: boolean;
+}
+
+interface EditUserFormState {
+  user: AdminUser | null;
+  email: string;
+  nickname: string;
+  password: string;
+}
+
+function applyFieldAction<T>(current: T, action: SetStateAction<T>): T {
+  return typeof action === "function" ? (action as (previous: T) => T)(current) : action;
+}
+
 export function useAdminUsersActions({
   setPage,
   setError,
@@ -17,14 +35,18 @@ export function useAdminUsersActions({
   const confirmDialog = useConfirmDialog();
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [password, setPassword] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [editEmail, setEditEmail] = useState("");
-  const [editNickname, setEditNickname] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+  const [addForm, setAddForm] = useState<AddUserFormState>({
+    email: "",
+    nickname: "",
+    password: "",
+    isOpen: false,
+  });
+  const [editForm, setEditForm] = useState<EditUserFormState>({
+    user: null,
+    email: "",
+    nickname: "",
+    password: "",
+  });
 
   function showMutationResult(payload: { error?: string }, fallback: string) {
     if (payload.error) {
@@ -55,37 +77,35 @@ export function useAdminUsersActions({
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (await performUserAction({ action: "create", email: email.trim(), nickname: nickname.trim(), password })) {
-      setEmail("");
-      setNickname("");
-      setPassword("");
-      setShowAddForm(false);
+    if (await performUserAction({ action: "create", email: addForm.email.trim(), nickname: addForm.nickname.trim(), password: addForm.password })) {
+      setAddForm({ email: "", nickname: "", password: "", isOpen: false });
       setPage(1);
     }
   }
 
   function openEditUser(user: AdminUser) {
-    setEditingUser(user);
-    setEditEmail(user.email ?? "");
-    setEditNickname(user.nickname);
-    setEditPassword("");
+    setEditForm({
+      user,
+      email: user.email ?? "",
+      nickname: user.nickname,
+      password: "",
+    });
     setError("");
     setNotice("");
   }
 
   async function editUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editingUser) return;
+    if (!editForm.user) return;
     const values: Extract<AdminUserActionInput, { action: "update" }> = {
       action: "update",
-      userId: editingUser.id,
-      email: editEmail.trim(),
-      nickname: editNickname.trim(),
+      userId: editForm.user.id,
+      email: editForm.email.trim(),
+      nickname: editForm.nickname.trim(),
     };
-    if (editPassword) values.password = editPassword;
+    if (editForm.password) values.password = editForm.password;
     if (await performUserAction(values)) {
-      setEditingUser(null);
-      setEditPassword("");
+      setEditForm((current) => ({ ...current, user: null, password: "" }));
     }
   }
 
@@ -96,9 +116,49 @@ export function useAdminUsersActions({
   }
 
   return {
-    busy, notice, setNotice, email, setEmail, nickname, setNickname, password, setPassword,
-    showAddForm, setShowAddForm, editingUser, setEditingUser, editEmail, setEditEmail,
-    editNickname, setEditNickname, editPassword, setEditPassword,
+    busy,
+    notice,
+    setNotice,
+    email: addForm.email,
+    setEmail: (action: SetStateAction<string>) => setAddForm((current) => ({
+      ...current,
+      email: applyFieldAction(current.email, action),
+    })),
+    nickname: addForm.nickname,
+    setNickname: (action: SetStateAction<string>) => setAddForm((current) => ({
+      ...current,
+      nickname: applyFieldAction(current.nickname, action),
+    })),
+    password: addForm.password,
+    setPassword: (action: SetStateAction<string>) => setAddForm((current) => ({
+      ...current,
+      password: applyFieldAction(current.password, action),
+    })),
+    showAddForm: addForm.isOpen,
+    setShowAddForm: (action: SetStateAction<boolean>) => setAddForm((current) => ({
+      ...current,
+      isOpen: applyFieldAction(current.isOpen, action),
+    })),
+    editingUser: editForm.user,
+    setEditingUser: (action: SetStateAction<AdminUser | null>) => setEditForm((current) => ({
+      ...current,
+      user: applyFieldAction(current.user, action),
+    })),
+    editEmail: editForm.email,
+    setEditEmail: (action: SetStateAction<string>) => setEditForm((current) => ({
+      ...current,
+      email: applyFieldAction(current.email, action),
+    })),
+    editNickname: editForm.nickname,
+    setEditNickname: (action: SetStateAction<string>) => setEditForm((current) => ({
+      ...current,
+      nickname: applyFieldAction(current.nickname, action),
+    })),
+    editPassword: editForm.password,
+    setEditPassword: (action: SetStateAction<string>) => setEditForm((current) => ({
+      ...current,
+      password: applyFieldAction(current.password, action),
+    })),
     addUser, editUser, openEditUser, removeUser,
   };
 }
