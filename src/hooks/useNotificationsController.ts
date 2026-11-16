@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useCallback, useEffect, useState } from "react";
 import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { recentNotifications, type NotificationRow } from "@/lib/notifications";
@@ -39,9 +40,9 @@ export function useNotificationsController() {
 
   useEffect(() => {
     let active = true;
-    const timer = window.setTimeout(() => {
+    const cancelScheduledRefresh = scheduleDeferredTask(() => {
       void refresh().catch((cause) => { if (active) setError(getErrorMessage(cause, "Could not load notifications.")); });
-    }, 0);
+    });
     const handleFocus = () => {
       if (document.visibilityState === "visible") {
         void refresh(true).catch((cause) => { if (active) setError(getErrorMessage(cause, "Could not load notifications.")); });
@@ -50,7 +51,7 @@ export function useNotificationsController() {
     document.addEventListener("visibilitychange", handleFocus);
     return () => {
       active = false;
-      window.clearTimeout(timer);
+      cancelScheduledRefresh();
       document.removeEventListener("visibilitychange", handleFocus);
     };
   }, [refresh]);

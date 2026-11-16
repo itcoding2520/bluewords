@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { checkCurrentUserIsAdmin, loadPublishedCategoryAuthors } from "@/lib/category-management-api";
+import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 
 
 export function useCategoryManagementAccess(supabase: SupabaseClient) {
@@ -9,30 +10,30 @@ export function useCategoryManagementAccess(supabase: SupabaseClient) {
 
   useEffect(() => {
     let cancelled = false;
-    const timer = window.setTimeout(() => {
+    const cancelScheduledCheck = scheduleDeferredTask(() => {
       void (async () => {
         const hasAdminAccess = await checkCurrentUserIsAdmin(supabase);
         if (!cancelled) setIsAdmin(hasAdminAccess);
       })();
-    }, 0);
+    });
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      cancelScheduledCheck();
     };
   }, [supabase]);
 
   useEffect(() => {
     if (!isAdmin) return;
     let cancelled = false;
-    const timer = window.setTimeout(() => {
+    const cancelScheduledLoad = scheduleDeferredTask(() => {
       void (async () => {
         const authors = await loadPublishedCategoryAuthors(supabase);
         if (!cancelled) setCategoryAuthors(authors);
       })();
-    }, 0);
+    });
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      cancelScheduledLoad();
     };
   }, [isAdmin, supabase]);
 
