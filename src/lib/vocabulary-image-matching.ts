@@ -27,8 +27,10 @@ export function matchVocabularyImportImages(
   }
 
   const imageFilesByWord = new Map<string, File>();
-  const importableNames = new Set(importableWords.map(normalizeImageName));
-  const currentWordsByName = new Map(existingWords.map((word) => [normalizeImageName(word.word), word]));
+  const importableNames = new Set<string>();
+  for (const word of importableWords) importableNames.add(normalizeImageName(word));
+  const currentWordsByName = new Map<string, VocabularyWord>();
+  for (const word of existingWords) currentWordsByName.set(normalizeImageName(word.word), word);
   let alreadyHasImage = 0;
 
   for (const [key, file] of filesByName) {
