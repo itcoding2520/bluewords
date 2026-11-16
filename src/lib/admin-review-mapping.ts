@@ -3,6 +3,7 @@ import type {
   PublishedCategory,
   PublishedWord,
 } from "@/lib/admin-review-types";
+import { getFirstImageByKey } from "@/lib/vocabulary/first-image-by-key";
 
 export function mapPublishedCategorySubmission(
   category: AdminReviewSubmission,
@@ -35,11 +36,5 @@ export function mapPublishedWordSubmission(
 export function getPublishedCategoryFallbackImages(
   words: PublishedWord[],
 ): Map<string, string> {
-  const imagesByCategory = new Map<string, string>();
-  for (const word of words) {
-    if (word.image_path && !imagesByCategory.has(word.category_id)) {
-      imagesByCategory.set(word.category_id, word.image_path);
-    }
-  }
-  return imagesByCategory;
+  return getFirstImageByKey(words, (word) => word.category_id, (word) => word.image_path);
 }
