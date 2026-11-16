@@ -21,6 +21,12 @@ export interface VocabularyCsvRowValues {
   ipa: string | null;
 }
 
+const PART_OF_SPEECH_BY_KEY = new Map<string, PartOfSpeech>();
+for (const option of PARTS_OF_SPEECH) {
+  const key = normalizeVocabularyKey(option);
+  if (!PART_OF_SPEECH_BY_KEY.has(key)) PART_OF_SPEECH_BY_KEY.set(key, option);
+}
+
 export function readVocabularyCsvRow(
   record: CsvRecord,
   headerLength: number,
@@ -38,9 +44,7 @@ export function readVocabularyCsvRow(
   const word = value("word");
   const typeValue = normalizeVocabularyKey(value("type"));
   const partOfSpeechValue = normalizeVocabularyKey(value("part_of_speech"));
-  const partOfSpeech = PARTS_OF_SPEECH.find(
-    (option) => normalizeVocabularyKey(option) === partOfSpeechValue
-  );
+  const partOfSpeech = PART_OF_SPEECH_BY_KEY.get(partOfSpeechValue);
   const meaning = value("meaning");
   // Older CSVs used `meaning` for the part-of-speech meaning. Continue to
   // accept them when the new, explicit `detailed_meaning` column is absent.
