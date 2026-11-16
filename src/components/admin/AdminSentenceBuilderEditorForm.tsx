@@ -1,7 +1,8 @@
 import type { FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { Select } from "@/components/ui/Select";
-import type { SentenceDifficulty, SentenceQuestionInput } from "@/lib/sentence-builder";
+import type { SentenceQuestionInput } from "@/lib/sentence-builder";
+import { isDifficultyLevel } from "@/types/difficulty";
 
 const fields = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
@@ -30,7 +31,7 @@ export function AdminSentenceBuilderEditorForm({
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="text-xs font-bold text-slate-600">Question ID<input className={`${fields} mt-1`} value={draft.question_id} disabled={Boolean(editing)} placeholder="SB101" onChange={(event) => onDraftChange({ ...draft, question_id: event.target.value })}/><small className="mt-1 block font-normal text-slate-500">Example: SB001 (must be unique).</small></label>
-        <label htmlFor="sentence-admin-difficulty" className="text-xs font-bold text-slate-600">Difficulty<Select id="sentence-admin-difficulty" containerClassName="mt-1" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={draft.difficulty} onChange={(event) => onDraftChange({ ...draft, difficulty: event.target.value as SentenceDifficulty })}><option value="easy">Easy / Dễ</option><option value="medium">Medium / Trung bình</option><option value="hard">Hard / Khó</option></Select><small className="mt-1 block font-normal text-slate-500">Example: Easy (CSV level 1).</small></label>
+        <label htmlFor="sentence-admin-difficulty" className="text-xs font-bold text-slate-600">Difficulty<Select id="sentence-admin-difficulty" containerClassName="mt-1" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={draft.difficulty} onChange={(event) => { if (isDifficultyLevel(event.target.value)) onDraftChange({ ...draft, difficulty: event.target.value }); }}><option value="easy">Easy / Dễ</option><option value="medium">Medium / Trung bình</option><option value="hard">Hard / Khó</option></Select><small className="mt-1 block font-normal text-slate-500">Example: Easy (CSV level 1).</small></label>
         <label htmlFor="sentence-admin-category" className="text-xs font-bold text-slate-600">Category<Select id="sentence-admin-category" containerClassName="mt-1" className="!h-[2.65rem] !rounded-xl !border-slate-200 !px-3 !text-sm" value={draft.category} onChange={(event) => onDraftChange({ ...draft, category: event.target.value })}><option value="" disabled>Select a category</option>{categoryOptions.map((name) => <option key={name} value={name}>{name}</option>)}</Select><small className="mt-1 block font-normal text-slate-500">Example: animals.</small></label>
         <label className="text-xs font-bold text-slate-600">Image keyword<input className={`${fields} mt-1`} value={draft.image_keyword} placeholder="cat" onChange={(event) => onDraftChange({ ...draft, image_keyword: event.target.value })}/><small className="mt-1 block font-normal text-slate-500">Example: cat (used to find a picture).</small></label>
         <label className="text-xs font-bold text-slate-600 md:col-span-2">Vietnamese clue<textarea className={`${fields} mt-1`} rows={2} value={draft.prompt_vi} onChange={(event) => onDraftChange({ ...draft, prompt_vi: event.target.value })}/><small className="mt-1 block font-normal text-slate-500">Example: Tôi nhìn thấy một con mèo.</small></label>

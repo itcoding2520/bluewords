@@ -5,6 +5,7 @@ import { sentenceBuilderQuestionCounts } from "@/hooks/useSentenceBuilderControl
 import type { SentenceDifficulty } from "@/lib/sentence-builder";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
+import { isDifficultyLevel } from "@/types/difficulty";
 
 export function SentenceBuilderSetup({
   difficulty,
@@ -34,7 +35,7 @@ export function SentenceBuilderSetup({
       <Card className="sentence-builder-panel">
         <div className="sentence-builder-panel-title"><span>🧩</span><div><h2>Build a sentence</h2><p>Use the picture and Vietnamese clue to arrange the word tiles.</p></div></div>
         <label htmlFor="sentence-builder-difficulty">Difficulty</label>
-        <select id="sentence-builder-difficulty" className="sentence-builder-difficulty-select" value={difficulty} onChange={(event) => { onDifficultyChange(event.target.value as SentenceDifficulty); onCategoryChange("all"); }}>
+        <select id="sentence-builder-difficulty" className="sentence-builder-difficulty-select" value={difficulty} onChange={(event) => { if (!isDifficultyLevel(event.target.value)) return; onDifficultyChange(event.target.value); onCategoryChange("all"); }}>
           <option value="easy">Easy · Dễ</option><option value="medium">Medium · Trung bình</option><option value="hard">Hard · Khó</option>
         </select>
         <label className="sentence-builder-category-label" htmlFor="sentence-builder-category">Category</label>
