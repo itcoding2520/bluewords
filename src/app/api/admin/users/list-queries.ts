@@ -8,13 +8,13 @@ function getAdminUserNickname(user: AuthUser, profileNickname?: string | null) {
   return profileNickname ?? (typeof user.user_metadata.nickname === "string" ? user.user_metadata.nickname : "");
 }
 
-function mapAdminUser(user: AuthUser, nickname = getAdminUserNickname(user)) {
+function mapAdminUser(user: AuthUser, profileNicknames?: ReadonlyMap<string, string>) {
   return {
     id: user.id,
     email: user.email ?? null,
     created_at: user.created_at,
     last_sign_in_at: user.last_sign_in_at ?? null,
-    nickname,
+    nickname: getAdminUserNickname(user, profileNicknames?.get(user.id)),
   };
 }
 
@@ -48,7 +48,7 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
   try {
     const nicknames = await getProfileNicknames(adminClient, users);
     return NextResponse.json({
-      users: users.map((user) => mapAdminUser(user, getAdminUserNickname(user, nicknames.get(user.id)))),
+      users: users.map((user) => mapAdminUser(user, nicknames)),
     });
   } catch (error) {
     return NextResponse.json({ error: getErrorMessage(error, "Could not load user profiles.") }, { status: 400 });
@@ -73,9 +73,9 @@ export async function searchAdminUsers(
       return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
     }
     for (const user of data.users) {
-      const nickname = getAdminUserNickname(user, profileNicknames.get(user.id));
-      if (!search || (user.email ?? "").toLowerCase().includes(search) || nickname.toLowerCase().includes(search)) {
-        matches.push(mapAdminUser(user, nickname));
+      const mappedUser = mapAdminUser(user, profileNicknames);
+      if (!search || (mappedUser.email ?? "").toLowerCase().includes(search) || mappedUser.nickname.toLowerCase().includes(search)) {
+        matches.push(mappedUser);
       }
     }
     if (userPage >= data.lastPage || data.users.length === 0) break;
@@ -90,7 +90,7 @@ export async function getAdminUsersPage(adminClient: AdminClient, page: number, 
   try {
     const nicknames = await getProfileNicknames(adminClient, data.users);
     return NextResponse.json({
-      users: data.users.map((user) => mapAdminUser(user, getAdminUserNickname(user, nicknames.get(user.id)))),
+      users: data.users.map((user) => mapAdminUser(user, nicknames)),
       total: data.total,
       page,
       pageSize,
