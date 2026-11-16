@@ -1,17 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { isAdminUser } from "@/lib/supabase/admin-access";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { authorizeAdminRoute } from "@/lib/supabase/admin-route-context";
 import { validateAdminNotificationInput } from "@/lib/admin-notification-input";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  if (!await isAdminUser(supabase, user.id)) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-
-  const adminClient = createAdminClient();
-  if (!adminClient) return NextResponse.json({ error: "Notification sending is not configured." }, { status: 503 });
+  const auth = await authorizeAdminRoute("Notification sending is not configured.");
+  if ("response" in auth) return auth.response;
+  const { user, adminClient } = auth;
 
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
