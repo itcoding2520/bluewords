@@ -1,13 +1,11 @@
 import type { GamePhase } from "@/types/game";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { buildWordMazeRound } from "@/lib/word-maze";
 import { useWordMazeGameplay } from "@/hooks/useWordMazeGameplay";
-import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
-import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
+import { useWordMazeSetupData } from "@/hooks/useWordMazeSetupData";
 
 type Phase = GamePhase;
 export type { MazeWord } from "@/lib/word-maze";
@@ -34,19 +32,11 @@ export function useWordMazeController(input: {
     startedAt,
   });
 
-  const candidates = useMemo(() => {
-    const meanings = new Set<string>();
-    const result: VocabularyWord[] = [];
-    for (const word of words) {
-      const meaning = getPrimaryVocabularyMeaning(word);
-      const key = meaning.toLocaleLowerCase();
-      if (!meaning || !matchesVocabularyCategory(word.category, category) || meanings.has(key)) continue;
-      meanings.add(key);
-      result.push(word);
-    }
-    return result;
-  }, [category, words]);
-  const categoryDropdownCategories = useVocabularyDropdownCategories(categories, words, true);
+  const { candidates, categoryDropdownCategories } = useWordMazeSetupData({
+    words,
+    categories,
+    category,
+  });
   function startGame() {
     const nextRound = buildWordMazeRound(words, category);
     if (nextRound.length < 5 || nextRound.some((question) => question.choices.length < 4)) return;
