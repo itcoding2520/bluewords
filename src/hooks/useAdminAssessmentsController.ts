@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { useAdminAssessmentAssignment } from "@/hooks/useAdminAssessmentAssignment";
 import { useAdminAssessmentsData } from "@/hooks/useAdminAssessmentsData";
 import { useAdminAssessmentsView } from "@/hooks/useAdminAssessmentsView";
@@ -6,8 +6,15 @@ import { useAdminAssessmentsView } from "@/hooks/useAdminAssessmentsView";
 export type AssessmentAdminTab = "tests" | "assignments" | "results";
 export function useAdminAssessmentsController() {
   const [activeTab, setActiveTab] = useState<AssessmentAdminTab>("tests");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [feedback, setFeedback] = useState({ error: "", notice: "" });
+  const setError: Dispatch<SetStateAction<string>> = (value) => setFeedback((current) => ({
+    ...current,
+    error: typeof value === "function" ? value(current.error) : value,
+  }));
+  const setNotice: Dispatch<SetStateAction<string>> = (value) => setFeedback((current) => ({
+    ...current,
+    notice: typeof value === "function" ? value(current.notice) : value,
+  }));
   const { users, assignments, attempts, loading, refresh } = useAdminAssessmentsData(setError);
   const { form, assign } = useAdminAssessmentAssignment({
     setActiveTab,
@@ -21,7 +28,7 @@ export function useAdminAssessmentsController() {
     navigation: { activeTab, setActiveTab },
     data: { users, assignments, attempts, loading },
     form,
-    feedback: { error, notice },
+    feedback,
     view: assessmentView,
     actions: { refresh, assign },
   };
