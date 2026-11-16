@@ -6,6 +6,7 @@ import { useAssessmentRunnerAnswers } from "@/hooks/useAssessmentRunnerAnswers";
 import { fetchAssessmentAttempt } from "@/lib/assessments/api";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
 import { useAssessmentRunnerSubmission } from "@/hooks/useAssessmentRunnerSubmission";
+import { getDurationSeconds } from "@/lib/session-duration";
 
 export function useAssessmentRunnerController(attemptId: string) {
   const [attempt, setAttempt] = useState<AssessmentRunnerAttempt | null>(null);
@@ -30,7 +31,7 @@ export function useAssessmentRunnerController(attemptId: string) {
       const value = await fetchAssessmentAttempt<AssessmentRunnerAttempt>(attemptId, "Could not load test.");
       setAttempt(value);
       setAnswers(value.answers?.length === 10 ? value.answers : Array(10).fill(""));
-      setSeconds(Math.max(0, Math.floor((Date.now() - new Date(value.started_at).getTime()) / 1000)));
+      setSeconds(getDurationSeconds(new Date(value.started_at).getTime(), Date.now()));
     } catch (cause) {
       setError(getErrorMessage(cause, "Could not load test."));
     } finally {

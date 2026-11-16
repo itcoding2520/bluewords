@@ -1,6 +1,7 @@
 import { gradeAssessmentAttempt } from "@/lib/assessments/grading";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import type { AdminClient } from "@/lib/supabase/admin-client";
+import { getDurationSeconds } from "@/lib/session-duration";
 
 export type SubmitAssessmentAttemptResult =
   | { status: "not_found" }
@@ -34,7 +35,7 @@ export async function submitAssessmentAttempt(
 
   const questions = attempt.questions as AssessmentQuestion[];
   const { correctCount, score, result } = gradeAssessmentAttempt(questions, answers);
-  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(attempt.started_at).getTime()) / 1000));
+  const elapsedSeconds = getDurationSeconds(new Date(attempt.started_at).getTime(), Date.now());
   const completedAt = new Date().toISOString();
   const { error: updateError } = await admin.from("assessment_attempts")
     .update({ answers, score, correct_count: correctCount, elapsed_seconds: elapsedSeconds, result, completed_at: completedAt })
