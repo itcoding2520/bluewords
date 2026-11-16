@@ -8,6 +8,7 @@ import {
   submitCommunityWordRequest,
   type PublishableWord,
 } from "@/lib/vocabulary/publish-word-request-submission";
+import { getPublishWordRequestFeedback } from "@/lib/vocabulary/publish-word-request-feedback";
 
 interface UsePublishWordRequestOptions {
   userWords: PublishableWord[];
@@ -63,60 +64,12 @@ export function usePublishWordRequest({
       defaultCategoryNames,
       categories,
     });
-    if (result.status === "default_word") {
-      toast.info(`“${word.word}” is already part of the default vocabulary in ${word.category}.`);
-      return;
-    }
-
-    if (result.status === "category_resolution_error") {
-      toast.error(result.source === "create" && result.code === "23505"
-        ? "This category already has a review request."
-        : result.message);
-      return;
-    }
-    if (result.status === "default_category_unavailable") {
-      toast.error("This shared category is not available for word requests yet. Refresh the page and try again.");
-      return;
-    }
-    if (result.status === "category_not_found") {
-      toast.error("Could not locate the category.");
-      return;
-    }
-    if (result.status === "category_not_available") {
-      toast.error("Words can only be requested in your own or an approved category.");
-      return;
-    }
-    if (result.status === "published_word_lookup_error") {
-      toast.error(result.message);
-      return;
-    }
-    if (result.status === "already_published") {
-      toast.info(`“${word.word}” is already published in ${word.category}.`);
-      return;
-    }
-    if (result.status !== "saved") return;
-
-    if (result.result.status === "error") {
-      toast.error(result.result.source === "create" && result.result.code === "23505"
-        ? `“${word.word}” already has a submission in this category.`
-        : result.result.message);
-      return;
-    }
-    if (result.result.status === "existing") {
-      toast.info(result.result.requestStatus === "removed"
-        ? "This request was removed and cannot be sent again."
-        : "This word already has a review request.");
-      return;
-    }
-    if (result.result.status === "resubmit_unavailable") {
-      toast.info("This word is no longer available to resubmit. Refresh the page and try again.");
-      return;
-    }
-
-    if (result.result.status === "resubmitted" || result.result.status === "created") {
-      setStatus(REQUEST_SENT_MESSAGE);
-      toast.success(result.result.status === "resubmitted" ? "Word request sent again." : "Word request sent.");
-    }
+    const feedback = getPublishWordRequestFeedback(result, word);
+    if (!feedback) return;
+    if (feedback.requestSent) setStatus(REQUEST_SENT_MESSAGE);
+    if (feedback.kind === "error") toast.error(feedback.message);
+    else if (feedback.kind === "info") toast.info(feedback.message);
+    else toast.success(feedback.message);
   }
 
   return publishWord;
