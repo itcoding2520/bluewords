@@ -1,5 +1,9 @@
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentDifficulty } from "@/lib/assessments/assignment-input";
+import {
+  persistAssessmentAssignment,
+  type AssessmentAssignmentPersistenceResult,
+} from "@/lib/assessments/assignment-persistence";
 import { generateAssessmentQuestions } from "@/lib/assessments/question-generation";
 import { loadAssessmentQuestionSources } from "@/lib/assessments/question-sources";
 import {
@@ -13,21 +17,12 @@ type AssignmentDetails = {
   dueAt: Date | null;
 };
 
-type CreatedAssessment = {
-  id: string;
-  title: string;
-  difficulty: AssessmentDifficulty;
-  due_at: string | null;
-};
-
 export type CreateAssessmentAssignmentResult =
   | { status: "source_error"; message: string }
   | { status: "questions_unavailable" }
   | { status: "recipient_lookup_error"; message: string }
   | { status: "no_recipients" }
-  | { status: "assignment_error"; message: string }
-  | { status: "recipient_insert_error"; message: string }
-  | { status: "created"; assignment: CreatedAssessment; recipientCount: number };
+  | AssessmentAssignmentPersistenceResult;
 
 export async function createAssessmentAssignment(
   admin: AdminClient,
@@ -54,23 +49,12 @@ export async function createAssessmentAssignment(
   const recipientIds = recipientResolution.recipientIds;
   if (!recipientIds.length) return { status: "no_recipients" };
 
-  const { data: assignment, error: assignmentError } = await admin.from("assessments").insert({
+  return persistAssessmentAssignment(admin, {
     title,
     difficulty,
+    dueAt,
+    createdBy,
     questions,
-    due_at: dueAt?.toISOString() ?? null,
-    created_by: createdBy,
-  }).select("id,title,difficulty,due_at").single();
-  if (assignmentError || !assignment) {
-    return { status: "assignment_error", message: assignmentError?.message ?? "Could not create assignment." };
-  }
-
-  const recipientRows = recipientIds.map((userId) => ({ assessment_id: assignment.id, user_id: userId }));
-  const { data: recipients, error: recipientError } = await admin.from("assessment_recipients").insert(recipientRows).select("id,user_id");
-  if (recipientError || !recipients) {
-    await admin.from("assessments").delete().eq("id", assignment.id);
-    return { status: "recipient_insert_error", message: recipientError?.message ?? "Could not assign learners." };
-  }
-
-  return { status: "created", assignment, recipientCount: recipientIds.length };
+    recipientIds,
+  });
 }
