@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
+import { firstRelation } from "@/lib/supabase/first-relation";
 import { loadAdminUserEmails } from "@/lib/admin-users";
 import type {
   AdminReviewDecision,
@@ -17,15 +18,16 @@ export async function loadAdminReviewSnapshot(supabase: SupabaseClient) {
   ]);
   if (categoryResult.error || wordResult.error) throw categoryResult.error ?? wordResult.error;
   const pendingCategories = (categoryResult.data ?? []) as AdminReviewSubmission[];
-  const pendingWords = ((wordResult.data ?? []) as unknown as Array<AdminReviewSubmission & {
-    community_categories: { name: string; status: string; image_path: string | null; color: string };
-  }>).map(({ community_categories, ...item }) => ({
-    ...item,
-    category_name: community_categories.name,
-    category_status: community_categories.status,
-    category_image_path: community_categories.image_path,
-    category_color: community_categories.color,
-  }));
+  const pendingWords = (wordResult.data ?? []).flatMap(({ community_categories, ...item }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{
+      ...item,
+      category_name: category.name,
+      category_status: category.status,
+      category_image_path: category.image_path,
+      category_color: category.color,
+    }] : [];
+  });
 
   const [publishedCategoryResult, publishedWordResult] = await Promise.all([
     supabase.from("community_categories").select("id, owner_id, name, color, image_path, status").eq("status", "published").order("name"),
