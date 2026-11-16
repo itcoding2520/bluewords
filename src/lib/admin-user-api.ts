@@ -1,4 +1,5 @@
 import { readResponseJson } from "@/lib/api/read-response-json";
+import { postJson } from "@/lib/api/post-json";
 
 export interface AdminUserSummary {
   id: string;
@@ -35,10 +36,9 @@ export async function sendAdminUserAction(
   action: string,
   values: Record<string, string>
 ): Promise<AdminUserActionResponse> {
-  const response = await fetch("/api/admin/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, ...values }),
-  });
-  return readResponseJson<AdminUserActionResponse>(response, "Could not complete this user action.");
+  return postJson<AdminUserActionResponse>(
+    "/api/admin/users",
+    { action, ...values },
+    "Could not complete this user action.",
+  );
 }

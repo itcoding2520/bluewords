@@ -1,4 +1,5 @@
 import { readResponseJson } from "@/lib/api/read-response-json";
+import { postJson } from "@/lib/api/post-json";
 
 export type AssessmentAdminUser = {
   id: string;
@@ -54,10 +55,9 @@ export async function createAssessmentAssignment(input: {
   recipientIds: string[];
   dueAt: string | null;
 }): Promise<AssessmentAssignmentResponse> {
-  const response = await fetch("/api/admin/assessments", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  return readResponseJson<AssessmentAssignmentResponse>(response, "Could not assign test.");
+  return postJson<AssessmentAssignmentResponse>(
+    "/api/admin/assessments",
+    input,
+    "Could not assign test.",
+  );
 }
