@@ -1,11 +1,12 @@
 import { getErrorMessage } from "@/lib/errors";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SetStateAction } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getCommunityContentStatus, loadAdminCategoryWords } from "@/lib/admin-category-data";
 import type { CategoryTab, CommunityCategory, CommunityWord } from "@/lib/admin-category-data";
 import { getSharedAdminCategory } from "@/lib/admin-category-management-view";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
+import { updateStateField } from "@/lib/state-action";
 
 type SelectedCategory = CommunityCategory | VocabularyCategoryRow;
 
@@ -16,17 +17,20 @@ export function useAdminCategoryWordsData(
   publishedCategoriesByName: Map<string, CommunityCategory>,
   setError: (error: string) => void
 ) {
-  const [words, setWords] = useState<CommunityWord[]>([]);
-  const [wordEmails, setWordEmails] = useState<Record<string, string>>({});
+  const [snapshot, setSnapshot] = useState<{ words: CommunityWord[]; emails: Record<string, string> }>({
+    words: [],
+    emails: {},
+  });
   const [wordsLoading, setWordsLoading] = useState(false);
+  const { words, emails: wordEmails } = snapshot;
+  const setWords = (action: SetStateAction<CommunityWord[]>) => updateStateField(setSnapshot, "words", action);
 
   useEffect(() => {
     if (!selectedCategory) return;
     const sharedCategory = getSharedAdminCategory(activeTab, selectedCategory, publishedCategoriesByName) ?? null;
     if (!sharedCategory) {
       return scheduleDeferredTask(() => {
-        setWords([]);
-        setWordEmails({});
+        setSnapshot({ words: [], emails: {} });
         setWordsLoading(false);
       });
     }
@@ -42,13 +46,11 @@ export function useAdminCategoryWordsData(
           getCommunityContentStatus(activeTab)
         );
         if (cancelled) return;
-        setWords(result.words);
-        setWordEmails(result.emails);
+        setSnapshot(result);
       } catch (cause) {
         if (cancelled) return;
         setError(getErrorMessage(cause, "Could not load words."));
-        setWords([]);
-        setWordEmails({});
+        setSnapshot({ words: [], emails: {} });
       }
       setWordsLoading(false);
     };
