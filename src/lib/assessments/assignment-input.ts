@@ -1,4 +1,5 @@
 import { toVietnamDateKey } from "@/lib/formatDate";
+import { isObjectRecord } from "@/lib/is-object-record";
 import { isDifficultyLevel, type DifficultyLevel } from "@/types/difficulty";
 
 export type AssessmentDifficulty = DifficultyLevel;
@@ -14,11 +15,11 @@ type AssignmentInputResult =
   | { ok: false; message: string };
 
 export function validateAssessmentAssignmentInput(input: unknown): AssignmentInputResult {
-  if (!input || typeof input !== "object") {
+  if (!isObjectRecord(input)) {
     return { ok: false, message: "Invalid request." };
   }
 
-  const body = input as { title?: unknown; difficulty?: unknown; dueAt?: unknown };
+  const body = input;
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const difficulty = String(body.difficulty);
   if (!title || title.length > 120 || !isDifficultyLevel(difficulty)) {

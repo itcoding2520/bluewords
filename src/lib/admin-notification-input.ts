@@ -1,3 +1,5 @@
+import { isObjectRecord } from "@/lib/is-object-record";
+
 type AdminNotificationInput = {
   title: string;
   message: string;
@@ -12,11 +14,11 @@ export function validateAdminNotificationInput(
   input: unknown,
   senderId: string,
 ): AdminNotificationInputResult {
-  if (!input || typeof input !== "object") {
+  if (!isObjectRecord(input)) {
     return { ok: false, message: "Invalid request." };
   }
 
-  const body = input as { title?: unknown; message?: unknown; recipientIds?: unknown };
+  const body = input;
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const message = typeof body.message === "string" ? body.message.trim() : "";
   if (!title || title.length > 120) {
