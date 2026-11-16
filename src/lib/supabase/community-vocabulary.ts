@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
+import { firstRelation } from "@/lib/supabase/first-relation";
 
 export interface CommunityWord {
   id: string;
@@ -16,5 +17,8 @@ export async function loadPublishedCommunityVocabulary(supabase: SupabaseClient)
     .eq("community_categories.status", "published")
     .order("word");
 
-  return (data ?? []) as unknown as CommunityWord[];
+  return (data ?? []).flatMap(({ community_categories, ...word }) => {
+    const category = firstRelation(community_categories);
+    return category ? [{ ...word, community_categories: category }] : [];
+  });
 }
