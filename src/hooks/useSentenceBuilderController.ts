@@ -4,7 +4,7 @@ import { useElapsedTimer } from "@/hooks/useElapsedTimer";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
 import { formatGameDuration } from "@/lib/game-duration";
-import { shuffleAndTake } from "@/lib/random";
+import { shuffleRoundIfAvailable } from "@/lib/random";
 import type { SentenceDifficulty } from "@/lib/sentence-builder";
 import { useSentenceBuilderGameplay } from "@/hooks/useSentenceBuilderGameplay";
 import { useSentenceBuilderSetupData } from "@/hooks/useSentenceBuilderSetupData";
@@ -42,8 +42,8 @@ export function useSentenceBuilderController() {
   });
 
   function start() {
-    if (eligible.length < questionCount) return;
-    const next = shuffleAndTake(eligible, questionCount);
+    const next = shuffleRoundIfAvailable(eligible, questionCount);
+    if (!next) return;
     gameplay.startRound(next);
     setStartedAt(Date.now()); setSeconds(0); resultSave.resetSaveState(); setPhase("playing");
   }

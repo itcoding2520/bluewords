@@ -4,7 +4,7 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { useWordScrambleGameplay } from "@/hooks/useWordScrambleGameplay";
-import { shuffleAndTake } from "@/lib/random";
+import { shuffleRoundIfAvailable } from "@/lib/random";
 import { formatGameDuration } from "@/lib/game-duration";
 import { getElapsedSeconds } from "@/lib/session-duration";
 import { useWordScrambleSetupData } from "@/hooks/useWordScrambleSetupData";
@@ -45,8 +45,8 @@ export function useWordScrambleController(input: {
   const timeLabel = formatGameDuration(session.elapsedSeconds);
 
   function startRound() {
-    if (candidates.length < questionCount) return;
-    const nextRound = shuffleAndTake(candidates, questionCount);
+    const nextRound = shuffleRoundIfAvailable(candidates, questionCount);
+    if (!nextRound) return;
     gameplay.startRound(nextRound);
     session.resetSession();
     setStartedAt(Date.now());

@@ -13,6 +13,12 @@ export function shuffleAndTake<T>(items: T[], count: number): T[] {
   return shuffle(items).slice(0, count);
 }
 
+/** Return a shuffled round only when the source contains enough entries. */
+export function shuffleRoundIfAvailable<T>(items: T[], count: number): T[] | null {
+  if (items.length < count) return null;
+  return shuffleAndTake(items, count);
+}
+
 /** Pick up to `count` unique entries from a copied pool. */
 export function sampleRandom<T>(items: T[], count: number): T[] {
   const pool = [...items];
