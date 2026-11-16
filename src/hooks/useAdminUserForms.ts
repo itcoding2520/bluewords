@@ -1,8 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { AdminUserRecord } from "@/lib/admin-user-api";
 
-export type AdminUser = AdminUserRecord;
-
 interface AddUserFormState {
   email: string;
   nickname: string;
@@ -11,7 +9,7 @@ interface AddUserFormState {
 }
 
 interface EditUserFormState {
-  user: AdminUser | null;
+  user: AdminUserRecord | null;
   email: string;
   nickname: string;
   password: string;
@@ -60,7 +58,7 @@ export function useAdminUserForms() {
     showAddForm: addForm.isOpen,
     setShowAddForm: (action: SetStateAction<boolean>) => updateField(setAddForm, "isOpen", action),
     editingUser: editForm.user,
-    setEditingUser: (action: SetStateAction<AdminUser | null>) => updateField(setEditForm, "user", action),
+    setEditingUser: (action: SetStateAction<AdminUserRecord | null>) => updateField(setEditForm, "user", action),
     editEmail: editForm.email,
     setEditEmail: (action: SetStateAction<string>) => updateField(setEditForm, "email", action),
     editNickname: editForm.nickname,

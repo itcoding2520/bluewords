@@ -4,8 +4,6 @@ import type { AdminUserActionInput, AdminUserRecord } from "@/lib/admin-user-api
 import { useAdminUserMutation } from "@/hooks/useAdminUserMutation";
 import { useAdminUserForms } from "@/hooks/useAdminUserForms";
 
-export type AdminUser = AdminUserRecord;
-
 export function useAdminUsersActions({
   setPage,
   setError,
@@ -28,7 +26,7 @@ export function useAdminUsersActions({
     }
   }
 
-  function openEditUser(user: AdminUser) {
+  function openEditUser(user: AdminUserRecord) {
     setEditForm({
       user,
       email: user.email ?? "",
@@ -54,7 +52,7 @@ export function useAdminUsersActions({
     }
   }
 
-  async function removeUser(user: AdminUser) {
+  async function removeUser(user: AdminUserRecord) {
     const confirmed = await confirmDialog({ title: "Remove user?", description: `Remove ${user.email ?? user.id}? This permanently deletes their account, vocabulary, and history.`, confirmLabel: "Remove" });
     if (!confirmed) return;
     await performUserAction({ action: "delete", userId: user.id });
