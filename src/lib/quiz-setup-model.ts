@@ -3,7 +3,7 @@ import { buildVocabularyGameCategoryOptions, type VocabularyGameCategoryOption }
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { QuizQuestion } from "@/lib/quiz-model";
 import { normalizeQuizAnswer } from "@/lib/supabase/normalize-quiz-answer.mjs";
-import { sampleRandom, shuffle } from "@/lib/quiz-random";
+import { sampleRandom, shuffle } from "@/lib/random";
 
 export type QuizCategoryOption = VocabularyGameCategoryOption;
 

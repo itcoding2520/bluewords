@@ -23,8 +23,6 @@ export type SentenceDrill<T extends SentenceDrillItem = SentenceDrillItem> = {
   tiles?: Array<{ id: number; text: string }>;
 };
 
-export { shuffle as shuffled } from "@/lib/random";
-
 export function createAnswerChoices(correctAnswer: string, distractors: string[]) {
   return shuffle([...new Set([correctAnswer, ...shuffle(distractors).slice(0, 3)])]);
 }

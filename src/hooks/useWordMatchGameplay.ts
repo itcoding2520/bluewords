@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 import type { MatchCardData, MatchPair } from "@/lib/word-match";
 import type { GamePhase } from "@/types/game";
 

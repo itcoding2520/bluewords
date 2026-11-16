@@ -1,4 +1,4 @@
-import { shuffled } from "@/lib/communication/lesson-practice";
+import { shuffle } from "@/lib/random";
 
 type DialogueRecord = { id: string };
 type DialogueTurnRecord = { dialogue_id: string; response_options: string[] | null };
@@ -19,7 +19,7 @@ export function attachDialogueTurns<
     ...dialogue,
     turns: (turnsByDialogue.get(dialogue.id) ?? []).map((turn) => ({
       ...turn,
-      response_options: shuffled(turn.response_options ?? []),
+      response_options: shuffle(turn.response_options ?? []),
     })),
   }));
 }

@@ -5,7 +5,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCategories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { useWordScrambleGameplay } from "@/hooks/useWordScrambleGameplay";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 import { formatGameDuration } from "@/lib/game-duration";
 import { buildWordScrambleCandidates } from "@/lib/word-scramble";
 

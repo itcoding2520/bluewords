@@ -1,5 +1,5 @@
 import type { VocabularyWord } from "@/data/vocabulary";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 import { getPrimaryVocabularyMeaning } from "@/lib/vocabulary/meaning";
 import { matchesVocabularyCategory } from "@/lib/vocabulary/category-filter";
 

@@ -1,6 +1,6 @@
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { QuizMode, QuizQuestion } from "@/lib/quiz-model";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 
 /** Selects and prepares a randomized round without mutating the source pools. */
 export function buildQuizRoundQuestions({

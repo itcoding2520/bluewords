@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers, shuffled } from "@/lib/assessments/server";
+import { createAssessmentAdminClient, getRequestUser, hideQuestionAnswers } from "@/lib/assessments/server";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
+import { shuffle } from "@/lib/random";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
@@ -21,9 +22,9 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   const attemptNumber = (latest?.attempt_number ?? 0) + 1;
   const questions = assessment?.questions as AssessmentQuestion[] | undefined;
   if (!questions || questions.length !== 10) return NextResponse.json({ error: "This test is not available." }, { status: 409 });
-  const randomizedQuestions = shuffled(questions.map((question) => question.type === "vocabulary"
-    ? { ...question, choices: shuffled(question.choices) }
-    : { ...question, tiles: shuffled(question.tiles) }));
+  const randomizedQuestions = shuffle(questions.map((question) => question.type === "vocabulary"
+    ? { ...question, choices: shuffle(question.choices) }
+    : { ...question, tiles: shuffle(question.tiles) }));
   const { data: attempt, error: insertError } = await admin.from("assessment_attempts").insert({ recipient_id: id, user_id: user.id, attempt_number: attemptNumber, questions: randomizedQuestions, answers: [] }).select("id,attempt_number,started_at").single();
   if (insertError || !attempt) return NextResponse.json({ error: insertError?.message ?? "Could not start test." }, { status: 400 });
   await admin.from("assessment_recipients").update({ status: "in_progress" }).eq("id", id).eq("user_id", user.id);

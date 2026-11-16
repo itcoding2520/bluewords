@@ -6,7 +6,7 @@ import { useVocabularyDropdownCategories } from "@/hooks/useVocabularyDropdownCa
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import { buildWordMatchPairs, type MatchCardData } from "@/lib/word-match";
 import { useWordMatchGameplay } from "@/hooks/useWordMatchGameplay";
-import { shuffle } from "@/lib/quiz-random";
+import { shuffle } from "@/lib/random";
 
 type Phase = GamePhase;
 type PairCount = 6 | 8 | 10;

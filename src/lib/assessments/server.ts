@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
-export { shuffle as shuffled } from "@/lib/random";
-
 export function createAssessmentAdminClient() {
   return createAdminClient();
 }
