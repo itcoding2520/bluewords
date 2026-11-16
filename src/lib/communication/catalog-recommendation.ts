@@ -36,18 +36,20 @@ export function getCatalogRecommendation({
     if (row.status === "completed") completedLessonIds.add(row.lesson_id);
     if (row.status === "in_progress") inProgressLessonIds.add(row.lesson_id);
   }
-  const inProgressLesson = lessons.find((lesson) => inProgressLessonIds.has(lesson.id));
-  const incompleteLesson = lessons.find((lesson) => !completedLessonIds.has(lesson.id));
   const difficultyRank: Record<DifficultyLevel, number> = { easy: 0, medium: 1, hard: 2 };
-  const reviewedLessons = lessons.flatMap((lesson) => {
+  let inProgressLesson: Lesson | undefined;
+  let incompleteLesson: Lesson | undefined;
+  let weakestLesson: { lesson: Lesson; accuracy: number } | undefined;
+  let strongestLesson: { lesson: Lesson; accuracy: number } | undefined;
+
+  for (const lesson of lessons) {
+    if (!inProgressLesson && inProgressLessonIds.has(lesson.id)) inProgressLesson = lesson;
+    if (!incompleteLesson && !completedLessonIds.has(lesson.id)) incompleteLesson = lesson;
     const stats = lessonAccuracy[lesson.id];
-    return stats && stats.attempts >= 3 ? [{ lesson, accuracy: stats.correct / stats.attempts }] : [];
-  });
-  let weakestLesson = reviewedLessons[0];
-  let strongestLesson = reviewedLessons[0];
-  for (const reviewedLesson of reviewedLessons.slice(1)) {
-    if (reviewedLesson.accuracy < weakestLesson.accuracy) weakestLesson = reviewedLesson;
-    if (reviewedLesson.accuracy > strongestLesson.accuracy) strongestLesson = reviewedLesson;
+    if (!stats || stats.attempts < 3) continue;
+    const reviewedLesson = { lesson, accuracy: stats.correct / stats.attempts };
+    if (!weakestLesson || reviewedLesson.accuracy < weakestLesson.accuracy) weakestLesson = reviewedLesson;
+    if (!strongestLesson || reviewedLesson.accuracy > strongestLesson.accuracy) strongestLesson = reviewedLesson;
   }
   let adaptiveLesson: Lesson | undefined;
   let adaptiveLabel = "";
