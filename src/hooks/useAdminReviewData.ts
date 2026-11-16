@@ -4,8 +4,7 @@ import { useSupabaseClient } from "@/hooks/useSupabaseClient";
 import { getAdminCachedData, invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { loadAdminReviewSnapshot } from "@/lib/admin-review-api";
 import { scheduleDeferredTask } from "@/lib/schedule-deferred-task";
-import { updateStateField } from "@/lib/state-action";
-import type { SetStateAction } from "react";
+import { useStateField } from "@/hooks/useStateField";
 export type { AdminReviewSubmission, PublishedCategory, PublishedWord } from "@/lib/admin-review-types";
 
 type AdminReviewSnapshot = Awaited<ReturnType<typeof loadAdminReviewSnapshot>>;
@@ -22,14 +21,10 @@ export function useAdminReviewData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { categories, words, publishedCategories, publishedWords, ownerEmails } = snapshot;
-  const setCategories = (action: SetStateAction<AdminReviewSnapshot["categories"]>) =>
-    updateStateField(setSnapshot, "categories", action);
-  const setWords = (action: SetStateAction<AdminReviewSnapshot["words"]>) =>
-    updateStateField(setSnapshot, "words", action);
-  const setPublishedCategories = (action: SetStateAction<AdminReviewSnapshot["publishedCategories"]>) =>
-    updateStateField(setSnapshot, "publishedCategories", action);
-  const setPublishedWords = (action: SetStateAction<AdminReviewSnapshot["publishedWords"]>) =>
-    updateStateField(setSnapshot, "publishedWords", action);
+  const setCategories = useStateField(setSnapshot, "categories");
+  const setWords = useStateField(setSnapshot, "words");
+  const setPublishedCategories = useStateField(setSnapshot, "publishedCategories");
+  const setPublishedWords = useStateField(setSnapshot, "publishedWords");
 
   const refresh = useCallback(async (force = true) => {
     setLoading(true);
