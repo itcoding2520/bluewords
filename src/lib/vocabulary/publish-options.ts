@@ -20,15 +20,18 @@ function buildCategoryRequestOptions(
   const normalizedRequests = requests.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
   const normalizedCategories = categories.map((item) => ({ item, normalizedName: normalizeVocabularyText(item.name) }));
   const communityCategoryNames = new Map(normalizedRequests.map(({ item, normalizedName }) => [item.id, normalizedName]));
-  const ownCommunityCategoryIds = new Set(normalizedRequests
-    .filter(({ item }) => item.owner_id && item.status !== "removed")
-    .map(({ item }) => item.id));
-  const ownCommunityCategoryNames = new Set(normalizedRequests
-    .filter(({ item }) => item.owner_id && item.status !== "removed")
-    .map(({ normalizedName }) => normalizedName));
-  const blockedCategoryNames = new Set(normalizedRequests
-    .filter(({ item }) => item.status === "pending" || item.status === "published")
-    .map(({ normalizedName }) => normalizedName));
+  const ownCommunityCategoryIds = new Set<string>();
+  const ownCommunityCategoryNames = new Set<string>();
+  const blockedCategoryNames = new Set<string>();
+  for (const { item, normalizedName } of normalizedRequests) {
+    if (item.owner_id && item.status !== "removed") {
+      ownCommunityCategoryIds.add(item.id);
+      ownCommunityCategoryNames.add(normalizedName);
+    }
+    if (item.status === "pending" || item.status === "published") {
+      blockedCategoryNames.add(normalizedName);
+    }
+  }
   const userCategoryEntries = normalizedCategories.filter(({ item, normalizedName }) => {
     const isOwnedCommunityCategory = !isCommunityCategoryId(item.id)
       || ownCommunityCategoryIds.has(getCommunityCategoryId(item.id) ?? "");
