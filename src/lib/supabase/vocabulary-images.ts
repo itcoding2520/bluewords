@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { requireAuthenticatedUser } from "@/lib/supabase/authenticated-user";
-import { getStandardImageExtension, MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
+import { MAX_STANDARD_IMAGE_SIZE, validateStandardImage } from "@/lib/image-validation";
 import { VOCABULARY_IMAGES_BUCKET } from "@/lib/supabase/vocabulary-image-config";
 import { invalidateVocabularyImageUrls } from "@/lib/supabase/vocabulary-image-urls";
+import { uploadAuthenticatedImage } from "@/lib/supabase/storage-image-upload";
 
 export { VOCABULARY_IMAGES_BUCKET } from "@/lib/supabase/vocabulary-image-config";
 export { createVocabularyImageUrl, getCachedVocabularyImageUrl } from "@/lib/supabase/vocabulary-image-urls";
@@ -21,20 +22,13 @@ export async function uploadVocabularyImage(
   const validationError = validateVocabularyImage(file);
   if (validationError) throw new Error(validationError);
 
-  const user = await requireAuthenticatedUser(supabase, "You must be logged in to upload an image.");
-
-  const extension = getStandardImageExtension(file.type);
-  const path = `${user.id}/${wordId}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage
-    .from(VOCABULARY_IMAGES_BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (error) throw error;
-  return path;
+  return uploadAuthenticatedImage({
+    supabase,
+    bucket: VOCABULARY_IMAGES_BUCKET,
+    ownerFolder: wordId,
+    file,
+    authenticationError: "You must be logged in to upload an image.",
+  });
 }
 
 export async function deleteVocabularyImages(paths: Array<string | null | undefined>) {
