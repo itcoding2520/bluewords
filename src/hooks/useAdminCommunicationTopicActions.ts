@@ -7,6 +7,7 @@ import { createCommunicationTopicDraft } from "@/lib/communication/admin-drafts"
 import { removeCommunicationTopic, saveCommunicationTopic } from "@/lib/communication/admin-actions";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationTopic } from "@/lib/supabase/communication-admin-types";
+import { runAdminCommunicationRequest } from "@/hooks/admin-communication-request";
 
 
 type Props = {
@@ -45,9 +46,9 @@ export function useAdminCommunicationTopicActions({
       return toast.error("Use lowercase letters, numbers, and single hyphens in the situation slug.");
     }
 
-    setBusy(true);
-    const { error } = await saveCommunicationTopic(supabase, editingId, payload);
-    setBusy(false);
+    const error = await runAdminCommunicationRequest(setBusy, () =>
+      saveCommunicationTopic(supabase, editingId, payload)
+    );
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Topic updated." : "Topic added.");

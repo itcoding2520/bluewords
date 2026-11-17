@@ -7,6 +7,7 @@ import {
   removeCommunicationItemsForLesson,
   removeCommunicationLessonsForTopic,
 } from "@/lib/communication/admin-actions";
+import { runAdminCommunicationRequest } from "@/hooks/admin-communication-request";
 
 
 type Props = {
@@ -47,9 +48,9 @@ export function useAdminCommunicationBulkActions({
       confirmLabel: "Delete all lessons",
     })) return;
 
-    setBusy(true);
-    const { error } = await removeCommunicationLessonsForTopic(supabase, selectedTopicId);
-    setBusy(false);
+    const error = await runAdminCommunicationRequest(setBusy, () =>
+      removeCommunicationLessonsForTopic(supabase, selectedTopicId)
+    );
     if (error) return toast.error(error.message);
 
     onLessonsDeleted();
@@ -66,9 +67,9 @@ export function useAdminCommunicationBulkActions({
       confirmLabel: "Delete all items",
     })) return;
 
-    setBusy(true);
-    const { error } = await removeCommunicationItemsForLesson(supabase, selectedLessonId);
-    setBusy(false);
+    const error = await runAdminCommunicationRequest(setBusy, () =>
+      removeCommunicationItemsForLesson(supabase, selectedLessonId)
+    );
     if (error) return toast.error(error.message);
 
     onItemsDeleted();

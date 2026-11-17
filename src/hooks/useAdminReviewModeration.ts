@@ -1,15 +1,38 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { updateAdminReviewStatus } from "@/lib/admin-review-api";
-import type { useAdminReviewData } from "@/hooks/useAdminReviewData";
+import type {
+  AdminReviewSubmission,
+  PublishedCategory,
+  PublishedWord,
+} from "@/lib/admin-review-types";
 import {
   mapPublishedCategorySubmission,
   mapPublishedWordSubmission,
 } from "@/lib/admin-review-mapping";
 
-type AdminReviewData = ReturnType<typeof useAdminReviewData>;
+interface AdminReviewModerationData {
+  categories: AdminReviewSubmission[];
+  setCategories: Dispatch<SetStateAction<AdminReviewSubmission[]>>;
+  words: AdminReviewWordSubmission[];
+  setWords: Dispatch<SetStateAction<AdminReviewWordSubmission[]>>;
+  setError: (error: string) => void;
+  setPublishedCategories: Dispatch<SetStateAction<PublishedCategory[]>>;
+  setPublishedWords: Dispatch<SetStateAction<PublishedWord[]>>;
+}
+
+interface AdminReviewWordSubmission extends AdminReviewSubmission {
+  word: string;
+  meaning: string;
+  category_id: string;
+  category_name: string;
+  category_status: string;
+  category_image_path: string | null;
+  category_color: string;
+}
 
 export function useAdminReviewModeration(supabase: SupabaseClient, {
   categories,
@@ -19,7 +42,7 @@ export function useAdminReviewModeration(supabase: SupabaseClient, {
   setError,
   setPublishedCategories,
   setPublishedWords,
-}: AdminReviewData) {
+}: AdminReviewModerationData) {
   const [busy, setBusy] = useState<string | null>(null);
   const [blockedWordId, setBlockedWordId] = useState<string | null>(null);
 

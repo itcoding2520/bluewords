@@ -7,6 +7,7 @@ import { createCommunicationLessonDraft } from "@/lib/communication/admin-drafts
 import { removeCommunicationLesson, saveCommunicationLesson } from "@/lib/communication/admin-actions";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationTopic } from "@/lib/supabase/communication-admin-types";
+import { runAdminCommunicationRequest } from "@/hooks/admin-communication-request";
 
 
 type Props = {
@@ -52,9 +53,9 @@ export function useAdminCommunicationLessonActions({
       return toast.error("The lesson key must be between 2 and 80 characters.");
     }
 
-    setBusy(true);
-    const { error } = await saveCommunicationLesson(supabase, editingId, payload);
-    setBusy(false);
+    const error = await runAdminCommunicationRequest(setBusy, () =>
+      saveCommunicationLesson(supabase, editingId, payload)
+    );
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Lesson updated." : "Lesson added.");

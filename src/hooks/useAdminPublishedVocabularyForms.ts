@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import {
   createPublishedCategory,
   createPublishedWord,
+  getPublishedVocabularyMutationError,
 } from "@/lib/admin-published-vocabulary-api";
 
 export function useAdminPublishedVocabularyForms(
@@ -21,7 +22,7 @@ export function useAdminPublishedVocabularyForms(
     const result = await createPublishedCategory(supabase, name);
     if (!result.authenticated) return;
     if (result.error) {
-      setError(result.error.code === "23505" ? "That category already exists." : result.error.message);
+      setError(getPublishedVocabularyMutationError(result.error, "That category already exists.") ?? "");
     } else {
       setNewCategory("");
       await refresh();
@@ -38,7 +39,10 @@ export function useAdminPublishedVocabularyForms(
     });
     if (!result.authenticated) return;
     if (result.error) {
-      setError(result.error.code === "23505" ? "That word already exists in this category." : result.error.message);
+      setError(getPublishedVocabularyMutationError(
+        result.error,
+        "That word already exists in this category."
+      ) ?? "");
     } else {
       setNewWord("");
       setNewMeaning("");

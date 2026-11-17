@@ -3,6 +3,7 @@ import { getCommunityContentStatus, type CategoryTab, type CommunityCategory, ty
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { isDefaultVocabularyCategory } from "@/lib/vocabulary/default-categories";
+import { getFirstImageByKey } from "@/lib/vocabulary/first-image-by-key";
 
 export type AdminCategory = VocabularyCategoryRow | CommunityCategory;
 
@@ -89,11 +90,11 @@ export function deriveAdminCategoryDetails({
   emails: Record<string, string>;
   words: CommunityWord[];
 }) {
-  const defaultFallbackImagesByCategory = new Map<string, string>();
-  for (const [categoryName, categoryWords] of defaultWordsByCategory) {
-    const firstImage = categoryWords.find((word) => word.imagePath)?.imagePath;
-    if (firstImage) defaultFallbackImagesByCategory.set(categoryName, firstImage);
-  }
+  const defaultFallbackImagesByCategory = getFirstImageByKey(
+    defaultWordsByCategory.entries(),
+    ([categoryName]) => categoryName,
+    ([, categoryWords]) => categoryWords.find((word) => word.imagePath)?.imagePath,
+  );
   const firstCommunityImage = words.find((word) => word.image_path)?.image_path;
 
   const visibleCategoryRows: AdminCategoryListRow[] = visibleCategories.map((category) => {
