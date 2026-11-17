@@ -4,6 +4,7 @@ import type { PublishedCategory, PublishedWord } from "@/lib/admin-review-types"
 import {
   editPublishedCategory as editPublishedCategoryRecord,
   editPublishedWord as editPublishedWordRecord,
+  getPublishedVocabularyMutationError,
   removePublishedAdminReview,
 } from "@/lib/admin-published-vocabulary-api";
 
@@ -46,20 +47,24 @@ export function useAdminPublishedVocabularyActions(
       word.trim(),
       meaning.trim()
     );
-    if (updateError) setError(updateError.code === "23505"
-      ? "A word with that spelling already exists in this category."
-      : updateError.message);
-    else await refresh();
+    if (updateError) {
+      setError(getPublishedVocabularyMutationError(
+        updateError,
+        "A word with that spelling already exists in this category."
+      ) ?? "");
+    } else await refresh();
   }
 
   async function editPublishedCategory(item: PublishedCategory) {
     const name = window.prompt("Edit category name", item.name);
     if (name === null || !name.trim()) return;
     const updateError = await editPublishedCategoryRecord(supabase, item.id, name.trim());
-    if (updateError) setError(updateError.code === "23505"
-      ? "A category with that name already exists."
-      : updateError.message);
-    else await refresh();
+    if (updateError) {
+      setError(getPublishedVocabularyMutationError(
+        updateError,
+        "A category with that name already exists."
+      ) ?? "");
+    } else await refresh();
   }
 
   return {

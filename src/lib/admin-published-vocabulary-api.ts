@@ -2,6 +2,14 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import type { AdminReviewTable } from "@/lib/admin-review-types";
 import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
 
+export function getPublishedVocabularyMutationError(
+  error: { code: string; message: string } | null,
+  duplicateMessage: string
+) {
+  if (!error) return null;
+  return error.code === "23505" ? duplicateMessage : error.message;
+}
+
 export async function createPublishedCategory(supabase: SupabaseClient, name: string) {
   const user = await getCurrentUserOrNull(supabase);
   if (!user) return { authenticated: false as const, error: null };
