@@ -5,6 +5,7 @@ import type {
 } from "@/lib/supabase/categories";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
+import { runAdminBusyAction } from "@/hooks/admin-busy-action";
 
 export function useManageCategoriesController() {
   const confirmDialog = useConfirmDialog();
@@ -32,9 +33,10 @@ export function useManageCategoriesController() {
     event.preventDefault();
     if (!newName.trim() || isSaving) return;
 
-    setIsSaving(true);
-    const added = await addCategory({ name: newName, color: newColor });
-    setIsSaving(false);
+    let added = false;
+    await runAdminBusyAction(setIsSaving, async () => {
+      added = Boolean(await addCategory({ name: newName, color: newColor }));
+    });
     if (added) {
       setNewName("");
       setNewColor("blue");
@@ -45,14 +47,15 @@ export function useManageCategoriesController() {
     event.preventDefault();
     if (!editing || !editName.trim() || isSaving) return;
 
-    setIsSaving(true);
-    const updated = await updateCategory(
-      editing.id,
-      editing.is_default
-        ? { color: editColor }
-        : { name: editName, color: editColor }
-    );
-    setIsSaving(false);
+    let updated = false;
+    await runAdminBusyAction(setIsSaving, async () => {
+      updated = Boolean(await updateCategory(
+        editing.id,
+        editing.is_default
+          ? { color: editColor }
+          : { name: editName, color: editColor }
+      ));
+    });
     if (updated) setEditing(null);
   }
 
@@ -65,9 +68,10 @@ export function useManageCategoriesController() {
     });
     if (!confirmed) return;
 
-    setIsSaving(true);
-    const deleted = await deleteCategory(category.id);
-    setIsSaving(false);
+    let deleted = false;
+    await runAdminBusyAction(setIsSaving, async () => {
+      deleted = Boolean(await deleteCategory(category.id));
+    });
     if (deleted && editing?.id === category.id) setEditing(null);
   }
 
