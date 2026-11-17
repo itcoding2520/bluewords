@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import type { Item } from "@/lib/communication/lesson-types";
-import { createAnswerChoices, createSentenceDrills } from "@/lib/communication/lesson-practice";
+import { createAnswerChoices } from "@/lib/communication/lesson-practice";
+import { createSentenceDrills } from "@/lib/communication/lesson-drills";
 
 function getOtherItemValues(items: Item[], currentItemId: string, getValue: (item: Item) => string) {
   const values: string[] = [];

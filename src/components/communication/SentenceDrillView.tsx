@@ -2,7 +2,7 @@
 
 import { ArrowRight, Check, Volume2 } from "lucide-react";
 import type { Item } from "@/lib/communication/lesson-types";
-import type { SentenceDrill } from "@/lib/communication/lesson-practice";
+import type { SentenceDrill } from "@/lib/communication/lesson-drills";
 import { normalizeSentence } from "@/lib/communication/lesson-practice";
 import { SentenceCompletionChoices } from "@/components/communication/SentenceCompletionChoices";
 import { SentenceWordOrderExercise } from "@/components/communication/SentenceWordOrderExercise";
