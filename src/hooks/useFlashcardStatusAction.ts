@@ -7,6 +7,7 @@ import { buildFlashcardDeck, filterFlashcardWords, shuffleDeck } from "@/lib/fla
 import { recordVocabularyReview } from "@/lib/supabase/reviews";
 import type { VocabularyReviewScheduleRow } from "@/types/database";
 import type { FlashcardReviewMode } from "@/types/flashcards";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 interface UseFlashcardStatusActionOptions {
   card: Flashcard | undefined;
@@ -47,8 +48,7 @@ export function useFlashcardStatusAction({
 
     const remembered = card.word.status === "learning";
     const nextStatus: VocabularyStatus = remembered ? "mastered" : "learning";
-    setIsTogglingStatus(true);
-    try {
+    await runWithBusyState(setIsTogglingStatus, async () => {
       const updated = await toggleMastered(card.word.id, card.word.status);
       if (!updated) return;
 
@@ -78,9 +78,7 @@ export function useFlashcardStatusAction({
         console.error("Failed to save flashcard review:", error);
         toast.error("Status changed, but review activity could not be recorded.");
       }
-    } finally {
-      setIsTogglingStatus(false);
-    }
+    });
   }
 
   return { isTogglingStatus, handleToggleStatus };
