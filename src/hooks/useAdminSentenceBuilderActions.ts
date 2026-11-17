@@ -2,7 +2,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
-import { runAdminBusyAction } from "@/hooks/admin-busy-action";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import {
   removeSentenceBuilderQuestion,
@@ -44,7 +44,7 @@ export function useAdminSentenceBuilderActions({
       toast.error("Complete the required fields and add at least two answer tokens.");
       return;
     }
-    await runAdminBusyAction(setBusy, async () => {
+    await runWithBusyState(setBusy, async () => {
       try {
         const { error } = await saveSentenceBuilderQuestion(supabase, editing, input, new Date().toISOString());
         if (error) throw error;

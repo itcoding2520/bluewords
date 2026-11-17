@@ -5,7 +5,7 @@ import type {
 } from "@/lib/supabase/categories";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { useConfirmDialog } from "@/contexts/confirm-dialog";
-import { runAdminBusyAction } from "@/hooks/admin-busy-action";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 export function useManageCategoriesController() {
   const confirmDialog = useConfirmDialog();
@@ -34,7 +34,7 @@ export function useManageCategoriesController() {
     if (!newName.trim() || isSaving) return;
 
     let added = false;
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       added = Boolean(await addCategory({ name: newName, color: newColor }));
     });
     if (added) {
@@ -48,7 +48,7 @@ export function useManageCategoriesController() {
     if (!editing || !editName.trim() || isSaving) return;
 
     let updated = false;
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       updated = Boolean(await updateCategory(
         editing.id,
         editing.is_default
@@ -69,7 +69,7 @@ export function useManageCategoriesController() {
     if (!confirmed) return;
 
     let deleted = false;
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       deleted = Boolean(await deleteCategory(category.id));
     });
     if (deleted && editing?.id === category.id) setEditing(null);

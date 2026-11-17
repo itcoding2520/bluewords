@@ -1,7 +1,7 @@
 import { getErrorMessage } from "@/lib/errors";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
-import { runAdminBusyAction } from "@/hooks/admin-busy-action";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 import { downloadCsvFile } from "@/lib/download-csv";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import {
@@ -20,7 +20,7 @@ export function useAdminSentenceBuilderCsvActions(input: {
   async function importCsv(file?: File) {
     if (!file) return;
     try {
-      await runAdminBusyAction(input.setBusy, async () => {
+      await runWithBusyState(input.setBusy, async () => {
         try {
           const rows = parseSentenceBuilderCsv(await file.text());
           const { error } = await importSentenceBuilderQuestions(input.supabase, rows);

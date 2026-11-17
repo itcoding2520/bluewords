@@ -9,7 +9,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { updateSharedCategoryDetails } from "@/lib/category-management-api";
 import type { useCategoryManagementFormState } from "@/hooks/useCategoryManagementFormState";
 import { getCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
-import { runAdminBusyAction } from "@/hooks/admin-busy-action";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 type CategoryMutations = Pick<ReturnType<typeof useVocabulary>, "addCategory" | "updateCategory" | "deleteCategory">;
 
@@ -39,7 +39,7 @@ export function useCategoryManagementActions({
       const validationError = validateCategoryImage(form.newImage);
       if (validationError) { toast.error(validationError); return; }
     }
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       let uploadedPath: string | null = null;
       try {
         const id = form.newImage ? crypto.randomUUID() : undefined;
@@ -65,7 +65,7 @@ export function useCategoryManagementActions({
       const validationError = validateCategoryImage(form.editImage);
       if (validationError) { toast.error(validationError); return; }
     }
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       try {
         const communityId = getCommunityCategoryId(editing.id);
         let updated = true;
@@ -94,7 +94,7 @@ export function useCategoryManagementActions({
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
-    await runAdminBusyAction(setIsSaving, async () => {
+    await runWithBusyState(setIsSaving, async () => {
       await deleteCategory(category.id);
     });
   }
