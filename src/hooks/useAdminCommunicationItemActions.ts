@@ -8,6 +8,7 @@ import { removeCommunicationItem, saveCommunicationItem } from "@/lib/communicat
 import { isOptionalHttpUrl } from "@/lib/communication/url-validation";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationLesson, CommunicationLessonItem } from "@/lib/supabase/communication-admin-types";
+import { runAdminCommunicationRequest } from "@/hooks/admin-communication-request";
 
 
 type Props = {
@@ -61,9 +62,9 @@ export function useAdminCommunicationItemActions({
       return toast.error("Audio URL must be a valid HTTP or HTTPS link.");
     }
 
-    setBusy(true);
-    const { error } = await saveCommunicationItem(supabase, editingId, payload);
-    setBusy(false);
+    const error = await runAdminCommunicationRequest(setBusy, () =>
+      saveCommunicationItem(supabase, editingId, payload)
+    );
     if (error) return toast.error(error.message);
 
     toast.success(editingId ? "Learning item updated." : "Learning item added.");
