@@ -1,4 +1,5 @@
 import type { Assignment } from "@/lib/assignments/types";
+import { getJson } from "@/lib/api/get-json";
 import { readResponseJson } from "@/lib/api/read-response-json";
 
 type AssignmentsResponse = {
@@ -7,8 +8,11 @@ type AssignmentsResponse = {
 };
 
 export async function fetchMyAssignments(): Promise<Assignment[]> {
-  const response = await fetch("/api/assessments", { cache: "no-store" });
-  const data = await readResponseJson<AssignmentsResponse>(response, "Could not load assignments.");
+  const data = await getJson<AssignmentsResponse>(
+    "/api/assessments",
+    "Could not load assignments.",
+    { cache: "no-store" },
+  );
   return data.assignments;
 }
 

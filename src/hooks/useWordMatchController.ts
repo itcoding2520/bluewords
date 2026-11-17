@@ -5,7 +5,7 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useGameSessionTracking } from "@/hooks/useGameSessionTracking";
 import type { MatchCardData } from "@/lib/word-match";
 import { useWordMatchGameplay } from "@/hooks/useWordMatchGameplay";
-import { shuffleAndTake } from "@/lib/random";
+import { shuffleRoundIfAvailable } from "@/lib/random";
 import { useWordMatchSetupData } from "@/hooks/useWordMatchSetupData";
 
 type Phase = GamePhase;
@@ -43,8 +43,8 @@ export function useWordMatchController(input: {
   });
 
   function startRound() {
-    if (availablePairs.length < pairCount) return;
-    const nextPairs = shuffleAndTake(availablePairs, pairCount);
+    const nextPairs = shuffleRoundIfAvailable(availablePairs, pairCount);
+    if (!nextPairs) return;
     const now = Date.now();
     gameplay.startRound(nextPairs);
     session.resetSession();

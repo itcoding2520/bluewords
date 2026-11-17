@@ -3,6 +3,7 @@ import { ArrowRight, BookOpenCheck, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatLocalDate, toVietnamDateKey } from "@/lib/formatDate";
 import type { Assignment } from "@/lib/assignments/types";
+import { getAssignmentCardState } from "@/lib/assignments/status";
 import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export function AssignmentCard({
@@ -20,9 +21,16 @@ export function AssignmentCard({
   const latest = assignment.attempts[0];
   const due = assessment.dueAt ? new Date(assessment.dueAt) : null;
   const overdue = due && Number.isFinite(due.getTime()) && toVietnamDateKey(due) < toVietnamDateKey(new Date());
+  const cardState = getAssignmentCardState({
+    status: assignment.status,
+    latestResult: latest?.result,
+    latestScore: latest?.score,
+    overdue: Boolean(overdue),
+    starting: starting === assignment.id,
+  });
 
   return (
-    <article className={`assignment-card ${latest?.result === "failed" ? "is-retry" : ""}`}>
+    <article className={`assignment-card ${cardState.articleClassName}`}>
       <div className="assignment-emoji"><BookOpenCheck size={25} /></div>
       <div className="assignment-card-main">
         <h2>{assessment.title}</h2>
@@ -30,11 +38,7 @@ export function AssignmentCard({
         <p>{ASSESSMENT_QUESTION_COUNT} questions <i>·</i> vocabulary and sentence building <i>·</i> about 10 minutes</p>
       </div>
       <div className="assignment-status">
-        <span className={latest?.result === "failed" ? "failed" : assignment.status === "in_progress" ? "in-progress" : "not-started"}>
-          {latest?.result === "failed"
-            ? `Try again · last score ${latest.score}`
-            : assignment.status === "in_progress" ? "In progress" : "Not started"}
-        </span>
+        <span className={cardState.statusClassName}>{cardState.statusLabel}</span>
         {due && (
           <small className={overdue ? "overdue" : undefined}>
             <CalendarDays size={14} />{overdue ? "Overdue · " : "Due "}{formatLocalDate(due)}
@@ -42,11 +46,7 @@ export function AssignmentCard({
         )}
       </div>
       <Button onClick={() => void onStart(assignment.id)} disabled={starting !== null}>
-        {starting === assignment.id
-          ? "Starting…"
-          : latest?.result === "failed" ? "Try again"
-            : assignment.status === "in_progress" ? "Continue"
-              : overdue ? "Start late" : "Start test"}
+        {cardState.actionLabel}
         <ArrowRight size={17} />
       </Button>
     </article>

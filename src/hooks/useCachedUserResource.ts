@@ -13,7 +13,7 @@ export function useCachedUserResource<T>(
 ) {
   const [state, setState] = useState<CachedUserResourceState<T>>(() => {
     const cached = getCached(userId);
-    return cached
+    return cached !== undefined
       ? { userId, status: "loaded", data: cached }
       : { userId, status: "loading" };
   });

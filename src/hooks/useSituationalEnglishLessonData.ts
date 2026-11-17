@@ -81,20 +81,14 @@ export function useSituationalEnglishLessonData(
           const [reviewResult, progressResult] = learnerProgressResult;
           if (reviewResult.error) throw reviewResult.error;
           if (active) setReviews(Object.fromEntries((reviewResult.data ?? []).map((row) => [row.item_id, { status: row.status, review_count: row.review_count, correct_count: row.correct_count }])));
-          if (!progressResult.error && !progressResult.data) {
+          const initializeProgress = !progressResult.error && !progressResult.data;
+          const resumeProgress = progressResult.data?.status === "not_started";
+          if (initializeProgress || resumeProgress) {
             const { error } = await startSituationalEnglishLessonProgress(
               supabase,
               user.id,
               lessonId,
-              false
-            );
-            if (!error) invalidateCommunicationCatalogCache(user.id);
-          } else if (progressResult.data?.status === "not_started") {
-            const { error } = await startSituationalEnglishLessonProgress(
-              supabase,
-              user.id,
-              lessonId,
-              true
+              resumeProgress,
             );
             if (!error) invalidateCommunicationCatalogCache(user.id);
           }

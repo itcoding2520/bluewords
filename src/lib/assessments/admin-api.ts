@@ -1,4 +1,4 @@
-import { readResponseJson } from "@/lib/api/read-response-json";
+import { getJson } from "@/lib/api/get-json";
 import { postJson } from "@/lib/api/post-json";
 
 export type AssessmentAdminUser = {
@@ -44,8 +44,11 @@ type AssessmentAdminListResponse = AssessmentAdminSnapshot & { error?: string };
 type AssessmentAssignmentResponse = { recipients?: number | string; error?: string };
 
 export async function fetchAssessmentAdminSnapshot(): Promise<AssessmentAdminSnapshot> {
-  const response = await fetch("/api/admin/assessments", { cache: "no-store" });
-  return readResponseJson<AssessmentAdminListResponse>(response, "Could not load assignments.");
+  return getJson<AssessmentAdminListResponse>(
+    "/api/admin/assessments",
+    "Could not load assignments.",
+    { cache: "no-store" },
+  );
 }
 
 export async function createAssessmentAssignment(input: {

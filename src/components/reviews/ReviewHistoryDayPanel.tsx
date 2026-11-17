@@ -4,7 +4,7 @@ import { ReviewHistoryEntry } from "@/components/reviews/ReviewHistoryEntry";
 import { formatFullLocalDate } from "@/lib/formatDate";
 import type { DailyReviewGroup } from "@/lib/review-history-view";
 import type { VocabularyReviewWithWord } from "@/lib/supabase/reviews";
-import { getNextPage, getPreviousPage } from "@/lib/pagination";
+import { createPageNavigationActions } from "@/lib/pagination";
 
 function formatDay(day: string): string {
   const date = new Date(`${day}T12:00:00`);
@@ -31,6 +31,7 @@ export function ReviewHistoryDayPanel({
   pageCount: number;
   onPageChange: (update: (page: number) => number) => void;
 }) {
+  const pageNavigation = createPageNavigationActions(pageCount, onPageChange);
   if (!selectedGroup) {
     return (
       <Card className="px-5 py-10 text-center">
@@ -56,8 +57,8 @@ export function ReviewHistoryDayPanel({
           <span>Showing {firstVisible}–{lastVisible} of {selectedGroup.reviews.length} words</span>
           <div className="flex items-center gap-2">
             <span>Page {currentPage} of {pageCount}</span>
-            <button type="button" aria-label="Previous review history page" disabled={currentPage <= 1} onClick={() => onPageChange((value) => getPreviousPage(value))} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={18} /></button>
-            <button type="button" aria-label="Next review history page" disabled={currentPage >= pageCount} onClick={() => onPageChange((value) => getNextPage(value, pageCount))} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={18} /></button>
+            <button type="button" aria-label="Previous review history page" disabled={currentPage <= 1} onClick={pageNavigation.previousPage} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={18} /></button>
+            <button type="button" aria-label="Next review history page" disabled={currentPage >= pageCount} onClick={pageNavigation.nextPage} className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={18} /></button>
           </div>
         </div>
       )}

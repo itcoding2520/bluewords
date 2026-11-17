@@ -1,4 +1,4 @@
-import { readResponseJson } from "@/lib/api/read-response-json";
+import { getJson } from "@/lib/api/get-json";
 import { postJson } from "@/lib/api/post-json";
 
 type AssessmentAttemptResponse<T> = {
@@ -14,8 +14,11 @@ export async function fetchAssessmentAttempt<T>(
   attemptId: string,
   fallbackError: string,
 ): Promise<T> {
-  const response = await fetch(`/api/assessments/attempts/${attemptId}`, { cache: "no-store" });
-  const data = await readResponseJson<AssessmentAttemptResponse<T>>(response, fallbackError);
+  const data = await getJson<AssessmentAttemptResponse<T>>(
+    `/api/assessments/attempts/${attemptId}`,
+    fallbackError,
+    { cache: "no-store" },
+  );
   return data.attempt;
 }
 

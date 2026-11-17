@@ -1,4 +1,4 @@
-import { readResponseJson } from "@/lib/api/read-response-json";
+import { getJson } from "@/lib/api/get-json";
 import { postJson } from "@/lib/api/post-json";
 
 export interface AdminUserSummary {
@@ -46,10 +46,9 @@ export async function fetchAdminUsers(
   query: URLSearchParams,
   fallbackError = "Could not load users."
 ): Promise<AdminUsersResponse> {
-  const response = await fetch(`/api/admin/users?${query}`, {
+  return getJson<AdminUsersResponse>(`/api/admin/users?${query}`, fallbackError, {
     cache: "no-store",
   });
-  return readResponseJson<AdminUsersResponse>(response, fallbackError);
 }
 
 export async function sendAdminUserAction(

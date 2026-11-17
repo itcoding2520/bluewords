@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { type NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
 import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 export type AssessmentUserResult = { user: User } | { response: NextResponse };
 
@@ -14,13 +15,13 @@ export async function getRequestUser() {
 
 export async function requireAssessmentUser(message: string): Promise<AssessmentUserResult> {
   const user = await getRequestUser();
-  if (!user) return { response: NextResponse.json({ error: message }, { status: 401 }) };
+  if (!user) return { response: jsonErrorResponse(message, 401) };
   return { user };
 }
 
 export function getAssessmentAdminClient(): AdminClient | NextResponse {
   const admin = createAdminClient();
-  return admin ?? NextResponse.json({ error: "Assessment service is not configured." }, { status: 503 });
+  return admin ?? jsonErrorResponse("Assessment service is not configured.", 503);
 }
 
 export async function signQuestionImages(admin: AdminClient, questions: AssessmentQuestion[]) {

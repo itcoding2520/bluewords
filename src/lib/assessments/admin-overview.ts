@@ -1,4 +1,5 @@
 import type { AdminClient } from "@/lib/supabase/admin-client";
+import { getAdminUserNickname } from "@/lib/admin-user-mapping";
 
 export async function getAdminAssessmentOverview(admin: AdminClient) {
   const [{ data: assignments, error }, { data: attempts, error: attemptsError }, { data: users, error: usersError }] = await Promise.all([
@@ -13,10 +14,10 @@ export async function getAdminAssessmentOverview(admin: AdminClient) {
     status: "success" as const,
     assignments: assignments ?? [],
     attempts: attempts ?? [],
-    users: users?.users.map(({ id, email, user_metadata }) => ({
-      id,
-      email,
-      nickname: typeof user_metadata?.nickname === "string" ? user_metadata.nickname : "",
+    users: users?.users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      nickname: getAdminUserNickname(user),
     })) ?? [],
   };
 }

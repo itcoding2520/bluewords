@@ -3,18 +3,16 @@ import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
 import { getPageItems } from "@/lib/pagination";
+import { getAdminUserNickname } from "@/lib/admin-user-mapping";
+import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
-function getAdminUserNickname(user: AuthUser, profileNickname?: string | null) {
-  return profileNickname ?? (typeof user.user_metadata.nickname === "string" ? user.user_metadata.nickname : "");
-}
-
-function mapAdminUser(user: AuthUser, nickname = getAdminUserNickname(user)) {
+function mapAdminUser(user: AuthUser, profileNicknames?: ReadonlyMap<string, string>) {
   return {
     id: user.id,
     email: user.email ?? null,
     created_at: user.created_at,
     last_sign_in_at: user.last_sign_in_at ?? null,
-    nickname,
+    nickname: getAdminUserNickname(user, profileNicknames?.get(user.id)),
   };
 }
 
@@ -37,7 +35,7 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
   const matchedUsers = new Map<string, AuthUser>();
   for (let page = 1; matchedUsers.size < requestedIds.size; page += 1) {
     const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 100 });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return jsonErrorResponse(error.message, 400);
     for (const user of data.users) {
       if (requestedIds.has(user.id)) matchedUsers.set(user.id, user);
     }
@@ -48,10 +46,10 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
   try {
     const nicknames = await getProfileNicknames(adminClient, users);
     return NextResponse.json({
-      users: users.map((user) => mapAdminUser(user, getAdminUserNickname(user, nicknames.get(user.id)))),
+      users: users.map((user) => mapAdminUser(user, nicknames)),
     });
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error, "Could not load user profiles.") }, { status: 400 });
+    return jsonErrorResponse(getErrorMessage(error, "Could not load user profiles."), 400);
   }
 }
 
@@ -65,17 +63,17 @@ export async function searchAdminUsers(
   const matches = [];
   for (let userPage = 1; ; userPage += 1) {
     const { data, error } = await adminClient.auth.admin.listUsers({ page: userPage, perPage: 1000 });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return jsonErrorResponse(error.message, 400);
     let profileNicknames: Map<string, string>;
     try {
       profileNicknames = await getProfileNicknames(adminClient, data.users);
     } catch (profileError) {
-      return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
+      return jsonErrorResponse(getErrorMessage(profileError, "Could not load user profiles."), 400);
     }
     for (const user of data.users) {
-      const nickname = getAdminUserNickname(user, profileNicknames.get(user.id));
-      if (!search || (user.email ?? "").toLowerCase().includes(search) || nickname.toLowerCase().includes(search)) {
-        matches.push(mapAdminUser(user, nickname));
+      const mappedUser = mapAdminUser(user, profileNicknames);
+      if (!search || (mappedUser.email ?? "").toLowerCase().includes(search) || mappedUser.nickname.toLowerCase().includes(search)) {
+        matches.push(mappedUser);
       }
     }
     if (userPage >= data.lastPage || data.users.length === 0) break;
@@ -86,16 +84,16 @@ export async function searchAdminUsers(
 
 export async function getAdminUsersPage(adminClient: AdminClient, page: number, pageSize: number) {
   const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: pageSize });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return jsonErrorResponse(error.message, 400);
   try {
     const nicknames = await getProfileNicknames(adminClient, data.users);
     return NextResponse.json({
-      users: data.users.map((user) => mapAdminUser(user, getAdminUserNickname(user, nicknames.get(user.id)))),
+      users: data.users.map((user) => mapAdminUser(user, nicknames)),
       total: data.total,
       page,
       pageSize,
     });
   } catch (profileError) {
-    return NextResponse.json({ error: getErrorMessage(profileError, "Could not load user profiles.") }, { status: 400 });
+    return jsonErrorResponse(getErrorMessage(profileError, "Could not load user profiles."), 400);
   }
 }

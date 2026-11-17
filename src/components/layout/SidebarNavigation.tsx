@@ -67,6 +67,18 @@ function canViewNavigationItem(
   }
 }
 
+function isNavigationItemActive(href: string, pathname: string) {
+  const isGamesRoute = href === "/games"
+    && (pathname === "/quiz" || pathname.startsWith("/quiz/"));
+  return isGamesRoute || (href === "/"
+    ? pathname === "/"
+    : pathname === href || pathname.startsWith(`${href}/`));
+}
+
+function formatNavigationBadgeCount(count: number) {
+  return count > 99 ? "99+" : count;
+}
+
 interface SidebarNavigationProps {
   pathname: string;
   isAuthenticated: boolean;
@@ -94,11 +106,7 @@ export function SidebarNavigation({
     <nav aria-label="Main navigation" className="space-y-2">
       {visibleItems.map((item) => {
         const Icon = item.icon;
-        const isGamesRoute = item.href === "/games"
-          && (pathname === "/quiz" || pathname.startsWith("/quiz/"));
-        const isActive = isGamesRoute || (item.href === "/"
-          ? pathname === "/"
-          : pathname === item.href || pathname.startsWith(`${item.href}/`));
+        const isActive = isNavigationItemActive(item.href, pathname);
         const visibleUnreadCount = isAuthenticated ? unreadNotificationCount : 0;
         const hasUnreadNotifications = item.href === "/notifications" && visibleUnreadCount > 0;
 
@@ -125,8 +133,8 @@ export function SidebarNavigation({
               <Icon size={23} strokeWidth={2} />
             )}
             <span className="min-w-0 flex-1">{item.label}</span>
-            {item.href === "/notifications" && visibleUnreadCount > 0 && <span className="min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{visibleUnreadCount > 99 ? "99+" : visibleUnreadCount}</span>}
-            {item.href === "/assignments" && pendingAssignmentCount > 0 && <span className="min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{pendingAssignmentCount > 99 ? "99+" : pendingAssignmentCount}</span>}
+            {item.href === "/notifications" && visibleUnreadCount > 0 && <span className="min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{formatNavigationBadgeCount(visibleUnreadCount)}</span>}
+            {item.href === "/assignments" && pendingAssignmentCount > 0 && <span className="min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4 text-white">{formatNavigationBadgeCount(pendingAssignmentCount)}</span>}
           </Link>
         );
       })}
