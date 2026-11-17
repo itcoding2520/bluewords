@@ -5,6 +5,7 @@ import { downloadCsvFile } from "@/lib/download-csv";
 import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { useVocabularyCsvImport } from "@/hooks/useVocabularyCsvImport";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 import {
   exportVocabularyCsv,
 } from "@/lib/vocabulary-csv";
@@ -32,8 +33,7 @@ export function useVocabularyCsvController({
       return;
     }
 
-    setIsExporting(true);
-    try {
+    await runWithBusyState(setIsExporting, async () => {
       const wordsToExport = await loadExportWords();
       const date = new Date();
       const dateSuffix = formatLocalDateForFilename(date);
@@ -50,9 +50,7 @@ export function useVocabularyCsvController({
       );
       toast.success(`Exported ${wordsToExport.length} words.`);
       setExportOpen(false);
-    } finally {
-      setIsExporting(false);
-    }
+    });
   }
 
   return {
