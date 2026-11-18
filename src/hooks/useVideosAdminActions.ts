@@ -8,6 +8,7 @@ import { getPageCount } from "@/lib/pagination";
 import { validateVideoInput, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
 import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
 import { useVideosAdminForm } from "@/hooks/useVideosAdminForm";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 
 export function useVideosAdminActions({
@@ -43,32 +44,31 @@ export function useVideosAdminActions({
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const duplicate = await findVideoByYoutubeId(supabase, input.videoId);
-      if (duplicate && duplicate.id !== editingId) {
-        toast.error("This YouTube video is already in the library.");
-        return;
-      }
+    await runWithBusyState(setIsSaving, async () => {
+      try {
+        const duplicate = await findVideoByYoutubeId(supabase, input.videoId);
+        if (duplicate && duplicate.id !== editingId) {
+          toast.error("This YouTube video is already in the library.");
+          return;
+        }
 
-      if (editingId) {
-        await updateVideoRecord(supabase, editingId, { title: input.title, youtube_url: input.youtubeUrl });
-        toast.success("Video updated.");
-      } else {
-        await createVideoRecord(supabase, { title: input.title, youtube_url: input.youtubeUrl });
-        setPage(1);
-        toast.success("Video added.");
+        if (editingId) {
+          await updateVideoRecord(supabase, editingId, { title: input.title, youtube_url: input.youtubeUrl });
+          toast.success("Video updated.");
+        } else {
+          await createVideoRecord(supabase, { title: input.title, youtube_url: input.youtubeUrl });
+          setPage(1);
+          toast.success("Video added.");
+        }
+        invalidateVideosCache();
+        resetForm();
+        if (editingId || page === 1) await loadVideos();
+        else setPage(1);
+      } catch (error) {
+        const isDuplicate = Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
+        toast.error(isDuplicate ? "This YouTube video is already in the library." : getErrorMessage(error, "Could not save video."));
       }
-      invalidateVideosCache();
-      resetForm();
-      if (editingId || page === 1) await loadVideos();
-      else setPage(1);
-    } catch (error) {
-      const isDuplicate = Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
-      toast.error(isDuplicate ? "This YouTube video is already in the library." : getErrorMessage(error, "Could not save video."));
-    } finally {
-      setIsSaving(false);
-    }
+    });
   }
 
   async function deleteVideo(video: VideoRow) {
@@ -76,20 +76,19 @@ export function useVideosAdminActions({
     const confirmed = await confirmDialog({ title: "Delete video?", description: `Delete “${video.title}” from the video library?`, confirmLabel: "Delete" });
     if (!confirmed) return;
 
-    setIsSaving(true);
-    try {
-      await removeVideoRecord(supabase, video.id);
-      toast.success("Video deleted.");
-      invalidateVideosCache();
-      const nextTotal = Math.max(0, total - 1);
-      const nextPage = Math.max(1, Math.min(page, getPageCount(nextTotal, VIDEOS_PAGE_SIZE)));
-      if (nextPage !== page) setPage(nextPage);
-      else await loadVideos();
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Could not delete video."));
-    } finally {
-      setIsSaving(false);
-    }
+    await runWithBusyState(setIsSaving, async () => {
+      try {
+        await removeVideoRecord(supabase, video.id);
+        toast.success("Video deleted.");
+        invalidateVideosCache();
+        const nextTotal = Math.max(0, total - 1);
+        const nextPage = Math.max(1, Math.min(page, getPageCount(nextTotal, VIDEOS_PAGE_SIZE)));
+        if (nextPage !== page) setPage(nextPage);
+        else await loadVideos();
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Could not delete video."));
+      }
+    });
   }
 
   return {

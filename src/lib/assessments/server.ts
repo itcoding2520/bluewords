@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { type NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin-client";
 import type { AssessmentQuestion } from "@/lib/assessments/types";
@@ -22,6 +22,21 @@ export async function requireAssessmentUser(message: string): Promise<Assessment
 export function getAssessmentAdminClient(): AdminClient | NextResponse {
   const admin = createAdminClient();
   return admin ?? jsonErrorResponse("Assessment service is not configured.", 503);
+}
+
+export type AssessmentAdminContextResult =
+  | { user: User; admin: AdminClient }
+  | { response: NextResponse };
+
+export async function requireAssessmentAdminContext(
+  message: string
+): Promise<AssessmentAdminContextResult> {
+  const auth = await requireAssessmentUser(message);
+  if ("response" in auth) return auth;
+
+  const admin = getAssessmentAdminClient();
+  if (admin instanceof NextResponse) return { response: admin };
+  return { user: auth.user, admin };
 }
 
 export async function signQuestionImages(admin: AdminClient, questions: AssessmentQuestion[]) {

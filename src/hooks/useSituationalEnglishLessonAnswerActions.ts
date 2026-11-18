@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import type { Item } from "@/lib/communication/lesson-types";
-import type { SentenceDrill } from "@/lib/communication/lesson-practice";
+import type { SentenceDrill } from "@/lib/communication/lesson-drills";
 import { normalizeSentence } from "@/lib/communication/lesson-practice";
 
 export function useSituationalEnglishLessonAnswerActions({

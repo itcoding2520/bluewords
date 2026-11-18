@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateAdminDataCache } from "@/lib/admin-data-cache.mjs";
 import { updateAdminReviewStatus } from "@/lib/admin-review-api";
+import { runWithBusyValue } from "@/lib/run-with-busy-state";
 import type {
   AdminReviewSubmission,
   PublishedCategory,
@@ -67,45 +68,44 @@ export function useAdminReviewModeration(supabase: SupabaseClient, {
       }
     }
     setBlockedWordId(null);
-    setBusy(id);
-    setError("");
-    try {
-      const updateError = await updateAdminReviewStatus(supabase, table, id, status);
-      if (updateError) {
-        setError(updateError.code === "23505"
-          ? "A published category or word with that name already exists."
-          : updateError.message);
-        return;
-      }
-
-      invalidateAdminDataCache();
-      if (table === "community_categories") {
-        const category = categories.find((item) => item.id === id);
-        setCategories((current) => current.filter((item) => item.id !== id));
-        if (category && status === "published") {
-          const publishedCategory = mapPublishedCategorySubmission(category);
-          setPublishedCategories((current) => [
-            ...current.filter((item) => item.id !== id),
-            publishedCategory,
-          ]);
+    await runWithBusyValue(setBusy, id, null, async () => {
+      setError("");
+      try {
+        const updateError = await updateAdminReviewStatus(supabase, table, id, status);
+        if (updateError) {
+          setError(updateError.code === "23505"
+            ? "A published category or word with that name already exists."
+            : updateError.message);
+          return;
         }
-        setWords((current) => current.map((item) => item.category_id === id
-          ? { ...item, category_status: status }
-          : item));
-      } else {
-        setWords((current) => current.filter((item) => item.id !== id));
-        if (word && status === "published") {
-          const publishedWord = mapPublishedWordSubmission(word);
-          if (publishedWord) {
-            setPublishedWords((current) => [...current.filter((item) => item.id !== id), publishedWord]);
+
+        invalidateAdminDataCache();
+        if (table === "community_categories") {
+          const category = categories.find((item) => item.id === id);
+          setCategories((current) => current.filter((item) => item.id !== id));
+          if (category && status === "published") {
+            const publishedCategory = mapPublishedCategorySubmission(category);
+            setPublishedCategories((current) => [
+              ...current.filter((item) => item.id !== id),
+              publishedCategory,
+            ]);
+          }
+          setWords((current) => current.map((item) => item.category_id === id
+            ? { ...item, category_status: status }
+            : item));
+        } else {
+          setWords((current) => current.filter((item) => item.id !== id));
+          if (word && status === "published") {
+            const publishedWord = mapPublishedWordSubmission(word);
+            if (publishedWord) {
+              setPublishedWords((current) => [...current.filter((item) => item.id !== id), publishedWord]);
+            }
           }
         }
+      } catch (cause) {
+        setError(getErrorMessage(cause, "Could not update this request."));
       }
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not update this request."));
-    } finally {
-      setBusy(null);
-    }
+    });
   }
 
   return { busy, blockedWordId, moderate };

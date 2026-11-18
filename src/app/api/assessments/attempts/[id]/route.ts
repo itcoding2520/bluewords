@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAssessmentAdminClient, requireAssessmentUser } from "@/lib/assessments/server";
+import {
+  getAssessmentAdminClient,
+  requireAssessmentAdminContext,
+  requireAssessmentUser,
+} from "@/lib/assessments/server";
 import { getAssessmentAttemptResult } from "@/lib/assessments/get-attempt-result";
 import { submitAssessmentAttempt } from "@/lib/assessments/submit-attempt";
 import { readRequestJsonOrResponse } from "@/lib/api/request-json";
@@ -8,12 +12,10 @@ import { isObjectRecord } from "@/lib/is-object-record";
 import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = await requireAssessmentUser("Sign in to view your results.");
-  if ("response" in auth) return auth.response;
-  const { user } = auth;
+  const access = await requireAssessmentAdminContext("Sign in to view your results.");
+  if ("response" in access) return access.response;
+  const { user, admin } = access;
   const { id } = await context.params;
-  const admin = getAssessmentAdminClient();
-  if (admin instanceof NextResponse) return admin;
   const result = await getAssessmentAttemptResult(admin, id, user.id);
   if (result.status === "not_found") return jsonErrorResponse("Result not found.", 404);
   return NextResponse.json({ attempt: result.attempt });

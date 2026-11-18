@@ -6,6 +6,7 @@ import {
   fetchAssessmentAdminSnapshot,
   type AssessmentAdminSnapshot,
 } from "@/lib/assessments/admin-api";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 export function useAdminAssessmentsData(
   setError: Dispatch<SetStateAction<string>>
@@ -18,16 +19,15 @@ export function useAdminAssessmentsData(
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchAssessmentAdminSnapshot();
-      setSnapshot(data);
-      setError("");
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not load assignments."));
-    } finally {
-      setLoading(false);
-    }
+    await runWithBusyState(setLoading, async () => {
+      try {
+        const data = await fetchAssessmentAdminSnapshot();
+        setSnapshot(data);
+        setError("");
+      } catch (cause) {
+        setError(getErrorMessage(cause, "Could not load assignments."));
+      }
+    });
   }, [setError]);
 
   useEffect(() => {

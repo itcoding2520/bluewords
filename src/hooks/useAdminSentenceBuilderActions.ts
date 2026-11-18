@@ -2,6 +2,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { toast } from "sonner";
 import { useConfirmedAdminAction } from "@/hooks/useConfirmedAdminAction";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import {
   removeSentenceBuilderQuestion,
@@ -43,19 +44,18 @@ export function useAdminSentenceBuilderActions({
       toast.error("Complete the required fields and add at least two answer tokens.");
       return;
     }
-    setBusy(true);
-    try {
-      const { error } = await saveSentenceBuilderQuestion(supabase, editing, input, new Date().toISOString());
-      if (error) throw error;
-      toast.success(editing ? "Question updated." : "Question added.");
-      resetDraft();
-      setEditing(null);
-      await refresh();
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Could not save this question."));
-    } finally {
-      setBusy(false);
-    }
+    await runWithBusyState(setBusy, async () => {
+      try {
+        const { error } = await saveSentenceBuilderQuestion(supabase, editing, input, new Date().toISOString());
+        if (error) throw error;
+        toast.success(editing ? "Question updated." : "Question added.");
+        resetDraft();
+        setEditing(null);
+        await refresh();
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Could not save this question."));
+      }
+    });
   }
 
   const removeQuestion = useConfirmedAdminAction({

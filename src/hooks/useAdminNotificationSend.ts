@@ -2,6 +2,7 @@ import { useState, type Dispatch, type FormEvent, type SetStateAction } from "re
 
 import { getErrorMessage } from "@/lib/errors";
 import { createAdminNotification } from "@/lib/admin-notifications-api";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 export function useAdminNotificationSend({
   recipients,
@@ -28,21 +29,20 @@ export function useAdminNotificationSend({
     event.preventDefault();
     const recipientIds = allUsers ? recipients.map((recipient) => recipient.id) : selected;
     if (!recipientIds.length || sending) return;
-    setSending(true);
-    setError("");
-    setNotice("");
-    try {
-      const payload = await createAdminNotification({ title, message, recipientIds });
-      setNotice(`Notification sent to ${payload.sent ?? 0} user(s).`);
-      setTitle("");
-      setMessage("");
-      setSelected([]);
-      setAllUsers(false);
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not send notification."));
-    } finally {
-      setSending(false);
-    }
+    await runWithBusyState(setSending, async () => {
+      setError("");
+      setNotice("");
+      try {
+        const payload = await createAdminNotification({ title, message, recipientIds });
+        setNotice(`Notification sent to ${payload.sent ?? 0} user(s).`);
+        setTitle("");
+        setMessage("");
+        setSelected([]);
+        setAllUsers(false);
+      } catch (cause) {
+        setError(getErrorMessage(cause, "Could not send notification."));
+      }
+    });
   }
 
   return { title, setTitle, message, setMessage, sending, sendNotification };

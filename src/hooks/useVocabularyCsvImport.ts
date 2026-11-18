@@ -8,6 +8,7 @@ import {
   type VocabularyCsvPreview,
 } from "@/lib/vocabulary-csv";
 import { useVocabularyCsvImageSelection } from "@/hooks/useVocabularyCsvImageSelection";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 export function useVocabularyCsvImport({
   categories,
@@ -41,30 +42,28 @@ export function useVocabularyCsvImport({
     event.target.value = "";
     if (!file) return;
 
-    setIsReading(true);
-    setFileName(file.name);
-    setPreview(null);
-    try {
-      const csv = await file.text();
-      setPreview(previewVocabularyCsvImport(
-        csv,
-        categories.map((category) => category.name),
-        allWords.map((word) => word.word),
-      ));
-    } catch (error) {
-      console.error("Failed to read CSV file:", error);
-      toast.error("Could not read this CSV file.");
-      setFileName("");
-    } finally {
-      setIsReading(false);
-    }
+    await runWithBusyState(setIsReading, async () => {
+      setFileName(file.name);
+      setPreview(null);
+      try {
+        const csv = await file.text();
+        setPreview(previewVocabularyCsvImport(
+          csv,
+          categories.map((category) => category.name),
+          allWords.map((word) => word.word),
+        ));
+      } catch (error) {
+        console.error("Failed to read CSV file:", error);
+        toast.error("Could not read this CSV file.");
+        setFileName("");
+      }
+    });
   }
 
   async function importCsv() {
     if (!preview || preview.items.length === 0 || isImporting) return;
 
-    setIsImporting(true);
-    try {
+    await runWithBusyState(setIsImporting, async () => {
       const result = await importWords(preview.items, imageSelection.imageMatch.imageFilesByWord);
       if (result.limitExceeded) {
         toast.error(`Import is limited to ${MAX_VOCABULARY_IMPORT_WORDS} words at a time.`);
@@ -83,9 +82,7 @@ export function useVocabularyCsvImport({
       imageSelection.clearImageFiles();
       if (result.failed === 0) setOpen(false);
       if (result.imported > 0 || result.imagesUploaded > 0) onImportComplete();
-    } finally {
-      setIsImporting(false);
-    }
+    });
   }
 
   return {

@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAssessmentAdminClient, requireAssessmentUser } from "@/lib/assessments/server";
+import { requireAssessmentAdminContext } from "@/lib/assessments/server";
 import { startAssignedAssessment } from "@/lib/assessments/start-attempt";
 import { jsonErrorResponse } from "@/lib/api/json-error-response";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = await requireAssessmentUser("Sign in to start this test.");
-  if ("response" in auth) return auth.response;
-  const { user } = auth;
+  const access = await requireAssessmentAdminContext("Sign in to start this test.");
+  if ("response" in access) return access.response;
+  const { user, admin } = access;
   const { id } = await context.params;
-  const admin = getAssessmentAdminClient();
-  if (admin instanceof NextResponse) return admin;
   const result = await startAssignedAssessment(admin, user.id, id);
   if (result.status === "not_found") return jsonErrorResponse("Assignment not found.", 404);
   if (result.status === "completed") return jsonErrorResponse("This assignment is already complete.", 409);
