@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { CommunicationCollections } from "@/lib/supabase/communication-admin-types";
 import { loadAdminCommunicationCollections } from "@/lib/communication/admin-collections";
+import { reconcileCommunicationCollectionSelection } from "@/lib/communication/admin-collection-selection";
 
 
 export function useAdminCommunicationCollections(supabase: SupabaseClient) {
@@ -28,36 +29,15 @@ export function useAdminCommunicationCollections(supabase: SupabaseClient) {
 
   const applyCollections = useCallback((next: CommunicationCollections) => {
     setState((current) => {
-      let nextTopicId = next.topics[0]?.id ?? "";
-      for (const topic of next.topics) {
-        if (topic.id === current.selectedTopicId) {
-          nextTopicId = current.selectedTopicId;
-          break;
-        }
-      }
-
-      let firstLessonId = "";
-      let hasLesson = false;
-      let nextLessonId = "";
-      let hasSelectedLesson = false;
-      for (const lesson of next.lessons) {
-        if (lesson.topic_id !== nextTopicId) continue;
-        if (!hasLesson) {
-          firstLessonId = lesson.id;
-          hasLesson = true;
-        }
-        if (lesson.id === current.selectedLessonId) {
-          nextLessonId = current.selectedLessonId;
-          hasSelectedLesson = true;
-          break;
-        }
-      }
-      if (!hasSelectedLesson && hasLesson) nextLessonId = firstLessonId;
+      const selection = reconcileCommunicationCollectionSelection(
+        next,
+        current.selectedTopicId,
+        current.selectedLessonId,
+      );
 
       return {
         collections: next,
-        selectedTopicId: nextTopicId,
-        selectedLessonId: nextLessonId,
+        ...selection,
       };
     });
   }, []);
