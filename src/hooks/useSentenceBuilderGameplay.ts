@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createSentenceBuilderTiles, type SentenceBuilderQuestion, type SentenceBuilderTile } from "@/lib/sentence-builder";
+import { getSentenceBuilderAnswerOutcome } from "@/lib/sentence-builder-answer";
 
 interface SentenceBuilderState {
   round: SentenceBuilderQuestion[];
@@ -68,22 +69,16 @@ export function useSentenceBuilderGameplay() {
   function submit() {
     if (!current || state.solved || !state.chosen.length) return;
     const answer = state.chosen.map((tile) => tile.text).join(" ");
-    if (answer === current.answer_tokens.join(" ")) {
-      setState((previous) => ({
-        ...previous,
-        moves: previous.moves + 1,
-        score: previous.score + 10,
-        correctCount: previous.correctCount + 1,
-        feedback: "Perfect sentence! Great job!",
-        solved: true,
-      }));
-    } else {
-      setState((previous) => ({
-        ...previous,
-        moves: previous.moves + 1,
-        feedback: "Not quite. Try a different word order.",
-      }));
-    }
+    setState((previous) => ({
+      ...previous,
+      ...getSentenceBuilderAnswerOutcome({
+        answer,
+        expectedAnswer: current.answer_tokens.join(" "),
+        moves: previous.moves,
+        score: previous.score,
+        correctCount: previous.correctCount,
+      }),
+    }));
   }
 
   function useHint() {
