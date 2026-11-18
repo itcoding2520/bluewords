@@ -3,15 +3,23 @@ import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import { getPageItems, getPageMetadata } from "@/lib/pagination";
 import { isDefaultCategory, isPublishedSharedCategory } from "@/lib/vocabulary/category-management";
 import type { CategoryManagementFilter, CategoryManagementSort } from "@/lib/category-management-filters";
+import type { VocabularyWord } from "@/data/vocabulary";
+import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
+import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
+import type { CategoryManagementPageRow } from "@/lib/vocabulary/category-management";
 
 export function useCategoryManagementView({
   categories,
+  words,
+  categoryAuthors,
   filterBy,
   sortBy,
   page,
   pageSize,
 }: {
   categories: VocabularyCategoryRow[];
+  words: VocabularyWord[];
+  categoryAuthors: Record<string, string>;
   filterBy: CategoryManagementFilter;
   sortBy: CategoryManagementSort;
   page: number;
@@ -50,12 +58,24 @@ export function useCategoryManagementView({
     () => getPageItems(managedCategories, pageMetadata.currentPage, pageSize),
     [managedCategories, pageMetadata.currentPage, pageSize],
   );
+  const fallbackImagesByCategory = useCategoryFallbackWordImages(words);
+  const pageCategoryRows: CategoryManagementPageRow[] = useMemo(
+    () => pageCategories.map((category) => {
+      const normalizedCategoryName = normalizeVocabularyLabel(category.name);
+      return {
+        category,
+        author: categoryAuthors[normalizedCategoryName],
+        fallbackWordImagePath: fallbackImagesByCategory.get(normalizedCategoryName),
+      };
+    }),
+    [categoryAuthors, fallbackImagesByCategory, pageCategories],
+  );
 
   return {
     managedCategories,
     pageCount: pageMetadata.pageCount,
     currentPage: pageMetadata.currentPage,
-    pageCategories,
+    pageCategoryRows,
     firstVisibleCategory: pageMetadata.first,
     lastVisibleCategory: pageMetadata.last,
   };
