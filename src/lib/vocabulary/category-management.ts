@@ -9,3 +9,9 @@ export function isDefaultCategory(category: Pick<VocabularyCategoryRow, "is_defa
 export function isPublishedSharedCategory(category: Pick<VocabularyCategoryRow, "id" | "user_id">) {
   return isCommunityCategoryId(category.id) || category.user_id === "community";
 }
+
+export interface CategoryManagementPageRow {
+  category: VocabularyCategoryRow;
+  author: string | undefined;
+  fallbackWordImagePath: string | undefined;
+}

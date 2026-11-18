@@ -10,7 +10,7 @@ import { useCategoryManagementController } from "@/hooks/useCategoryManagementCo
 export function CategoryManagementPanel() {
   const {
     access: { isAdmin },
-    data: { words, categoryAuthors, managedCategories, pageCategories },
+    data: { managedCategories, pageCategoryRows },
     pagination: {
       setPage, pageSize, setPageSize, pageCount, currentPage,
       firstVisibleCategory, lastVisibleCategory,
@@ -36,9 +36,7 @@ export function CategoryManagementPanel() {
       </div>
 
       <CategoryManagementList
-        words={words}
         isAdmin={isAdmin}
-        categoryAuthors={categoryAuthors}
         editing={editing}
         onEditingChange={setEditing}
         editName={editName}
@@ -52,7 +50,7 @@ export function CategoryManagementPanel() {
         sortBy={sortBy}
         onSortChange={(value) => { setSortBy(value); setPage(1); }}
         managedCategories={managedCategories}
-        pageCategories={pageCategories}
+        pageCategoryRows={pageCategoryRows}
         pageCount={pageCount}
         currentPage={currentPage}
         firstVisibleCategory={firstVisibleCategory}

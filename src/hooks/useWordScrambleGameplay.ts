@@ -4,6 +4,7 @@ import {
   type LetterTile,
   type ScrambleWord,
 } from "@/lib/word-scramble";
+import { getWordScrambleAnswerOutcome } from "@/lib/word-scramble-score";
 
 interface WordScrambleState {
   round: ScrambleWord[];
@@ -64,29 +65,19 @@ export function useWordScrambleGameplay() {
       return;
     }
 
-    setState((current) => {
-      const moves = current.moves + 1;
-      if (answer !== currentWord.answer) {
-        return {
-          ...current,
-          moves,
-          streak: 0,
-          feedback: "Almost! Rearrange the letters and try again.",
-          isCorrect: false,
-        };
-      }
-
-      const nextStreak = current.streak + 1;
-      return {
-        ...current,
-        moves,
-        streak: nextStreak,
-        bestStreak: Math.max(current.bestStreak, nextStreak),
-        score: current.score + (usedHint ? 10 : 20),
-        feedback: `Great job! ${currentWord.word} is correct!`,
-        isCorrect: true,
-      };
-    });
+    setState((current) => ({
+      ...current,
+      ...getWordScrambleAnswerOutcome({
+        answer,
+        expectedAnswer: currentWord.answer,
+        displayWord: currentWord.word,
+        usedHint,
+        moves: current.moves,
+        streak: current.streak,
+        bestStreak: current.bestStreak,
+        score: current.score,
+      }),
+    }));
   }
 
   function chooseLetter(tileId: number) {

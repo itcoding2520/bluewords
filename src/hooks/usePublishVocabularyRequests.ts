@@ -18,18 +18,23 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
     return loadPublishVocabularyRequests(supabase);
   }, [supabase]);
 
-  const refreshRequests = useCallback(async () => {
+  const loadCurrentUserRequests = useCallback(async (force = false) => {
     const user = await getCurrentUserOrNull(supabase);
-    if (!user) return;
-    invalidatePublishRequestCache(user.id);
+    if (!user) return null;
+    if (force) invalidatePublishRequestCache(user.id);
+    return getCachedPublishRequests(user.id, loadPublishRequests, { force });
+  }, [loadPublishRequests, supabase]);
+
+  const refreshRequests = useCallback(async () => {
     try {
-      const requests = await getCachedPublishRequests(user.id, loadPublishRequests, { force: true });
+      const requests = await loadCurrentUserRequests(true);
+      if (!requests) return;
       setCommunityCategoryRequests(requests.categories);
       setCommunityWordRequests(requests.words);
     } catch (error) {
       toast.error(getErrorMessage(error, "Could not refresh request status."));
     }
-  }, [loadPublishRequests, supabase]);
+  }, [loadCurrentUserRequests]);
 
   useEffect(() => {
     let active = true;
@@ -41,12 +46,11 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
         return;
       }
       try {
-        const user = await getCurrentUserOrNull(supabase);
-        if (!user) {
-          setRequestsLoaded(true);
+        const requests = await loadCurrentUserRequests();
+        if (!requests) {
+          if (active) setRequestsLoaded(true);
           return;
         }
-        const requests = await getCachedPublishRequests(user.id, loadPublishRequests);
         if (!active) return;
         setCommunityCategoryRequests(requests.categories);
         setCommunityWordRequests(requests.words);
@@ -64,7 +68,7 @@ export function usePublishVocabularyRequests(isAuthenticated: boolean) {
       active = false;
       cancelLoadingUpdate();
     };
-  }, [isAuthenticated, loadPublishRequests, supabase]);
+  }, [isAuthenticated, loadCurrentUserRequests]);
 
   return {
     communityCategoryRequests,

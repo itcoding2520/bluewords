@@ -31,10 +31,10 @@ export function useCategoryManagementController() {
     managedCategories,
     pageCount,
     currentPage,
-    pageCategories,
+    pageCategoryRows,
     firstVisibleCategory,
     lastVisibleCategory,
-  } = useCategoryManagementView({ categories, filterBy, sortBy, page, pageSize });
+  } = useCategoryManagementView({ categories, words, categoryAuthors, filterBy, sortBy, page, pageSize });
 
   const form = useCategoryManagementFormState();
   const formState = {
@@ -69,10 +69,8 @@ export function useCategoryManagementController() {
     access: { isAdmin },
     data: {
       categories,
-      words,
-      categoryAuthors,
       managedCategories,
-      pageCategories,
+      pageCategoryRows,
     },
     pagination: {
       page,

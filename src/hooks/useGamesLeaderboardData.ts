@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import type { LeaderboardFilters } from "@/lib/games/leaderboard-filters";
+import { loadGamesLeaderboard } from "@/lib/games/load-leaderboard";
 import {
-  getQuizLeaderboard,
-  getVocabularyGameLeaderboard,
-  getWordSearchLeaderboard,
   type QuizLeaderboardRow,
   type VocabularyGameLeaderboardRow,
   type WordSearchLeaderboardRow,
@@ -13,17 +11,6 @@ export type GamesLeaderboardRow =
   | QuizLeaderboardRow
   | WordSearchLeaderboardRow
   | VocabularyGameLeaderboardRow;
-
-function getLeaderboardRequest(filters: LeaderboardFilters) {
-  switch (filters.game) {
-    case "quiz":
-      return getQuizLeaderboard({ mode: filters.quizMode, questionCount: filters.questionCount });
-    case "word-search":
-      return getWordSearchLeaderboard({ gridSize: filters.gridSize, difficulty: filters.difficulty });
-    default:
-      return getVocabularyGameLeaderboard({ gameType: filters.game, roundSize: null });
-  }
-}
 
 export function useGamesLeaderboardData(filters: LeaderboardFilters) {
   const [rows, setRows] = useState<GamesLeaderboardRow[]>([]);
@@ -35,7 +22,7 @@ export function useGamesLeaderboardData(filters: LeaderboardFilters) {
   useEffect(() => {
     let active = true;
 
-    void getLeaderboardRequest(filters).then((result) => {
+    void loadGamesLeaderboard(filters).then((result) => {
       if (active) setRows(result);
     }).catch(() => {
       if (active) {

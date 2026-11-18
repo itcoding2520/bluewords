@@ -2,7 +2,6 @@ import { type FormEvent } from "react";
 import { ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import type { VocabularyWord } from "@/data/vocabulary";
 import type { VocabularyCategoryColor } from "@/config/vocabulary";
 import { CategoryManagementCard } from "@/components/vocabulary/CategoryManagementCard";
 import {
@@ -12,9 +11,8 @@ import {
   type CategoryManagementSort,
 } from "@/lib/category-management-filters";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
-import { normalizeVocabularyLabel } from "@/lib/vocabulary/normalize-text";
 import { createPageNavigationActions } from "@/lib/pagination";
-import { useCategoryFallbackWordImages } from "@/hooks/useCategoryFallbackWordImages";
+import type { CategoryManagementPageRow } from "@/lib/vocabulary/category-management";
 
 const categoryFilters: Array<{ value: CategoryManagementFilter; label: string }> = [
   { value: "all", label: "All categories" },
@@ -30,9 +28,7 @@ const categorySorts: Array<{ value: CategoryManagementSort; label: string }> = [
 const categoryPageSizes = [10, 20, 50];
 
 export function CategoryManagementList({
-  words,
   isAdmin,
-  categoryAuthors,
   editing,
   onEditingChange,
   editName,
@@ -46,7 +42,7 @@ export function CategoryManagementList({
   sortBy,
   onSortChange,
   managedCategories,
-  pageCategories,
+  pageCategoryRows,
   pageCount,
   currentPage,
   firstVisibleCategory,
@@ -58,9 +54,7 @@ export function CategoryManagementList({
   onUpdate,
   onDelete,
 }: {
-  words: VocabularyWord[];
   isAdmin: boolean;
-  categoryAuthors: Record<string, string>;
   editing: VocabularyCategoryRow | null;
   onEditingChange: (category: VocabularyCategoryRow | null) => void;
   editName: string;
@@ -74,7 +68,7 @@ export function CategoryManagementList({
   sortBy: CategoryManagementSort;
   onSortChange: (sort: CategoryManagementSort) => void;
   managedCategories: VocabularyCategoryRow[];
-  pageCategories: VocabularyCategoryRow[];
+  pageCategoryRows: CategoryManagementPageRow[];
   pageCount: number;
   currentPage: number;
   firstVisibleCategory: number;
@@ -86,7 +80,6 @@ export function CategoryManagementList({
   onUpdate: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: (category: VocabularyCategoryRow) => void;
 }) {
-  const fallbackImagesByCategory = useCategoryFallbackWordImages(words);
   const pageNavigation = createPageNavigationActions(pageCount, onPageChange);
 
   return (
@@ -105,16 +98,14 @@ export function CategoryManagementList({
         </label>
       </div>
       <div className="category-card-grid">
-        {pageCategories.map((category) => {
-          const normalizedCategoryName = normalizeVocabularyLabel(category.name);
-          const categoryAuthor = categoryAuthors[normalizedCategoryName];
+        {pageCategoryRows.map(({ category, author, fallbackWordImagePath }) => {
           return (
             <CategoryManagementCard
               key={category.id}
               category={category}
               isAdmin={isAdmin}
-              author={categoryAuthor}
-              fallbackWordImagePath={fallbackImagesByCategory.get(normalizedCategoryName)}
+              author={author}
+              fallbackWordImagePath={fallbackWordImagePath}
               editing={editing?.id === category.id}
               editName={editName}
               onEditNameChange={onEditNameChange}
