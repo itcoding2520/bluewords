@@ -3,6 +3,7 @@ import { useState, type Dispatch, type FormEvent, type SetStateAction } from "re
 import { getErrorMessage } from "@/lib/errors";
 import { toLocalDateInputValue } from "@/lib/formatDate";
 import { createAssessmentAssignment } from "@/lib/assessments/admin-api";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 export function useAdminAssessmentAssignment({
   setActiveTab,
@@ -26,34 +27,32 @@ export function useAdminAssessmentAssignment({
 
   async function assign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSending(true);
-    setError("");
-    setNotice("");
-    if (dueAt && today && dueAt < today) {
-      setError("Due date must be today or a future date.");
-      setSending(false);
-      return;
-    }
-    try {
-      const data = await createAssessmentAssignment({
-        title,
-        difficulty,
-        allUsers,
-        recipientIds: selected,
-        dueAt: dueAt || null,
-      });
-      setNotice(`Test assigned to ${data.recipients ?? "selected"} learner(s).`);
-      setTitle("");
-      setSelected([]);
-      setAllUsers(false);
-      setDueAt("");
-      setActiveTab("tests");
-      await refresh();
-    } catch (cause) {
-      setError(getErrorMessage(cause, "Could not assign test."));
-    } finally {
-      setSending(false);
-    }
+    await runWithBusyState(setSending, async () => {
+      setError("");
+      setNotice("");
+      if (dueAt && today && dueAt < today) {
+        setError("Due date must be today or a future date.");
+        return;
+      }
+      try {
+        const data = await createAssessmentAssignment({
+          title,
+          difficulty,
+          allUsers,
+          recipientIds: selected,
+          dueAt: dueAt || null,
+        });
+        setNotice(`Test assigned to ${data.recipients ?? "selected"} learner(s).`);
+        setTitle("");
+        setSelected([]);
+        setAllUsers(false);
+        setDueAt("");
+        setActiveTab("tests");
+        await refresh();
+      } catch (cause) {
+        setError(getErrorMessage(cause, "Could not assign test."));
+      }
+    });
   }
 
   return {
