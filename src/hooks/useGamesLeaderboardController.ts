@@ -29,30 +29,30 @@ export function useGamesLeaderboardController() {
   const [expanded, setExpanded] = useState(false);
   const data = useGamesLeaderboardData(filters);
 
+  function updateFilters(patch: Partial<LeaderboardFilters>) {
+    data.prepareFilterChange();
+    setFilters((current) => ({ ...current, ...patch }));
+  }
+
   function selectGame(nextGame: LeaderboardGame) {
     if (filters.game === nextGame) return;
-    data.prepareFilterChange();
-    setFilters((current) => ({ ...current, game: nextGame }));
+    updateFilters({ game: nextGame });
   }
 
   function selectQuizMode(nextMode: LeaderboardQuizMode) {
-    data.prepareFilterChange();
-    setFilters((current) => ({ ...current, quizMode: nextMode }));
+    updateFilters({ quizMode: nextMode });
   }
 
   function selectQuestionCount(nextCount: LeaderboardQuestionCount) {
-    data.prepareFilterChange();
-    setFilters((current) => ({ ...current, questionCount: nextCount }));
+    updateFilters({ questionCount: nextCount });
   }
 
   function selectGridSize(nextGridSize: LeaderboardGridSize) {
-    data.prepareFilterChange();
-    setFilters((current) => ({ ...current, gridSize: nextGridSize }));
+    updateFilters({ gridSize: nextGridSize });
   }
 
   function selectDifficulty(nextDifficulty: LeaderboardDifficulty) {
-    data.prepareFilterChange();
-    setFilters((current) => ({ ...current, difficulty: nextDifficulty }));
+    updateFilters({ difficulty: nextDifficulty });
   }
 
   return {
