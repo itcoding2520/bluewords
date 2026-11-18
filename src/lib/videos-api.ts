@@ -54,3 +54,20 @@ export async function removeVideoRecord(supabase: SupabaseClient, id: string) {
   const { error } = await supabase.from("videos").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function saveVideoRecord(
+  supabase: SupabaseClient,
+  editingId: string | null,
+  input: { title: string; youtube_url: string; videoId: string },
+): Promise<"duplicate" | "created" | "updated"> {
+  const duplicate = await findVideoByYoutubeId(supabase, input.videoId);
+  if (duplicate && duplicate.id !== editingId) return "duplicate";
+
+  if (editingId) {
+    await updateVideoRecord(supabase, editingId, { title: input.title, youtube_url: input.youtube_url });
+    return "updated";
+  }
+
+  await createVideoRecord(supabase, { title: input.title, youtube_url: input.youtube_url });
+  return "created";
+}

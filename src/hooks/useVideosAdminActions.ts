@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@/lib/supabase/client";
 import { invalidateVideosCache } from "@/lib/videos-cache.mjs";
 import { getPageCount } from "@/lib/pagination";
 import { validateVideoInput, VIDEOS_PAGE_SIZE, type VideoRow } from "@/lib/videos";
-import { createVideoRecord, findVideoByYoutubeId, removeVideoRecord, updateVideoRecord } from "@/lib/videos-api";
+import { removeVideoRecord, saveVideoRecord } from "@/lib/videos-api";
 import { useVideosAdminForm } from "@/hooks/useVideosAdminForm";
 import { runWithBusyState } from "@/lib/run-with-busy-state";
 
@@ -46,20 +46,20 @@ export function useVideosAdminActions({
 
     await runWithBusyState(setIsSaving, async () => {
       try {
-        const duplicate = await findVideoByYoutubeId(supabase, input.videoId);
-        if (duplicate && duplicate.id !== editingId) {
+        const result = await saveVideoRecord(supabase, editingId, {
+          title: input.title,
+          youtube_url: input.youtubeUrl,
+          videoId: input.videoId,
+        });
+        if (result === "duplicate") {
           toast.error("This YouTube video is already in the library.");
           return;
         }
 
-        if (editingId) {
-          await updateVideoRecord(supabase, editingId, { title: input.title, youtube_url: input.youtubeUrl });
-          toast.success("Video updated.");
-        } else {
-          await createVideoRecord(supabase, { title: input.title, youtube_url: input.youtubeUrl });
+        if (result === "created") {
           setPage(1);
-          toast.success("Video added.");
         }
+        toast.success(result === "updated" ? "Video updated." : "Video added.");
         invalidateVideosCache();
         resetForm();
         if (editingId || page === 1) await loadVideos();
