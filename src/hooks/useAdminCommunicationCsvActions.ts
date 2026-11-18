@@ -2,6 +2,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { downloadCsvFile } from "@/lib/download-csv";
+import { runWithBusyState } from "@/lib/run-with-busy-state";
 
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { exportCommunicationCsv } from "@/lib/communication/csv";
@@ -21,25 +22,27 @@ export function useAdminCommunicationCsvActions({ supabase, selectedTopicId, set
 
   async function importCsv(file?: File) {
     if (!file) return;
-    setBusy(true);
     try {
-      const result = await importCommunicationCsv(supabase, await file.text());
-      if (!result.hasContentRows) {
-        toast.info(result.duplicateRowsInFile.length ? `No new rows to import. Skipped ${result.duplicateRowsInFile.length} duplicate CSV rows.` : "The CSV has no content rows.");
-        return;
-      }
-      const imported = result.importedItems + result.importedTurns;
-      if (result.skippedRows) {
-        const rowDetails = result.skippedRowNumbers.length ? ` Skipped CSV rows: ${[...new Set(result.skippedRowNumbers)].join(", ")}.` : "";
-        toast.success(`Imported ${imported} new rows (${result.importedItems} items, ${result.importedTurns} dialogue turns). Skipped ${result.skippedRows} duplicate rows.${rowDetails}`);
-      } else {
-        toast.success(`Imported ${imported} rows (${result.importedItems} items, ${result.importedTurns} dialogue turns).`);
-      }
-      await onRefresh();
-    } catch (error) {
-      toast.error(getErrorMessage(error, "CSV import failed."));
+      await runWithBusyState(setBusy, async () => {
+        try {
+          const result = await importCommunicationCsv(supabase, await file.text());
+          if (!result.hasContentRows) {
+            toast.info(result.duplicateRowsInFile.length ? `No new rows to import. Skipped ${result.duplicateRowsInFile.length} duplicate CSV rows.` : "The CSV has no content rows.");
+            return;
+          }
+          const imported = result.importedItems + result.importedTurns;
+          if (result.skippedRows) {
+            const rowDetails = result.skippedRowNumbers.length ? ` Skipped CSV rows: ${[...new Set(result.skippedRowNumbers)].join(", ")}.` : "";
+            toast.success(`Imported ${imported} new rows (${result.importedItems} items, ${result.importedTurns} dialogue turns). Skipped ${result.skippedRows} duplicate rows.${rowDetails}`);
+          } else {
+            toast.success(`Imported ${imported} rows (${result.importedItems} items, ${result.importedTurns} dialogue turns).`);
+          }
+          await onRefresh();
+        } catch (error) {
+          toast.error(getErrorMessage(error, "CSV import failed."));
+        }
+      });
     } finally {
-      setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -49,20 +52,19 @@ export function useAdminCommunicationCsvActions({ supabase, selectedTopicId, set
       toast.error("Select a situation before exporting its CSV.");
       return;
     }
-    setBusy(true);
-    try {
-      const { topicSlug, records } = await loadCommunicationSituationExport(supabase, selectedTopicId);
-      downloadCsvFile(
-        `BlueWords_Situational_English_${topicSlug}.csv`,
-        exportCommunicationCsv(records),
-        { includeUtf8Bom: true }
-      );
-      toast.success(`Exported ${records.length} content rows.`);
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Could not export communication content."));
-    } finally {
-      setBusy(false);
-    }
+    await runWithBusyState(setBusy, async () => {
+      try {
+        const { topicSlug, records } = await loadCommunicationSituationExport(supabase, selectedTopicId);
+        downloadCsvFile(
+          `BlueWords_Situational_English_${topicSlug}.csv`,
+          exportCommunicationCsv(records),
+          { includeUtf8Bom: true }
+        );
+        toast.success(`Exported ${records.length} content rows.`);
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Could not export communication content."));
+      }
+    });
   }
 
   return { fileRef, importCsv, exportCsv };
