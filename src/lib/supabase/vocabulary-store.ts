@@ -15,18 +15,26 @@ function getPublishedCommunityCategoriesQuery(supabase: SupabaseClient) {
     .eq("status", "published");
 }
 
+export async function loadPublishedCommunityVocabularyCategories(supabase: SupabaseClient) {
+  const result = await getPublishedCommunityCategoriesQuery(supabase);
+  return {
+    categories: (result.data ?? []) as AuthenticatedVocabularyCategoriesSnapshot["communityCategories"],
+    error: result.error,
+  };
+}
+
 export async function loadAuthenticatedVocabularyCategories(
   supabase: SupabaseClient,
   userId: string
 ): Promise<AuthenticatedVocabularyCategoriesSnapshot> {
   const [personalCategories, communityResult] = await Promise.all([
     getVocabularyCategoriesForUser(userId),
-    getPublishedCommunityCategoriesQuery(supabase),
+    loadPublishedCommunityVocabularyCategories(supabase),
   ]);
 
   return {
     personalCategories,
-    communityCategories: (communityResult.data ?? []) as AuthenticatedVocabularyCategoriesSnapshot["communityCategories"],
+    communityCategories: communityResult.categories,
     error: communityResult.error,
   };
 }
