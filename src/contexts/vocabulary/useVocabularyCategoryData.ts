@@ -20,7 +20,8 @@ export function useVocabularyCategoryData(
   const refreshCategories = useCallback(async (): Promise<void> => {
     const requestId = ++categoriesRequestIdRef.current;
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (authError || !user) {
         if (!mountedRef.current || requestId !== categoriesRequestIdRef.current) return;
         try {
