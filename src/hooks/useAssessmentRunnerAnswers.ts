@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AssessmentQuestionForLearner } from "@/lib/assessments/types";
 import { ASSESSMENT_QUESTION_COUNT } from "@/lib/assessments/constants";
+import { toggleSentenceAnswerTile } from "@/lib/assessments/sentence-tile-answer";
 import { useStateField } from "@/hooks/useStateField";
 
 interface AssessmentAnswersState {
@@ -31,12 +32,11 @@ export function useAssessmentRunnerAnswers(questions: AssessmentQuestionForLearn
     setState((current) => {
       const next = current.sentenceTiles.map((entry) => [...entry]);
       const currentSelection = next[questionIndex];
-      if (currentSelection.includes(tileIndex)) next[questionIndex] = currentSelection.filter((entry) => entry !== tileIndex);
-      else if (currentSelection.length < (question.tiles?.length ?? 0)) next[questionIndex] = [...currentSelection, tileIndex];
-      const result = next[questionIndex].map((entry) => question.tiles?.[entry] ?? "").join(" ").replace(/\s+([.,!?])/g, "$1");
+      const answer = toggleSentenceAnswerTile(question, currentSelection, tileIndex);
+      next[questionIndex] = answer.tileIndexes;
       return {
         sentenceTiles: next,
-        answers: current.answers.map((answer, position) => position === questionIndex ? result : answer),
+        answers: current.answers.map((value, position) => position === questionIndex ? answer.answer : value),
       };
     });
   }

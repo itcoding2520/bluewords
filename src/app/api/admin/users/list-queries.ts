@@ -3,32 +3,8 @@ import type { AuthUser } from "@supabase/supabase-js";
 import type { AdminClient } from "@/lib/supabase/admin-client";
 import { getErrorMessage } from "@/lib/errors";
 import { getPageItems } from "@/lib/pagination";
-import { getAdminUserNickname } from "@/lib/admin-user-mapping";
+import { getAdminUserNicknames, mapAdminUserRecord } from "@/lib/admin-user-mapping";
 import { jsonErrorResponse } from "@/lib/api/json-error-response";
-
-function mapAdminUser(user: AuthUser, profileNicknames?: ReadonlyMap<string, string>) {
-  return {
-    id: user.id,
-    email: user.email ?? null,
-    created_at: user.created_at,
-    last_sign_in_at: user.last_sign_in_at ?? null,
-    nickname: getAdminUserNickname(user, profileNicknames?.get(user.id)),
-  };
-}
-
-async function getProfileNicknames(adminClient: AdminClient, users: AuthUser[]) {
-  if (users.length === 0) return new Map<string, string>();
-  const { data, error } = await adminClient.from("user_profiles").select("user_id, nickname").in("user_id", users.map((user) => user.id));
-  if (error) {
-    console.error("Could not load profiles for admin user list:", error.message);
-    return new Map<string, string>();
-  }
-  const nicknames = new Map<string, string>();
-  for (const profile of data ?? []) {
-    if (profile.nickname) nicknames.set(profile.user_id, profile.nickname);
-  }
-  return nicknames;
-}
 
 export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]) {
   const requestedIds = new Set(ids);
@@ -44,9 +20,9 @@ export async function getAdminUsersByIds(adminClient: AdminClient, ids: string[]
 
   const users = [...matchedUsers.values()];
   try {
-    const nicknames = await getProfileNicknames(adminClient, users);
+    const nicknames = await getAdminUserNicknames(adminClient, users);
     return NextResponse.json({
-      users: users.map((user) => mapAdminUser(user, nicknames)),
+      users: users.map((user) => mapAdminUserRecord(user, nicknames)),
     });
   } catch (error) {
     return jsonErrorResponse(getErrorMessage(error, "Could not load user profiles."), 400);
@@ -66,12 +42,12 @@ export async function searchAdminUsers(
     if (error) return jsonErrorResponse(error.message, 400);
     let profileNicknames: Map<string, string>;
     try {
-      profileNicknames = await getProfileNicknames(adminClient, data.users);
+      profileNicknames = await getAdminUserNicknames(adminClient, data.users);
     } catch (profileError) {
       return jsonErrorResponse(getErrorMessage(profileError, "Could not load user profiles."), 400);
     }
     for (const user of data.users) {
-      const mappedUser = mapAdminUser(user, profileNicknames);
+      const mappedUser = mapAdminUserRecord(user, profileNicknames);
       if (!search || (mappedUser.email ?? "").toLowerCase().includes(search) || mappedUser.nickname.toLowerCase().includes(search)) {
         matches.push(mappedUser);
       }
@@ -86,9 +62,9 @@ export async function getAdminUsersPage(adminClient: AdminClient, page: number, 
   const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: pageSize });
   if (error) return jsonErrorResponse(error.message, 400);
   try {
-    const nicknames = await getProfileNicknames(adminClient, data.users);
+    const nicknames = await getAdminUserNicknames(adminClient, data.users);
     return NextResponse.json({
-      users: data.users.map((user) => mapAdminUser(user, nicknames)),
+      users: data.users.map((user) => mapAdminUserRecord(user, nicknames)),
       total: data.total,
       page,
       pageSize,
