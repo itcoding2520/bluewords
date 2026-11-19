@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@/lib/supabase/client";
 import type { AdminReviewTable } from "@/lib/admin-review-types";
-import { getCurrentUserOrNull } from "@/lib/supabase/authenticated-user";
+import { getCurrentSessionUserOrNull } from "@/lib/supabase/authenticated-user";
 
 export function getPublishedVocabularyMutationError(
   error: { code: string; message: string } | null,
@@ -11,7 +11,7 @@ export function getPublishedVocabularyMutationError(
 }
 
 export async function createPublishedCategory(supabase: SupabaseClient, name: string) {
-  const user = await getCurrentUserOrNull(supabase);
+  const user = await getCurrentSessionUserOrNull(supabase);
   if (!user) return { authenticated: false as const, error: null };
 
   const { error } = await supabase.from("community_categories").insert({
@@ -27,7 +27,7 @@ export async function createPublishedWord(
   supabase: SupabaseClient,
   input: { categoryId: string; word: string; meaning: string }
 ) {
-  const user = await getCurrentUserOrNull(supabase);
+  const user = await getCurrentSessionUserOrNull(supabase);
   if (!user) return { authenticated: false as const, error: null };
 
   const { error } = await supabase.from("community_words").insert({
