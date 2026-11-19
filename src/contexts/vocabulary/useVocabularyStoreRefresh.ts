@@ -84,7 +84,8 @@ export function useVocabularyStoreRefresh(input: {
     }
 
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!isCurrentRequest()) return;
 
       if (authError || !user) {
