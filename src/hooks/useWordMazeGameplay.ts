@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { WORD_MAZE_LIVES, type MazeWord } from "@/lib/word-maze";
+import { getWordMazeAnswerOutcome } from "@/lib/word-maze-answer";
 
 type Feedback = "correct" | "wrong" | null;
 
@@ -37,25 +38,18 @@ export function useWordMazeGameplay() {
 
   function chooseAnswer(choice: string): boolean {
     if (!current || state.feedback === "correct" || state.selectedChoice === choice) return false;
-    if (choice === current.meaning) {
-      setState((previous) => ({
-        ...previous,
-        moves: previous.moves + 1,
-        selectedChoice: choice,
-        score: previous.score + 10,
-        feedback: "correct",
-      }));
-      return false;
-    }
-    const remainingLives = state.lives - 1;
+    const isCorrect = choice === current.meaning;
     setState((previous) => ({
       ...previous,
-      moves: previous.moves + 1,
-      selectedChoice: choice,
-      lives: previous.lives - 1,
-      feedback: "wrong",
+      ...getWordMazeAnswerOutcome({
+        choice,
+        isCorrect,
+        moves: previous.moves,
+        score: previous.score,
+        lives: previous.lives,
+      }),
     }));
-    return remainingLives === 0;
+    return !isCorrect && state.lives - 1 === 0;
   }
 
   function continuePath(): boolean {
