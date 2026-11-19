@@ -3,9 +3,12 @@ import type { VocabularyWord } from "@/data/vocabulary";
 import { defaultVocabularyCategories, defaultVocabularyWords } from "@/data/default-vocabulary";
 import { invalidateDashboardVocabularyOverviewCache } from "@/lib/supabase/dashboard-vocabulary";
 import {
-  loadAuthenticatedVocabularyView,
+  loadAuthenticatedCommunityVocabularyView,
+  loadAuthenticatedVocabularyCoreView,
   loadGuestVocabularySnapshot,
 } from "@/lib/supabase/vocabulary-store-snapshots";
+import { mapCommunityWords, mergeVocabularyCategories } from "@/lib/vocabulary/shared-vocabulary";
+import { isCommunityCategoryId } from "@/lib/vocabulary/community-category-id";
 import type { VocabularyCategoryRow } from "@/lib/supabase/categories";
 import type { SupabaseClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -72,15 +75,29 @@ export function useVocabularyStoreRefresh(input: {
         setIsLoaded(false);
       }
 
-      const result = await loadAuthenticatedVocabularyView(supabase, userId);
+      const core = await loadAuthenticatedVocabularyCoreView(userId);
       if (!isCurrentRequest()) return;
-      if (result.communityCategoriesError || result.communityWordsError) {
-        console.error("Could not load published community vocabulary:", result.communityCategoriesError ?? result.communityWordsError);
-      }
-      setWords(result.words);
-      setCategories(result.categories);
+      setWords((currentWords) => [
+        ...core.words,
+        ...currentWords.filter((word) => word.id.startsWith("community-")),
+      ]);
+      setCategories((currentCategories) => [
+        ...core.categories,
+        ...currentCategories.filter((category) => isCommunityCategoryId(category.id)),
+      ]);
       setCategoriesLoaded(true);
       setIsLoaded(true);
+
+      const community = await loadAuthenticatedCommunityVocabularyView(supabase);
+      if (!isCurrentRequest()) return;
+      if (community.categoryError || community.wordsError) {
+        console.error("Could not load published community vocabulary:", community.categoryError ?? community.wordsError);
+      }
+      setWords((currentWords) => {
+        const personalWords = currentWords.filter((word) => !word.id.startsWith("community-"));
+        return [...personalWords, ...mapCommunityWords(community.words, personalWords)];
+      });
+      setCategories(mergeVocabularyCategories(core.categories, community.categories));
     }
 
     try {
